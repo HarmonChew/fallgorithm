@@ -1,0 +1,22 @@
+{
+  "game": {
+    "ruleset": "classic_ntsc_extended",
+    "mode": "endless",
+    "start_level": 18,
+    "height": 0,
+    "seed": 42
+  },
+  "frame_limit": 40,
+  "script": [
+    {"mask": 1, "frames": 2},
+    {"mask": 0, "frames": 1},
+    {"mask": 8, "frames": 1},
+    {"mask": 0, "frames": 1},
+    {"mask": 8, "frames": 1},
+    {"mask": 0, "frames": 1},
+    {"mask": 2, "frames": 2},
+    {"mask": 0, "frames": 1},
+    {"mask": 4, "frames": 20},
+    {"mask": 0, "frames": 1}
+  ]
+}

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fallgorithm"
+version = "0.1.0"
+description = "Small, reproducible frame-input experiments with Block Stack"
+requires-python = ">=3.10"
+dependencies = ["block-stack>=0.1.0"]
+
+[project.scripts]
+block-stack-ai = "block_stack_ai.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: requires the built sibling native engine and installed Python binding"]

@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "run_record": "runs/20260923T082257031259Z-76932b9a/run.json",
+  "verification": "passed",
+  "doctor": "passed",
+  "tests": {
+    "unit_passed": 16,
+    "integration_passed": 3
+  },
+  "frame_count": 31,
+  "stopping_reason": "script_complete",
+  "score": 0,
+  "lines": 0,
+  "initial_state_hash": "04cccfd1b5b72607",
+  "final_state_hash": "41dfca77676d6d79",
+  "event_counts": {
+    "moved": 2,
+    "rotated": 2,
+    "soft_drop": 9,
+    "gravity_drop": 1
+  },
+  "engine_git": {
+    "commit": "0e56c3beb7e4165e793ff326e3600d973e236cb8",
+    "dirty": true,
+    "kind": "working-tree"
+  },
+  "fallgorithm_git": {
+    "commit": null,
+    "dirty": true,
+    "kind": "working-tree"
+  }
+}
