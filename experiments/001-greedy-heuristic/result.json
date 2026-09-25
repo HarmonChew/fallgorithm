@@ -1,0 +1,69 @@
+{
+  "status": "passed",
+  "doctor": "passed",
+  "run_record": "runs/20260925T073542509599Z-14e63372/run.json",
+  "verification": "passed",
+  "verification_warnings": [
+    "The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source."
+  ],
+  "tests": {
+    "unit_passed": 36,
+    "integration_passed": 5
+  },
+  "configuration": {
+    "game": {
+      "ruleset": "classic_ntsc_extended",
+      "mode": "endless",
+      "start_level": 18,
+      "height": 0
+    },
+    "frame_limit": 60000,
+    "seeds": [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+    "agents": ["random", "greedy"]
+  },
+  "heuristic": {
+    "lines_cleared": 1.0,
+    "holes": -1.0,
+    "aggregate_height": -0.5,
+    "bumpiness": -0.5,
+    "max_height": -1.0,
+    "tie_break": "first highest-scoring placement in enumeration order: orientation ascending, then x ascending"
+  },
+  "episodes": 20,
+  "summary": {
+    "random": {
+      "games": 10,
+      "score": {"mean": 162.1, "median": 165.5, "min": 124, "max": 203},
+      "lines": {"mean": 0.0, "median": 0.0, "min": 0, "max": 0},
+      "frames": {"mean": 765.3, "median": 780.0, "min": 623, "max": 948},
+      "pieces": {"mean": 21.2, "median": 21.0, "min": 18, "max": 26},
+      "stopping_reasons": {"game_over": 10}
+    },
+    "greedy": {
+      "games": 10,
+      "score": {"mean": 106621.7, "median": 77953.5, "min": 22482, "max": 334495},
+      "lines": {"mean": 118.9, "median": 97.0, "min": 28, "max": 309},
+      "frames": {"mean": 15792.1, "median": 12911.0, "min": 4663, "max": 38158},
+      "pieces": {"mean": 336.3, "median": 282.0, "min": 109, "max": 807},
+      "stopping_reasons": {"game_over": 10}
+    }
+  },
+  "model_fidelity": {
+    "locks": 3353,
+    "locks_landed_exactly_as_modelled": 3324,
+    "divergences": 29,
+    "divergences_with_a_blocked_column_path": 29,
+    "lines_predicted_by_the_model": 1206,
+    "lines_cleared_by_the_engine": 1189
+  },
+  "engine_git": {
+    "commit": "0e56c3beb7e4165e793ff326e3600d973e236cb8",
+    "dirty": true,
+    "kind": "working-tree"
+  },
+  "fallgorithm_git": {
+    "commit": "970c849b65ef8f0410096824b1e0b5ec16f700a9",
+    "dirty": true,
+    "kind": "working-tree"
+  }
+}

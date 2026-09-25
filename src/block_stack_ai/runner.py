@@ -1,4 +1,9 @@
-"""Run a bounded frame script and replay exactly the inputs that were executed."""
+"""Run bounded episodes and replay exactly the inputs that were executed.
+
+Two record formats share this module: version 1 is one scripted episode, and
+version 2 is a suite of placement-agent episodes over fixed seeds. Both replay
+the recorded inputs against the native engine and compare every reported field.
+"""
 
 from __future__ import annotations
 
@@ -6,14 +11,17 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+from statistics import fmean, median
 from typing import Any, Callable
 from uuid import uuid4
 
-from .agents import ScriptedAgent, Segment, parse_script
+from .agents import AGENT_NAMES, ScriptedAgent, Segment, create_agent, parse_script
 from .engine import PROJECT_ROOT, create_game, engine_root, git_info
+from .heuristic import weights_record
 
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 1  # one scripted episode
+SUITE_FORMAT_VERSION = 2  # a placement-agent suite over fixed seeds
 _EVENT_FIELDS = (
     "moved", "rotated", "locked", "spawned", "gravity_drop", "soft_drop",
     "game_over", "challenge_completed", "lines_cleared", "score_delta",
@@ -38,27 +46,84 @@ class RunConfig:
         }
 
 
-def parse_config(value: Any) -> RunConfig:
-    if not isinstance(value, dict) or set(value) != {"game", "frame_limit", "script"}:
-        raise ValueError("config must contain exactly game, frame_limit, and script")
-    game = value["game"]
-    if not isinstance(game, dict) or set(game) != {"ruleset", "mode", "start_level", "height", "seed"}:
-        raise ValueError("game must contain exactly ruleset, mode, start_level, height, and seed")
-    if game["ruleset"] not in ("classic_ntsc_strict", "classic_ntsc_extended"):
+@dataclass(frozen=True)
+class SuiteConfig:
+    """Fixed game settings, frame bound, seeds and agents of one comparison."""
+
+    game: dict[str, Any]
+    frame_limit: int
+    seeds: tuple[int, ...]
+    agents: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "game": self.game.copy(),
+            "frame_limit": self.frame_limit,
+            "seeds": list(self.seeds),
+            "agents": list(self.agents),
+        }
+
+
+Config = RunConfig | SuiteConfig
+
+
+def _parse_game(value: Any, *, with_seed: bool) -> dict[str, Any]:
+    keys = {"ruleset", "mode", "start_level", "height"} | ({"seed"} if with_seed else set())
+    if not isinstance(value, dict) or set(value) != keys:
+        raise ValueError(f"game must contain exactly {', '.join(sorted(keys))}")
+    if value["ruleset"] not in ("classic_ntsc_strict", "classic_ntsc_extended"):
         raise ValueError("game.ruleset must be a supported Block Stack ruleset")
-    if game["mode"] not in ("endless", "challenge"):
+    if value["mode"] not in ("endless", "challenge"):
         raise ValueError("game.mode must be endless or challenge")
     for name, minimum, maximum in (("start_level", 0, 19), ("height", 0, 5), ("seed", 0, 65535)):
-        item = game[name]
+        if name not in keys:
+            continue
+        item = value[name]
         if type(item) is not int or not minimum <= item <= maximum:
             raise ValueError(f"game.{name} must be an integer from {minimum} to {maximum}")
-    limit = value["frame_limit"]
-    if type(limit) is not int or limit <= 0:
+    return value.copy()
+
+
+def _parse_frame_limit(value: Any) -> int:
+    if type(value) is not int or value <= 0:
         raise ValueError("frame_limit must be a positive integer")
-    return RunConfig(game.copy(), limit, parse_script(value["script"]))
+    return value
 
 
-def load_config(path: Path) -> RunConfig:
+def _parse_script_config(value: dict[str, Any]) -> RunConfig:
+    return RunConfig(_parse_game(value["game"], with_seed=True),
+                     _parse_frame_limit(value["frame_limit"]), parse_script(value["script"]))
+
+
+def _parse_suite_config(value: dict[str, Any]) -> SuiteConfig:
+    seeds = value["seeds"]
+    if not isinstance(seeds, list) or not seeds:
+        raise ValueError("seeds must be a nonempty list of 16-bit integers")
+    for seed in seeds:
+        if type(seed) is not int or not 0 <= seed <= 65535:
+            raise ValueError("every seed must be an integer from 0 to 65535")
+    agents = value["agents"]
+    if not isinstance(agents, list) or not agents:
+        raise ValueError("agents must be a nonempty list of agent names")
+    for agent in agents:
+        if agent not in AGENT_NAMES:
+            raise ValueError(f"agents must be chosen from {', '.join(AGENT_NAMES)}")
+    return SuiteConfig(_parse_game(value["game"], with_seed=False),
+                       _parse_frame_limit(value["frame_limit"]), tuple(seeds), tuple(agents))
+
+
+def parse_config(value: Any) -> Config:
+    if isinstance(value, dict) and set(value) == {"game", "frame_limit", "script"}:
+        return _parse_script_config(value)
+    if isinstance(value, dict) and set(value) == {"game", "frame_limit", "seeds", "agents"}:
+        return _parse_suite_config(value)
+    raise ValueError(
+        "config must contain exactly game, frame_limit and script, "
+        "or exactly game, frame_limit, seeds and agents"
+    )
+
+
+def load_config(path: Path) -> Config:
     return parse_config(json.loads(path.read_text(encoding="utf-8")))
 
 
@@ -83,15 +148,16 @@ def _count_events(counts: dict[str, int], events: Any) -> None:
         counts[name] += int(getattr(events, name))
 
 
-def run_episode(
-    config: RunConfig,
-    game_factory: Callable[..., Any] = create_game,
+def _play(
+    game_config: dict[str, Any],
+    frame_limit: int,
+    agent: Any,
+    game_factory: Callable[..., Any],
 ) -> dict[str, Any]:
-    agent = ScriptedAgent(config.script)
     agent.reset()
     actual_inputs: list[int] = []
     event_counts = _empty_event_counts()
-    with game_factory(**config.game) as game:
+    with game_factory(**game_config) as game:
         state = game.state
         initial_hash = _hash(game)
         while True:
@@ -101,7 +167,7 @@ def run_episode(
             if agent.done:
                 reason = "script_complete"
                 break
-            if len(actual_inputs) >= config.frame_limit:
+            if len(actual_inputs) >= frame_limit:
                 reason = "frame_limit"
                 break
             action = agent.act(state)
@@ -117,21 +183,84 @@ def run_episode(
             "final_state_hash": _hash(game),
             "event_counts": event_counts,
         }
-    return {"initial_state_hash": initial_hash, "inputs": actual_inputs, "result": result}
+        pieces = state.piece_count
+    return {
+        "initial_state_hash": initial_hash,
+        "inputs": actual_inputs,
+        "result": result,
+        "pieces": pieces,
+    }
 
 
-def run_and_save(config_path: Path, runs_dir: Path = PROJECT_ROOT / "runs") -> Path:
+def run_episode(config: RunConfig, game_factory: Callable[..., Any] = create_game) -> dict[str, Any]:
+    return _play(config.game, config.frame_limit, ScriptedAgent(config.script), game_factory)
+
+
+def run_suite(config: SuiteConfig, game_factory: Callable[..., Any] = create_game) -> list[dict[str, Any]]:
+    """One episode per agent and seed, in the configured order."""
+    episodes = []
+    for name in config.agents:
+        for seed in config.seeds:
+            agent = create_agent(name, seed)
+            episode = _play({**config.game, "seed": seed}, config.frame_limit, agent, game_factory)
+            episodes.append({"agent": name, "seed": seed, **episode})
+    return episodes
+
+
+def _metric(values: list[int]) -> dict[str, float | int]:
+    return {
+        "mean": round(fmean(values), 3),
+        "median": round(median(values), 3),
+        "min": min(values),
+        "max": max(values),
+    }
+
+
+def _summarize(episodes: list[dict[str, Any]]) -> dict[str, Any]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for episode in episodes:
+        grouped.setdefault(episode["agent"], []).append(episode)
+    summary = {}
+    for name, group in grouped.items():
+        reasons: dict[str, int] = {}
+        for episode in group:
+            reason = episode["result"]["stopping_reason"]
+            reasons[reason] = reasons.get(reason, 0) + 1
+        summary[name] = {
+            "games": len(group),
+            "stopping_reasons": reasons,
+            "score": _metric([episode["result"]["score"] for episode in group]),
+            "lines": _metric([episode["result"]["lines"] for episode in group]),
+            "frames": _metric([episode["result"]["frame_count"] for episode in group]),
+            "pieces": _metric([episode["pieces"] for episode in group]),
+        }
+    return summary
+
+
+def _record_versions() -> dict[str, Any]:
+    return {"engine": git_info(engine_root()), "fallgorithm": git_info(PROJECT_ROOT)}
+
+
+def run_and_save(
+    config_path: Path,
+    runs_dir: Path = PROJECT_ROOT / "runs",
+    game_factory: Callable[..., Any] = create_game,
+) -> Path:
     config = load_config(config_path)
-    record = {
-        "format_version": FORMAT_VERSION,
+    record: dict[str, Any] = {
         "created_at": datetime.now(timezone.utc).isoformat(),
         "configuration": config.to_dict(),
-        "versions": {
-            "engine": git_info(engine_root()),
-            "fallgorithm": git_info(PROJECT_ROOT),
-        },
-        **run_episode(config),
+        "versions": _record_versions(),
     }
+    if isinstance(config, SuiteConfig):
+        record["format_version"] = SUITE_FORMAT_VERSION
+        record["heuristic"] = weights_record()
+        episodes = run_suite(config, game_factory)
+        record["episodes"] = episodes
+        record["summary"] = _summarize(episodes)
+    else:
+        record["format_version"] = FORMAT_VERSION
+        record.update(run_episode(config, game_factory))
     name = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + "-" + uuid4().hex[:8]
     run_dir = runs_dir / name
     run_dir.mkdir(parents=True, exist_ok=False)
@@ -140,20 +269,36 @@ def run_and_save(config_path: Path, runs_dir: Path = PROJECT_ROOT / "runs") -> P
     return path
 
 
-def verify_run(path: Path, game_factory: Callable[..., Any] = create_game) -> list[str]:
-    record = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(record, dict) or record.get("format_version") != FORMAT_VERSION:
-        raise VerificationError(f"Unsupported run record format in {path}")
+def _engine_warnings(recorded: Any) -> list[str]:
+    if not isinstance(recorded, dict):
+        raise VerificationError("Malformed engine version in run record")
+    current = git_info(engine_root())
+    warnings = []
+    if recorded.get("commit") != current["commit"] or recorded.get("dirty") != current["dirty"]:
+        warnings.append("Engine Git version or dirty status differs from the recorded run.")
+    if recorded.get("kind") != "committed" or current["kind"] != "committed":
+        warnings.append("The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.")
+    return warnings
+
+
+def _record_sections(record: dict[str, Any], path: Path) -> tuple[Any, Any]:
     try:
-        config = parse_config(record["configuration"])
+        return record["versions"]["engine"], record["configuration"]
+    except (KeyError, TypeError) as error:
+        raise VerificationError(f"Malformed run record in {path}: {error}") from error
+
+
+def _verify_scripted(record: dict[str, Any], path: Path, game_factory: Callable[..., Any]) -> list[str]:
+    recorded_engine, configuration = _record_sections(record, path)
+    try:
+        config = parse_config(configuration)
         inputs = record["inputs"]
         expected = record["result"]
         expected_initial = record["initial_state_hash"]
-        recorded_engine = record["versions"]["engine"]
     except (KeyError, TypeError, ValueError) as error:
         raise VerificationError(f"Malformed run record in {path}: {error}") from error
-    if not isinstance(recorded_engine, dict):
-        raise VerificationError("Malformed engine version in run record")
+    if not isinstance(config, RunConfig):
+        raise VerificationError(f"Malformed run record in {path}: not a scripted configuration")
     if not isinstance(inputs, list) or any(type(mask) is not int or not 0 <= mask <= 31 for mask in inputs):
         raise VerificationError("Recorded inputs must be a list of gameplay masks from 0 to 31")
     if len(inputs) > config.frame_limit:
@@ -201,13 +346,80 @@ def verify_run(path: Path, game_factory: Callable[..., Any] = create_game) -> li
     for name, value in actual.items():
         if expected.get(name) != value:
             differences.append(f"{name}: recorded {expected.get(name)!r}, replayed {value!r}")
-    current_engine = git_info(engine_root())
-    warnings = []
-    if recorded_engine.get("commit") != current_engine["commit"] or recorded_engine.get("dirty") != current_engine["dirty"]:
-        warnings.append("Engine Git version or dirty status differs from the recorded run.")
-    if recorded_engine.get("kind") != "committed" or current_engine["kind"] != "committed":
-        warnings.append("The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.")
+    warnings = _engine_warnings(recorded_engine)
     if differences:
         context = "\n" + "\n".join(f"Warning: {warning}" for warning in warnings) if warnings else ""
         raise VerificationError("Replay mismatch:\n  " + "\n  ".join(differences) + context)
     return warnings
+
+
+def _verify_suite(record: dict[str, Any], path: Path, game_factory: Callable[..., Any]) -> list[str]:
+    recorded_engine, configuration = _record_sections(record, path)
+    if record.get("heuristic") != weights_record():
+        raise VerificationError("Recorded heuristic weights differ from the current implementation")
+    try:
+        config = parse_config(configuration)
+        episodes = record["episodes"]
+        summary = record["summary"]
+    except (KeyError, TypeError, ValueError) as error:
+        raise VerificationError(f"Malformed run record in {path}: {error}") from error
+    if not isinstance(config, SuiteConfig):
+        raise VerificationError(f"Malformed run record in {path}: not a suite configuration")
+    # The record must carry exactly the sequence run_suite emits: agent order,
+    # then seed order. Membership alone would accept a record that duplicates one
+    # configured pair and omits another.
+    expected = [(name, seed) for name in config.agents for seed in config.seeds]
+    if not isinstance(episodes, list) or len(episodes) != len(expected):
+        raise VerificationError("Recorded episodes do not match the configured agents and seeds")
+    replayed = []
+    for index, (episode, identity) in enumerate(zip(episodes, expected)):
+        try:
+            recorded = (episode["agent"], episode["seed"])
+        except (KeyError, TypeError) as error:
+            raise VerificationError(f"Malformed episode {index} in {path}: {error}") from error
+        if recorded != identity:
+            raise VerificationError(
+                f"Episode {index} is not the configured suite entry: recorded agent "
+                f"{recorded[0]!r} with seed {recorded[1]!r}, expected agent "
+                f"{identity[0]!r} with seed {identity[1]!r}"
+            )
+        name, seed = identity
+        actual = _play({**config.game, "seed": seed}, config.frame_limit,
+                       create_agent(name, seed), game_factory)
+        differences = []
+        if episode.get("initial_state_hash") != actual["initial_state_hash"]:
+            differences.append(
+                f"initial_state_hash: recorded {episode.get('initial_state_hash')!r}, "
+                f"replayed {actual['initial_state_hash']!r}"
+            )
+        if episode.get("inputs") != actual["inputs"]:
+            differences.append(
+                f"inputs: recorded {len(episode.get('inputs') or [])}, replayed {len(actual['inputs'])}"
+            )
+        expected = episode.get("result")
+        if not isinstance(expected, dict):
+            raise VerificationError(f"Malformed result in episode {index}")
+        for field, value in actual["result"].items():
+            if expected.get(field) != value:
+                differences.append(f"result.{field}: recorded {expected.get(field)!r}, replayed {value!r}")
+        if episode.get("pieces") != actual["pieces"]:
+            differences.append(f"pieces: recorded {episode.get('pieces')!r}, replayed {actual['pieces']!r}")
+        if differences:
+            raise VerificationError(
+                f"Replay mismatch in episode {index} ({name}, seed {seed}):\n  " + "\n  ".join(differences)
+            )
+        replayed.append(episode)
+    if summary != _summarize(replayed):
+        raise VerificationError("Recorded summary does not match the replayed episodes")
+    return _engine_warnings(recorded_engine)
+
+
+def verify_run(path: Path, game_factory: Callable[..., Any] = create_game) -> list[str]:
+    record = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(record, dict):
+        raise VerificationError(f"Unsupported run record format in {path}")
+    if record.get("format_version") == FORMAT_VERSION:
+        return _verify_scripted(record, path, game_factory)
+    if record.get("format_version") == SUITE_FORMAT_VERSION:
+        return _verify_suite(record, path, game_factory)
+    raise VerificationError(f"Unsupported run record format in {path}")

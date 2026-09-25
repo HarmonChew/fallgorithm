@@ -29,3 +29,4 @@ registry in Stage 0.
 | Number | Question | Outcome |
 | --- | --- | --- |
 | [000-connection](000-connection/notes.md) | Can the project control and replay the sibling engine? | See its measured result. |
+| [001-greedy-heuristic](001-greedy-heuristic/notes.md) | Does a one-piece greedy placement heuristic beat a random legal-placement baseline on fixed seeds? | The heuristic survived about 20x longer and cleared about 119 lines per game against none; 99.1% of its locks matched the placement model. |

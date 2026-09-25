@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
@@ -7,14 +8,35 @@ from types import SimpleNamespace
 import pytest
 
 from block_stack_ai.agents import ScriptedAgent, parse_script
-from block_stack_ai import engine
-from block_stack_ai.runner import parse_config, run_episode
+from block_stack_ai import engine, runner
+from block_stack_ai.runner import (
+    RunConfig,
+    SuiteConfig,
+    VerificationError,
+    parse_config,
+    run_and_save,
+    run_episode,
+    verify_run,
+)
+
+
+EVENT_NAMES = (
+    "moved", "rotated", "locked", "spawned", "gravity_drop", "soft_drop",
+    "game_over", "challenge_completed", "lines_cleared", "score_delta",
+)
 
 
 BASE = {
     "game": {"ruleset": "classic_ntsc_extended", "mode": "endless", "start_level": 0, "height": 0, "seed": 42},
     "frame_limit": 10,
     "script": [{"mask": 8, "frames": 2}, {"mask": 0, "frames": 1}, {"mask": 8, "frames": 1}],
+}
+
+SUITE = {
+    "game": {"ruleset": "classic_ntsc_extended", "mode": "endless", "start_level": 18, "height": 0},
+    "frame_limit": 10,
+    "seeds": [1, 2],
+    "agents": ["random", "greedy"],
 }
 
 
@@ -36,6 +58,39 @@ def test_config_rejects_invalid_values(change):
         parse_config({**BASE, **change})
 
 
+def test_scripted_and_suite_configs_are_distinguished():
+    scripted = parse_config(BASE)
+    assert isinstance(scripted, RunConfig)
+    assert not isinstance(scripted, SuiteConfig)
+
+    suite = parse_config(SUITE)
+    assert isinstance(suite, SuiteConfig)
+    assert suite.seeds == (1, 2)
+    assert suite.agents == ("random", "greedy")
+    assert suite.game == SUITE["game"]
+    assert parse_config(suite.to_dict()) == suite
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"frame_limit": 0},
+        {"seeds": []},
+        {"seeds": [65536]},
+        {"seeds": [True]},
+        {"seeds": 1},
+        {"agents": []},
+        {"agents": ["scripted"]},
+        {"game": {**SUITE["game"], "seed": 42}},
+        {"game": {**SUITE["game"], "ruleset": "classic"}},
+        {"script": BASE["script"]},
+    ],
+)
+def test_suite_config_rejects_invalid_values(change):
+    with pytest.raises(ValueError):
+        parse_config({**SUITE, **change})
+
+
 def test_script_is_deterministic_and_releases_rotation():
     agent = ScriptedAgent(parse_script(BASE["script"]))
     first = [agent.act(None) for _ in range(4)]
@@ -54,6 +109,7 @@ class FakeState:
     lines: int = 0
     terminal: bool = False
     phase: str = "active"
+    piece_count: int = 0
 
 
 class FakeGame:
@@ -79,11 +135,49 @@ class FakeGame:
         if self.state.frame == self.terminal_at:
             self.state.terminal = True
             self.state.phase = self.terminal_phase
-        names = (
-            "moved", "rotated", "locked", "spawned", "gravity_drop", "soft_drop",
-            "game_over", "challenge_completed", "lines_cleared", "score_delta",
-        )
-        return self.state, SimpleNamespace(**{name: 0 for name in names})
+        return self.state, SimpleNamespace(**{name: 0 for name in EVENT_NAMES})
+
+
+@dataclass
+class SuiteState:
+    """The placement-agent fields of an engine state, on a board with no room."""
+
+    frame: int = 0
+    score: int = 0
+    lines: int = 0
+    terminal: bool = False
+    phase: str = "active"
+    piece_count: int = 0
+    current_piece: str = "T"
+    board: object = ((1,) * 10,) * 20
+    hidden_rows: object = ((1,) * 10,) * 2
+
+
+class SuiteGame:
+    """A native-engine stand-in that is blind to the agent and the seed.
+
+    The field is full, so no placement fits and every placement agent emits the
+    same Down frames. Episodes therefore replay identically whatever their
+    recorded agent and seed are, which isolates the suite identity check: a
+    duplicated episode changes neither the replay nor the summary.
+    """
+
+    def __init__(self, **_):
+        self.state = SuiteState()
+        self.closed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.closed = True
+
+    def state_hash(self):
+        return self.state.frame
+
+    def step(self, mask):
+        self.state.frame += 1
+        return self.state, SimpleNamespace(**{name: 0 for name in EVENT_NAMES})
 
 
 @pytest.mark.parametrize(
@@ -116,6 +210,39 @@ def test_game_is_closed_when_a_step_raises():
     with pytest.raises(RuntimeError, match="native step failed"):
         run_episode(parse_config(BASE), lambda **_: game)
     assert game.closed
+
+
+def test_suite_verification_rejects_a_tampered_episode_identity(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps(SUITE), encoding="utf-8")
+    path = run_and_save(config_path, tmp_path / "runs", lambda **_: SuiteGame())
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert [(episode["agent"], episode["seed"]) for episode in record["episodes"]] == [
+        ("random", 1), ("random", 2), ("greedy", 1), ("greedy", 2)
+    ]
+    assert verify_run(path, lambda **_: SuiteGame()) == []
+
+    # Neither tamper changes the configured agent and seed sets, the recorded
+    # frames or the recorded summary; only the per-position identity differs.
+    def rejected(episodes, message):
+        path.write_text(json.dumps({**record, "episodes": episodes}), encoding="utf-8")
+        with pytest.raises(VerificationError, match=message):
+            verify_run(path, lambda **_: SuiteGame())
+
+    rejected(  # swap the two random seeds: both pairs stay configured, in the wrong order
+        [record["episodes"][1], record["episodes"][0], *record["episodes"][2:]],
+        "Episode 0 is not the configured suite entry: recorded agent 'random' "
+        "with seed 2, expected agent 'random' with seed 1",
+    )
+    rejected(  # duplicate (greedy, 1) and omit (greedy, 2)
+        [*record["episodes"][:3], dict(record["episodes"][2])],
+        "Episode 3 is not the configured suite entry: recorded agent 'greedy' "
+        "with seed 1, expected agent 'greedy' with seed 2",
+    )
 
 
 def test_missing_engine_checkout_has_actionable_error(monkeypatch, tmp_path):
