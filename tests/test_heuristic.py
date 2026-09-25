@@ -13,6 +13,7 @@ from block_stack_ai.heuristic import (
     board_grid,
     enumerate_placements,
     fits,
+    settle,
 )
 
 EMPTY_HIDDEN = ((0,) * WIDTH,) * 2
@@ -76,6 +77,38 @@ def test_enumeration_lands_on_top_of_the_existing_stack():
     landing = [placement for placement in enumerate_placements(grid, "O") if placement.x == 4]
     assert [placement.y for placement in landing] == [12]
     assert all(placement.lines_cleared == 0 for placement in landing)
+
+
+def test_settle_keeps_hidden_rows_in_place_when_a_visible_line_clears():
+    """The engine compacts the visible board alone, so hidden minos never shift."""
+    hidden = ((0,) * WIDTH, (1, 1) + (0,) * (WIDTH - 2))
+    rows = [list(row) for row in EMPTY_ROWS]
+    for column in range(2, WIDTH):
+        rows[0][column] = 1  # the O completes this row from columns 0-1
+    rows[1][0] = rows[1][1] = 1  # support, so the O rests at y = -1
+
+    settled, cleared = settle(board_grid(tuple(tuple(row) for row in rows), hidden), "O", 0, 1, -1)
+
+    expected = [list(row) for row in EMPTY_ROWS]
+    expected[1][0] = expected[1][1] = 1  # the row below the clear keeps its place
+    assert cleared == 1
+    assert settled == board_grid(tuple(tuple(row) for row in expected), hidden)
+
+
+def test_settle_shifts_visible_rows_above_a_cleared_row_downward():
+    rows = [list(row) for row in EMPTY_ROWS]
+    for column in range(2, WIDTH):
+        rows[10][column] = 1  # the O completes this row from columns 0-1
+    rows[9][5] = 1  # above the cleared row, so it moves down one
+    rows[11][9] = 1  # below the cleared row, so it keeps its place
+
+    settled, cleared = settle(visible_grid(tuple(tuple(row) for row in rows)), "O", 0, 1, 9)
+
+    expected = [list(row) for row in EMPTY_ROWS]
+    expected[10] = [1, 1, 0, 0, 0, 1, 0, 0, 0, 0]  # old visible row 9, one row lower
+    expected[11][9] = 1  # old visible row 11, unmoved
+    assert cleared == 1
+    assert settled == visible_grid(tuple(tuple(row) for row in expected))
 
 
 def test_greedy_clears_a_tetris_well_instead_of_dropping_flat():

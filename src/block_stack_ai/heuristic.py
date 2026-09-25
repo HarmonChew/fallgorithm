@@ -115,7 +115,20 @@ def fits(grid: Grid, piece: str, orientation: int, x: int, y: int) -> bool:
 
 
 def settle(grid: Grid, piece: str, orientation: int, x: int, y: int) -> tuple[Grid, int]:
-    """Lock the piece, clear full visible rows, and return the settled grid and clear count."""
+    """Lock the piece, clear full visible rows, and return the settled grid and clear count.
+
+    Only the visible field compacts, and it compacts downward: the surviving
+    visible rows keep their order and collect at the bottom, so every row above
+    a cleared row shifts down by the number of cleared rows below it, and the
+    cleared rows reopen empty at the top of the visible field. The two hidden
+    rows do not move: a piece locked above the ceiling keeps its hidden minos
+    after a lower row clears. This mirrors the native lock exactly, which
+    compacts ``state_.board`` alone and never touches ``state_.hidden_rows``
+    (``Game::clear_rows``) and reports the hidden rows as a separate 2x10
+    buffer. ``test_settle_keeps_hidden_rows_in_place_when_a_visible_line_clears``
+    and ``test_placement_model_matches_a_native_lock_straddling_the_ceiling``
+    pin that behaviour.
+    """
     rows = [list(row) for row in grid]
     for offset_x, offset_y in cells(piece, orientation):
         rows[y + offset_y + HIDDEN_ROWS][x + offset_x] = 1
@@ -123,7 +136,9 @@ def settle(grid: Grid, piece: str, orientation: int, x: int, y: int) -> tuple[Gr
     remaining = [row for row in visible if not all(row)]
     cleared = len(visible) - len(remaining)
     if cleared:
-        rows = rows[:HIDDEN_ROWS] + [[0] * WIDTH for _ in range(cleared)] + remaining
+        # The hidden rows stay put: only the visible field above the cleared
+        # rows moves down, into the empty rows reopened at its top.
+        rows[HIDDEN_ROWS:] = [[0] * WIDTH for _ in range(cleared)] + remaining
     return tuple(tuple(row) for row in rows), cleared
 
 

@@ -84,6 +84,37 @@ def test_every_enumerated_placement_locks_where_the_model_says():
             assert board_grid(state.board, state.hidden_rows) == settled
 
 
+def test_placement_model_matches_a_native_lock_straddling_the_ceiling():
+    """A lock that rests in the hidden rows and clears the visible row below it."""
+    suite = load_config(SUITE_CONFIG)
+    configuration = {**suite.game, "seed": 1}
+
+    rows = [[0] * 10 for _ in range(20)]
+    for column in range(2, 10):
+        rows[0][column] = 1  # the O completes this row from columns 0-1
+    rows[1][0] = rows[1][1] = 1  # support, so the O rests at y = -1
+
+    with create_game(**configuration) as game:
+        game.set_board(rows)
+        grid = board_grid(game.state.board, game.state.hidden_rows)
+        game.set_piece("O", x=1, y=-1)
+        for _ in range(200):
+            state, events = game.step(0)
+            if events.locked:
+                break
+        else:
+            raise AssertionError("the ceiling piece never locked")
+        settled, cleared = settle(grid, "O", 0, 1, -1)
+        native = board_grid(state.board, state.hidden_rows)
+
+    assert events.lines_cleared == cleared == 1
+    # The lower minos completed and cleared visible row 0; the minos above the
+    # ceiling stay in hidden row -1 exactly where the engine left them.
+    assert native[1][:2] == (1, 1)
+    assert native[2] == (0,) * 10
+    assert native == settled
+
+
 def test_suite_save_and_verify_real_run(tmp_path: Path):
     raw = json.loads(SUITE_CONFIG.read_text(encoding="utf-8"))
     config_path = tmp_path / "config.json"

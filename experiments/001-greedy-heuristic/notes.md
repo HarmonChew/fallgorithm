@@ -13,9 +13,9 @@ locks and clears lines, scores the resulting board, and executes the chosen
 placement with frame-level masks (rotate, one press per horizontal step, then
 Down held). Only the placement choice differs: the heuristic takes the highest
 score, the baseline picks uniformly from the same list with a Python RNG seeded
-from the episode seed. 20 episodes, the CLI doctor, 36 unit tests and five
-native integration tests were run; the saved suite record was replayed with
-`verify`.
+from the episode seed. 20 episodes, the CLI doctor and the then-current 36 unit
+and five native integration tests were run; the saved suite record was replayed
+with `verify`.
 
 **Heuristic:** Fixed weights, never tuned against these seeds, per
 [`src/block_stack_ai/heuristic.py`](../../src/block_stack_ai/heuristic.py):
@@ -49,6 +49,22 @@ blocked column path: the piece could not slide to the chosen column above a
 tall stack, so it locked early (29 column differences, four of them also stuck
 in the wrong orientation).
 
+Ceiling behaviour is modelled exactly. The native lock compacts the visible
+board alone and reports the two hidden rows as a separate buffer that it never
+shifts, so a piece locked above the visible field keeps its hidden minos when a
+lower visible row clears, and the empty row reopens at the top of the visible
+field. A native lock that straddles the ceiling and clears the row below it
+settles to the same grid the model's `settle` returns, cell for cell, and the
+reviewed alternative that shifts the hidden rows down with the cleared row
+produces a grid the native engine does not. The unit tests
+`test_settle_keeps_hidden_rows_in_place_when_a_visible_line_clears` and
+`test_settle_shifts_visible_rows_above_a_cleared_row_downward` and the
+integration test
+`test_placement_model_matches_a_native_lock_straddling_the_ceiling` pin both
+sides. These were added after the run above, so the suite is now 38 unit and
+six native integration tests; `settle` and enumeration behaviour is unchanged
+and the recorded metrics stand.
+
 **Limitations and useful failures:**
 
 - The model assumes a straight drop from above the stack. It ignores the
@@ -58,8 +74,10 @@ in the wrong orientation).
   pressing until the piece locks. Near the ceiling this abandons the plan.
 - No next-piece lookahead, hold, weight tuning or learning; the classic preset
   offers no wall kicks to model.
-- Empty cells that a piece leaves in the hidden rows are outside the height
-  features; only visible rows are scored.
+- Minos that come to rest in the hidden rows are outside the height features:
+  only visible rows are scored, although those hidden cells still block
+  placement. A hidden row that fills is never cleared, because the engine scans
+  the visible board alone.
 - The suite verifier first accepted any record of the right length whose
   recorded agent and seed were each merely members of the configured lists, so a
   tampered record could duplicate one episode identity and omit another and
