@@ -3,11 +3,22 @@
 Two record formats share this module and both replay against the native engine.
 Version 1 is one scripted episode. The replay requires the recorded inputs and
 compares them alongside the recorded initial state hash and every ``result``
-field, and it compares a top-level ``pieces`` count when the record carries one.
+field, and it compares a top-level piece count when the record carries one.
 Version 2 is a suite of placement-agent episodes over fixed seeds: the replay
 compares each episode's agent and seed, inputs, initial state hash, ``result``
-fields and ``pieces`` count, then the summary derived from them. Records that
-predate a compared field and omit it keep verifying.
+fields and piece count, then the summary derived from them.
+
+The piece count is ``pieces_placed``: the number of pieces the engine actually
+wrote to the board. It is counted from the engine's ``locked`` events minus the
+failed lock that ends an endless game: ``Game::lock`` raises ``locked`` before
+its ``fits`` check and only writes the board when the piece fits, so the
+topping-out lock places nothing. A piece still in play at a frame-limit stop has
+not locked and is not counted either, and the RNG/preview selection counter
+``state.piece_count`` is always above the count. Records written before that
+field existed carry the legacy ``pieces`` key instead, which held
+``state.piece_count``; the replay compares it against that counter so those
+records keep verifying under their original semantics. A record that carries
+neither key is older still and keeps verifying.
 """
 
 from __future__ import annotations
@@ -153,6 +164,33 @@ def _count_events(counts: dict[str, int], events: Any) -> None:
         counts[name] += int(getattr(events, name))
 
 
+def _placed_pieces(event_counts: dict[str, int]) -> int:
+    """Pieces written to the board: lock events minus the failed top-out lock.
+
+    ``Game::lock`` raises ``locked`` before its ``fits`` check and writes the
+    board only when the piece fits, so the lock that ends an endless game places
+    nothing. A frame-limit stop has no such lock, so its count is the lock count.
+    """
+    return event_counts["locked"] - event_counts["game_over"]
+
+
+def _compare_piece_count(record: dict[str, Any], field: str, replayed: int, where: str) -> str | None:
+    """A difference message for a recorded piece count, or raise on a bad type.
+
+    ``where`` names the record location. JSON ``false``/``true`` compare equal to
+    the integers ``0``/``1``, so the type is checked before the value; a record
+    that omits the field is older and is left alone.
+    """
+    if field not in record:
+        return None
+    value = record[field]
+    if type(value) is not int:
+        raise VerificationError(f"Recorded {field}{where} must be an integer, not {value!r}")
+    if value != replayed:
+        return f"{field}: recorded {value!r}, replayed {replayed!r}"
+    return None
+
+
 def _play(
     game_config: dict[str, Any],
     frame_limit: int,
@@ -188,17 +226,26 @@ def _play(
             "final_state_hash": _hash(game),
             "event_counts": event_counts,
         }
-        pieces = state.piece_count
+        pieces_placed = _placed_pieces(event_counts)
+        # The engine's RNG/preview selection counter, always above pieces_placed.
+        # Kept only to replay legacy records; _persisted drops it from new ones.
+        piece_count = state.piece_count
     return {
         "initial_state_hash": initial_hash,
         "inputs": actual_inputs,
         "result": result,
-        "pieces": pieces,
+        "pieces_placed": pieces_placed,
+        "piece_count": piece_count,
     }
 
 
+def _persisted(episode: dict[str, Any]) -> dict[str, Any]:
+    """The saved episode: the placed-piece count, without the engine RNG counter."""
+    return {key: value for key, value in episode.items() if key != "piece_count"}
+
+
 def run_episode(config: RunConfig, game_factory: Callable[..., Any] = create_game) -> dict[str, Any]:
-    return _play(config.game, config.frame_limit, ScriptedAgent(config.script), game_factory)
+    return _persisted(_play(config.game, config.frame_limit, ScriptedAgent(config.script), game_factory))
 
 
 def run_suite(config: SuiteConfig, game_factory: Callable[..., Any] = create_game) -> list[dict[str, Any]]:
@@ -208,7 +255,7 @@ def run_suite(config: SuiteConfig, game_factory: Callable[..., Any] = create_gam
         for seed in config.seeds:
             agent = create_agent(name, seed)
             episode = _play({**config.game, "seed": seed}, config.frame_limit, agent, game_factory)
-            episodes.append({"agent": name, "seed": seed, **episode})
+            episodes.append({"agent": name, "seed": seed, **_persisted(episode)})
     return episodes
 
 
@@ -231,13 +278,15 @@ def _summarize(episodes: list[dict[str, Any]]) -> dict[str, Any]:
         for episode in group:
             reason = episode["result"]["stopping_reason"]
             reasons[reason] = reasons.get(reason, 0) + 1
+        # New episodes carry ``pieces_placed``; older ones the legacy ``pieces``.
+        pieces = "pieces_placed" if "pieces_placed" in group[0] else "pieces"
         summary[name] = {
             "games": len(group),
             "stopping_reasons": reasons,
             "score": _metric([episode["result"]["score"] for episode in group]),
             "lines": _metric([episode["result"]["lines"] for episode in group]),
             "frames": _metric([episode["result"]["frame_count"] for episode in group]),
-            "pieces": _metric([episode["pieces"] for episode in group]),
+            pieces: _metric([episode[pieces] for episode in group]),
         }
     return summary
 
@@ -343,12 +392,19 @@ def _verify_scripted(record: dict[str, Any], path: Path, game_factory: Callable[
             "final_state_hash": _hash(game),
             "event_counts": event_counts,
         }
-        actual_pieces = state.piece_count
+        actual_pieces_placed = _placed_pieces(event_counts)
+        actual_piece_count = state.piece_count
     differences = []
     if expected_initial != actual_initial:
         differences.append(f"initial_state_hash: recorded {expected_initial!r}, replayed {actual_initial!r}")
-    if "pieces" in record and record["pieces"] != actual_pieces:
-        differences.append(f"pieces: recorded {record['pieces']!r}, replayed {actual_pieces!r}")
+    # ``pieces_placed`` counts pieces written to the board; the legacy ``pieces``
+    # key held the RNG/preview selection counter, which is always above it. Each
+    # present key is replayed against its own value, so older records keep
+    # verifying.
+    for field, replayed in (("pieces_placed", actual_pieces_placed), ("pieces", actual_piece_count)):
+        difference = _compare_piece_count(record, field, replayed, "")
+        if difference:
+            differences.append(difference)
     if not isinstance(expected, dict):
         raise VerificationError("Malformed result in run record")
     for name, value in actual.items():
@@ -382,14 +438,33 @@ def _verify_suite(record: dict[str, Any], path: Path, game_factory: Callable[...
     replayed = []
     for index, (episode, identity) in enumerate(zip(episodes, expected)):
         try:
-            recorded = (episode["agent"], episode["seed"])
+            recorded_agent = episode["agent"]
+            recorded_seed = episode["seed"]
         except (KeyError, TypeError) as error:
             raise VerificationError(f"Malformed episode {index} in {path}: {error}") from error
-        if recorded != identity:
+        # JSON true compares equal to the integer 1, so a boolean seed would pass
+        # plain equality against a configured seed of 1. Require the recorded
+        # identity types the writer emits before comparing the values.
+        if type(recorded_agent) is not str or type(recorded_seed) is not int:
+            raise VerificationError(
+                f"Episode {index} identity must be an agent name and an integer seed: "
+                f"recorded agent {recorded_agent!r} with seed {recorded_seed!r}"
+            )
+        if (recorded_agent, recorded_seed) != identity:
             raise VerificationError(
                 f"Episode {index} is not the configured suite entry: recorded agent "
-                f"{recorded[0]!r} with seed {recorded[1]!r}, expected agent "
+                f"{recorded_agent!r} with seed {recorded_seed!r}, expected agent "
                 f"{identity[0]!r} with seed {identity[1]!r}"
+            )
+        # The same guard the scripted verifier applies. Plain equality would accept
+        # booleans for the 0/1 masks, and a non-list input would make the difference
+        # message below raise TypeError instead of a controlled VerificationError.
+        inputs = episode.get("inputs")
+        if not isinstance(inputs, list) or any(
+            type(mask) is not int or not 0 <= mask <= 31 for mask in inputs
+        ):
+            raise VerificationError(
+                f"Recorded inputs in episode {index} must be a list of gameplay masks from 0 to 31"
             )
         name, seed = identity
         actual = _play({**config.game, "seed": seed}, config.frame_limit,
@@ -401,17 +476,17 @@ def _verify_suite(record: dict[str, Any], path: Path, game_factory: Callable[...
                 f"replayed {actual['initial_state_hash']!r}"
             )
         if episode.get("inputs") != actual["inputs"]:
-            differences.append(
-                f"inputs: recorded {len(episode.get('inputs') or [])}, replayed {len(actual['inputs'])}"
-            )
+            differences.append(f"inputs: recorded {len(inputs)}, replayed {len(actual['inputs'])}")
         expected = episode.get("result")
         if not isinstance(expected, dict):
             raise VerificationError(f"Malformed result in episode {index}")
         for field, value in actual["result"].items():
             if expected.get(field) != value:
                 differences.append(f"result.{field}: recorded {expected.get(field)!r}, replayed {value!r}")
-        if episode.get("pieces") != actual["pieces"]:
-            differences.append(f"pieces: recorded {episode.get('pieces')!r}, replayed {actual['pieces']!r}")
+        for field, actual_value in (("pieces_placed", actual["pieces_placed"]), ("pieces", actual["piece_count"])):
+            difference = _compare_piece_count(episode, field, actual_value, f" in episode {index}")
+            if difference:
+                differences.append(difference)
         if differences:
             raise VerificationError(
                 f"Replay mismatch in episode {index} ({name}, seed {seed}):\n  " + "\n  ".join(differences)

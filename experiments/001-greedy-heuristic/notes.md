@@ -13,8 +13,8 @@ locks and clears lines, scores the resulting board, and executes the chosen
 placement with frame-level masks (rotate, one press per horizontal step, then
 Down held). Only the placement choice differs: the heuristic takes the highest
 score, the baseline picks uniformly from the same list with a Python RNG seeded
-from the episode seed. 20 episodes, the CLI doctor and the current 43 unit and
-eight native integration tests were run; the saved suite record was replayed
+from the episode seed. 20 episodes, the CLI doctor and the current 50 unit and
+nine native integration tests were run; the saved suite record was replayed
 with `verify`.
 
 **Placement model:** A placement is a straight drop that enters its column at
@@ -45,10 +45,10 @@ lowest-orientation of the equal-scoring candidates.
 **Observed result:** All 20 episodes ended by topping out; the frame limit was
 never reached.
 
-| Agent | Score mean / median (min-max) | Lines mean / median (min-max) | Frames mean / median (min-max) | Pieces mean | Games |
+| Agent | Score mean / median (min-max) | Lines mean / median (min-max) | Frames mean / median (min-max) | Pieces placed mean | Games |
 | --- | --- | --- | --- | --- | --- |
-| random | 162.9 / 168.0 (124-203) | 0.0 / 0.0 (0-0) | 786.7 / 807.0 (623-948) | 21.9 | 10 game over |
-| greedy | 106621.9 / 77953.5 (22482-334495) | 118.9 / 97.0 (28-309) | 15801.3 / 12911.0 (4686-38158) | 336.7 | 10 game over |
+| random | 162.9 / 168.0 (124-203) | 0.0 / 0.0 (0-0) | 786.7 / 807.0 (623-948) | 19.9 | 10 game over |
+| greedy | 106621.9 / 77953.5 (22482-334495) | 118.9 / 97.0 (28-309) | 15801.3 / 12911.0 (4686-38158) | 334.7 | 10 game over |
 
 The heuristic survived about 20 times longer (15801.3 against 786.7 frames),
 cleared about 119 lines per game against none, and scored about 650 times
@@ -58,11 +58,28 @@ threshold (130 lines at level 18), so per-line score grows in longer episodes.
 The random baseline never completed a row: random columns spread the stack
 instead of filling rows.
 
+The **`Pieces placed`** column is the number of pieces the engine actually wrote
+to the board, counted from the engine's `locked` events minus the failed
+topping-out lock: `Game::lock` (`core/src/game.cpp:242`) raises `locked` before
+its `fits` check and writes the board only when the piece fits, so the lock that
+ends an endless game places nothing, and a piece still in play at a frame-limit
+stop has not locked at all. At game over every spawned piece has locked, so the
+count is one below `state.stats.pieces` and two below the engine's RNG/preview
+selection counter `state.piece_count`, which also counts the initial and next
+preview. The runner used to record that preview counter as `pieces`, so the
+earlier values of this column (21.9 and 336.7) were two too high; records now
+carry the placed count as `pieces_placed` (the older `pieces` key is still read
+under its original meaning). The greedy total of **3347** placed pieces is one
+below the **3357** lock events the model-fidelity measurement below counts, the
+difference being the ten topping-out locks that wrote nothing.
+
 **Model fidelity:** Re-measured on the regenerated record by replaying each
 recorded greedy episode and comparing the engine's locked origin with the
 placement the greedy policy would have chosen at that piece's spawn state:
 **3328 of 3357 locks (99.1%) landed exactly where the model predicted**, and the
-model predicted **1208** line clears where the engine cleared **1189**. All 29
+model predicted **1208** line clears where the engine cleared **1189**. The 3357
+are lock events, one per spawned piece, including the ten topping-out locks that
+wrote nothing, so they are one above the `Pieces placed` total of 3347. All 29
 divergences show a column difference, nine of them also a wrong orientation and
 27 also a different row. The mechanism is unchanged: the piece cannot slide to
 the chosen column above a tall stack, so it locks early in the spawn column —
@@ -71,7 +88,10 @@ The measurement method is anchored to the previously published numbers: run over
 the pre-fix record with the legacy drop rule it reproduces exactly the earlier
 3324/3353 locks, 29 divergences, four orientation differences and 1206 model
 against 1189 engine clears, so the values above are directly comparable to that
-record rather than carried over from it.
+record rather than carried over from it. The metric correction does not move
+these numbers: the regenerated record's episodes are identical to the previous
+record's in inputs, results and initial hashes (only the piece field differs),
+so the replay is the same.
 
 Ceiling behaviour is modelled exactly. The native lock compacts the visible
 board alone and keeps the two hidden rows as a separate buffer, so a piece
@@ -143,24 +163,26 @@ across every review round, and the hidden rows stay fixed.
 - Effect of the fix on the fixed seeds (supersedes the earlier "6 = 3+1+2"
   account): **6 of 20 episodes are unchanged** (greedy seeds 6, 12, 16, 20 and
   random seeds 8, 10); 14 changed, seven of them only in the executed masks and
-  seven also in score, frames or pieces.
+  seven also in score, frames or pieces. Piece figures here use the corrected
+  placed count (board placements, two below the preview counter the earlier
+  draft quoted for a game-over episode).
   - Greedy, six changed: seeds 2, 8 and 14 in the masks only, with identical
-    score, frames and pieces; seed 4 (frames 8236 → 8257, pieces 174 → 175),
-    seed 18 (frames 4663 → 4686, pieces 109 → 110) and seed 10 (score
-    150514 → 150516, frames 23408 → 23456, pieces 480 → 482) also in the result
+    score, frames and pieces; seed 4 (frames 8236 → 8257, pieces 172 → 173),
+    seed 18 (frames 4663 → 4686, pieces 107 → 108) and seed 10 (score
+    150514 → 150516, frames 23408 → 23456, pieces 478 → 480) also in the result
     fields.
   - Random, eight changed: seeds 2, 4, 6 and 18 in the masks only; seed 12
     (frames 755 → 757), seed 14 (score 179 → 178, frames 851 → 918, pieces
-    23 → 25), seed 16 (score 165 → 169, frames 807 → 891, pieces 22 → 25) and
-    seed 20 (score 161 → 163, frames 693 → 726, pieces 19 → 20) also in the
+    21 → 23), seed 16 (score 165 → 169, frames 807 → 891, pieces 20 → 23) and
+    seed 20 (score 161 → 163, frames 693 → 726, pieces 17 → 18) also in the
     result fields.
   - Masks change while the result stands when the model now picks a reachable
     placement that the controller executes to the same resting position the
     unreachable one described. The greedy summary barely moved (mean score
-    106621.7 → 106621.9, frames 15792.1 → 15801.3, pieces 336.3 → 336.7; lines
+    106621.7 → 106621.9, frames 15792.1 → 15801.3, pieces 334.3 → 334.7; lines
     mean, median, min and max are identical), while the random baseline samples
     uniformly from the enumeration, so eight of its ten episodes moved (mean
-    score 162.4 → 162.9, frames 768.1 → 786.7, pieces 21.3 → 21.9). The record
+    score 162.4 → 162.9, frames 768.1 → 786.7, pieces 19.3 → 19.9). The record
     below was regenerated after the change and verifies.
 - The controller does not replan around a blocked rotation or move: it keeps
   pressing until the piece locks. Near the ceiling this abandons the plan.
@@ -176,8 +198,11 @@ across every review round, and the hidden rows stay fixed.
   tampered record could duplicate one episode identity and omit another and
   still verify. `verify` now requires the recorded `(agent, seed)` sequence to
   equal the configured Cartesian product in `run_suite` order (agent order, then
-  seed order); a unit test duplicates and swaps episode identities and confirms
-  rejection. The retained record above still verifies.
+  seed order), and the recorded identity must have the written types before the
+  values are compared: JSON `true` compares equal to the integer `1`, so a
+  boolean seed for a configured seed of `1` would otherwise pass. A unit test
+  duplicates, swaps and boolean-seeds episode identities and confirms rejection.
+  The retained record above still verifies.
 - The version-1 scripted verifier compared the recorded inputs and `result`
   fields but ignored the top-level `pieces` count the writer records beside
   them, so that count could be tampered with or deleted and the record still
@@ -186,6 +211,34 @@ across every review round, and the hidden rows stay fixed.
   test writes a scripted record through `run_and_save` and checks an untampered
   record, tampered counts (the frame count, `5`, `null`, `true`) and an omitted
   count.
+- The reported piece count was the wrong engine field. The runner recorded
+  `state.piece_count`, the RNG/preview selection counter, which is incremented
+  once for the initial preview and once for `next`, so it is above the number of
+  pieces actually placed. The native contract is unambiguous: `Game::reset`
+  (`core/src/game.cpp:137`) and `Game::spawn` (`core/src/game.cpp:196`) advance
+  `state_.piece_count` for each preview selection and `state_.stats.pieces` for
+  each piece that enters play, and a probe on the registered library confirms
+  `piece_count == stats.pieces + 1` at spawn and at game over. The count is now
+  the number of pieces written to the board, taken from the engine's `locked`
+  events minus the failed topping-out lock: `Game::lock` raises `locked` before
+  its `fits` check and writes the board only on success, so neither the
+  topping-out lock nor a piece still in play at a frame-limit stop is counted
+  (`stats.pieces` counts both as soon as they spawn, and a one-frame episode has
+  `stats.pieces == 1` with zero locks). Records now carry the placed count as
+  **`pieces_placed`** and the summary key is renamed with it; the older `pieces`
+  key is still compared against `piece_count`, so every previously saved record
+  keeps verifying under its original meaning. The retained record below was
+  regenerated with the corrected field (its episodes are otherwise byte-identical
+  to the previous one, and all 20 ended at game over, so the count is one below
+  both the lock events and `stats.pieces`), and the previous record still
+  verifies. Regressions: a unit test pins the offset on a stop where nothing is
+  in play, another pins a stop with an unlocked piece, another pins the failed
+  topping-out lock, unit tests round-trip the new and legacy keys of both record
+  formats (rejecting a legacy `pieces` that holds the placed count), unit tests
+  reject a boolean seed identity and a boolean piece count that would compare
+  equal to a configured seed of 1 and a count of 0, and an integration test
+  drives a full native top-out and a one-frame stop and requires the recorded
+  count to equal the native board placements.
 - Adjacent seeds are not independent. With seeds `1..10` the greedy episodes
   for `(2,3)`, `(4,5)`, `(6,7)` and `(8,9)` were identical in every recorded
   field, and reading the spawned pieces directly showed the same first twelve
@@ -216,14 +269,21 @@ cp -r runs/<new-run-id> experiments/001-greedy-heuristic/runs/
 ```
 
 The record used here was copied that way to the retained, still-ignored
-`experiments/001-greedy-heuristic/runs/20260926T020359855832Z-12e7c9a3/run.json`
+`experiments/001-greedy-heuristic/runs/20260926T054458996351Z-697e2202/run.json`
 (1.8 MB, format version 2, every frame mask retained) and verifies from there,
 with the CLI's own copy left at
-`runs/20260926T020359855832Z-12e7c9a3/run.json`.
+`runs/20260926T054458996351Z-697e2202/run.json`. Its episodes are identical to
+the previous retained record's in inputs, results and initial hashes, differing
+only in the piece field: `pieces_placed` here is two below the legacy `pieces`
+there (the preview counter, above the spawned count and the placed count). That
+previous record,
+`experiments/001-greedy-heuristic/runs/20260926T020359855832Z-12e7c9a3/run.json`,
+is kept beside it and still verifies under the legacy semantics, which is the
+backward-compatibility check on a real artifact.
 
 This is a **working-tree run**. The engine was dirty at commit
 `0e56c3beb7e4165e793ff326e3600d973e236cb8` and fallgorithm was dirty at commit
-`def52b822e331d89b73c4ed8cc19fccae4d71498`, so the Git metadata alone cannot
+`d5d0d9c2222e3e7709db8ec1912e0f21739b2faa`, so the Git metadata alone cannot
 reconstruct the uncommitted source. Environment: the read-only sibling checkout
 at `../block-stack` through the installed `block_stack` binding, the native
 library from `.build/engine/libblocks_native.so` (`BLOCKS_NATIVE_LIB`), Python

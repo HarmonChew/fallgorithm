@@ -12,7 +12,9 @@ from block_stack_ai.pieces import PIECES, cells, orientation_count
 from block_stack_ai.runner import (
     VerificationError,
     load_config,
+    parse_config,
     run_and_save,
+    run_episode,
     verify_run,
 )
 
@@ -286,7 +288,7 @@ def test_suite_save_and_verify_real_run(tmp_path: Path):
     for summary in record["summary"].values():
         assert summary["games"] == 2
         assert set(summary["stopping_reasons"]) <= {"game_over", "frame_limit"}
-        for metric in ("score", "lines", "frames", "pieces"):
+        for metric in ("score", "lines", "frames", "pieces_placed"):
             assert set(summary[metric]) == {"mean", "median", "min", "max"}
     verify_run(path)
 
@@ -294,3 +296,48 @@ def test_suite_save_and_verify_real_run(tmp_path: Path):
     path.write_text(json.dumps(record), encoding="utf-8")
     with pytest.raises(VerificationError, match="episode 0"):
         verify_run(path)
+
+
+def test_recorded_placed_pieces_agree_with_the_native_engine():
+    """The recorded count is the board placements, not the engine's preview counter.
+
+    A whole top-out episode is driven with no inputs on the fixed suite ruleset.
+    ``state.piece_count`` is the RNG/preview selection counter and stays one
+    above ``state.stats.pieces``; at game over ``stats.pieces`` equals the number
+    of lock events. The topping-out lock raises ``locked`` but writes no piece,
+    so the recorded count is one below both. A stop before the first lock shows
+    the other end: the engine has already spawned the active piece
+    (``stats.pieces == 1``) but nothing has locked, so the placed count is zero.
+    """
+    configuration = {**load_config(SUITE_CONFIG).game, "seed": 2}
+    config = parse_config(
+        {"game": configuration, "frame_limit": 2000, "script": [{"mask": 0, "frames": 2000}]}
+    )
+    episode = run_episode(config)
+    assert episode["result"]["stopping_reason"] == "game_over"
+    assert "pieces" not in episode
+
+    locked = 0
+    with create_game(**configuration) as game:
+        state = game.state
+        assert state.piece_count == state.stats.pieces + 1
+        while not state.terminal:
+            state, events = game.step(0)
+            locked += int(events.locked)
+        assert state.piece_count == state.stats.pieces + 1
+
+    assert state.stats.pieces == locked
+    assert episode["result"]["event_counts"]["locked"] == locked
+    assert episode["result"]["event_counts"]["game_over"] == 1
+    assert episode["pieces_placed"] == locked - 1 == state.stats.pieces - 1
+
+    early_config = parse_config(
+        {"game": configuration, "frame_limit": 1, "script": [{"mask": 0, "frames": 100}]}
+    )
+    early = run_episode(early_config)
+    assert early["result"]["stopping_reason"] == "frame_limit"
+    assert early["pieces_placed"] == 0
+    with create_game(**configuration) as game:
+        state, _ = game.step(0)
+    assert state.stats.pieces == 1  # the active piece is spawned, not locked
+    assert state.piece_count == 2

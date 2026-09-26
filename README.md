@@ -51,7 +51,12 @@ repositories. A dirty or no-commit run is labeled a working-tree run; a matching
 hash verifies this replay, while the Git commit alone cannot restore uncommitted
 edits. A suite record also states the fixed heuristic weights it used, and
 `verify` re-derives every episode from the recorded agent name and seed, which
-must appear in the configured order: agent order, then seed order.
+must appear in the configured order: agent order, then seed order. Each episode
+and summary reports `pieces_placed`, the number of pieces the engine wrote to
+the board (its `locked` events minus the failed top-out lock; a piece still in
+play at a frame-limit stop and the topping-out lock that places nothing are not
+counted); records written before that field carry the legacy `pieces` key
+holding the preview counter and still verify under that meaning.
 
 Only gameplay masks 0–31 are used. A `0` frame releases held buttons. Rotation
 fires on a new press edge, so the connection script and the placement agents
@@ -71,13 +76,15 @@ The first command tests configuration, deterministic scripted inputs, release
 frames, stop reasons, missing-path diagnostics, the lock and line-clear grid
 rule, placement enumeration including the spawn-origin entry and the
 downward-only descent rule, board scoring, deterministic tie-breaking, the
-placement controller and the suite record's episode identity check, without the
-native engine. The second requires the completed setup and tests native state
-reads, logical frame counts, seeded hash determinism, the placement model
-against native locks including a lock that straddles the ceiling and hidden
-minos surviving a later clear, the whole enumerated placement set against
-engine-reachable straight drops from the spawn origin, and run-record
-verification for both record formats.
+placement controller, the placed-piece metric (the engine's board placements,
+above which sit its lock and preview counters) in both record formats and the
+suite record's episode identity check, without the native engine. The second
+requires the completed setup and tests native state reads, logical frame counts,
+seeded hash determinism, the placement model against native locks including a
+lock that straddles the ceiling and hidden minos surviving a later clear, the
+whole enumerated placement set against engine-reachable straight drops from the
+spawn origin, the recorded piece count against the native engine's own counters,
+and run-record verification for both record formats.
 Integration tests are never treated as passing when the native library is
 unavailable. The measured results are in
 [experiments/000-connection](experiments/000-connection/notes.md) and
