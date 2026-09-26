@@ -1,0 +1,11 @@
+{
+  "game": {
+    "ruleset": "classic_ntsc_extended",
+    "mode": "endless",
+    "start_level": 18,
+    "height": 0
+  },
+  "frame_limit": 60000,
+  "seeds": [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+  "agents": ["random", "greedy"]
+}

@@ -1,0 +1,99 @@
+{
+  "status": "passed",
+  "doctor": "passed",
+  "run_record": "experiments/001-greedy-heuristic/runs/20260926T054458996351Z-697e2202/run.json (temporary ignored run output: `runs/` is ignored at any depth, so this record is present only in a working tree and is not part of the repository; rerun config.json to recreate it)",
+  "run_record_cli_copy": "runs/20260926T054458996351Z-697e2202/run.json (the same temporary ignored record in the CLI's own output directory, also absent from the repository)",
+  "previous_legacy_record": "experiments/001-greedy-heuristic/runs/20260926T020359855832Z-12e7c9a3/run.json (temporary ignored run output, absent from the repository; this pre-fix record verified under the legacy `pieces` meaning when it was replayed, and the automated unit tests cover legacy records directly)",
+  "verification": "passed",
+  "verification_warnings": [
+    "The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source."
+  ],
+  "tests": {
+    "unit_passed": 66,
+    "integration_passed": 9
+  },
+  "configuration": {
+    "game": {
+      "ruleset": "classic_ntsc_extended",
+      "mode": "endless",
+      "start_level": 18,
+      "height": 0
+    },
+    "frame_limit": 60000,
+    "seeds": [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+    "agents": ["random", "greedy"]
+  },
+  "piece_metric": {
+    "field": "pieces_placed",
+    "meaning": "the number of pieces the engine wrote to the board: lock events minus the failed top-out lock, so a piece still in play at a frame-limit stop and the topping-out lock that places nothing are both excluded",
+    "legacy_field": "pieces",
+    "legacy_meaning": "the pre-fix records' key, which held state.piece_count (the RNG/preview selection counter); still verified under that meaning"
+  },
+  "heuristic": {
+    "lines_cleared": 1.0,
+    "holes": -1.0,
+    "aggregate_height": -0.5,
+    "bumpiness": -0.5,
+    "max_height": -1.0,
+    "tie_break": "first highest-scoring placement in enumeration order: orientation ascending, then x ascending"
+  },
+  "placement_model": {
+    "entry": "engine spawn origin row, measured on the registered library as y=0 for every piece and orientation",
+    "descent": "downward only, through consecutive free origins, stopping at the first obstruction or the floor",
+    "out_of_scope": [
+      "lateral movement during the descent",
+      "entering in one column and sliding over to another"
+    ]
+  },
+  "episodes": 20,
+  "summary": {
+    "random": {
+      "games": 10,
+      "score": {"mean": 162.9, "median": 168.0, "min": 124, "max": 203},
+      "lines": {"mean": 0.0, "median": 0.0, "min": 0, "max": 0},
+      "frames": {"mean": 786.7, "median": 807.0, "min": 623, "max": 948},
+      "pieces_placed": {"mean": 19.9, "median": 20.0, "min": 16, "max": 24},
+      "stopping_reasons": {"game_over": 10}
+    },
+    "greedy": {
+      "games": 10,
+      "score": {"mean": 106621.9, "median": 77953.5, "min": 22482, "max": 334495},
+      "lines": {"mean": 118.9, "median": 97.0, "min": 28, "max": 309},
+      "frames": {"mean": 15801.3, "median": 12911.0, "min": 4686, "max": 38158},
+      "pieces_placed": {"mean": 334.7, "median": 280.0, "min": 108, "max": 805},
+      "stopping_reasons": {"game_over": 10}
+    }
+  },
+  "model_fidelity": {
+    "method": "replay each recorded greedy episode and compare the engine's locked origin with the greedy policy's placement for that piece's spawn state",
+    "locks": 3357,
+    "locks_note": "lock events, including each episode's terminal topping-out lock that writes nothing; pieces_placed totals 3347, one fewer per game-over episode",
+    "locks_landed_exactly_as_modelled": 3328,
+    "divergences": 29,
+    "divergences_with_a_column_difference": 29,
+    "divergences_with_an_orientation_difference": 9,
+    "divergences_with_a_row_difference": 27,
+    "lines_predicted_by_the_model": 1208,
+    "lines_cleared_by_the_engine": 1189,
+    "unchanged_by_the_piece_metric_fix": true
+  },
+  "episode_changes_vs_the_pre_fix_record": {
+    "record": "runs/20260925T144222830845Z-a061382f/run.json (temporary ignored run output, absent from the repository)",
+    "unchanged": 6,
+    "changed": 14,
+    "greedy_changed": 6,
+    "random_changed": 8,
+    "changed_only_in_executed_inputs": 7,
+    "changed_in_score_lines_frames_or_pieces": 7
+  },
+  "engine_git": {
+    "commit": "0e56c3beb7e4165e793ff326e3600d973e236cb8",
+    "dirty": true,
+    "kind": "working-tree"
+  },
+  "fallgorithm_git": {
+    "commit": "d5d0d9c2222e3e7709db8ec1912e0f21739b2faa",
+    "dirty": true,
+    "kind": "working-tree"
+  }
+}

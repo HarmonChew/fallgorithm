@@ -1,4 +1,4 @@
-"""Small command line interface for the connection experiment."""
+"""Small command line interface for the fallgorithm experiments."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="block-stack-ai")
     subcommands = parser.add_subparsers(dest="command", required=True)
     subcommands.add_parser("doctor", help="check the sibling engine and one native frame")
-    run_parser = subcommands.add_parser("run", help="run a bounded scripted experiment")
+    run_parser = subcommands.add_parser("run", help="run the experiment in a config")
     run_parser.add_argument("--config", type=Path, required=True)
     verify_parser = subcommands.add_parser("verify", help="replay the inputs in a run record")
     verify_parser.add_argument("record", type=Path)
@@ -56,12 +56,26 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "run":
             path = run_and_save(args.config)
             record = json.loads(path.read_text(encoding="utf-8"))
-            result = record["result"]
-            print(
-                f"{result['stopping_reason']}: {result['frame_count']} frames, "
-                f"score {result['score']}, lines {result['lines']}, "
-                f"hash {result['final_state_hash']}"
-            )
+            if "episodes" in record:
+                for name in record["configuration"]["agents"]:
+                    summary = record["summary"][name]
+                    reasons = ", ".join(
+                        f"{reason} {count}" for reason, count in summary["stopping_reasons"].items()
+                    )
+                    print(
+                        f"{name}: {summary['games']} games, "
+                        f"score mean {summary['score']['mean']}, "
+                        f"lines mean {summary['lines']['mean']}, "
+                        f"frames mean {summary['frames']['mean']}, "
+                        f"({reasons})"
+                    )
+            else:
+                result = record["result"]
+                print(
+                    f"{result['stopping_reason']}: {result['frame_count']} frames, "
+                    f"score {result['score']}, lines {result['lines']}, "
+                    f"hash {result['final_state_hash']}"
+                )
             print(f"Record: {path}")
         else:
             warnings = verify_run(args.record)

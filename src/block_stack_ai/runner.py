@@ -1,4 +1,28 @@
-"""Run a bounded frame script and replay exactly the inputs that were executed."""
+"""Run bounded episodes and replay exactly the inputs that were executed.
+
+Two record formats share this module and both replay against the native engine.
+Version 1 is one scripted episode. The replay requires the recorded inputs and
+compares them alongside the recorded initial state hash and every ``result``
+field, and it compares a top-level piece count when the record carries one.
+Version 2 is a suite of placement-agent episodes over fixed seeds: the replay
+compares each episode's agent and seed, inputs, initial state hash, ``result``
+fields and piece count, then the summary derived from them. Both verifiers
+compare a recorded value only after its type — and, for mappings, its keys —
+equals the replayed value's, so JSON booleans, which compare equal to ``0``/``1``
+and ``0.0``, are rejected instead of verifying.
+
+The piece count is ``pieces_placed``: the number of pieces the engine actually
+wrote to the board. It is counted from the engine's ``locked`` events minus the
+failed lock that ends an endless game: ``Game::lock`` raises ``locked`` before
+its ``fits`` check and only writes the board when the piece fits, so the
+topping-out lock places nothing. A piece still in play at a frame-limit stop has
+not locked and is not counted either, and the RNG/preview selection counter
+``state.piece_count`` is always above the count. Records written before that
+field existed carry the legacy ``pieces`` key instead, which held
+``state.piece_count``; the replay compares it against that counter so those
+records keep verifying under their original semantics. A record that carries
+neither key is older still and keeps verifying.
+"""
 
 from __future__ import annotations
 
@@ -6,14 +30,17 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+from statistics import fmean, median
 from typing import Any, Callable
 from uuid import uuid4
 
-from .agents import ScriptedAgent, Segment, parse_script
+from .agents import AGENT_NAMES, ScriptedAgent, Segment, create_agent, parse_script
 from .engine import PROJECT_ROOT, create_game, engine_root, git_info
+from .heuristic import weights_record
 
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 1  # one scripted episode
+SUITE_FORMAT_VERSION = 2  # a placement-agent suite over fixed seeds
 _EVENT_FIELDS = (
     "moved", "rotated", "locked", "spawned", "gravity_drop", "soft_drop",
     "game_over", "challenge_completed", "lines_cleared", "score_delta",
@@ -38,27 +65,84 @@ class RunConfig:
         }
 
 
-def parse_config(value: Any) -> RunConfig:
-    if not isinstance(value, dict) or set(value) != {"game", "frame_limit", "script"}:
-        raise ValueError("config must contain exactly game, frame_limit, and script")
-    game = value["game"]
-    if not isinstance(game, dict) or set(game) != {"ruleset", "mode", "start_level", "height", "seed"}:
-        raise ValueError("game must contain exactly ruleset, mode, start_level, height, and seed")
-    if game["ruleset"] not in ("classic_ntsc_strict", "classic_ntsc_extended"):
+@dataclass(frozen=True)
+class SuiteConfig:
+    """Fixed game settings, frame bound, seeds and agents of one comparison."""
+
+    game: dict[str, Any]
+    frame_limit: int
+    seeds: tuple[int, ...]
+    agents: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "game": self.game.copy(),
+            "frame_limit": self.frame_limit,
+            "seeds": list(self.seeds),
+            "agents": list(self.agents),
+        }
+
+
+Config = RunConfig | SuiteConfig
+
+
+def _parse_game(value: Any, *, with_seed: bool) -> dict[str, Any]:
+    keys = {"ruleset", "mode", "start_level", "height"} | ({"seed"} if with_seed else set())
+    if not isinstance(value, dict) or set(value) != keys:
+        raise ValueError(f"game must contain exactly {', '.join(sorted(keys))}")
+    if value["ruleset"] not in ("classic_ntsc_strict", "classic_ntsc_extended"):
         raise ValueError("game.ruleset must be a supported Block Stack ruleset")
-    if game["mode"] not in ("endless", "challenge"):
+    if value["mode"] not in ("endless", "challenge"):
         raise ValueError("game.mode must be endless or challenge")
     for name, minimum, maximum in (("start_level", 0, 19), ("height", 0, 5), ("seed", 0, 65535)):
-        item = game[name]
+        if name not in keys:
+            continue
+        item = value[name]
         if type(item) is not int or not minimum <= item <= maximum:
             raise ValueError(f"game.{name} must be an integer from {minimum} to {maximum}")
-    limit = value["frame_limit"]
-    if type(limit) is not int or limit <= 0:
+    return value.copy()
+
+
+def _parse_frame_limit(value: Any) -> int:
+    if type(value) is not int or value <= 0:
         raise ValueError("frame_limit must be a positive integer")
-    return RunConfig(game.copy(), limit, parse_script(value["script"]))
+    return value
 
 
-def load_config(path: Path) -> RunConfig:
+def _parse_script_config(value: dict[str, Any]) -> RunConfig:
+    return RunConfig(_parse_game(value["game"], with_seed=True),
+                     _parse_frame_limit(value["frame_limit"]), parse_script(value["script"]))
+
+
+def _parse_suite_config(value: dict[str, Any]) -> SuiteConfig:
+    seeds = value["seeds"]
+    if not isinstance(seeds, list) or not seeds:
+        raise ValueError("seeds must be a nonempty list of 16-bit integers")
+    for seed in seeds:
+        if type(seed) is not int or not 0 <= seed <= 65535:
+            raise ValueError("every seed must be an integer from 0 to 65535")
+    agents = value["agents"]
+    if not isinstance(agents, list) or not agents:
+        raise ValueError("agents must be a nonempty list of agent names")
+    for agent in agents:
+        if agent not in AGENT_NAMES:
+            raise ValueError(f"agents must be chosen from {', '.join(AGENT_NAMES)}")
+    return SuiteConfig(_parse_game(value["game"], with_seed=False),
+                       _parse_frame_limit(value["frame_limit"]), tuple(seeds), tuple(agents))
+
+
+def parse_config(value: Any) -> Config:
+    if isinstance(value, dict) and set(value) == {"game", "frame_limit", "script"}:
+        return _parse_script_config(value)
+    if isinstance(value, dict) and set(value) == {"game", "frame_limit", "seeds", "agents"}:
+        return _parse_suite_config(value)
+    raise ValueError(
+        "config must contain exactly game, frame_limit and script, "
+        "or exactly game, frame_limit, seeds and agents"
+    )
+
+
+def load_config(path: Path) -> Config:
     return parse_config(json.loads(path.read_text(encoding="utf-8")))
 
 
@@ -83,15 +167,74 @@ def _count_events(counts: dict[str, int], events: Any) -> None:
         counts[name] += int(getattr(events, name))
 
 
-def run_episode(
-    config: RunConfig,
-    game_factory: Callable[..., Any] = create_game,
+def _placed_pieces(event_counts: dict[str, int]) -> int:
+    """Pieces written to the board: lock events minus the failed top-out lock.
+
+    ``Game::lock`` raises ``locked`` before its ``fits`` check and writes the
+    board only when the piece fits, so the lock that ends an endless game places
+    nothing. A frame-limit stop has no such lock, so its count is the lock count.
+    """
+    return event_counts["locked"] - event_counts["game_over"]
+
+
+def _compare_piece_count(record: dict[str, Any], field: str, replayed: int, where: str) -> str | None:
+    """A difference message for a recorded piece count, or raise on a bad type.
+
+    ``where`` names the record location. JSON ``false``/``true`` compare equal to
+    the integers ``0``/``1``, so the type is checked before the value; a record
+    that omits the field is older and is left alone.
+    """
+    if field not in record:
+        return None
+    value = record[field]
+    if type(value) is not int:
+        raise VerificationError(f"Recorded {field}{where} must be an integer, not {value!r}")
+    if value != replayed:
+        return f"{field}: recorded {value!r}, replayed {replayed!r}"
+    return None
+
+
+def _compare_fields(recorded: Any, replayed: Any, where: str) -> list[str]:
+    """Differences between a recorded value and its replay, after a type check.
+
+    JSON ``false``/``true`` compare equal to the integers ``0``/``1`` and to
+    ``0.0``, so plain equality accepts a boolean wherever the writer recorded a
+    number. The recorded type must equal the replayed type exactly at every leaf,
+    and every mapping must carry exactly the replayed keys, before any value is
+    compared; a mismatch raises instead of producing a difference. The expected
+    types come from the replayed value the writer produced, so the check stays in
+    step with what ``_play`` and ``_summarize`` actually emit: a metric ``median``
+    is an ``int`` for an odd-sized group and a ``float`` for an even one, and both
+    are accepted as recorded.
+    """
+    if type(recorded) is not type(replayed):
+        raise VerificationError(
+            f"Recorded {where} must be {type(replayed).__name__}, not {recorded!r}"
+        )
+    if isinstance(replayed, dict):
+        if set(recorded) != set(replayed):
+            raise VerificationError(
+                f"Recorded {where} keys {sorted(recorded)} do not match {sorted(replayed)}"
+            )
+        differences = []
+        for key, value in replayed.items():
+            differences.extend(_compare_fields(recorded[key], value, f"{where}.{key}"))
+        return differences
+    if recorded != replayed:
+        return [f"{where}: recorded {recorded!r}, replayed {replayed!r}"]
+    return []
+
+
+def _play(
+    game_config: dict[str, Any],
+    frame_limit: int,
+    agent: Any,
+    game_factory: Callable[..., Any],
 ) -> dict[str, Any]:
-    agent = ScriptedAgent(config.script)
     agent.reset()
     actual_inputs: list[int] = []
     event_counts = _empty_event_counts()
-    with game_factory(**config.game) as game:
+    with game_factory(**game_config) as game:
         state = game.state
         initial_hash = _hash(game)
         while True:
@@ -101,7 +244,7 @@ def run_episode(
             if agent.done:
                 reason = "script_complete"
                 break
-            if len(actual_inputs) >= config.frame_limit:
+            if len(actual_inputs) >= frame_limit:
                 reason = "frame_limit"
                 break
             action = agent.act(state)
@@ -117,21 +260,95 @@ def run_episode(
             "final_state_hash": _hash(game),
             "event_counts": event_counts,
         }
-    return {"initial_state_hash": initial_hash, "inputs": actual_inputs, "result": result}
+        pieces_placed = _placed_pieces(event_counts)
+        # The engine's RNG/preview selection counter, always above pieces_placed.
+        # Kept only to replay legacy records; _persisted drops it from new ones.
+        piece_count = state.piece_count
+    return {
+        "initial_state_hash": initial_hash,
+        "inputs": actual_inputs,
+        "result": result,
+        "pieces_placed": pieces_placed,
+        "piece_count": piece_count,
+    }
 
 
-def run_and_save(config_path: Path, runs_dir: Path = PROJECT_ROOT / "runs") -> Path:
+def _persisted(episode: dict[str, Any]) -> dict[str, Any]:
+    """The saved episode: the placed-piece count, without the engine RNG counter."""
+    return {key: value for key, value in episode.items() if key != "piece_count"}
+
+
+def run_episode(config: RunConfig, game_factory: Callable[..., Any] = create_game) -> dict[str, Any]:
+    return _persisted(_play(config.game, config.frame_limit, ScriptedAgent(config.script), game_factory))
+
+
+def run_suite(config: SuiteConfig, game_factory: Callable[..., Any] = create_game) -> list[dict[str, Any]]:
+    """One episode per agent and seed, in the configured order."""
+    episodes = []
+    for name in config.agents:
+        for seed in config.seeds:
+            agent = create_agent(name, seed)
+            episode = _play({**config.game, "seed": seed}, config.frame_limit, agent, game_factory)
+            episodes.append({"agent": name, "seed": seed, **_persisted(episode)})
+    return episodes
+
+
+def _metric(values: list[int]) -> dict[str, float | int]:
+    return {
+        "mean": round(fmean(values), 3),
+        "median": round(median(values), 3),
+        "min": min(values),
+        "max": max(values),
+    }
+
+
+def _summarize(episodes: list[dict[str, Any]]) -> dict[str, Any]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for episode in episodes:
+        grouped.setdefault(episode["agent"], []).append(episode)
+    summary = {}
+    for name, group in grouped.items():
+        reasons: dict[str, int] = {}
+        for episode in group:
+            reason = episode["result"]["stopping_reason"]
+            reasons[reason] = reasons.get(reason, 0) + 1
+        # New episodes carry ``pieces_placed``; older ones the legacy ``pieces``.
+        pieces = "pieces_placed" if "pieces_placed" in group[0] else "pieces"
+        summary[name] = {
+            "games": len(group),
+            "stopping_reasons": reasons,
+            "score": _metric([episode["result"]["score"] for episode in group]),
+            "lines": _metric([episode["result"]["lines"] for episode in group]),
+            "frames": _metric([episode["result"]["frame_count"] for episode in group]),
+            pieces: _metric([episode[pieces] for episode in group]),
+        }
+    return summary
+
+
+def _record_versions() -> dict[str, Any]:
+    return {"engine": git_info(engine_root()), "fallgorithm": git_info(PROJECT_ROOT)}
+
+
+def run_and_save(
+    config_path: Path,
+    runs_dir: Path = PROJECT_ROOT / "runs",
+    game_factory: Callable[..., Any] = create_game,
+) -> Path:
     config = load_config(config_path)
-    record = {
-        "format_version": FORMAT_VERSION,
+    record: dict[str, Any] = {
         "created_at": datetime.now(timezone.utc).isoformat(),
         "configuration": config.to_dict(),
-        "versions": {
-            "engine": git_info(engine_root()),
-            "fallgorithm": git_info(PROJECT_ROOT),
-        },
-        **run_episode(config),
+        "versions": _record_versions(),
     }
+    if isinstance(config, SuiteConfig):
+        record["format_version"] = SUITE_FORMAT_VERSION
+        record["heuristic"] = weights_record()
+        episodes = run_suite(config, game_factory)
+        record["episodes"] = episodes
+        record["summary"] = _summarize(episodes)
+    else:
+        record["format_version"] = FORMAT_VERSION
+        record.update(run_episode(config, game_factory))
     name = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + "-" + uuid4().hex[:8]
     run_dir = runs_dir / name
     run_dir.mkdir(parents=True, exist_ok=False)
@@ -140,20 +357,46 @@ def run_and_save(config_path: Path, runs_dir: Path = PROJECT_ROOT / "runs") -> P
     return path
 
 
-def verify_run(path: Path, game_factory: Callable[..., Any] = create_game) -> list[str]:
-    record = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(record, dict) or record.get("format_version") != FORMAT_VERSION:
-        raise VerificationError(f"Unsupported run record format in {path}")
+def _engine_warnings(recorded: Any) -> list[str]:
+    if not isinstance(recorded, dict):
+        raise VerificationError("Malformed engine version in run record")
+    current = git_info(engine_root())
+    warnings = []
+    dirty = recorded.get("dirty")
+    # ``git_info`` records a boolean, or ``null`` when there is no Git checkout,
+    # and JSON ``0``/``1`` compare equal to ``False``/``True``: plain equality let
+    # an edited flag match the current checkout and suppress this warning. The
+    # fields stay advisory, so a wrong type is reported as a difference rather
+    # than raised, and an older record that omits the field keeps verifying.
+    if (
+        (dirty is not None and type(dirty) is not bool)
+        or dirty != current["dirty"]
+        or recorded.get("commit") != current["commit"]
+    ):
+        warnings.append("Engine Git version or dirty status differs from the recorded run.")
+    if recorded.get("kind") != "committed" or current["kind"] != "committed":
+        warnings.append("The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.")
+    return warnings
+
+
+def _record_sections(record: dict[str, Any], path: Path) -> tuple[Any, Any]:
     try:
-        config = parse_config(record["configuration"])
+        return record["versions"]["engine"], record["configuration"]
+    except (KeyError, TypeError) as error:
+        raise VerificationError(f"Malformed run record in {path}: {error}") from error
+
+
+def _verify_scripted(record: dict[str, Any], path: Path, game_factory: Callable[..., Any]) -> list[str]:
+    recorded_engine, configuration = _record_sections(record, path)
+    try:
+        config = parse_config(configuration)
         inputs = record["inputs"]
         expected = record["result"]
         expected_initial = record["initial_state_hash"]
-        recorded_engine = record["versions"]["engine"]
     except (KeyError, TypeError, ValueError) as error:
         raise VerificationError(f"Malformed run record in {path}: {error}") from error
-    if not isinstance(recorded_engine, dict):
-        raise VerificationError("Malformed engine version in run record")
+    if not isinstance(config, RunConfig):
+        raise VerificationError(f"Malformed run record in {path}: not a scripted configuration")
     if not isinstance(inputs, list) or any(type(mask) is not int or not 0 <= mask <= 31 for mask in inputs):
         raise VerificationError("Recorded inputs must be a list of gameplay masks from 0 to 31")
     if len(inputs) > config.frame_limit:
@@ -193,21 +436,129 @@ def verify_run(path: Path, game_factory: Callable[..., Any] = create_game) -> li
             "final_state_hash": _hash(game),
             "event_counts": event_counts,
         }
+        actual_pieces_placed = _placed_pieces(event_counts)
+        actual_piece_count = state.piece_count
     differences = []
     if expected_initial != actual_initial:
         differences.append(f"initial_state_hash: recorded {expected_initial!r}, replayed {actual_initial!r}")
-    if not isinstance(expected, dict):
-        raise VerificationError("Malformed result in run record")
-    for name, value in actual.items():
-        if expected.get(name) != value:
-            differences.append(f"{name}: recorded {expected.get(name)!r}, replayed {value!r}")
-    current_engine = git_info(engine_root())
-    warnings = []
-    if recorded_engine.get("commit") != current_engine["commit"] or recorded_engine.get("dirty") != current_engine["dirty"]:
-        warnings.append("Engine Git version or dirty status differs from the recorded run.")
-    if recorded_engine.get("kind") != "committed" or current_engine["kind"] != "committed":
-        warnings.append("The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.")
+    # ``pieces_placed`` counts pieces written to the board; the legacy ``pieces``
+    # key held the RNG/preview selection counter, which is always above it. Each
+    # present key is replayed against its own value, so older records keep
+    # verifying.
+    for field, replayed in (("pieces_placed", actual_pieces_placed), ("pieces", actual_piece_count)):
+        difference = _compare_piece_count(record, field, replayed, "")
+        if difference:
+            differences.append(difference)
+    differences.extend(_compare_fields(expected, actual, "result"))
+    warnings = _engine_warnings(recorded_engine)
     if differences:
         context = "\n" + "\n".join(f"Warning: {warning}" for warning in warnings) if warnings else ""
         raise VerificationError("Replay mismatch:\n  " + "\n  ".join(differences) + context)
     return warnings
+
+
+def _verify_suite(record: dict[str, Any], path: Path, game_factory: Callable[..., Any]) -> list[str]:
+    recorded_engine, configuration = _record_sections(record, path)
+    # ``weights_record()`` carries the writer's float weights and the tie-break
+    # string, so the same type-and-key comparison the episodes and summary get
+    # applies here too: a weight saved as JSON ``true`` compares equal to ``1.0``,
+    # and the plain comparison that used to run here certified it.
+    heuristic_differences = _compare_fields(record.get("heuristic"), weights_record(), "heuristic")
+    if heuristic_differences:
+        raise VerificationError(
+            "Recorded heuristic weights differ from the current implementation:\n  "
+            + "\n  ".join(heuristic_differences)
+        )
+    try:
+        config = parse_config(configuration)
+        episodes = record["episodes"]
+        summary = record["summary"]
+    except (KeyError, TypeError, ValueError) as error:
+        raise VerificationError(f"Malformed run record in {path}: {error}") from error
+    if not isinstance(config, SuiteConfig):
+        raise VerificationError(f"Malformed run record in {path}: not a suite configuration")
+    # The record must carry exactly the sequence run_suite emits: agent order,
+    # then seed order. Membership alone would accept a record that duplicates one
+    # configured pair and omits another.
+    expected = [(name, seed) for name in config.agents for seed in config.seeds]
+    if not isinstance(episodes, list) or len(episodes) != len(expected):
+        raise VerificationError("Recorded episodes do not match the configured agents and seeds")
+    replayed = []
+    for index, (episode, identity) in enumerate(zip(episodes, expected)):
+        try:
+            recorded_agent = episode["agent"]
+            recorded_seed = episode["seed"]
+        except (KeyError, TypeError) as error:
+            raise VerificationError(f"Malformed episode {index} in {path}: {error}") from error
+        # JSON true compares equal to the integer 1, so a boolean seed would pass
+        # plain equality against a configured seed of 1. Require the recorded
+        # identity types the writer emits before comparing the values.
+        if type(recorded_agent) is not str or type(recorded_seed) is not int:
+            raise VerificationError(
+                f"Episode {index} identity must be an agent name and an integer seed: "
+                f"recorded agent {recorded_agent!r} with seed {recorded_seed!r}"
+            )
+        if (recorded_agent, recorded_seed) != identity:
+            raise VerificationError(
+                f"Episode {index} is not the configured suite entry: recorded agent "
+                f"{recorded_agent!r} with seed {recorded_seed!r}, expected agent "
+                f"{identity[0]!r} with seed {identity[1]!r}"
+            )
+        # The same guard the scripted verifier applies. Plain equality would accept
+        # booleans for the 0/1 masks, and a non-list input would make the difference
+        # message below raise TypeError instead of a controlled VerificationError.
+        inputs = episode.get("inputs")
+        if not isinstance(inputs, list) or any(
+            type(mask) is not int or not 0 <= mask <= 31 for mask in inputs
+        ):
+            raise VerificationError(
+                f"Recorded inputs in episode {index} must be a list of gameplay masks from 0 to 31"
+            )
+        name, seed = identity
+        actual = _play({**config.game, "seed": seed}, config.frame_limit,
+                       create_agent(name, seed), game_factory)
+        differences = []
+        if episode.get("initial_state_hash") != actual["initial_state_hash"]:
+            differences.append(
+                f"initial_state_hash: recorded {episode.get('initial_state_hash')!r}, "
+                f"replayed {actual['initial_state_hash']!r}"
+            )
+        if episode.get("inputs") != actual["inputs"]:
+            differences.append(f"inputs: recorded {len(inputs)}, replayed {len(actual['inputs'])}")
+        differences.extend(
+            _compare_fields(episode.get("result"), actual["result"], f"episode {index} result")
+        )
+        for field, actual_value in (("pieces_placed", actual["pieces_placed"]), ("pieces", actual["piece_count"])):
+            difference = _compare_piece_count(episode, field, actual_value, f" in episode {index}")
+            if difference:
+                differences.append(difference)
+        if differences:
+            raise VerificationError(
+                f"Replay mismatch in episode {index} ({name}, seed {seed}):\n  " + "\n  ".join(differences)
+            )
+        replayed.append(episode)
+    summary_differences = _compare_fields(summary, _summarize(replayed), "summary")
+    if summary_differences:
+        raise VerificationError(
+            "Recorded summary does not match the replayed episodes:\n  "
+            + "\n  ".join(summary_differences)
+        )
+    return _engine_warnings(recorded_engine)
+
+
+def verify_run(path: Path, game_factory: Callable[..., Any] = create_game) -> list[str]:
+    record = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(record, dict):
+        raise VerificationError(f"Unsupported run record format in {path}")
+    version = record.get("format_version")
+    # JSON booleans and floats compare equal to the integers 1 and 2 under plain
+    # equality (``True == 1``, ``2.0 == 2``), so a record whose discriminator was
+    # edited to ``2.0`` used to dispatch to the suite verifier and one edited to
+    # ``true`` to the scripted verifier. The writer records only an ``int``.
+    if type(version) is not int:
+        raise VerificationError(f"Recorded format_version in {path} must be an integer, not {version!r}")
+    if version == FORMAT_VERSION:
+        return _verify_scripted(record, path, game_factory)
+    if version == SUITE_FORMAT_VERSION:
+        return _verify_suite(record, path, game_factory)
+    raise VerificationError(f"Unsupported run record format in {path}")
