@@ -17,4 +17,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["integration: requires the built sibling native engine and installed Python binding"]
+markers = [
+    "integration: requires the built sibling native engine and installed Python binding",
+    "desktop: also requires the built SDL3 desktop client (uses dummy video/audio)",
+]
