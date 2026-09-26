@@ -13,7 +13,7 @@ locks and clears lines, scores the resulting board, and executes the chosen
 placement with frame-level masks (rotate, one press per horizontal step, then
 Down held). Only the placement choice differs: the heuristic takes the highest
 score, the baseline picks uniformly from the same list with a Python RNG seeded
-from the episode seed. 20 episodes, the CLI doctor and the current 63 unit and
+from the episode seed. 20 episodes, the CLI doctor and the current 64 unit and
 nine native integration tests were run; the saved suite record was replayed
 with `verify`.
 

@@ -665,6 +665,55 @@ def test_suite_verification_accepts_a_summary_median_of_int_type(tmp_path, monke
     assert verify_run(path, lambda **_: SuiteGame()) == []
 
 
+def test_suite_verification_rejects_tampered_heuristic_metadata(tmp_path, monkeypatch):
+    """The recorded weights must carry the writer's types and exactly its keys.
+
+    ``weights_record()`` holds the float weights and the tie-break string beside
+    the episodes. JSON ``true`` compares equal to the float ``1.0``, so a plain
+    comparison certified a record whose ``lines_cleared`` weight no longer matched
+    the implementation's; an integer ``1`` for that float and a boolean for the
+    tie-break string slip through the same way. The heuristic mapping now goes
+    through the type-and-key comparison the episodes and the summary already use.
+    """
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps(SUITE), encoding="utf-8")
+    path = run_and_save(config_path, tmp_path / "runs", lambda **_: SuiteGame())
+    record = json.loads(path.read_text(encoding="utf-8"))
+    # The genuine weight is the float 1.0, numerically equal to the boolean below.
+    assert type(record["heuristic"]["lines_cleared"]) is float
+    assert record["heuristic"]["lines_cleared"] == 1.0
+    # Positive control: the untampered record still verifies.
+    assert verify_run(path, lambda **_: SuiteGame()) == []
+
+    def rejected(tamper, message):
+        tampered = json.loads(json.dumps(record))
+        tamper(tampered["heuristic"])
+        path.write_text(json.dumps(tampered), encoding="utf-8")
+        with pytest.raises(VerificationError, match=message):
+            verify_run(path, lambda **_: SuiteGame())
+
+    def weight_to_bool(heuristic):
+        heuristic["lines_cleared"] = True
+
+    def weight_to_int(heuristic):
+        heuristic["lines_cleared"] = 1
+
+    def tie_break_to_bool(heuristic):
+        heuristic["tie_break"] = True
+
+    def add_weight(heuristic):
+        heuristic["extra_weight"] = 1.0
+
+    rejected(weight_to_bool, r"Recorded heuristic\.lines_cleared must be float, not True")
+    rejected(weight_to_int, r"Recorded heuristic\.lines_cleared must be float, not 1")
+    rejected(tie_break_to_bool, r"Recorded heuristic\.tie_break must be str, not True")
+    rejected(add_weight, r"Recorded heuristic keys .* do not match")
+
+
 def test_scripted_verification_rejects_boolean_result_fields(tmp_path, monkeypatch):
     """JSON ``false`` equals the integer 0, so result fields need their written types.
 

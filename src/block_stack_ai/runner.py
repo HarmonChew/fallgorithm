@@ -449,8 +449,16 @@ def _verify_scripted(record: dict[str, Any], path: Path, game_factory: Callable[
 
 def _verify_suite(record: dict[str, Any], path: Path, game_factory: Callable[..., Any]) -> list[str]:
     recorded_engine, configuration = _record_sections(record, path)
-    if record.get("heuristic") != weights_record():
-        raise VerificationError("Recorded heuristic weights differ from the current implementation")
+    # ``weights_record()`` carries the writer's float weights and the tie-break
+    # string, so the same type-and-key comparison the episodes and summary get
+    # applies here too: a weight saved as JSON ``true`` compares equal to ``1.0``,
+    # and the plain comparison that used to run here certified it.
+    heuristic_differences = _compare_fields(record.get("heuristic"), weights_record(), "heuristic")
+    if heuristic_differences:
+        raise VerificationError(
+            "Recorded heuristic weights differ from the current implementation:\n  "
+            + "\n  ".join(heuristic_differences)
+        )
     try:
         config = parse_config(configuration)
         episodes = record["episodes"]
