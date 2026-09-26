@@ -9,7 +9,7 @@
     "The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source."
   ],
   "tests": {
-    "unit_passed": 64,
+    "unit_passed": 66,
     "integration_passed": 9
   },
   "configuration": {

@@ -362,7 +362,17 @@ def _engine_warnings(recorded: Any) -> list[str]:
         raise VerificationError("Malformed engine version in run record")
     current = git_info(engine_root())
     warnings = []
-    if recorded.get("commit") != current["commit"] or recorded.get("dirty") != current["dirty"]:
+    dirty = recorded.get("dirty")
+    # ``git_info`` records a boolean, or ``null`` when there is no Git checkout,
+    # and JSON ``0``/``1`` compare equal to ``False``/``True``: plain equality let
+    # an edited flag match the current checkout and suppress this warning. The
+    # fields stay advisory, so a wrong type is reported as a difference rather
+    # than raised, and an older record that omits the field keeps verifying.
+    if (
+        (dirty is not None and type(dirty) is not bool)
+        or dirty != current["dirty"]
+        or recorded.get("commit") != current["commit"]
+    ):
         warnings.append("Engine Git version or dirty status differs from the recorded run.")
     if recorded.get("kind") != "committed" or current["kind"] != "committed":
         warnings.append("The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.")
@@ -540,8 +550,15 @@ def verify_run(path: Path, game_factory: Callable[..., Any] = create_game) -> li
     record = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(record, dict):
         raise VerificationError(f"Unsupported run record format in {path}")
-    if record.get("format_version") == FORMAT_VERSION:
+    version = record.get("format_version")
+    # JSON booleans and floats compare equal to the integers 1 and 2 under plain
+    # equality (``True == 1``, ``2.0 == 2``), so a record whose discriminator was
+    # edited to ``2.0`` used to dispatch to the suite verifier and one edited to
+    # ``true`` to the scripted verifier. The writer records only an ``int``.
+    if type(version) is not int:
+        raise VerificationError(f"Recorded format_version in {path} must be an integer, not {version!r}")
+    if version == FORMAT_VERSION:
         return _verify_scripted(record, path, game_factory)
-    if record.get("format_version") == SUITE_FORMAT_VERSION:
+    if version == SUITE_FORMAT_VERSION:
         return _verify_suite(record, path, game_factory)
     raise VerificationError(f"Unsupported run record format in {path}")

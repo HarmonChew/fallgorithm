@@ -750,6 +750,101 @@ def test_scripted_verification_rejects_boolean_result_fields(tmp_path, monkeypat
     rejected(locked_to_false, "Recorded result.event_counts.locked must be int, not False")
 
 
+def test_verify_run_requires_the_written_integer_format_version(tmp_path, monkeypatch):
+    """``verify_run`` dispatched on plain equality, which JSON coercion reaches.
+
+    JSON ``true`` compares equal to the integer 1 and ``2.0`` to 2, while the
+    writer records only the integers 1 and 2. A suite record whose
+    ``format_version`` was edited from 2 to ``2.0`` therefore still routed to the
+    suite verifier and verified (exit 0 on the retained record before the
+    change), and an edited ``true`` (or ``1.0``) routed a v1 record to the
+    scripted verifier, which verified it just the same. ``false``, ``null`` and
+    ``"2"`` matched neither version and were already rejected as unsupported.
+    Every non-integer is now reported as one, and both genuine records still
+    verify as the positive control.
+    """
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+
+    def rejected(path, record, factory, version):
+        path.write_text(json.dumps({**record, "format_version": version}), encoding="utf-8")
+        with pytest.raises(
+            VerificationError,
+            match=rf"Recorded format_version in .* must be an integer, not {version!r}",
+        ):
+            verify_run(path, factory)
+
+    suite_factory = lambda **_: SuiteGame()
+    config_path = tmp_path / "suite-config.json"
+    config_path.write_text(json.dumps(SUITE), encoding="utf-8")
+    suite_path = run_and_save(config_path, tmp_path / "runs", suite_factory)
+    suite_record = json.loads(suite_path.read_text(encoding="utf-8"))
+    assert suite_record["format_version"] == 2  # the writer's own type
+    assert verify_run(suite_path, suite_factory) == []
+    for version in (2.0, 1.0, True, False, None, "2"):
+        rejected(suite_path, suite_record, suite_factory, version)
+
+    scripted_factory = lambda **_: FakeGame()
+    config_path = tmp_path / "scripted-config.json"
+    config_path.write_text(json.dumps(BASE), encoding="utf-8")
+    scripted_path = run_and_save(config_path, tmp_path / "runs", scripted_factory)
+    scripted_record = json.loads(scripted_path.read_text(encoding="utf-8"))
+    assert scripted_record["format_version"] == 1
+    assert verify_run(scripted_path, scripted_factory) == []
+    for version in (1.0, True, 2.0, False, None, "2"):
+        rejected(scripted_path, scripted_record, scripted_factory, version)
+
+
+def test_engine_version_warnings_reject_a_non_boolean_dirty_flag(tmp_path, monkeypatch):
+    """JSON ``0`` equals ``False``, so a malformed dirty flag used to match silently.
+
+    ``git_info`` records ``dirty`` as a boolean, or ``null`` when there is no Git
+    checkout, so those are the only recorded forms. The engine fields stay
+    advisory: a wrong type is reported as a difference, never raised, so a record
+    that omits the field keeps verifying with the warning. Before the change the
+    tampered flag below verified with no warnings at all, which is the same
+    class of type-loose recorded comparison the discriminator guard closes.
+    """
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps(BASE), encoding="utf-8")
+    factory = lambda **_: FakeGame()
+    path = run_and_save(config_path, tmp_path / "runs", factory)
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["versions"]["engine"] == {"commit": "abc123", "dirty": False, "kind": "committed"}
+    assert verify_run(path, factory) == []  # positive control: a clean tree warns about nothing
+
+    difference = "Engine Git version or dirty status differs from the recorded run."
+    working_tree = (
+        "The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source."
+    )
+
+    def verify_warnings(engine):
+        tampered = json.loads(json.dumps(record))
+        tampered["versions"]["engine"] = engine
+        path.write_text(json.dumps(tampered), encoding="utf-8")
+        return verify_run(path, factory)
+
+    # The numbers compare equal to the booleans the writer records, which is why
+    # plain equality accepted them; a missing field is an older record and still
+    # warns instead of raising.
+    assert verify_warnings({**record["versions"]["engine"], "dirty": 0}) == [difference]
+    assert verify_warnings({**record["versions"]["engine"], "dirty": 1}) == [difference]
+    assert verify_warnings({"commit": "abc123", "kind": "committed"}) == [difference]
+    assert verify_warnings({**record["versions"]["engine"], "commit": 0}) == [difference]
+
+    # The null the writer records without a Git checkout is not a difference.
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": None, "dirty": None, "kind": "unversioned"}
+    )
+    assert verify_warnings({"commit": None, "dirty": None, "kind": "unversioned"}) == [working_tree]
+
+
 def test_missing_engine_checkout_has_actionable_error(monkeypatch, tmp_path):
     monkeypatch.setenv("BLOCK_STACK_ROOT", str(tmp_path / "missing"))
     with pytest.raises(engine.EngineError, match="BLOCK_STACK_ROOT"):
