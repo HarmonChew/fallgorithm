@@ -52,6 +52,19 @@ def native_library_path() -> Path:
     )
 
 
+def engine_executable(name: str) -> Path:
+    filename = name + (".exe" if sys.platform == "win32" else "")
+    for directory in (BUILD_DIR, BUILD_DIR / "Release"):
+        path = directory / filename
+        if path.is_file():
+            return path.resolve()
+    option = " --desktop" if name == "block_stack" else ""
+    raise EngineError(
+        f"{name} not found in {BUILD_DIR}. Run "
+        f"`.venv/bin/python scripts/setup_engine.py{option}`."
+    )
+
+
 def load_binding() -> tuple[Any, Path, Path]:
     root = engine_root()
     library = native_library_path()

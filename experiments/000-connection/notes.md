@@ -43,3 +43,45 @@ fallgorithm format, not the game's desktop replay format.
 **Lesson:** The native frame API and state hash are enough for a small,
 repeatable input experiment. Later agents can use the same connection and
 recording path while changing only how masks are chosen.
+
+## Review and local playback, 2026-09-27
+
+No blocking defect was found within this connection test's scope. A fresh run
+with the unchanged configuration reproduced both hashes, all event totals,
+31 frames, score 0, and lines 0. This demonstrates input delivery and replay
+determinism. It does not evaluate decision quality, piece placement, line
+clearing, or full-game survival: the script locks no pieces and ignores the
+observation. The working-tree provenance limitation above still applies.
+
+The local environment was rebuilt, both editable packages were installed, and
+`doctor` passed. All **22 tests passed**: 16 unit tests and six native integration
+cases. The added cases export the original experiment, a Strict Challenge
+configuration, and a frame-limited run through the engine's replay writer,
+then validate each `.rep` with `block_stack_replay`. They also check that a
+record with a wrong final hash cannot replace an existing valid replay.
+
+Visual playback is now available through `run --watch` and `watch <record>`.
+The desktop was built against the installed SDL3 runtime; matching headers
+were unpacked into ignored `.build/deps/sdl3/`. To rebuild this machine's setup:
+
+```sh
+.venv/bin/python scripts/setup_engine.py --desktop --sdl3-include-dir .build/deps/sdl3/usr/include
+.venv/bin/block-stack-ai run --config experiments/000-connection/config.json --watch
+```
+
+The desktop starts at frame 0, paused, with an unobstructed board. Use `.` to
+step, P to play/pause, and brackets to change speed. This displays the completed
+run's recorded inputs in the actual game; it is not a live decision-making
+agent. The SDL dummy video/audio drivers were used for rendering checks:
+initial and frame-31 screenshots were inspected, paused playback stayed at
+frame 0 for 60 render frames, and the existing keyboard smoke check passed.
+The complete `run --watch` command launched successfully and was deliberately
+stopped after two seconds by `timeout` (expected status 124).
+
+The fresh temporary record and exported replay are
+`runs/20260926T160259860824Z-57c9c899/run.json` and its neighboring `run.rep`.
+The replay writer reached `41dfca77676d6d79` after 31 frames, matching the run.
+Both repositories were dirty: engine commit
+`0e56c3beb7e4165e793ff326e3600d973e236cb8`, fallgorithm commit
+`5494363120bdd182e9dab51a8ea5b20c918f71d3`. The desktop startup flag and pause
+indicator changes are in the sibling engine working tree.

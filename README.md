@@ -6,6 +6,8 @@ test: send a fixed controller script to the native simulation, save the outcome,
 and replay the executed inputs to check it. Experiment 001 adds the first
 playing algorithms on top of that path: a one-piece greedy placement heuristic
 and a uniform random legal-placement baseline. There is no machine learning yet.
+Development proceeds one measured experiment at a time, reusing this engine
+connection and recording path.
 
 ## Setup
 
@@ -21,12 +23,13 @@ python3.12 -m venv .venv
 ```
 
 The setup script configures a Release headless build, builds `blocks_native`
-and `block_stack_headless` into ignored `.build/engine/`, then installs the
+and the headless/replay tools into ignored `.build/engine/`, then installs the
 game's Python package from its sibling checkout into the virtual environment.
 Fallgorithm's own editable package provides the `block-stack-ai` command. The
 native library is selected from that build directory on the local platform.
 `BLOCKS_NATIVE_LIB` overrides the selected library if the engine already has
-a suitable build elsewhere. No tracked file in the game checkout is changed.
+a suitable build elsewhere. Setup does not change tracked files in the game
+checkout.
 
 ## Run and verify
 
@@ -65,11 +68,91 @@ terminal game or challenge states stop it immediately. The AI calls the headless
 engine directly through its Python binding; it does not press physical keys or
 read screenshots. The JSON run record is not the game's desktop replay format.
 
+## Let the algorithm play a fresh game
+
+Build the desktop once with SDL3 development files available (`libsdl3-dev` on
+Ubuntu), then launch experiment 001's greedy agent:
+
+```sh
+.venv/bin/python scripts/setup_engine.py --desktop
+.venv/bin/block-stack-ai play
+```
+
+The window starts a new game immediately, with a freshly selected seed printed
+in the terminal and shown in the game. The existing Python agent chooses the
+next input from the desktop's current state on every logical frame. The desktop
+owns the game clock and renders that game as it runs. No recorded game is loaded.
+By default, `play` uses the game settings and 60,000-frame safety limit from
+`experiments/001-greedy-heuristic/config.json`.
+
+**P** pauses, **.** advances one frame while paused, **R** restarts the same seed,
+**[ / ]** changes speed, and **Esc** quits. A new invocation chooses a fresh seed.
+To choose the seed, watch faster, or compare the random baseline:
+
+```sh
+.venv/bin/block-stack-ai play --seed 2 --speed 4
+.venv/bin/block-stack-ai play --agent random
+.venv/bin/block-stack-ai play --seed 2 --paused
+```
+
+Each completed game or frame-limit stop saves a normal one-episode suite record
+under `runs/`; use the printed path with `block-stack-ai verify`. The controller
+checks every desktop state against the native library's predicted next state
+before choosing another input. Closing or restarting an incomplete game excludes
+it from experiment results; the desktop can still save its inputs with F5.
+
+Live play requires the sibling game's `--controller-stdio` support. Rebuild
+the desktop after updating that checkout. If SDL3 headers are unpacked locally,
+add `--sdl3-include-dir /path/to/include` to the setup command as described below.
+
+## Watch recorded inputs
+
+The desktop client uses the same native simulation and can play the exact
+recorded inputs. Build it once with SDL3 development files available
+(`libsdl3-dev` on Ubuntu):
+
+```sh
+.venv/bin/python scripts/setup_engine.py --desktop
+.venv/bin/block-stack-ai run --config experiments/000-connection/config.json --watch
+```
+
+`--watch` saves the run, verifies it, exports `run.rep` beside `run.json` using
+the engine's own replay writer, checks that the exporter reaches the recorded
+state hash and frame count, then opens Block Stack paused at frame 0. Press
+**.** to advance one frame, **P** to play/pause, **[ / ]** to change speed, and
+**F1** for debug counters and the state hash. Playback pauses at the end. Close
+the window to return to the command line; rerun `watch` to watch it again.
+
+For an existing run, or to export without opening a window:
+
+```sh
+.venv/bin/block-stack-ai watch runs/<run-id>/run.json
+.venv/bin/block-stack-ai export-replay runs/<run-id>/run.json
+```
+
+Experiment 000 lasts only 31 frames (about half a second at normal speed).
+You will see its fixed left/rotate/right/drop script, not a full-game AI player.
+This is visual playback of a completed run; the current controller does not
+make decisions live in the window. The commands in this section currently
+handle the single-episode format used by experiment 000; experiment 001 stores
+a suite of episodes.
+
+If SDL3's runtime is installed but its headers are in a local directory, use
+the following command with the directory containing `SDL3/`:
+
+```sh
+.venv/bin/python scripts/setup_engine.py --desktop --sdl3-include-dir /path/to/include
+```
+
+If the desktop reports an unknown `--paused` option, update the sibling game
+checkout and rebuild with `--desktop`.
+
 ## Tests and experiment notes
 
 ```sh
 .venv/bin/python -m pytest -q -p no:cacheprovider -m 'not integration'
-.venv/bin/python -m pytest -q -p no:cacheprovider -m integration
+.venv/bin/python -m pytest -q -p no:cacheprovider -m 'integration and not desktop'
+.venv/bin/python -m pytest -q -p no:cacheprovider -m desktop
 ```
 
 The first command tests configuration, deterministic scripted inputs, release
@@ -84,7 +167,10 @@ seeded hash determinism, the placement model against native locks including a
 lock that straddles the ceiling and hidden minos surviving a later clear, the
 whole enumerated placement set against engine-reachable straight drops from the
 spawn origin, the recorded piece count against the native engine's own counters,
-and run-record verification for both record formats.
+run-record verification for both record formats, and desktop replay exports
+through the native writer and verifier. The desktop checks additionally require
+the SDL3 target; they exercise live input, pause/step/restart, record verification,
+invalid masks and pipe closure using dummy video/audio. None needs a display.
 Integration tests are never treated as passing when the native library is
 unavailable. The measured results are in
 [experiments/000-connection](experiments/000-connection/notes.md) and

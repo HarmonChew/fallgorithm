@@ -8,7 +8,10 @@ import json
 from pathlib import Path
 import sys
 
-from .engine import EngineError, engine_root, git_info, load_binding
+from .agents import AGENT_NAMES
+from .engine import EngineError, PROJECT_ROOT, engine_root, git_info, load_binding
+from .live import play_live
+from .replay import export_replay, watch_run
 from .runner import VerificationError, run_and_save, verify_run
 
 
@@ -47,13 +50,26 @@ def main(argv: list[str] | None = None) -> int:
     subcommands.add_parser("doctor", help="check the sibling engine and one native frame")
     run_parser = subcommands.add_parser("run", help="run the experiment in a config")
     run_parser.add_argument("--config", type=Path, required=True)
+    run_parser.add_argument("--watch", action="store_true", help="open the completed run in the desktop game, paused")
     verify_parser = subcommands.add_parser("verify", help="replay the inputs in a run record")
     verify_parser.add_argument("record", type=Path)
+    export_parser = subcommands.add_parser("export-replay", help="verify and export a desktop .rep file beside a run record")
+    export_parser.add_argument("record", type=Path)
+    watch_parser = subcommands.add_parser("watch", help="verify and watch a saved run in the desktop game, paused")
+    watch_parser.add_argument("record", type=Path)
+    play_parser = subcommands.add_parser("play", help="start a fresh desktop game controlled live by an experiment agent")
+    play_parser.add_argument("--config", type=Path, default=PROJECT_ROOT / "experiments/001-greedy-heuristic/config.json")
+    play_parser.add_argument("--agent", choices=AGENT_NAMES, default="greedy")
+    play_parser.add_argument("--seed", type=int, help="fixed seed; otherwise choose a fresh random seed")
+    play_parser.add_argument("--speed", choices=("0.25", "0.5", "1", "2", "4", "8"), default="1")
+    play_parser.add_argument("--paused", action="store_true", help="start paused for frame stepping")
     args = parser.parse_args(argv)
     if args.command == "doctor":
         return doctor()
     try:
-        if args.command == "run":
+        if args.command == "play":
+            play_live(args.config, args.agent, args.seed, args.speed, args.paused)
+        elif args.command == "run":
             path = run_and_save(args.config)
             record = json.loads(path.read_text(encoding="utf-8"))
             if "episodes" in record:
@@ -77,12 +93,24 @@ def main(argv: list[str] | None = None) -> int:
                     f"hash {result['final_state_hash']}"
                 )
             print(f"Record: {path}")
+            if args.watch:
+                return watch_run(path)
+        elif args.command == "watch":
+            return watch_run(args.record)
+        elif args.command == "export-replay":
+            path, warnings = export_replay(args.record)
+            print(f"Replay: {path}")
+            for warning in warnings:
+                print(f"Warning: {warning}", file=sys.stderr)
         else:
             warnings = verify_run(args.record)
             print(f"Verified: {args.record}")
             for warning in warnings:
                 print(f"Warning: {warning}", file=sys.stderr)
         return 0
+    except KeyboardInterrupt:
+        print("Stopped.", file=sys.stderr)
+        return 130
     except (EngineError, VerificationError, ValueError, OSError, RuntimeError, KeyError, json.JSONDecodeError) as error:
         print(f"{args.command} failed: {error}", file=sys.stderr)
         return 1
