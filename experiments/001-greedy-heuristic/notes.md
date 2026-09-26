@@ -73,9 +73,10 @@ under its original meaning). The greedy total of **3347** placed pieces is one
 below the **3357** lock events the model-fidelity measurement below counts, the
 difference being the ten topping-out locks that wrote nothing.
 
-**Model fidelity:** Re-measured on the regenerated record by replaying each
-recorded greedy episode and comparing the engine's locked origin with the
-placement the greedy policy would have chosen at that piece's spawn state:
+**Model fidelity:** Re-measured on the run record for this configuration by
+replaying each recorded greedy episode and comparing the engine's locked origin
+with the placement the greedy policy would have chosen at that piece's spawn
+state:
 **3328 of 3357 locks (99.1%) landed exactly where the model predicted**, and the
 model predicted **1208** line clears where the engine cleared **1189**. The 3357
 are lock events, one per spawned piece, including the ten topping-out locks that
@@ -89,9 +90,13 @@ the pre-fix record with the legacy drop rule it reproduces exactly the earlier
 3324/3353 locks, 29 divergences, four orientation differences and 1206 model
 against 1189 engine clears, so the values above are directly comparable to that
 record rather than carried over from it. The metric correction does not move
-these numbers: the regenerated record's episodes are identical to the previous
-record's in inputs, results and initial hashes (only the piece field differs),
-so the replay is the same.
+these numbers: the record carrying the corrected field has episodes identical to
+the earlier `pieces` record's in inputs, results and initial hashes (only the
+piece field differs), so the replay is the same. The full per-frame records are
+temporary ignored output rather than repository files (see **Reproduce**), so a
+reader reproduces this measurement by rerunning `config.json` and repeating the
+comparison above, with [result.json](result.json) as the compact retained
+summary.
 
 Ceiling behaviour is modelled exactly. The native lock compacts the visible
 board alone and keeps the two hidden rows as a separate buffer, so a piece
@@ -182,8 +187,8 @@ across every review round, and the hidden rows stay fixed.
     106621.7 → 106621.9, frames 15792.1 → 15801.3, pieces 334.3 → 334.7; lines
     mean, median, min and max are identical), while the random baseline samples
     uniformly from the enumeration, so eight of its ten episodes moved (mean
-    score 162.4 → 162.9, frames 768.1 → 786.7, pieces 19.3 → 19.9). The record
-    below was regenerated after the change and verifies.
+    score 162.4 → 162.9, frames 768.1 → 786.7, pieces 19.3 → 19.9). The run
+    record was regenerated after the change and replayed with `verify`.
 - The controller does not replan around a blocked rotation or move: it keeps
   pressing until the piece locks. Near the ceiling this abandons the plan.
 - No next-piece lookahead, hold, weight tuning or learning; the classic preset
@@ -202,7 +207,7 @@ across every review round, and the hidden rows stay fixed.
   values are compared: JSON `true` compares equal to the integer `1`, so a
   boolean seed for a configured seed of `1` would otherwise pass. A unit test
   duplicates, swaps and boolean-seeds episode identities and confirms rejection.
-  The retained record above still verifies.
+  The run record still verified under the stricter rule.
 - The version-1 scripted verifier compared the recorded inputs and `result`
   fields but ignored the top-level `pieces` count the writer records beside
   them, so that count could be tampered with or deleted and the record still
@@ -227,11 +232,13 @@ across every review round, and the hidden rows stay fixed.
   `stats.pieces == 1` with zero locks). Records now carry the placed count as
   **`pieces_placed`** and the summary key is renamed with it; the older `pieces`
   key is still compared against `piece_count`, so every previously saved record
-  keeps verifying under its original meaning. The retained record below was
-  regenerated with the corrected field (its episodes are otherwise byte-identical
-  to the previous one, and all 20 ended at game over, so the count is one below
-  both the lock events and `stats.pieces`), and the previous record still
-  verifies. Regressions: a unit test pins the offset on a stop where nothing is
+  keeps verifying under its original meaning. The run record was regenerated
+  with the corrected field (its episodes are otherwise byte-identical to the
+  earlier `pieces` record, and all 20 ended at game over, so the count is one
+  below both the lock events and `stats.pieces`), and that earlier record
+  verified under the legacy `pieces` semantics when it was replayed; the
+  automated unit tests now cover legacy records directly. Regressions: a unit
+  test pins the offset on a stop where nothing is
   in play, another pins a stop with an unlocked piece, another pins the failed
   topping-out lock, unit tests round-trip the new and legacy keys of both record
   formats (rejecting a legacy `pieces` that holds the placed count), unit tests
@@ -259,27 +266,32 @@ across every review round, and the hidden rows stay fixed.
 ```
 
 `run` writes its record under the ignored project-root `runs/` directory, and
-`verify` replays that path directly. To keep a copy beside the experiment, copy
-the directory and verify the copy:
+`verify` replays that path directly. That per-frame record is 1.8 MB (format
+version 2, every frame mask stored), temporary and disposable: `runs/` is
+ignored at any depth, so no run record is part of the repository, and a clean
+checkout holds only `config.json`, this note and the compact
+[result.json](result.json) summary. Rerunning the configuration after restoring
+the recorded code versions and any uncommitted edits (see the working-tree note
+below) recreates the record; every measurement in this note was taken from such
+a local, temporary record and is reproduced by rerunning the configuration and
+repeating the documented comparison.
 
-```sh
-mkdir -p experiments/001-greedy-heuristic/runs
-cp -r runs/<new-run-id> experiments/001-greedy-heuristic/runs/
-.venv/bin/block-stack-ai verify experiments/001-greedy-heuristic/runs/<new-run-id>/run.json
-```
-
-The record used here was copied that way to the retained, still-ignored
+The run reported here wrote `runs/20260926T054458996351Z-697e2202/run.json`; the
+copy replayed for the model-fidelity measurement is the ignored
 `experiments/001-greedy-heuristic/runs/20260926T054458996351Z-697e2202/run.json`
-(1.8 MB, format version 2, every frame mask retained) and verifies from there,
-with the CLI's own copy left at
-`runs/20260926T054458996351Z-697e2202/run.json`. Its episodes are identical to
-the previous retained record's in inputs, results and initial hashes, differing
-only in the piece field: `pieces_placed` here is two below the legacy `pieces`
-there (the preview counter, above the spawned count and the placed count). That
-previous record,
-`experiments/001-greedy-heuristic/runs/20260926T020359855832Z-12e7c9a3/run.json`,
-is kept beside it and still verifies under the legacy semantics, which is the
-backward-compatibility check on a real artifact.
+(a second ignored `runs/` path, present only in a working tree). Its episodes
+are identical to the earlier `pieces` record's in inputs, results and initial
+hashes, differing only in the piece field: `pieces_placed` is two below the
+legacy `pieces` there (the preview counter, above the spawned count and the
+placed count). That earlier record,
+`runs/20260926T020359855832Z-12e7c9a3/run.json`, is likewise temporary ignored
+output rather than a repository file; while it was present locally it verified
+under the legacy semantics, which is the backward-compatibility check on a real
+artifact, and the automated unit tests now cover legacy records directly. The
+pre-fix record compared against under
+`episode_changes_vs_the_pre_fix_record` in [result.json](result.json),
+`runs/20260925T144222830845Z-a061382f/run.json`, is temporary ignored output in
+the same way.
 
 This is a **working-tree run**. The engine was dirty at commit
 `0e56c3beb7e4165e793ff326e3600d973e236cb8` and fallgorithm was dirty at commit

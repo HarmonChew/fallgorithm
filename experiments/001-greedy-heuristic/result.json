@@ -1,9 +1,9 @@
 {
   "status": "passed",
   "doctor": "passed",
-  "run_record": "experiments/001-greedy-heuristic/runs/20260926T054458996351Z-697e2202/run.json",
-  "run_record_cli_copy": "runs/20260926T054458996351Z-697e2202/run.json",
-  "previous_legacy_record": "experiments/001-greedy-heuristic/runs/20260926T020359855832Z-12e7c9a3/run.json",
+  "run_record": "experiments/001-greedy-heuristic/runs/20260926T054458996351Z-697e2202/run.json (temporary ignored run output: `runs/` is ignored at any depth, so this record is present only in a working tree and is not part of the repository; rerun config.json to recreate it)",
+  "run_record_cli_copy": "runs/20260926T054458996351Z-697e2202/run.json (the same temporary ignored record in the CLI's own output directory, also absent from the repository)",
+  "previous_legacy_record": "experiments/001-greedy-heuristic/runs/20260926T020359855832Z-12e7c9a3/run.json (temporary ignored run output, absent from the repository; this pre-fix record verified under the legacy `pieces` meaning when it was replayed, and the automated unit tests cover legacy records directly)",
   "verification": "passed",
   "verification_warnings": [
     "The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source."
@@ -78,7 +78,7 @@
     "unchanged_by_the_piece_metric_fix": true
   },
   "episode_changes_vs_the_pre_fix_record": {
-    "record": "runs/20260925T144222830845Z-a061382f/run.json",
+    "record": "runs/20260925T144222830845Z-a061382f/run.json (temporary ignored run output, absent from the repository)",
     "unchanged": 6,
     "changed": 14,
     "greedy_changed": 6,
