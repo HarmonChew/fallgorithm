@@ -6,7 +6,10 @@ compares them alongside the recorded initial state hash and every ``result``
 field, and it compares a top-level piece count when the record carries one.
 Version 2 is a suite of placement-agent episodes over fixed seeds: the replay
 compares each episode's agent and seed, inputs, initial state hash, ``result``
-fields and piece count, then the summary derived from them.
+fields and piece count, then the summary derived from them. Both verifiers
+compare a recorded value only after its type — and, for mappings, its keys —
+equals the replayed value's, so JSON booleans, which compare equal to ``0``/``1``
+and ``0.0``, are rejected instead of verifying.
 
 The piece count is ``pieces_placed``: the number of pieces the engine actually
 wrote to the board. It is counted from the engine's ``locked`` events minus the
@@ -189,6 +192,37 @@ def _compare_piece_count(record: dict[str, Any], field: str, replayed: int, wher
     if value != replayed:
         return f"{field}: recorded {value!r}, replayed {replayed!r}"
     return None
+
+
+def _compare_fields(recorded: Any, replayed: Any, where: str) -> list[str]:
+    """Differences between a recorded value and its replay, after a type check.
+
+    JSON ``false``/``true`` compare equal to the integers ``0``/``1`` and to
+    ``0.0``, so plain equality accepts a boolean wherever the writer recorded a
+    number. The recorded type must equal the replayed type exactly at every leaf,
+    and every mapping must carry exactly the replayed keys, before any value is
+    compared; a mismatch raises instead of producing a difference. The expected
+    types come from the replayed value the writer produced, so the check stays in
+    step with what ``_play`` and ``_summarize`` actually emit: a metric ``median``
+    is an ``int`` for an odd-sized group and a ``float`` for an even one, and both
+    are accepted as recorded.
+    """
+    if type(recorded) is not type(replayed):
+        raise VerificationError(
+            f"Recorded {where} must be {type(replayed).__name__}, not {recorded!r}"
+        )
+    if isinstance(replayed, dict):
+        if set(recorded) != set(replayed):
+            raise VerificationError(
+                f"Recorded {where} keys {sorted(recorded)} do not match {sorted(replayed)}"
+            )
+        differences = []
+        for key, value in replayed.items():
+            differences.extend(_compare_fields(recorded[key], value, f"{where}.{key}"))
+        return differences
+    if recorded != replayed:
+        return [f"{where}: recorded {recorded!r}, replayed {replayed!r}"]
+    return []
 
 
 def _play(
@@ -405,11 +439,7 @@ def _verify_scripted(record: dict[str, Any], path: Path, game_factory: Callable[
         difference = _compare_piece_count(record, field, replayed, "")
         if difference:
             differences.append(difference)
-    if not isinstance(expected, dict):
-        raise VerificationError("Malformed result in run record")
-    for name, value in actual.items():
-        if expected.get(name) != value:
-            differences.append(f"{name}: recorded {expected.get(name)!r}, replayed {value!r}")
+    differences.extend(_compare_fields(expected, actual, "result"))
     warnings = _engine_warnings(recorded_engine)
     if differences:
         context = "\n" + "\n".join(f"Warning: {warning}" for warning in warnings) if warnings else ""
@@ -477,12 +507,9 @@ def _verify_suite(record: dict[str, Any], path: Path, game_factory: Callable[...
             )
         if episode.get("inputs") != actual["inputs"]:
             differences.append(f"inputs: recorded {len(inputs)}, replayed {len(actual['inputs'])}")
-        expected = episode.get("result")
-        if not isinstance(expected, dict):
-            raise VerificationError(f"Malformed result in episode {index}")
-        for field, value in actual["result"].items():
-            if expected.get(field) != value:
-                differences.append(f"result.{field}: recorded {expected.get(field)!r}, replayed {value!r}")
+        differences.extend(
+            _compare_fields(episode.get("result"), actual["result"], f"episode {index} result")
+        )
         for field, actual_value in (("pieces_placed", actual["pieces_placed"]), ("pieces", actual["piece_count"])):
             difference = _compare_piece_count(episode, field, actual_value, f" in episode {index}")
             if difference:
@@ -492,8 +519,12 @@ def _verify_suite(record: dict[str, Any], path: Path, game_factory: Callable[...
                 f"Replay mismatch in episode {index} ({name}, seed {seed}):\n  " + "\n  ".join(differences)
             )
         replayed.append(episode)
-    if summary != _summarize(replayed):
-        raise VerificationError("Recorded summary does not match the replayed episodes")
+    summary_differences = _compare_fields(summary, _summarize(replayed), "summary")
+    if summary_differences:
+        raise VerificationError(
+            "Recorded summary does not match the replayed episodes:\n  "
+            + "\n  ".join(summary_differences)
+        )
     return _engine_warnings(recorded_engine)
 
 

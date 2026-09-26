@@ -524,6 +524,183 @@ def test_scripted_verification_rejects_a_boolean_piece_count(tmp_path, monkeypat
         verify_run(path, factory)
 
 
+@pytest.mark.parametrize(
+    "frame_limit,field,value",
+    [(10, "score", False), (10, "lines", False), (1, "frame_count", True)],
+)
+def test_suite_verification_rejects_a_boolean_result_number(
+    tmp_path, monkeypatch, frame_limit, field, value
+):
+    """JSON ``false``/``true`` equal 0 and 1, so a 0- or 1-valued result field needs a type.
+
+    The suite stand-in scores nothing, clears nothing, and records one frame under
+    a one-frame limit, so each field replays to 0 or 1 and the saved boolean would
+    pass a plain value comparison.
+    """
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps({**SUITE, "frame_limit": frame_limit}), encoding="utf-8")
+    path = run_and_save(config_path, tmp_path / "runs", lambda **_: SuiteGame())
+    record = json.loads(path.read_text(encoding="utf-8"))
+    recorded = record["episodes"][0]["result"][field]
+    assert type(recorded) is int and recorded == (1 if value else 0)
+    assert verify_run(path, lambda **_: SuiteGame()) == []
+
+    record["episodes"][0]["result"][field] = value
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(
+        VerificationError, match=rf"Recorded episode 0 result\.{field} must be int, not {value!r}"
+    ):
+        verify_run(path, lambda **_: SuiteGame())
+
+
+@pytest.mark.parametrize(
+    "frame_limit,lock_period,field,value",
+    [(10, 2, "game_over", False), (1, 1, "locked", True)],
+)
+def test_suite_verification_rejects_a_boolean_event_count(
+    tmp_path, monkeypatch, frame_limit, lock_period, field, value
+):
+    """JSON ``false``/``true`` equal 0 and 1, so a 0- or 1-valued event count needs a type.
+
+    ``game_over`` stays 0 while the game runs, while a one-frame limit with a lock
+    every frame leaves ``locked`` at 1, so either boolean would pass a plain value
+    comparison against the recorded count.
+    """
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+    factory = lambda **_: SuiteGame(lock_period=lock_period)
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps({**SUITE, "frame_limit": frame_limit}), encoding="utf-8")
+    path = run_and_save(config_path, tmp_path / "runs", factory)
+    record = json.loads(path.read_text(encoding="utf-8"))
+    recorded = record["episodes"][0]["result"]["event_counts"][field]
+    assert type(recorded) is int and recorded == (1 if value else 0)
+    assert verify_run(path, factory) == []
+
+    record["episodes"][0]["result"]["event_counts"][field] = value
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=rf"Recorded episode 0 result\.event_counts\.{field} must be int, not {value!r}",
+    ):
+        verify_run(path, factory)
+
+
+@pytest.mark.parametrize(
+    "seeds,keys,value,expected_type",
+    [
+        ([1, 2, 3], ("score", "mean"), False, float),
+        ([1, 2, 3], ("score", "median"), False, int),
+        ([1, 2, 3], ("score", "min"), False, int),
+        ([1, 2, 3], ("score", "max"), False, int),
+        ([3], ("games",), True, int),
+        ([3], ("stopping_reasons", "frame_limit"), True, int),
+    ],
+)
+def test_suite_verification_rejects_a_boolean_summary_value(
+    tmp_path, monkeypatch, seeds, keys, value, expected_type
+):
+    """JSON ``false``/``true`` equal 0, 0.0 and 1, so every summary leaf needs its type.
+
+    Three seeds make the group odd, so the recorded ``median`` is an ``int`` while
+    ``mean`` is a ``float``: a genuine record must verify with both, and a boolean
+    saved in either place must not. A single seed puts a 1 in ``games`` and in the
+    ``stopping_reasons`` count, which ``true`` compares equal to.
+    """
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps({**SUITE, "seeds": seeds}), encoding="utf-8")
+    path = run_and_save(config_path, tmp_path / "runs", lambda **_: SuiteGame())
+    record = json.loads(path.read_text(encoding="utf-8"))
+    recorded = record["summary"]["greedy"]
+    for key in keys:
+        recorded = recorded[key]
+    # The genuine value is numerically equal to the boolean that will replace it,
+    # which is exactly why a plain equality accepted the tamper.
+    assert type(recorded) is expected_type
+    assert recorded == (1 if value else 0)
+    assert verify_run(path, lambda **_: SuiteGame()) == []
+
+    tampered = json.loads(json.dumps(record))
+    leaf = tampered["summary"]["greedy"]
+    for key in keys[:-1]:
+        leaf = leaf[key]
+    leaf[keys[-1]] = value
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    where = ".".join(("summary", "greedy", *keys))
+    with pytest.raises(
+        VerificationError,
+        match=rf"Recorded {where} must be {expected_type.__name__}, not {value!r}",
+    ):
+        verify_run(path, lambda **_: SuiteGame())
+
+
+def test_suite_verification_accepts_a_summary_median_of_int_type(tmp_path, monkeypatch):
+    """A median of an odd-sized group is an ``int``; the type check follows the writer.
+
+    ``_metric`` rounds ``statistics.median``, which returns an ``int`` for an odd
+    number of games and a ``float`` for an even one, so a verifier that demanded a
+    fixed ``float`` median would reject a genuine three-seed record.
+    """
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps({**SUITE, "seeds": [1, 2, 3]}), encoding="utf-8")
+    path = run_and_save(config_path, tmp_path / "runs", lambda **_: SuiteGame())
+    record = json.loads(path.read_text(encoding="utf-8"))
+    summary = record["summary"]["greedy"]
+    assert type(summary["score"]["median"]) is int
+    assert type(summary["score"]["mean"]) is float
+    assert verify_run(path, lambda **_: SuiteGame()) == []
+
+
+def test_scripted_verification_rejects_boolean_result_fields(tmp_path, monkeypatch):
+    """JSON ``false`` equals the integer 0, so result fields need their written types.
+
+    ``FakeGame`` scores nothing, clears nothing and emits no events, so every
+    recorded number is 0 and a saved ``false`` passes a plain value comparison.
+    """
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps(BASE), encoding="utf-8")
+    factory = lambda **_: FakeGame()
+    path = run_and_save(config_path, tmp_path / "runs", factory)
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["result"]["score"] == 0
+    assert record["result"]["event_counts"]["locked"] == 0
+    assert verify_run(path, factory) == []
+
+    def rejected(mutate, message):
+        tampered = json.loads(json.dumps(record))
+        mutate(tampered)
+        path.write_text(json.dumps(tampered), encoding="utf-8")
+        with pytest.raises(VerificationError, match=message):
+            verify_run(path, factory)
+
+    def score_to_false(tampered):
+        tampered["result"]["score"] = False
+
+    def locked_to_false(tampered):
+        tampered["result"]["event_counts"]["locked"] = False
+
+    rejected(score_to_false, "Recorded result.score must be int, not False")
+    rejected(locked_to_false, "Recorded result.event_counts.locked must be int, not False")
+
+
 def test_missing_engine_checkout_has_actionable_error(monkeypatch, tmp_path):
     monkeypatch.setenv("BLOCK_STACK_ROOT", str(tmp_path / "missing"))
     with pytest.raises(engine.EngineError, match="BLOCK_STACK_ROOT"):
