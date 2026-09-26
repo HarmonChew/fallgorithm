@@ -37,10 +37,17 @@ From the fallgorithm root:
 
 ```sh
 .venv/bin/block-stack-ai doctor
-.venv/bin/block-stack-ai run --config experiments/000-connection/config.json
-.venv/bin/block-stack-ai run --config experiments/001-greedy-heuristic/config.json
+.venv/bin/block-stack-ai experiments
+.venv/bin/block-stack-ai run --experiment 000
+.venv/bin/block-stack-ai run --experiment 001
 .venv/bin/block-stack-ai verify runs/<run-id>/run.json
 ```
+
+`experiments` lists the numbered directories and which agents support live play.
+Both `run` and `play` require an explicit `--experiment` number or full directory
+name (for example, `001` or `001-greedy-heuristic`). The selected name and resolved
+config path are printed before starting. `--config path/to/config.json` remains
+available for a custom configuration; it cannot be combined with `--experiment`.
 
 `doctor` prints the resolved checkout, Git version, binding and library paths,
 and performs a create/read/step/close smoke check. `run` prints the stopping
@@ -75,24 +82,26 @@ Ubuntu), then launch experiment 001's greedy agent:
 
 ```sh
 .venv/bin/python scripts/setup_engine.py --desktop
-.venv/bin/block-stack-ai play
+.venv/bin/block-stack-ai play --experiment 001
 ```
 
 The window starts a new game immediately, with a freshly selected seed printed
 in the terminal and shown in the game. The existing Python agent chooses the
 next input from the desktop's current state on every logical frame. The desktop
 owns the game clock and renders that game as it runs. No recorded game is loaded.
-By default, `play` uses the game settings and 60,000-frame safety limit from
-`experiments/001-greedy-heuristic/config.json`.
+The selected experiment supplies its game settings and frame limit; experiment
+001 uses a 60,000-frame limit. `--agent` chooses an algorithm within that
+experiment (default: `greedy`). Experiment 000 is a fixed controller script and
+supports `run` and replay rather than live placement play.
 
 **P** pauses, **.** advances one frame while paused, **R** restarts the same seed,
 **[ / ]** changes speed, and **Esc** quits. A new invocation chooses a fresh seed.
 To choose the seed, watch faster, or compare the random baseline:
 
 ```sh
-.venv/bin/block-stack-ai play --seed 2 --speed 4
-.venv/bin/block-stack-ai play --agent random
-.venv/bin/block-stack-ai play --seed 2 --paused
+.venv/bin/block-stack-ai play --experiment 001 --seed 2 --speed 4
+.venv/bin/block-stack-ai play --experiment 001 --agent random
+.venv/bin/block-stack-ai play --experiment 001 --seed 2 --paused
 ```
 
 Each completed game or frame-limit stop saves a normal one-episode suite record

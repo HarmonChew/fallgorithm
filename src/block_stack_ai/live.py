@@ -125,8 +125,13 @@ def play_live(
     desktop_arguments: tuple[str, ...] = (),
 ) -> list[Path]:
     source = load_config(config_path)
-    if not isinstance(source, SuiteConfig) or agent not in source.agents:
-        raise ValueError("Live play needs a placement-agent config containing the selected agent")
+    if not isinstance(source, SuiteConfig):
+        raise ValueError(
+            f"{config_path.parent.name} is a scripted experiment, with no live placement agent. "
+            "Use `run` with the same selection and `--watch` to view its scripted inputs."
+        )
+    if agent not in source.agents:
+        raise ValueError(f"Agent {agent!r} is not in this experiment. Available agents: {', '.join(source.agents)}")
     seed = secrets.randbelow(65536) if seed is None else seed
     config = parse_config({
         "game": source.game, "frame_limit": source.frame_limit, "seeds": [seed], "agents": [agent],

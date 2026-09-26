@@ -51,7 +51,8 @@ def desktop_environment(monkeypatch, tmp_path):
 @pytest.mark.parametrize("agent,reason", [("greedy", "frame_limit"), ("random", "game_over")])
 def test_live_desktop_pause_step_restart_and_record(tmp_path, desktop_environment, agent, reason):
     config = SuiteConfig(GAME, 1200, (2,), ("random", "greedy"))
-    path = tmp_path / "config.json"
+    path = tmp_path / "experiments/001-test/config.json"
+    path.parent.mkdir(parents=True)
     path.write_text(json.dumps(config.to_dict()), encoding="utf-8")
     runs = tmp_path / "runs"
     # The native smoke path pauses, advances a frame, restarts, then runs this
@@ -59,12 +60,16 @@ def test_live_desktop_pause_step_restart_and_record(tmp_path, desktop_environmen
     code = """
 import sys
 from pathlib import Path
+from block_stack_ai import cli
 from block_stack_ai.live import play_live
-play_live(Path(sys.argv[1]), agent=sys.argv[2], seed=2,
-          runs_dir=Path(sys.argv[3]), desktop_arguments=('--controller-smoke',))
+cli.PROJECT_ROOT = Path(sys.argv[1])
+def play(*args):
+    return play_live(*args, runs_dir=Path(sys.argv[3]), desktop_arguments=('--controller-smoke',))
+cli.play_live = play
+raise SystemExit(cli.main(['play', '--experiment', '001', '--agent', sys.argv[2], '--seed', '2']))
 """
     completed = subprocess.run(
-        [sys.executable, "-c", code, str(path), agent, str(runs)],
+        [sys.executable, "-c", code, str(tmp_path), agent, str(runs)],
         capture_output=True, text=True, timeout=30,
     )
     assert completed.returncode == 0, completed.stdout + completed.stderr

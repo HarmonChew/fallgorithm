@@ -1,6 +1,6 @@
 # 001: Greedy heuristic placement baseline
 
-**Live viewing (2026-09-27):** `block-stack-ai play` now starts a fresh desktop
+**Live viewing (2026-09-27):** `block-stack-ai play --experiment 001` starts a fresh desktop
 game with this experiment's greedy agent, settings and frame limit. The seed is
 selected afresh unless supplied with `--seed`; `--agent random` selects the
 comparison baseline. Inputs are chosen from the current desktop state through
