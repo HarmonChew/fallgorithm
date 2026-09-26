@@ -7,7 +7,8 @@ import pytest
 
 from block_stack_ai.agents import DOWN
 from block_stack_ai.engine import PROJECT_ROOT, create_game
-from block_stack_ai.heuristic import board_grid, enumerate_placements, settle
+from block_stack_ai.heuristic import SPAWN_ORIGIN_Y, WIDTH, board_grid, enumerate_placements, settle
+from block_stack_ai.pieces import PIECES, cells, orientation_count
 from block_stack_ai.runner import (
     VerificationError,
     load_config,
@@ -84,6 +85,108 @@ def test_every_enumerated_placement_locks_where_the_model_says():
             assert board_grid(state.board, state.hidden_rows) == settled
 
 
+def test_enumeration_matches_engine_straight_drops_from_the_spawn_origin():
+    """Whole-set gate: every enumerated placement is an engine-reachable drop.
+
+    Two constructed boards isolate the two directions the contract cares about:
+
+    * a visible overhang over a stack (visible row 0 filled at columns 4 and 5
+      with free cells below, a tall left stack and a shorter right one), so a
+      column blocked at the spawn origin must contribute no placement and no
+      placement may rest above the origin;
+    * minos occupying the hidden buffer while the visible field is empty, so a
+      column whose *hidden* cells are filled while its visible spawn rows are
+      free must still be enumerated (the old top-of-grid entry rejected it).
+
+    For every piece, orientation and legal column the native engine is driven
+    from the spawn origin: ``set_piece`` (which enforces the engine's own
+    ``fits``) and Down held until lock. A rejected ``set_piece`` must correspond
+    to no enumerated placement, and a locked origin must equal the enumerated
+    ``y``. This compares the entire placement set of both boards, not a sample.
+    """
+    suite = load_config(SUITE_CONFIG)
+    configuration = {**suite.game, "seed": 1}
+
+    overhang = [[0] * WIDTH for _ in range(20)]
+    for row in range(12, 20):
+        for column in range(4):
+            overhang[row][column] = 1
+    for row in range(16, 20):
+        for column in range(6, WIDTH):
+            overhang[row][column] = 1
+    overhang[0][4] = overhang[0][5] = 1
+
+    empty_visible = [[0] * WIDTH for _ in range(20)]
+    ceiling_blocker = [list(row) for row in empty_visible]
+    ceiling_blocker[0][8] = ceiling_blocker[0][9] = 1
+
+    templates = []
+    with create_game(**configuration) as builder:
+        builder.set_board(overhang)
+        templates.append(("overhang", board_grid(builder.state.board, builder.state.hidden_rows),
+                          builder.clone()))
+        # Lock an O above the ceiling, then wipe the visible field: the hidden
+        # buffer keeps its minos while the visible spawn rows are free.
+        builder.set_board(ceiling_blocker)
+        builder.set_piece("O", x=9, y=-2)
+        for _ in range(60):
+            _, events = builder.step(DOWN)
+            if events.locked:
+                break
+        else:
+            raise AssertionError("the ceiling O never locked")
+        builder.set_board(empty_visible)
+        hidden_grid = board_grid(builder.state.board, builder.state.hidden_rows)
+        assert hidden_grid[0][8:10] == (1, 1)
+        assert hidden_grid[1][8:10] == (1, 1)
+        templates.append(("hidden-buffer", hidden_grid, builder.clone()))
+
+    def engine_lock(template, piece, orientation, x):
+        """Origin row the engine locks at from the spawn origin, or None if refused."""
+        with template.clone() as trial:
+            try:
+                trial.set_piece(piece, x=x, y=SPAWN_ORIGIN_Y, rotation=orientation)
+            except RuntimeError:
+                return None
+            for _ in range(400):
+                state, events = trial.step(DOWN)
+                if events.locked:
+                    assert (state.orientation, state.x) == (orientation, x)
+                    return state.y
+            raise AssertionError(f"{piece} orientation {orientation} at x={x} never locked")
+
+    compared = 0
+    for label, grid, template in templates:
+        with template:
+            for piece in PIECES:
+                model = {
+                    (placement.orientation, placement.x): placement
+                    for placement in enumerate_placements(grid, piece)
+                }
+                for orientation in range(orientation_count(piece)):
+                    offsets = cells(piece, orientation)
+                    first = min(offset_x for offset_x, _ in offsets)
+                    last = max(offset_x for offset_x, _ in offsets)
+                    for x in range(-first, WIDTH - last):
+                        locked_y = engine_lock(template, piece, orientation, x)
+                        placement = model.get((orientation, x))
+                        compared += 1
+                        if locked_y is None:
+                            assert placement is None, (label, piece, orientation, x, placement)
+                        else:
+                            assert placement is not None, (label, piece, orientation, x, locked_y)
+                            assert placement.y == locked_y, (label, piece, orientation, x)
+
+    def columns(piece):
+        return sum(
+            WIDTH - (max(offset_x for offset_x, _ in cells(piece, orientation))
+                     - min(offset_x for offset_x, _ in cells(piece, orientation)))
+            for orientation in range(orientation_count(piece))
+        )
+
+    assert compared == sum(columns(piece) for piece in PIECES) * len(templates)
+
+
 def test_placement_model_matches_a_native_lock_straddling_the_ceiling():
     """A lock that rests in the hidden rows and clears the visible row below it."""
     suite = load_config(SUITE_CONFIG)
@@ -113,6 +216,61 @@ def test_placement_model_matches_a_native_lock_straddling_the_ceiling():
     assert native[1][:2] == (1, 1)
     assert native[2] == (0,) * 10
     assert native == settled
+
+
+def test_hidden_rows_survive_a_later_clear_below_the_ceiling():
+    """Minos left above the ceiling stay put when a later, lower row clears.
+
+    The dispute was whether an occupied hidden row shifts down with a cleared
+    row. The registered engine compacts ``state_.board`` alone and never touches
+    ``state_.hidden_rows``, so the buffer is byte-identical across later locks
+    that clear one row and two rows, while a model that shifted hidden rows
+    would not match the engine.
+    """
+    suite = load_config(SUITE_CONFIG)
+    configuration = {**suite.game, "seed": 1}
+
+    def lock(game, piece, x, y):
+        game.set_piece(piece, x=x, y=y)
+        for _ in range(200):
+            state, events = game.step(0)
+            if events.locked:
+                return state, events
+        raise AssertionError("the piece never locked")
+
+    def board(full_rows, support_row):
+        rows = [[0] * 10 for _ in range(20)]
+        for row in full_rows:
+            for column in range(2, 10):
+                rows[row][column] = 1  # the O completes these rows at columns 0-1
+        rows[support_row][0] = rows[support_row][1] = 1  # pins the O resting on top
+        return rows
+
+    with create_game(**configuration) as game:
+        # First lock leaves minos above the ceiling and clears visible row 0.
+        game.set_board(board((0,), 1))
+        _, first = lock(game, "O", 1, -1)
+        assert first.lines_cleared == 1
+        hidden = game.state.hidden_rows
+        assert all(hidden[1][:2])  # the O left minos above the ceiling
+
+        # A later mid-field clear, far below the occupied hidden row.
+        game.set_board(board((10,), 12))
+        grid = board_grid(game.state.board, game.state.hidden_rows)
+        state, events = lock(game, "O", 1, 10)
+        settled, cleared = settle(grid, "O", 0, 1, 10)
+        assert events.lines_cleared == cleared == 1
+        assert state.hidden_rows == hidden  # the buffer never moves or clears
+        assert board_grid(state.board, state.hidden_rows) == settled
+
+        # A later double clear, also far below the occupied hidden row.
+        game.set_board(board((8, 9), 10))
+        grid = board_grid(game.state.board, game.state.hidden_rows)
+        state, events = lock(game, "O", 1, 8)
+        settled, cleared = settle(grid, "O", 0, 1, 8)
+        assert events.lines_cleared == cleared == 2
+        assert state.hidden_rows == hidden
+        assert board_grid(state.board, state.hidden_rows) == settled
 
 
 def test_suite_save_and_verify_real_run(tmp_path: Path):

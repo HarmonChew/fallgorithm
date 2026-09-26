@@ -69,12 +69,15 @@ read screenshots. The JSON run record is not the game's desktop replay format.
 
 The first command tests configuration, deterministic scripted inputs, release
 frames, stop reasons, missing-path diagnostics, the lock and line-clear grid
-rule, placement enumeration, board scoring, deterministic tie-breaking, the
+rule, placement enumeration including the spawn-origin entry and the
+downward-only descent rule, board scoring, deterministic tie-breaking, the
 placement controller and the suite record's episode identity check, without the
 native engine. The second requires the completed setup and tests native state
 reads, logical frame counts, seeded hash determinism, the placement model
-against native locks including a lock that straddles the ceiling, and
-run-record verification for both record formats.
+against native locks including a lock that straddles the ceiling and hidden
+minos surviving a later clear, the whole enumerated placement set against
+engine-reachable straight drops from the spawn origin, and run-record
+verification for both record formats.
 Integration tests are never treated as passing when the native library is
 unavailable. The measured results are in
 [experiments/000-connection](experiments/000-connection/notes.md) and

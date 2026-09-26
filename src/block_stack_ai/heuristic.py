@@ -9,6 +9,11 @@ Features and weights follow the conventional flattened-board evaluation: the
 immediate line clear plus penalties for holes, aggregate height, bumpiness and
 maximum height. The weights are fixed here, chosen once from that documented
 family, and are never tuned against the evaluation seeds.
+
+Placements are straight drops: a piece enters its column at the engine's spawn
+origin row and descends only downward, so a column blocked at that origin has no
+placement. Lateral movement during the descent and entering in one column and
+sliding over to another are out of scope.
 """
 
 from __future__ import annotations
@@ -30,6 +35,17 @@ WEIGHTS = {
     "max_height": -1.0,
 }
 TIE_BREAK = "first highest-scoring placement in enumeration order: orientation ascending, then x ascending"
+
+# The native piece origin row a straight drop must enter at: the model's ``y``
+# is the engine's own piece-origin row (engine row = model row - HIDDEN_ROWS),
+# and ``Game::spawn`` (core/src/game.cpp) sets ``state_.y = 0`` while an in-place
+# rotation leaves the origin untouched (``Game::process_rotation`` keeps x and
+# y). Measured on the registered read-only library: a spawn trace reports
+# ``(x=5, y=0, orientation=0)``, and ``set_piece`` for every piece at every
+# orientation reports origin row 0, unchanged by clockwise rotations. The
+# integration test ``test_enumeration_matches_engine_straight_drops_from_the_spawn_origin``
+# keeps this measured value honest for the whole placement set.
+SPAWN_ORIGIN_Y = 0
 
 Grid = tuple[tuple[int, ...], ...]
 
@@ -117,17 +133,18 @@ def fits(grid: Grid, piece: str, orientation: int, x: int, y: int) -> bool:
 def settle(grid: Grid, piece: str, orientation: int, x: int, y: int) -> tuple[Grid, int]:
     """Lock the piece, clear full visible rows, and return the settled grid and clear count.
 
-    Only the visible field compacts, and it compacts downward: the surviving
-    visible rows keep their order and collect at the bottom, so every row above
-    a cleared row shifts down by the number of cleared rows below it, and the
-    cleared rows reopen empty at the top of the visible field. The two hidden
-    rows do not move: a piece locked above the ceiling keeps its hidden minos
-    after a lower row clears. This mirrors the native lock exactly, which
-    compacts ``state_.board`` alone and never touches ``state_.hidden_rows``
-    (``Game::clear_rows``) and reports the hidden rows as a separate 2x10
-    buffer. ``test_settle_keeps_hidden_rows_in_place_when_a_visible_line_clears``
-    and ``test_placement_model_matches_a_native_lock_straddling_the_ceiling``
-    pin that behaviour.
+    This mirrors ``Game::lock``/``Game::clear_rows``: only the 20 visible rows
+    are scanned for full rows and only they are compacted, so a hidden row is
+    never cleared and no hidden cell is ever moved. Within the visible field the
+    surviving rows collect at the bottom in order and the cleared rows reopen
+    empty at its top, so a row below the lowest cleared row keeps its place. The
+    hidden rows are a separate buffer: a lock writes a hidden cell only for a
+    mino resting above the ceiling, and a visible clear leaves the buffer
+    byte-identical. Verified cell for cell against the registered native library
+    for a hidden-only lock, a ceiling-straddling lock that clears visible row 0,
+    a mid-field clear with the buffer already occupied, and a double clear. The
+    hidden-row tests in ``tests/test_heuristic.py`` and
+    ``tests/test_integration.py`` fail if the hidden rows are shifted instead.
     """
     rows = [list(row) for row in grid]
     for offset_x, offset_y in cells(piece, orientation):
@@ -143,12 +160,21 @@ def settle(grid: Grid, piece: str, orientation: int, x: int, y: int) -> tuple[Gr
 
 
 def _drop_y(grid: Grid, piece: str, orientation: int, x: int) -> int | None:
-    """Origin row of a straight drop into this column, or None when it cannot fit."""
-    y = -HIDDEN_ROWS
-    while y <= HEIGHT and not fits(grid, piece, orientation, x, y):
-        y += 1
-    if y > HEIGHT:
+    """Origin row of a straight drop into this column, or None when it cannot fit.
+
+    The piece enters the column at the engine's spawn origin row
+    (:data:`SPAWN_ORIGIN_Y`) and only ever descends from there. A straight drop
+    cannot pass through an occupied cell, and it cannot start anywhere else: a
+    column whose spawn origin is obstructed has no legal placement, even if the
+    piece would fit further down. From the origin the piece descends through
+    consecutive free origins and stops at the first obstruction or the floor.
+    Lateral movement during the descent and entering in one column and sliding
+    across are out of scope: the frame controller aligns the piece at the spawn
+    row first and then holds Down.
+    """
+    if not fits(grid, piece, orientation, x, SPAWN_ORIGIN_Y):
         return None
+    y = SPAWN_ORIGIN_Y
     while fits(grid, piece, orientation, x, y + 1):
         y += 1
     return y
@@ -158,8 +184,11 @@ def enumerate_placements(grid: Grid, piece: str) -> tuple[Placement, ...]:
     """Every unique rotation and legal column, scored by its settled board.
 
     Enumeration order is canonical: orientation ascending, then column
-    ascending. A placement is a straight drop from above the stack, which is
-    what the frame controller below can actually execute.
+    ascending. A placement is a straight drop that enters its column at the
+    engine's spawn origin row and then descends only downward, which is what the
+    frame controller below can actually execute. Lateral movement during the
+    descent and entering in one column and sliding over to another are out of
+    scope, so a column blocked at its spawn origin contributes no placement.
     """
     placements = []
     for orientation in range(orientation_count(piece)):

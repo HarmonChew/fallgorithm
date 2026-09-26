@@ -1,14 +1,15 @@
 {
   "status": "passed",
   "doctor": "passed",
-  "run_record": "runs/20260925T073542509599Z-14e63372/run.json",
+  "run_record": "experiments/001-greedy-heuristic/runs/20260926T020359855832Z-12e7c9a3/run.json",
+  "run_record_cli_copy": "runs/20260926T020359855832Z-12e7c9a3/run.json",
   "verification": "passed",
   "verification_warnings": [
     "The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source."
   ],
   "tests": {
-    "unit_passed": 38,
-    "integration_passed": 6
+    "unit_passed": 43,
+    "integration_passed": 8
   },
   "configuration": {
     "game": {
@@ -29,32 +30,52 @@
     "max_height": -1.0,
     "tie_break": "first highest-scoring placement in enumeration order: orientation ascending, then x ascending"
   },
+  "placement_model": {
+    "entry": "engine spawn origin row, measured on the registered library as y=0 for every piece and orientation",
+    "descent": "downward only, through consecutive free origins, stopping at the first obstruction or the floor",
+    "out_of_scope": [
+      "lateral movement during the descent",
+      "entering in one column and sliding over to another"
+    ]
+  },
   "episodes": 20,
   "summary": {
     "random": {
       "games": 10,
-      "score": {"mean": 162.1, "median": 165.5, "min": 124, "max": 203},
+      "score": {"mean": 162.9, "median": 168.0, "min": 124, "max": 203},
       "lines": {"mean": 0.0, "median": 0.0, "min": 0, "max": 0},
-      "frames": {"mean": 765.3, "median": 780.0, "min": 623, "max": 948},
-      "pieces": {"mean": 21.2, "median": 21.0, "min": 18, "max": 26},
+      "frames": {"mean": 786.7, "median": 807.0, "min": 623, "max": 948},
+      "pieces": {"mean": 21.9, "median": 22.0, "min": 18, "max": 26},
       "stopping_reasons": {"game_over": 10}
     },
     "greedy": {
       "games": 10,
-      "score": {"mean": 106621.7, "median": 77953.5, "min": 22482, "max": 334495},
+      "score": {"mean": 106621.9, "median": 77953.5, "min": 22482, "max": 334495},
       "lines": {"mean": 118.9, "median": 97.0, "min": 28, "max": 309},
-      "frames": {"mean": 15792.1, "median": 12911.0, "min": 4663, "max": 38158},
-      "pieces": {"mean": 336.3, "median": 282.0, "min": 109, "max": 807},
+      "frames": {"mean": 15801.3, "median": 12911.0, "min": 4686, "max": 38158},
+      "pieces": {"mean": 336.7, "median": 282.0, "min": 110, "max": 807},
       "stopping_reasons": {"game_over": 10}
     }
   },
   "model_fidelity": {
-    "locks": 3353,
-    "locks_landed_exactly_as_modelled": 3324,
+    "method": "replay each recorded greedy episode and compare the engine's locked origin with the greedy policy's placement for that piece's spawn state",
+    "locks": 3357,
+    "locks_landed_exactly_as_modelled": 3328,
     "divergences": 29,
-    "divergences_with_a_blocked_column_path": 29,
-    "lines_predicted_by_the_model": 1206,
+    "divergences_with_a_column_difference": 29,
+    "divergences_with_an_orientation_difference": 9,
+    "divergences_with_a_row_difference": 27,
+    "lines_predicted_by_the_model": 1208,
     "lines_cleared_by_the_engine": 1189
+  },
+  "episode_changes_vs_the_pre_fix_record": {
+    "record": "runs/20260925T144222830845Z-a061382f/run.json",
+    "unchanged": 6,
+    "changed": 14,
+    "greedy_changed": 6,
+    "random_changed": 8,
+    "changed_only_in_executed_inputs": 7,
+    "changed_in_score_lines_frames_or_pieces": 7
   },
   "engine_git": {
     "commit": "0e56c3beb7e4165e793ff326e3600d973e236cb8",
@@ -62,7 +83,7 @@
     "kind": "working-tree"
   },
   "fallgorithm_git": {
-    "commit": "970c849b65ef8f0410096824b1e0b5ec16f700a9",
+    "commit": "def52b822e331d89b73c4ed8cc19fccae4d71498",
     "dirty": true,
     "kind": "working-tree"
   }

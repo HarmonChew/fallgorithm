@@ -1,8 +1,13 @@
 """Run bounded episodes and replay exactly the inputs that were executed.
 
-Two record formats share this module: version 1 is one scripted episode, and
-version 2 is a suite of placement-agent episodes over fixed seeds. Both replay
-the recorded inputs against the native engine and compare every reported field.
+Two record formats share this module and both replay against the native engine.
+Version 1 is one scripted episode. The replay requires the recorded inputs and
+compares them alongside the recorded initial state hash and every ``result``
+field, and it compares a top-level ``pieces`` count when the record carries one.
+Version 2 is a suite of placement-agent episodes over fixed seeds: the replay
+compares each episode's agent and seed, inputs, initial state hash, ``result``
+fields and ``pieces`` count, then the summary derived from them. Records that
+predate a compared field and omit it keep verifying.
 """
 
 from __future__ import annotations
@@ -338,9 +343,12 @@ def _verify_scripted(record: dict[str, Any], path: Path, game_factory: Callable[
             "final_state_hash": _hash(game),
             "event_counts": event_counts,
         }
+        actual_pieces = state.piece_count
     differences = []
     if expected_initial != actual_initial:
         differences.append(f"initial_state_hash: recorded {expected_initial!r}, replayed {actual_initial!r}")
+    if "pieces" in record and record["pieces"] != actual_pieces:
+        differences.append(f"pieces: recorded {record['pieces']!r}, replayed {actual_pieces!r}")
     if not isinstance(expected, dict):
         raise VerificationError("Malformed result in run record")
     for name, value in actual.items():

@@ -245,6 +245,49 @@ def test_suite_verification_rejects_a_tampered_episode_identity(tmp_path, monkey
     )
 
 
+class CountingGame(FakeGame):
+    """A scripted-episode stand-in whose piece count advances independently.
+
+    Two frame steps make one piece here, so the count differs from the frame
+    count and a verifier that compares the wrong state field is caught.
+    """
+
+    def step(self, mask):
+        state, events = super().step(mask)
+        self.state.piece_count = self.state.frame // 2
+        return state, events
+
+
+def test_scripted_verification_compares_a_recorded_piece_count(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps(BASE), encoding="utf-8")
+    path = run_and_save(config_path, tmp_path / "runs", lambda **_: CountingGame())
+    record = json.loads(path.read_text(encoding="utf-8"))
+    # The writer records the replayed piece count beside the result it replays,
+    # and that count is not the frame count.
+    assert (record["pieces"], record["result"]["frame_count"]) == (2, 4)
+    assert verify_run(path, lambda **_: CountingGame()) == []
+
+    def rejected(value, message):
+        path.write_text(json.dumps({**record, "pieces": value}), encoding="utf-8")
+        with pytest.raises(VerificationError, match=message):
+            verify_run(path, lambda **_: CountingGame())
+
+    rejected(5, "pieces: recorded 5, replayed 2")
+    rejected(4, "pieces: recorded 4, replayed 2")  # the frame count must not pass
+    rejected(None, "pieces: recorded None, replayed 2")
+    rejected(True, "pieces: recorded True, replayed 2")
+
+    # A record that carries no piece count is an older record and still verifies.
+    legacy = {key: value for key, value in record.items() if key != "pieces"}
+    path.write_text(json.dumps(legacy), encoding="utf-8")
+    assert verify_run(path, lambda **_: CountingGame()) == []
+
+
 def test_missing_engine_checkout_has_actionable_error(monkeypatch, tmp_path):
     monkeypatch.setenv("BLOCK_STACK_ROOT", str(tmp_path / "missing"))
     with pytest.raises(engine.EngineError, match="BLOCK_STACK_ROOT"):
