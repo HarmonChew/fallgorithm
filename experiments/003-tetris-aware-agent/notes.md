@@ -57,15 +57,28 @@ exports `PYTHONPATH=<worktree>/src`, so every command below selects this tree's
 and publication, so this repair is reviewed **in this worktree** rather than
 through the PR: the PR is updated with the approved tree only after an
 independent review approves this exact tree. PR #11 is this task's PR and is open
-at head `dc3c29c449c439ad8df415404d4df6d0eeb0087f`, the publication of the
+at head `cfab11e264996929a10bd29168212c53e7973158`, the publication of the
 previous repair round, which the service committed and pushed after that round's
 review. The branch ref and the PR head name that one commit, so the probe asserts
-what stays true of a published task commit — the two refs agree, the commit
-descends from the recorded base, and its tree carries the repaired paths — and
-reports this worktree's `HEAD` and dirty state beside it instead of requiring the
-transient state of a review session in progress (an uncommitted repair behind a
-lagging head), which no later checkout can re-observe; the earlier version of the
-probe did require it, which is the defect this round repairs. The reviewed tree
+what stays true of a published task commit — the two refs agree, and the commit
+descends from the recorded base — and it **compares content**: for every path either tree
+tracks, plus this worktree's untracked files — a set derived from Git, not
+hand-listed — it hashes the file in the published clone and the file in this
+worktree and prints both, because presence cannot tell a published repair from an
+earlier publication that happens to contain the same file names, and a hand-listed
+set cannot tell it from a publication that omits a file this task changes. That is the defect this
+round repairs: the previous version printed `present` per path and claimed the
+published commit "carries the repair", so when the refs named an earlier
+publication it certified a repair that was not published — the reviewer measured
+the published tree at `dc3c29c` differing from the reviewed worktree across 12
+files while every presence check passed. When the content differs, the probe
+requires the difference to be exactly the repair this worktree still holds
+uncommitted, prints the differing paths, and reports the earlier-publication state
+instead of calling the repair published; a published tree that differs from a
+*clean* worktree fails outright. It reports this worktree's `HEAD` and dirty state
+instead of requiring the transient state of a review session in progress (an
+uncommitted repair behind a lagging head), which no later checkout can re-observe
+— that requirement was the defect the previous round repaired. The reviewed tree
 is this worktree, and the repair still uncommitted here is published only after
 it is approved. The `publication` probe records the refs and each command's exit
 status instead of narrating them. This is the state criterion 6 asks for: the PR
@@ -74,10 +87,11 @@ stops at human-review-ready; the PR is the publication channel for the approved
 tree, never the medium this work is reviewed in.
 
 **What was tested:** One new metric, one new agent, one CLI default fix, one
-evaluation — and, in the repair round recorded here, verification for the
-objective that chose the new agent's placements, one suite-wide histogram rule
-and a publication probe that holds on a committed tree, with no new metric, agent
-or measured number.
+evaluation — and, in the repair rounds recorded here, verification for the
+objective that chose the new agent's placements, one suite-wide histogram rule,
+and a publication probe that holds on a committed tree and establishes the repair
+from the repaired paths' content rather than their presence, with no new metric,
+agent or measured number.
 
 * **Clear sizes.** `events.lines_cleared` already reports the size (1/2/3/4) of
   each step's clear through the registered binding, but the runner only summed
@@ -268,7 +282,8 @@ at the configured 200000-frame cap and is reported as such, not as a game over.
 
 **Elapsed time:** the 20-episode suite ran in **133.0 s** on the repaired tree
 (10 seeds × 2 agents at `frame_limit` 200000; the first post-repair run took
-133.2 s, and the previous round measured 132.5–134.8 s for the same
+133.2 s, this round's repaired-tree run 132.9 s, and the previous round measured
+132.5–134.8 s for the same
 configuration), measured with `time.monotonic()` around `run_and_save`. Each
 `evaluation` invocation also replayed all 20 episodes from their recorded inputs
 with `verify`, so one invocation takes about 267 s — the run plus its replay.
@@ -278,7 +293,7 @@ start — after the objective capture above — and its directory stamp
 (`runs/20260927T172236989889Z-dbdb1bb5/run.json`) started at
 `2026-09-27T17:20:24.104867+00:00` and took 133.0 s.
 
-**Determinism and exit status:** thirteen full runs of the same configuration in
+**Determinism and exit status:** fourteen full runs of the same configuration in
 separate processes produced identical records — `evidence.py compare` reports
 identical configuration, heuristic, episodes and summary for the cited record
 against each of the other twelve, exit 0 — and every record made after the final
@@ -288,7 +303,12 @@ only warning is the engine working-tree warning). The cited record is
 this repair; its repeat is
 `runs/20260927T172236989889Z-dbdb1bb5/run.json`, and
 `runs/20260927T172911183859Z-65f15d68/run.json` is the record the documented
-`evidence.py all` path wrote. The ten records of the previous
+`evidence.py all` path wrote. This round's repeat, written by the same documented
+path on the repaired tree, is
+`runs/20260927T175224947881Z-fc07196a/run.json`; `evidence.py compare` reports it
+identical to the cited record across configuration, heuristic, episodes and
+summary (exit 0), which is how the metric persistence above is confirmed unchanged
+under the repaired probe. The ten records of the previous
 round are `runs/20260927T155639890404Z-ffa2811a/run.json` (the round's cited
 record), `runs/20260927T160108237288Z-15960d5c/run.json`,
 `runs/20260927T163819537849Z-9fe2bd86/run.json`,
@@ -301,10 +321,11 @@ record), `runs/20260927T160108237288Z-15960d5c/run.json`,
 `runs/20260927T134150617700Z-8753ea22/run.json`; they carry no `objective`
 section, and the round's cited record replays with `verify` under the new rule
 (exit 0, item 4), which is the compatibility the optional section exists for.
-All thirteen ran the same objective module — whose digest is unchanged — and the
+All fourteen ran the same objective module — whose digest is unchanged — and the
 same weights; only where the declared-objective section ends changed (the
 provenance note now sits below the end marker). The measured wall clocks, in the
-cited-then-repeat-then-full-path-then-previous-round order, were 133.2 s
+repaired-tree-full-path-then-cited-then-repeat-then-full-path-then-previous-round
+order, were 132.9 s (fc07196a), 133.2 s
 (ceb3fba6), 133.0 s (dbdb1bb5), 133.3 s (65f15d68), 133.9 s (ffa2811a), 133.6 s
 (15960d5c), 134.8 s (9fe2bd86), 132.5 s (69abca21), 133.3 s (ce1c3bf0), 132.5 s
 (b97139b5), 133.5 s (ed02d95f), 133.0 s (c9e760e3), 133.3 s (9c153077) and 133.0 s
@@ -325,17 +346,26 @@ export BLOCK_STACK_ROOT=/home/harmon-chew/projects/code/block-stack
 export BLOCKS_NATIVE_LIB=/home/harmon-chew/projects/code/fallgorithm/.build/engine/libblocks_native.so
 PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
 $PY experiments/003-tetris-aware-agent/probes/evidence.py remote-main   # base == refreshed remote main tip
-$PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # the published refs are this branch's own commit
-$PY -m pytest -q -p no:cacheprovider -m 'not integration'     # 138 passed, 26 deselected
-$PY -m pytest -q -p no:cacheprovider -m integration           # 26 passed, 138 deselected
+$PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # refs, base descent and per-path content comparison
+$PY -m pytest -q -p no:cacheprovider -m 'not integration'     # 143 passed, 26 deselected
+$PY -m pytest -q -p no:cacheprovider -m integration           # 26 passed, 143 deselected
 mkdir -p /tmp/exp003-base && git archive d83a5bc54a76bb23cd38e4afbab8192b0e2a207f | tar -x -C /tmp/exp003-base
 mkdir -p /tmp/exp003-before && git archive dc3c29c449c439ad8df415404d4df6d0eeb0087f | tar -x -C /tmp/exp003-before
+mkdir -p /tmp/exp003-before-cfab && git archive cfab11e264996929a10bd29168212c53e7973158 | tar -x -C /tmp/exp003-before-cfab
 mkdir -p /tmp/exp003-after && cp -r src /tmp/exp003-after/src
 PYTHONPATH=/tmp/exp003-base/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
 PYTHONPATH=/tmp/exp003-before/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
 PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
+PYTHONPATH=/tmp/exp003-before-cfab/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content   # exit 1, the probe file of the replaced publication
+PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content $PWD/experiments/003-tetris-aware-agent/probes/evidence.py   # exit 0
+mkdir -p /tmp/exp003-listbased && cp -r src tests experiments /tmp/exp003-listbased/
+# reconstruct the list-based iteration: rewrite compared_paths there to return REPAIRED_PATHS
+PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content /tmp/exp003-listbased/experiments/003-tetris-aware-agent/probes/evidence.py   # exit 1
+cd /tmp/exp003-listbased && PYTHONPATH=$PWD/src $PY -m pytest -q -p no:cacheprovider -m 'not integration' tests/test_unit.py -k publication   # 1 failed, 5 passed
+cp tests/test_unit.py /tmp/exp003-before-cfab/tests/test_unit.py
+cd /tmp/exp003-before-cfab && PYTHONPATH=$PWD/src $PY -m pytest -q -p no:cacheprovider -m 'not integration' tests/test_unit.py -k publication   # 5 failed, 1 passed (the replaced publication's probe)
 git show dc3c29c449c439ad8df415404d4df6d0eeb0087f:experiments/003-tetris-aware-agent/probes/evidence.py > experiments/003-tetris-aware-agent/probes/.publication-before.py
-$PY experiments/003-tetris-aware-agent/probes/.publication-before.py publication   # exit 1 on the committed tree
+$PY experiments/003-tetris-aware-agent/probes/.publication-before.py publication   # exit 1 on the committed tree (the previous round's finding, item 1)
 rm experiments/003-tetris-aware-agent/probes/.publication-before.py
 $PY experiments/003-tetris-aware-agent/probes/evidence.py line-sizes
 $PY experiments/003-tetris-aware-agent/probes/evidence.py tetris-choice
@@ -395,68 +425,80 @@ failures: 0
 **0b. Publication state.** `evidence.py publication` (exit 0) records what a
 committed, published tree can be asked: the branch ref and the PR head are one
 commit, that commit descends from the recorded base (so it is this task's own
-commit and not the base), and the repaired paths are present in its tree, which
-the probe reads from a writable clone of the branch because this worktree's Git
-directory is read-only. It reports this worktree's `HEAD` and dirty state beside
-those facts rather than requiring them: the review runs on this worktree, so the
-repair may still be uncommitted here while the published tree is the previous
-round's, and the service, which owns publication, pushes the approved tree only
-after an exact-tree approval. The pre-change probe is the defect this row fixes —
-it asserted the transient pre-publication worktree, so it necessarily failed on a
-committed tree (the executed failure is in item 1).
+commit and not the base), and the two trees are compared **by content** — each
+path's sha256 in the published clone beside its sha256 in this worktree, over every
+path either tree tracks plus this worktree's untracked files — because presence
+cannot distinguish a published repair from an earlier publication that contains the
+same names, and a hand-listed set cannot distinguish it from one that omits a
+changed path. It reports this worktree's `HEAD` and dirty state
+beside those facts rather than requiring them: the review runs on this worktree,
+so the repair may still be uncommitted here while the published tree is the
+previous round's, and the service, which owns publication, pushes the approved
+tree only after an exact-tree approval. When the contents differ, the probe
+requires the difference to be exactly the repair this worktree holds uncommitted
+and prints the earlier-publication state; the run below is that state, reported
+honestly instead of as a published repair. Two earlier defects in this row, both
+repaired, are in item 1: the first version asserted the transient pre-publication
+worktree, so it necessarily failed on a committed tree; the second checked only
+that the repaired paths existed, so it certified a repair that was not published; the next
+round's review then found the declared list itself could omit a changed path, so
+the comparison is now derived from the two trees instead of listed. The digest the
+block below prints for `notes.md` is the file's value at that run:
+pasting the block into that same file changes it, so a re-run reports the same
+state and the same differing paths with a different `notes.md` worktree digest.
+The pair of runs and the one-line diff between them are recorded under
+`publication.paste_self_reference` in [`result.json`](result.json).
 
 ```text
 ########## probe: publication
 # the task branch and the PR head over HTTPS
 #   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorithm.git refs/heads/rakazo/experiment-003-tetris-aware-agent refs/pull/11/head
 #   exit 0
-#   | dc3c29c449c439ad8df415404d4df6d0eeb0087f	refs/heads/rakazo/experiment-003-tetris-aware-agent
-#   | dc3c29c449c439ad8df415404d4df6d0eeb0087f	refs/pull/11/head
+#   | cfab11e264996929a10bd29168212c53e7973158	refs/heads/rakazo/experiment-003-tetris-aware-agent
+#   | cfab11e264996929a10bd29168212c53e7973158	refs/pull/11/head
 # writable clone of the published branch
 #   $ git clone --quiet --branch rakazo/experiment-003-tetris-aware-agent https://github.com/HarmonChew/fallgorithm.git /tmp/exp003-publication
 #   exit 0
 # the published task commit from the clone
 #   $ git -C /tmp/exp003-publication rev-parse HEAD
 #   exit 0
-#   | dc3c29c449c439ad8df415404d4df6d0eeb0087f
+#   | cfab11e264996929a10bd29168212c53e7973158
 # the published tree from the clone
 #   $ git -C /tmp/exp003-publication rev-parse HEAD^{tree}
 #   exit 0
-#   | 51bd596d4dcdb7aaed9ef160d71f8b3d96be5ebd
+#   | de938c93823455953aa57a2211c1da5953b69249
 # the published commit descends from the recorded base
 #   $ git -C /tmp/exp003-publication merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
-#   | present src/block_stack_ai/runner.py
-#   | present src/block_stack_ai/live.py
-#   | present src/block_stack_ai/agents.py
-#   | present src/block_stack_ai/tetris.py
-#   | present experiments/003-tetris-aware-agent/notes.md
-#   | present experiments/003-tetris-aware-agent/probes/evidence.py
-#   | present tests/test_unit.py
-#   | present tests/test_integration.py
 # this worktree's HEAD
 #   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
 #   exit 0
-#   | dc3c29c449c439ad8df415404d4df6d0eeb0087f
+#   | cfab11e264996929a10bd29168212c53e7973158
 # changes not committed in this worktree
 #   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent status --porcelain
 #   exit 0
-#   | M README.md
-#   |  M experiments/003-tetris-aware-agent/notes.md
+#   | M experiments/003-tetris-aware-agent/notes.md
 #   |  M experiments/003-tetris-aware-agent/probes/evidence.py
 #   |  M experiments/003-tetris-aware-agent/probes/prechange_probe.py
 #   |  M experiments/003-tetris-aware-agent/result.json
-#   |  M experiments/README.md
-#   |  M src/block_stack_ai/agents.py
-#   |  M src/block_stack_ai/live.py
-#   |  M src/block_stack_ai/runner.py
-#   |  M tests/test_integration.py
-#   |  M tests/test_live.py
 #   |  M tests/test_unit.py
-# the branch refs/heads/rakazo/experiment-003-tetris-aware-agent and the PR head refs/pull/11/head are dc3c29c449c439ad8df415404d4df6d0eeb0087f
+#   | differs experiments/003-tetris-aware-agent/notes.md published sha256 77d73ded0848 this worktree sha256 8f5e6e70d1f2
+#   | differs experiments/003-tetris-aware-agent/probes/evidence.py published sha256 6b1a0b231b6d this worktree sha256 3574badaaca6
+#   | differs experiments/003-tetris-aware-agent/probes/prechange_probe.py published sha256 c513922e4553 this worktree sha256 bf3ef3179636
+#   | differs experiments/003-tetris-aware-agent/result.json published sha256 df61b3323eb1 this worktree sha256 e9dc3f760da6
+#   | same src/block_stack_ai/agents.py sha256 2b24e1b25e2c
+#   | same src/block_stack_ai/live.py sha256 b03ef0f69194
+#   | same src/block_stack_ai/runner.py sha256 5322723b41a6
+#   | same src/block_stack_ai/tetris.py sha256 3d32c1c3c1f3
+#   | same tests/test_integration.py sha256 98040bf901c9
+#   | differs tests/test_unit.py published sha256 d7f5790a82c9 this worktree sha256 040096d7d266
+#   | compared 46 paths: every path either tree tracks, plus this worktree's untracked files
+# the refs name an earlier publication: cfab11e264996929a10bd29168212c53e7973158; 5 of 46 compared paths differ from this worktree (experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/003-tetris-aware-agent/result.json, tests/test_unit.py), and this worktree holds the unpublished repair
+# the branch refs/heads/rakazo/experiment-003-tetris-aware-agent and the PR head refs/pull/11/head are cfab11e264996929a10bd29168212c53e7973158
 # that commit descends from the recorded base d83a5bc54a76bb23cd38e4afbab8192b0e2a207f, so it is this task's own
-# commit, and its tree contains the 8 repaired paths listed above
-# this worktree's HEAD is dc3c29c449c439ad8df415404d4df6d0eeb0087f, the published commit, with 12 uncommitted change(s)
+# commit; its tree carries the last publication's content for the 46 compared paths, 5 of which differ from this
+# worktree's, so the repair reviewed here is not in it
+# this worktree's HEAD is cfab11e264996929a10bd29168212c53e7973158, the published commit, with 5 uncommitted change(s)
 # the reviewed tree is this worktree; the service owns commits and publication, so
 # approval precedes publication and the refs above name the last published tree
 failures: 0
@@ -502,6 +544,7 @@ status is read three ways:
 | `test_suite_record_with_the_tetris_agent_declares_its_objective` (integration) | `suite_objective_section`, `objective_is_verified` | 1 | The same two pre-change values as the rows above, measured on a stand-in suite; the integration test runs the real engine on this tree, asserts the recorded objective and that the same record with the section stripped still verifies. |
 | `test_live_tetris_session_records_the_objective_and_verifies` (integration) | `live_objective_section` | 1 | The base cannot play a live Tetris game at all (`ValueError("unknown agent: 'tetris'")`); the previous publication plays it and saves a live record whose top-level keys are `['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'summary', 'versions']`. The new live path records the objective too. |
 | `test_publication_probe_holds_on_a_committed_tree` | the pre-change probe itself, no `prechange_probe.py` id | 1 | The finding's defect is the probe's own assertion, so the counterpart is the probe file from the previous publication: `git show dc3c29c:experiments/003-tetris-aware-agent/probes/evidence.py > experiments/003-tetris-aware-agent/probes/.publication-before.py` then `PYTHONPATH=$PWD/src $PY experiments/003-tetris-aware-agent/probes/.publication-before.py publication` exits 1 on this committed tree with `AssertionError: the PR head moved to dc3c29c449c439ad8df415404d4df6d0eeb0087f, which is not the recorded pre-publication commit`; driving that file with the new test's stubbed Git commands fails the same way. The repaired probe passes on this tree (`exit 0`). |
+| `test_publication_probe_reports_content_not_presence_when_the_refs_lag`, `test_publication_probe_detects_a_result_only_difference`, `test_publication_probe_detects_a_changed_path_outside_the_declared_list`, `test_publication_probe_rejects_repaired_content_a_clean_worktree_lacks`, `test_publication_probe_certifies_a_published_repair_by_content` | `publication_content` | 1 | The counterpart is the probe file of the publication this round replaces, `cfab11e2`: driving it with the reviewer's counterexample — refs naming an earlier publication, repaired-path contents differing from the reviewed worktree, worktree dirty holding the repair — it exits 0 reporting `0 differing paths of 8` and names no differing path, and it also passes a published tree that differs from a *clean* worktree. The probe of the list-based iteration this round's review measured is the second counterpart: reconstructed from this tree by restricting `compared_paths` to the declared list, it passes the state where only a tracked path outside that list differs (`exit 0`). The repaired probe reports the earlier-publication state and names every differing path, detects the result-only and outside-the-list differences, fails the clean-worktree case, and reports the equal-content case; the five unit tests fail against the old probe (`5 failed, 1 passed` — the one that passes is the previous round's committed-tree test, whose stub the old probe still satisfies) and the outside-the-list test alone fails against the list-based probe (`1 failed, 5 passed`). Full stdout is in the block after this table. |
 | `test_clear_size_recording_rejects_a_size_the_engine_cannot_report` | — | — | No counterpart: the base has no histogram to guard. Executed substitute: `evidence.py line-sizes` drives the registered engine for all four sizes (`events.lines_cleared` = 1, 2, 3, 4), the range the guard allows. |
 | `test_tetris_choice_refuses_a_premature_clear_and_keeps_the_well` | `premature_clear` | 1 | The frozen `lookahead` and `greedy` agents both choose `(1, 9, 15)`, clearing 1 row and leaving `well_depth` 0, where the new agent clears 0 and keeps depth 4. |
 | `test_clear_term_rewards_only_the_four_line_clear` (and the `tetris_value` anchors) | `tetris_term` | 1 | The frozen marginal value of a cleared line is `+1.0`; the new clear term charges the same one-line clear `-3.0`. |
@@ -513,6 +556,42 @@ status is read three ways:
 | `test_play_default_agent_follows_the_selected_experiment`, `test_play_default_agent_uses_an_explicit_config`, `test_menu_default_agent_is_the_experiment_default` | `cli_default_agent` | 1 | The base CLI hard-codes `--agent` `greedy`; starting a config that does not offer greedy — 003's agents are `lookahead` and `tetris` — exits 1 with `play failed: Agent 'greedy' is not in this experiment. Available agents: lookahead`. The new CLI resolves the default from the selected config. |
 | `test_explicit_agent_overrides_the_experiment_default` | `cli_explicit_agent` | 0 | Compatibility pin: the base already passes an explicit `--agent` straight through to `play_live` (recorded agent `'lookahead'` with a config whose agents are `['lookahead']`), which the new CLI keeps doing. |
 | `test_play_rejects_an_agent_the_experiment_does_not_offer` | `cli_absent_agent` | 0 | Compatibility pin: the base already fails `play` for an agent absent from the config (`play failed: Agent 'random' is not in this experiment`), because `play_live` checks membership; the new CLI keeps that check and argparse's `choices`. |
+
+**1b. Presence-only certifications audited.** The finding asks for the analogous
+checks in the same patch, not only the cited lines. Every check in `evidence.py`
+and `prechange_probe.py` that could certify a fact from existence rather than
+content was reviewed:
+
+* **the repaired-paths list — fixed, then superseded as the basis of the
+  comparison.** It is compared per file by sha256, and a path missing from the
+  published tree is still a failure (`assert not absent`), which is the one claim
+  presence did establish. Two review rounds then found the list itself too weak:
+  this round's `result.json` was missing from it, so a state where every compared
+  path matched but the reported result was still the previous round's would have
+  been certified as published (`test_publication_probe_detects_a_result_only_difference`
+  pins that), and the next review found the same hole for any tracked path the
+  task changes outside the list (`test_publication_probe_detects_a_changed_path_outside_the_declared_list`
+  pins it, and the reconstruction below shows the list-based probe failing it).
+  The comparison is therefore derived from Git — `tracked_paths` of both trees
+  plus this worktree's untracked files — and the declared list is reported as the
+  experiment's own rows rather than used as the boundary of the claim.
+* **`check_remote_main`** compares Git object ids — `remote_commit == base_commit`
+  and `remote_tree == base_tree` — which are content-addressed, so the values are
+  the content's, not a presence check.
+* **`compare`** parses two records and compares the configuration, heuristic,
+  episodes and summary; **`check_predeclaration`** compares the recorded module
+  and notes-section digests with the current files. `predeclare`'s
+  `PREDECLARATION.exists()` is idempotence, not certification: it reads the file
+  and compares its recorded digests, and refuses to overwrite them.
+* **`REMOTE_MAIN_CLONE.exists()` and `PUBLICATION_CLONE.exists()`** only clear a
+  stale clone before re-cloning; they assert nothing.
+* **`prechange_probe.py`'s `_guard`** prints `block_stack_ai/tetris.py: present`
+  as a diagnostic of the tree under test and asserts nothing about it.
+* **notes.md and result.json** carried two presence claims, both rewritten in
+  this round: the 0b sentence "the repaired paths are present in its tree" and
+  result.json's `publication.repaired_paths_present_in_published_tree`, and the
+  pasted publication stdout block now carries the compared digests instead of
+  `present` rows.
 
 Verbatim stdout of the ten pre-change probes, run with
 `PYTHONPATH=/tmp/exp003-base/src` against the pinned base commit
@@ -610,14 +689,18 @@ result: the tree under test satisfies this probe
 exit=0
 ```
 
-Verbatim stdout of the four probes added by this repair, run against all three
-trees: the recorded base commit, the previous publication
+Verbatim stdout of the five probes added by these repair rounds, run against the
+trees they need: the recorded base commit, the previous publication
 `dc3c29c449c439ad8df415404d4df6d0eeb0087f` (the per-agent histogram rule and the
-unrecorded objective this repair replaces live there) and a copy of this tree's
-`src` in `/tmp/exp003-after`. The first two exit 1 with the value that violates
-the regression; the third exits 0, which is what shows the contract holds after
-the change. The `live_objective_section` runs print a unique temporary record
-path per invocation:
+unrecorded objective the earlier repair replaced live there), the publication
+this round replaces, `cfab11e264996929a10bd29168212c53e7973158` (which carried the
+presence-only publication probe), and a copy of this tree's `src` in
+`/tmp/exp003-after`. The before and base runs exit 1 with the value that violates
+the regression; the after run exits 0, which is what shows the contract holds
+after the change. The `live_objective_section` runs print a unique temporary
+record path per invocation, and the `publication_content` run prints the probe
+file it loaded and a fixed published commit id (`1` * 40) it fabricates so the
+counterexample is offline and deterministic:
 
 ```text
 ########## tree: base | probe: suite_objective_section
@@ -731,15 +814,299 @@ Record: /tmp/tmp1pduc880/runs/20260927T171509042653Z-cf8ce02e/run.json
 # recorded objective: {'module': 'block_stack_ai.tetris', 'weights': {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}}
 result: the tree under test satisfies this probe
 exit=0
-```
 
+Verbatim stdout of this round's pre-change probe, `publication_content`, which
+loads a probe file and drives that file's `check_publication` on real content with
+the Git commands stubbed, so the counterexamples are offline and deterministic. The
+first run loads the probe file of the publication this round replaces
+(`cfab11e2`) and exits 1: it certified the repair from presence in every state,
+reporting `0 differing paths of 8` and passing even a published tree that differs
+from a clean worktree. The second loads the list-based iteration this round's
+review measured — a faithful reconstruction, from this tree, of a
+`compared_paths` that returns only the declared repaired paths, because the
+reviewed iteration is not committed — and exits 1: the state where only a tracked
+path outside that list differs is certified as published. The third loads this
+tree's probe file and exits 0. The fourth and fifth are the new regressions run as
+unit tests against those two probes, with this tree's `tests/test_unit.py` copied
+over them.
+
+```text
+########## tree: before-cfab11e2 | probe: publication_content
+# tree under test: /tmp/exp003-before-cfab/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: publication_content
+# target probe file: /tmp/exp003-before-cfab/experiments/003-tetris-aware-agent/probes/evidence.py
+# 1111111 published, worktree dirty holding the repair: exit 0
+#   reported 0 differing paths of 8
+# 1111111 published, worktree clean: exit 0
+# 1111111 published, worktree clean and equal: exit 0
+# 1111111 published, only experiments/003-tetris-aware-agent/config.json differs, worktree dirty: exit 0
+AssertionError: the dirty-worktree case reported no content comparison: it certified from presence (stdout 2611 bytes, no 'the refs name an earlier publication' line); the dirty-worktree case did not name the differing path src/block_stack_ai/runner.py; the dirty-worktree case did not name the differing path src/block_stack_ai/live.py; the dirty-worktree case did not name the differing path src/block_stack_ai/agents.py; the dirty-worktree case did not name the differing path src/block_stack_ai/tetris.py; the dirty-worktree case did not name the differing path experiments/003-tetris-aware-agent/notes.md; the dirty-worktree case did not name the differing path experiments/003-tetris-aware-agent/probes/evidence.py; the dirty-worktree case did not name the differing path tests/test_unit.py; the dirty-worktree case did not name the differing path tests/test_integration.py; the clean-worktree case passed, so a published tree that is not this worktree's content was certified as carrying the repair; the equal-content clean-worktree case reported no equal-content line; the path-outside-the-declared-list case did not name experiments/003-tetris-aware-agent/config.json
+exit=1
+########## tree: list-based iteration (reconstructed) | probe: publication_content
+# tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: publication_content
+# target probe file: /tmp/exp003-listbased/experiments/003-tetris-aware-agent/probes/evidence.py
+# 1111111 published, worktree dirty holding the repair: exit 0
+#   reported 10 differing paths of 10
+# 1111111 published, worktree clean: exit 1 (the published tree 1111111111111111111111111111111111111111 differs from this clean worktree on ['experiments/003-tetris-aware-agent/notes.md', 'experiments/003-tetris-aware-agent/probes/evidence.py', 'experiments/003-tetris-aware-agent/probes/prechange_probe.py', 'experiments/003-tetris-aware-agent/result.json', 'src/block_stack_ai/agents.py', 'src/block_stack_ai/live.py', 'src/block_stack_ai/runner.py', 'src/block_stack_ai/tetris.py', 'tests/test_integration.py', 'tests/test_unit.py'], and nothing here is uncommitted to account for it)
+# 1111111 published, worktree clean and equal: exit 0
+# 1111111 published, only experiments/003-tetris-aware-agent/config.json differs, worktree dirty: exit 0
+AssertionError: the path-outside-the-declared-list case certified a publication as this worktree when only experiments/003-tetris-aware-agent/config.json differed, which the declared list does not name; the path-outside-the-declared-list case did not name experiments/003-tetris-aware-agent/config.json
+exit=1
+########## tree: after | probe: publication_content
+# tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: publication_content
+# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
+# 1111111 published, worktree dirty holding the repair: exit 0
+#   reported 10 differing paths of 10
+# 1111111 published, worktree clean: exit 1 (the published tree 1111111111111111111111111111111111111111 differs from this clean worktree on ['experiments/003-tetris-aware-agent/notes.md', 'experiments/003-tetris-aware-agent/probes/evidence.py', 'experiments/003-tetris-aware-agent/probes/prechange_probe.py', 'experiments/003-tetris-aware-agent/result.json', 'src/block_stack_ai/agents.py', 'src/block_stack_ai/live.py', 'src/block_stack_ai/runner.py', 'src/block_stack_ai/tetris.py', 'tests/test_integration.py', 'tests/test_unit.py'], and nothing here is uncommitted to account for it)
+# 1111111 published, worktree clean and equal: exit 0
+# 1111111 published, only experiments/003-tetris-aware-agent/config.json differs, worktree dirty: exit 0
+result: the tree under test satisfies this probe
+exit=0
+########## new tests against the replaced publication's probe file
+.FFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+____ test_publication_probe_reports_content_not_presence_when_the_refs_lag _____
+
+tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-36/test_publication_probe_reports0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71b2fcac8ec0>
+capsys = <_pytest.capture.CaptureFixture object at 0x71b2fcac8ad0>
+
+    def test_publication_probe_reports_content_not_presence_when_the_refs_lag(
+        tmp_path, monkeypatch, capsys
+    ):
+        """A published tree that only happens to contain the paths is not the repair.
+
+        The reviewer's counterexample: the refs name the earlier publication
+        ``PUBLISHED_COMMIT``, whose repaired-path contents differ from the reviewed
+        worktree across many files, while every path exists in it. The probe must
+        compare content, report that the refs name an earlier publication and which
+        paths differ, and never print that this worktree's content is published.
+        """
+        probe = _load_publication_probe()
+        _drive_publication_probe(
+            probe, tmp_path, monkeypatch,
+            worktree_content=REPAIRED_CONTENT, uncommitted=list(probe.REPAIRED_PATHS))
+        probe.check_publication()
+
+        printed = capsys.readouterr().out
+>       assert STATE_EARLIER_PREFIX in printed
+E       AssertionError: assert 'the refs name an earlier publication' in '# the task branch and the PR head over HTTPS\n#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorit...ce owns commits and publication, so\n# approval precedes publication and the refs above name the last published tree\n'
+
+tests/test_unit.py:1424: AssertionError
+___ test_publication_probe_detects_a_changed_path_outside_the_declared_list ____
+
+tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-36/test_publication_probe_detects0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71b2fcac8b00>
+capsys = <_pytest.capture.CaptureFixture object at 0x71b2fcb0eed0>
+
+    def test_publication_probe_detects_a_changed_path_outside_the_declared_list(
+        tmp_path, monkeypatch, capsys
+    ):
+        """Every path either tree tracks is compared, not only a declared list.
+
+        The reviewer's counterexample: the publication differs from this worktree in
+        one tracked path that the probe's declared list does not name, while every
+        declared path is equal. A comparison driven by the declared list alone prints
+        the equal-content certification there and certifies a publication that is not
+        this tree; the derived set must report the earlier-publication state and name
+        the differing path.
+        """
+        probe = _load_publication_probe()
+        outside = "experiments/003-tetris-aware-agent/config.json"
+        _drive_publication_probe(
+            probe, tmp_path, monkeypatch, worktree_content=PUBLISHED_CONTENT,
+            uncommitted=[outside], published_same=probe.REPAIRED_PATHS,
+            outside_paths=[outside])
+        probe.check_publication()
+
+        printed = capsys.readouterr().out
+>       assert STATE_EARLIER_PREFIX in printed
+E       AssertionError: assert 'the refs name an earlier publication' in '# the task branch and the PR head over HTTPS\n#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorit...ce owns commits and publication, so\n# approval precedes publication and the refs above name the last published tree\n'
+
+tests/test_unit.py:1453: AssertionError
+____ test_publication_probe_rejects_repaired_content_a_clean_worktree_lacks ____
+
+tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-36/test_publication_probe_rejects0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71b2fcb0ef90>
+
+    def test_publication_probe_rejects_repaired_content_a_clean_worktree_lacks(
+        tmp_path, monkeypatch
+    ):
+        """A published tree differing from a clean worktree is not this task's work.
+
+        With nothing uncommitted here, a published tree whose repaired-path content
+        differs from this worktree cannot be this task's published repair; the probe
+        must fail rather than report a repair it cannot see.
+        """
+        probe = _load_publication_probe()
+        _drive_publication_probe(
+            probe, tmp_path, monkeypatch,
+            worktree_content=REPAIRED_CONTENT, uncommitted=[],
+            worktree_head=PUBLISHED_COMMIT)
+>       with pytest.raises(AssertionError, match="clean worktree"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AssertionError
+
+tests/test_unit.py:1473: Failed
+----------------------------- Captured stdout call -----------------------------
+# the task branch and the PR head over HTTPS
+#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorithm.git refs/heads/rakazo/experiment-003-tetris-aware-agent refs/pull/11/head
+#   exit 0
+#   | dc3c29c449c439ad8df415404d4df6d0eeb0087f	refs/heads/rakazo/experiment-003-tetris-aware-agent
+#   | dc3c29c449c439ad8df415404d4df6d0eeb0087f	refs/pull/11/head
+# writable clone of the published branch
+#   $ git clone --quiet --branch rakazo/experiment-003-tetris-aware-agent https://github.com/HarmonChew/fallgorithm.git /tmp/pytest-of-harmon-chew/pytest-36/test_publication_probe_rejects0/publication
+#   exit 0
+# the published task commit from the clone
+#   $ git -C /tmp/pytest-of-harmon-chew/pytest-36/test_publication_probe_rejects0/publication rev-parse HEAD
+#   exit 0
+#   | dc3c29c449c439ad8df415404d4df6d0eeb0087f
+# the published tree from the clone
+#   $ git -C /tmp/pytest-of-harmon-chew/pytest-36/test_publication_probe_rejects0/publication rev-parse HEAD^{tree}
+#   exit 0
+#   | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+# the published commit descends from the recorded base
+#   $ git -C /tmp/pytest-of-harmon-chew/pytest-36/test_publication_probe_rejects0/publication merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
+#   exit 0
+#   | present src/block_stack_ai/runner.py
+#   | present src/block_stack_ai/live.py
+#   | present src/block_stack_ai/agents.py
+#   | present src/block_stack_ai/tetris.py
+#   | present experiments/003-tetris-aware-agent/notes.md
+#   | present experiments/003-tetris-aware-agent/probes/evidence.py
+#   | present tests/test_unit.py
+#   | present tests/test_integration.py
+# this worktree's HEAD
+#   $ git -C /tmp/pytest-of-harmon-chew/pytest-36/test_publication_probe_rejects0/worktree rev-parse HEAD
+#   exit 0
+#   | dc3c29c449c439ad8df415404d4df6d0eeb0087f
+# changes not committed in this worktree
+#   $ git -C /tmp/pytest-of-harmon-chew/pytest-36/test_publication_probe_rejects0/worktree status --porcelain
+#   exit 0
+# the branch refs/heads/rakazo/experiment-003-tetris-aware-agent and the PR head refs/pull/11/head are dc3c29c449c439ad8df415404d4df6d0eeb0087f
+# that commit descends from the recorded base d83a5bc54a76bb23cd38e4afbab8192b0e2a207f, so it is this task's own
+# commit, and its tree contains the 8 repaired paths listed above
+# this worktree's HEAD is dc3c29c449c439ad8df415404d4df6d0eeb0087f, the published commit, with 0 uncommitted change(s)
+# the reviewed tree is this worktree; the service owns commits and publication, so
+# approval precedes publication and the refs above name the last published tree
+___________ test_publication_probe_detects_a_result_only_difference ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-36/test_publication_probe_detects1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71b2fcb0d970>
+capsys = <_pytest.capture.CaptureFixture object at 0x71b2fcb0f800>
+
+    def test_publication_probe_detects_a_result_only_difference(tmp_path, monkeypatch, capsys):
+        """The experiment's own record is one of the compared paths.
+
+        A publication check that compared only source and notes would certify a
+        published repair while the experiment's reported result was still the previous
+        round's. Every compared path is published content equal to this worktree's
+        except the result artifact, which this worktree holds uncommitted: the probe
+        must report the earlier-publication state and name the result instead of
+        printing the equal-content certification.
+        """
+        probe = _load_publication_probe()
+        result_path = "experiments/003-tetris-aware-agent/result.json"
+        published_same = tuple(path for path in probe.REPAIRED_PATHS if path != result_path)
+        _drive_publication_probe(
+            probe, tmp_path, monkeypatch, worktree_content=REPAIRED_CONTENT,
+            uncommitted=[result_path], published_same=published_same)
+        probe.check_publication()
+
+        printed = capsys.readouterr().out
+>       assert STATE_EARLIER_PREFIX in printed
+E       AssertionError: assert 'the refs name an earlier publication' in '# the task branch and the PR head over HTTPS\n#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorit...ce owns commits and publication, so\n# approval precedes publication and the refs above name the last published tree\n'
+
+tests/test_unit.py:1496: AssertionError
+________ test_publication_probe_certifies_a_published_repair_by_content ________
+
+tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-36/test_publication_probe_certifi0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71b2fcb0ce90>
+capsys = <_pytest.capture.CaptureFixture object at 0x71b2fcb0deb0>
+
+    def test_publication_probe_certifies_a_published_repair_by_content(
+        tmp_path, monkeypatch, capsys
+    ):
+        """A clean checkout whose content is the published content certifies the repair.
+
+        The post-publication state: the refs name this worktree's commit, nothing is
+        uncommitted, and the repaired paths' content is identical, which is the state
+        the probe is allowed to report as published.
+        """
+        probe = _load_publication_probe()
+        _drive_publication_probe(
+            probe, tmp_path, monkeypatch,
+            worktree_content=PUBLISHED_CONTENT, uncommitted=[],
+            worktree_head=PUBLISHED_COMMIT, published_same=probe.REPAIRED_PATHS)
+        probe.check_publication()
+
+        printed = capsys.readouterr().out
+>       assert STATE_EQUAL_PREFIX in printed
+E       AssertionError: assert 'published content equals this worktree' in '# the task branch and the PR head over HTTPS\n#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorit...ce owns commits and publication, so\n# approval precedes publication and the refs above name the last published tree\n'
+
+tests/test_unit.py:1519: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_unit.py::test_publication_probe_reports_content_not_presence_when_the_refs_lag - AssertionError: assert 'the refs name an earlier publication' in '# the task branch and the PR head over HTTPS\n#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorit...ce owns commits and publication, so\n# approval precedes publication and the refs above name the last published tree\n'
+FAILED tests/test_unit.py::test_publication_probe_detects_a_changed_path_outside_the_declared_list - AssertionError: assert 'the refs name an earlier publication' in '# the task branch and the PR head over HTTPS\n#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorit...ce owns commits and publication, so\n# approval precedes publication and the refs above name the last published tree\n'
+FAILED tests/test_unit.py::test_publication_probe_rejects_repaired_content_a_clean_worktree_lacks - Failed: DID NOT RAISE AssertionError
+FAILED tests/test_unit.py::test_publication_probe_detects_a_result_only_difference - AssertionError: assert 'the refs name an earlier publication' in '# the task branch and the PR head over HTTPS\n#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorit...ce owns commits and publication, so\n# approval precedes publication and the refs above name the last published tree\n'
+FAILED tests/test_unit.py::test_publication_probe_certifies_a_published_repair_by_content - AssertionError: assert 'published content equals this worktree' in '# the task branch and the PR head over HTTPS\n#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorit...ce owns commits and publication, so\n# approval precedes publication and the refs above name the last published tree\n'
+5 failed, 1 passed, 63 deselected in 0.11s
+exit=1
+########## new tests against the list-based iteration
+..F...                                                                   [100%]
+=================================== FAILURES ===================================
+___ test_publication_probe_detects_a_changed_path_outside_the_declared_list ____
+
+tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-35/test_publication_probe_detects0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7a59f6cf7650>
+capsys = <_pytest.capture.CaptureFixture object at 0x7a59f6cf75c0>
+
+    def test_publication_probe_detects_a_changed_path_outside_the_declared_list(
+        tmp_path, monkeypatch, capsys
+    ):
+        """Every path either tree tracks is compared, not only a declared list.
+
+        The reviewer's counterexample: the publication differs from this worktree in
+        one tracked path that the probe's declared list does not name, while every
+        declared path is equal. A comparison driven by the declared list alone prints
+        the equal-content certification there and certifies a publication that is not
+        this tree; the derived set must report the earlier-publication state and name
+        the differing path.
+        """
+        probe = _load_publication_probe()
+        outside = "experiments/003-tetris-aware-agent/config.json"
+        _drive_publication_probe(
+            probe, tmp_path, monkeypatch, worktree_content=PUBLISHED_CONTENT,
+            uncommitted=[outside], published_same=probe.REPAIRED_PATHS,
+            outside_paths=[outside])
+        probe.check_publication()
+
+        printed = capsys.readouterr().out
+>       assert STATE_EARLIER_PREFIX in printed
+E       AssertionError: assert 'the refs name an earlier publication' in '# the task branch and the PR head over HTTPS\n#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorit...ce owns commits and publication, so\n# approval precedes publication and the refs above name the last published tree\n'
+
+tests/test_unit.py:1453: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_unit.py::test_publication_probe_detects_a_changed_path_outside_the_declared_list - AssertionError: assert 'the refs name an earlier publication' in '# the task branch and the PR head over HTTPS\n#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorit...ce owns commits and publication, so\n# approval precedes publication and the refs above name the last published tree\n'
+1 failed, 5 passed, 63 deselected in 0.08s
+exit=1
+```
 
 **2. Metric source, objective decisions and the native four-line clear.** Every
 probe exits 0 (`failures: 0`). The documented single-command path runs them all,
 including the evaluation, and exits 0 too — `evidence.py all`, which the earlier
-publication assertion made impossible on a committed tree; its evaluation record
-`runs/20260927T172911183859Z-65f15d68/run.json` took 133.3 s and compares
-identical to the cited record (`evidence.py compare`, exit 0).
+publication assertion made impossible on a committed tree; run on the repaired
+tree it wrote `runs/20260927T175224947881Z-fc07196a/run.json` in 132.9 s, and that
+record compares identical to the cited record across configuration, heuristic,
+episodes and summary (`evidence.py compare`, exit 0). The earlier round's record
+of the same path, `runs/20260927T172911183859Z-65f15d68/run.json`, took 133.3 s
+and compares identical too.
 
 ```text
 ########## probe: line-sizes
@@ -765,19 +1132,22 @@ identical to the cited record (`evidence.py compare`, exit 0).
 ```
 
 **3. Registered suites.** `.venv/bin/python -m pytest -q -p no:cacheprovider -m
-'not integration'` reports `138 passed, 26 deselected` (was 110 before this
+'not integration'` reports `143 passed, 26 deselected` (was 110 before this
 experiment; the 23 new unit tests are in `tests/test_tetris.py`,
 `tests/test_unit.py` and the five CLI default-agent regressions in
-`tests/test_cli.py`, and this repair adds the objective-recording,
+`tests/test_cli.py`; the earlier repair added the objective-recording,
 tampered-objective, objective-without-the-agent, suite-wide-histogram and
-publication-probe regressions — five more in `tests/test_unit.py`).
+publication-probe regressions — five in `tests/test_unit.py` — and this round adds
+five publication-content regressions: the reviewer's counterexample, the
+result-only case, the path-outside-the-declared-list case, the clean-worktree case
+and the equal-content control).
 `.venv/bin/python -m pytest -q -p no:cacheprovider -m integration` reports
-`26 passed, 138 deselected` (was 21; the 3 new tests are the agent's native
+`26 passed, 143 deselected` (was 21; the 3 new tests are the agent's native
 four-line clear, the suite record with its renewed histogram, and the live-session
-record's histogram, and this repair adds the real-engine objective record and the
-live Tetris objective — two more). Both exit 0. Every model-level test uses
-fake boards, so the unit suite stays fast (0.61 s measured); the whole native
-integration suite, desktop dummy-video checks included, ran in 1.89 s. Nothing in
+record's histogram, and the earlier repair adds the real-engine objective record
+and the live Tetris objective — two more). Both exit 0. Every model-level test uses
+fake boards, so the unit suite stays fast; the whole native
+integration suite, desktop dummy-video checks included, ran in 2.00 s. Nothing in
 the viewing, replay-export or desktop path was changed; the live session only
 tallies and records the histogram its episode already needed to stay verifiable,
 and `play`'s default agent is resolved from the selected config while the
@@ -893,7 +1263,10 @@ reproduces every field 002 published for `lookahead`, adding only the new
 This repair round strengthens verification without moving a measured number: the
 declared Tetris objective is written into every suite record that uses the agent
 and compared on replay, clear-size presence is one suite-wide invariant instead of
-a per-agent one, and the publication probe asserts what a committed tree can be
-asked. The records of the previous round carry no objective section and still
-verify, which is what the optional field exists for; the histogram, line totals
-and rates above are unchanged.
+a per-agent one, and the publication probe establishes what a committed tree can
+be asked — the refs agree, the commit descends from the recorded base, and the
+repaired paths' **content** is compared, per-file sha256, so a published tree that
+merely contains those paths is reported as an earlier publication rather than
+certified as the repair. The records of the previous round carry no objective
+section and still verify, which is what the optional field exists for; the
+histogram, line totals and rates above are unchanged.

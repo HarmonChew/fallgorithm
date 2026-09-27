@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -59,20 +60,94 @@ TASK_PR_REF = "refs/pull/11/head"
 # worktree's Git directory is read-only, so the published tree is read from a
 # clone of the ref instead of from the local checkout.
 PUBLICATION_CLONE = Path(tempfile.gettempdir()) / "exp003-publication"
-# The files this experiment adds or repairs. They must be present in the
-# published tree, which is what makes the published commit this task's work and
-# not an unrelated branch state; all of them exist in every publication of this
-# branch, so the probe holds before and after the next push.
+# The files this experiment adds or repairs. They must exist in the published
+# tree and are reported row by row with their digests; they are not the whole
+# comparison, because a declared list can omit a file this task changes.
 REPAIRED_PATHS = (
     "src/block_stack_ai/runner.py",
     "src/block_stack_ai/live.py",
     "src/block_stack_ai/agents.py",
     "src/block_stack_ai/tetris.py",
     "experiments/003-tetris-aware-agent/notes.md",
+    "experiments/003-tetris-aware-agent/result.json",
     "experiments/003-tetris-aware-agent/probes/evidence.py",
+    "experiments/003-tetris-aware-agent/probes/prechange_probe.py",
     "tests/test_unit.py",
     "tests/test_integration.py",
 )
+# The two states the publication probe can observe, pinned here so the
+# regressions and the experiment record can cite the lines it prints: the
+# published clone carries this worktree's content for the compared paths, or the
+# refs still name an earlier publication and this worktree holds the difference.
+STATE_EQUAL_PREFIX = "published content equals this worktree"
+STATE_EARLIER_PREFIX = "the refs name an earlier publication"
+
+
+def _file_sha256(path: Path) -> str | None:
+    """A file's sha256, or ``None`` when the file is absent."""
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except FileNotFoundError:
+        return None
+
+
+def repaired_path_content(published_root: Path, worktree_root: Path):
+    """Per declared path: the published clone's digest and this worktree's.
+
+    The first digest is read from the published clone, the second from this
+    worktree; ``None`` means the file is absent from that root. The comparison is
+    by content because presence cannot distinguish a published repair from an
+    earlier publication that happens to contain the same file names.
+    """
+    return [
+        (path, _file_sha256(published_root / path), _file_sha256(worktree_root / path))
+        for path in REPAIRED_PATHS
+    ]
+
+
+def tracked_paths(root: Path) -> set[str]:
+    """Every path Git tracks under ``root``."""
+    status, output = _git(root, "ls-files", "-z")
+    assert status == 0, f"git ls-files in {root} failed with exit {status}"
+    return {path for path in output.split("\0") if path}
+
+
+def untracked_paths(porcelain: str) -> set[str]:
+    """The paths ``git status --porcelain`` reports as untracked."""
+    return {line[3:].strip().strip('"') for line in porcelain.splitlines()
+            if line.startswith("?? ")}
+
+
+def compared_paths(published_root: Path, worktree_root: Path, porcelain: str) -> list[str]:
+    """Every path either tree tracks, plus this worktree's untracked files.
+
+    The set is derived from Git rather than hand-listed: a declared list can omit
+    a path this task changes, and the comparison would then certify an earlier
+    publication that differs from the reviewed tree in exactly that path. The
+    published clone's own list makes a published tree an earlier publication of
+    this branch visible even for paths this worktree no longer tracks, and the
+    untracked files are the part of the unpublished work Git has not recorded.
+    """
+    return sorted(tracked_paths(published_root) | tracked_paths(worktree_root)
+                  | untracked_paths(porcelain))
+
+
+# A ``git status --porcelain`` entry: two status columns and a space, then the
+# path. The leading column may be missing from the first line, because the git
+# output the probe captures is stripped of surrounding whitespace.
+_PORCELAIN_ENTRY = re.compile(r"^[ MADRCU?!]{1,2} (.*)$")
+
+
+def uncommitted_paths(porcelain: str) -> set[str]:
+    """The paths ``git status --porcelain`` reports, a rename giving both sides."""
+    paths = set()
+    for line in porcelain.splitlines():
+        match = _PORCELAIN_ENTRY.match(line)
+        if match is None:
+            continue
+        for side in match.group(1).split(" -> "):
+            paths.add(side.strip().strip('"'))
+    return paths
 
 
 def _git(cwd: Path, *arguments: str) -> tuple[int, str]:
@@ -160,15 +235,27 @@ def check_remote_main():
 
 
 def check_publication():
-    """The published task commit is this branch's own commit and carries the repair.
+    """The published task commit is this branch's own commit; its content is compared.
 
     Publication is service-owned and gated on an exact-tree approval: the service
     commits the approved tree and pushes it, so the branch ref and the PR head
     move together. This probe asserts what stays true on a committed tree — the
-    branch ref and the PR head are one commit, that commit descends from the
-    recorded base (so it is this task branch's own work, not the base itself), and
-    the repaired files are present in its tree — and it reports this worktree's
-    HEAD and dirty state instead of requiring the transient pre-publication state
+    branch ref and the PR head are one commit, and that commit descends from the
+    recorded base (so it is this task branch's own work, not the base itself) —
+    and it compares the published tree's content with this worktree's, per-file
+    sha256, for **every path either tree tracks plus this worktree's untracked
+    files** — a set derived from Git, not a hand-listed one, because a declared
+    list can omit a file this task changes and then a published tree differing
+    from the reviewed one in exactly that file would be certified as the repair.
+    Presence cannot tell a published repair from an earlier publication that
+    happens to contain the same file names, and existence of a declared list
+    cannot tell it from a publication that omits a changed file.
+
+    When the contents differ, the refs name an earlier publication: the probe
+    requires the difference to be exactly the repair this worktree still holds
+    uncommitted, prints the differing paths, and reports that state instead of
+    calling the repair published. For the same reason it reports this worktree's
+    HEAD and dirty state rather than requiring the transient pre-publication state
     (an uncommitted repair behind a lagging head) that only the reviewing session
     can observe. The published tree is read from a writable clone of the branch,
     because this worktree's Git directory is read-only.
@@ -221,11 +308,6 @@ def check_publication():
         f"the published commit {published} does not descend from the recorded base: exit {status}"
     )
 
-    missing = [path for path in REPAIRED_PATHS if not (PUBLICATION_CLONE / path).is_file()]
-    for path in REPAIRED_PATHS:
-        print(f"#   | {'present' if path not in missing else 'MISSING'} {path}")
-    assert not missing, f"the published tree lacks the repaired files: {missing}"
-
     status, output = _git(PROJECT_ROOT, "rev-parse", "HEAD")
     _show("this worktree's HEAD", ["git", "-C", str(PROJECT_ROOT), "rev-parse", "HEAD"],
           status, output)
@@ -238,9 +320,63 @@ def check_publication():
     assert status == 0, f"git status failed with exit {status}"
     uncommitted = output.splitlines()
 
+    compared = repaired_path_content(PUBLICATION_CLONE, PROJECT_ROOT)
+    absent = [path for path, published_digest, _ in compared if published_digest is None]
+    digests = {
+        path: (_file_sha256(PUBLICATION_CLONE / path), _file_sha256(PROJECT_ROOT / path))
+        for path in compared_paths(PUBLICATION_CLONE, PROJECT_ROOT, output)
+    }
+    declared = {path for path in REPAIRED_PATHS}
+    differing = [path for path, (published_digest, worktree_digest) in digests.items()
+                 if published_digest != worktree_digest]
+    for path in sorted(digests):
+        published_digest, worktree_digest = digests[path]
+        if path not in declared and published_digest == worktree_digest:
+            continue
+        if published_digest is None:
+            print(f"#   | MISSING {path}")
+        elif published_digest == worktree_digest:
+            print(f"#   | same {path} sha256 {worktree_digest[:12]}")
+        else:
+            outside = "" if path in declared else " (outside the declared repaired paths)"
+            print(f"#   | differs {path}{outside} published sha256 {published_digest[:12]} "
+                  f"this worktree sha256 {worktree_digest[:12]}")
+    print(f"#   | compared {len(digests)} paths: every path either tree tracks, plus this "
+          f"worktree's untracked files")
+    assert not absent, f"the published tree lacks the repaired files: {absent}"
+
+    if differing:
+        # The published refs name an earlier publication than this worktree. That
+        # is the pre-publication state and the probe reports it; what it must not
+        # do is call this worktree's repair published. The difference has to be
+        # exactly the repair this worktree still holds uncommitted: a published
+        # tree differing from a clean worktree is not this task's work at all.
+        assert uncommitted, (
+            f"the published tree {published} differs from this clean worktree on "
+            f"{differing}, and nothing here is uncommitted to account for it"
+        )
+        changed = uncommitted_paths(output)
+        unexplained = [path for path in differing if path not in changed]
+        assert not unexplained, (
+            f"the published tree {published} differs from this worktree on "
+            f"{unexplained}, which this worktree does not hold uncommitted, so the "
+            f"difference is not this task's unpublished repair"
+        )
+        print(f"# {STATE_EARLIER_PREFIX}: {published}; {len(differing)} of "
+              f"{len(digests)} compared paths differ from this worktree "
+              f"({', '.join(differing)}), and this worktree holds the unpublished repair")
+    else:
+        print(f"# {STATE_EQUAL_PREFIX} for all {len(digests)} compared paths: {published}")
+
     print(f"# the branch {TASK_BRANCH_REF} and the PR head {TASK_PR_REF} are {published}")
     print(f"# that commit descends from the recorded base {BASE_COMMIT}, so it is this task's own")
-    print(f"# commit, and its tree contains the {len(REPAIRED_PATHS)} repaired paths listed above")
+    if differing:
+        print(f"# commit; its tree carries the last publication's content for the "
+              f"{len(digests)} compared paths, {len(differing)} of which differ from this")
+        print(f"# worktree's, so the repair reviewed here is not in it")
+    else:
+        print(f"# commit, and its tree carries this worktree's content for all "
+              f"{len(digests)} compared paths")
     print(f"# this worktree's HEAD is {head}, "
           f"{'the published commit' if head == published else 'a commit the refs do not name yet'}, "
           f"with {len(uncommitted)} uncommitted change(s)")

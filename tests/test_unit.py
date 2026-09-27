@@ -1285,8 +1285,17 @@ def test_verification_rejects_an_objective_in_a_suite_without_the_tetris_agent(
         verify_run(path, factory)
 
 
+# The earlier publication the finding measured: the refs named this commit while
+# the reviewed worktree held the repair, and every repaired path existed in it.
 PUBLISHED_COMMIT = "dc3c29c449c439ad8df415404d4df6d0eeb0087f"
 OLDER_WORKTREE_HEAD = "6e21ab8426b534c5de96e2f648b55fc0901e0ab6"
+PUBLISHED_CONTENT = "the earlier publication's file\n"
+REPAIRED_CONTENT = "the repair this worktree holds uncommitted\n"
+# The state lines the probe prints, pinned as literals: the counterexample must
+# fail on the pre-repair probe's behaviour (it printed presence rows and no state
+# line) instead of aborting on a missing attribute.
+STATE_EQUAL_PREFIX = "published content equals this worktree"
+STATE_EARLIER_PREFIX = "the refs name an earlier publication"
 
 
 def _load_publication_probe():
@@ -1299,19 +1308,32 @@ def _load_publication_probe():
     return module
 
 
-def test_publication_probe_holds_on_a_committed_tree(tmp_path, monkeypatch):
-    """The probe must pass on the committed tree it is run against.
+def _drive_publication_probe(probe, tmp_path, monkeypatch, *, worktree_content,
+                             uncommitted, worktree_head=OLDER_WORKTREE_HEAD,
+                             published_same=(), outside_paths=()):
+    """Run ``check_publication`` against real content with the Git plumbing stubbed.
 
-    The earlier version required this worktree's HEAD to be a recorded
-    pre-publication commit with the repair still uncommitted, which a committed,
-    published tree cannot satisfy — the documented ``evidence.py all`` path failed
-    there. This drives the probe's own checks with its Git commands stubbed, on a
-    worktree whose HEAD is an older commit and which still has uncommitted
-    changes, and requires it to pass; a branch ref and PR head that disagree must
-    still fail, so the probe keeps its teeth.
+    The published clone and the worktree are real directories whose paths hold
+    real content, so the probe's comparison runs for real; only the Git commands
+    are stubbed, which is what makes the states below deterministic and offline.
+    ``published_same`` names the declared paths whose published content is the
+    worktree's own; every other declared path holds ``PUBLISHED_CONTENT``.
+    ``outside_paths`` are tracked in both trees but outside the probe's declared
+    list, with the worktree holding ``REPAIRED_CONTENT`` and the publication
+    ``PUBLISHED_CONTENT``. The clone directory must not exist beforehand, because
+    the probe clears it before cloning.
     """
-    probe = _load_publication_probe()
-    clone = tmp_path / "publication"
+    published_root = tmp_path / "publication"
+    worktree_root = tmp_path / "worktree"
+    tracked = list(probe.REPAIRED_PATHS) + list(outside_paths)
+    for path in probe.REPAIRED_PATHS:
+        target = worktree_root / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(worktree_content, encoding="utf-8")
+    for path in outside_paths:
+        target = worktree_root / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(REPAIRED_CONTENT, encoding="utf-8")
 
     def fake_git(cwd, *arguments):
         command = " ".join(arguments)
@@ -1320,25 +1342,54 @@ def test_publication_probe_holds_on_a_committed_tree(tmp_path, monkeypatch):
                        f"{PUBLISHED_COMMIT}\t{probe.TASK_PR_REF}")
         if command.startswith("clone "):
             for path in probe.REPAIRED_PATHS:
-                target = clone / path
+                content = worktree_content if path in published_same else PUBLISHED_CONTENT
+                target = published_root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_text("present", encoding="utf-8")
+                target.write_text(content, encoding="utf-8")
+            for path in outside_paths:
+                target = published_root / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(PUBLISHED_CONTENT, encoding="utf-8")
             return 0, ""
-        if Path(cwd) == clone:
+        if command == "ls-files -z":
+            return 0, "\0".join(tracked) + "\0"
+        if Path(cwd) == published_root:
             if command == "rev-parse HEAD":
                 return 0, PUBLISHED_COMMIT
             if command == "rev-parse HEAD^{tree}":
                 return 0, "a" * 40
             if command.startswith("merge-base --is-ancestor"):
                 return 0, ""
-        if command == "rev-parse HEAD":
-            return 0, OLDER_WORKTREE_HEAD
-        if command == "status --porcelain":
-            return 0, " M experiments/003-tetris-aware-agent/notes.md"
+        if Path(cwd) == worktree_root:
+            if command == "rev-parse HEAD":
+                return 0, worktree_head
+            if command == "status --porcelain":
+                # As the probe's own _git would: the captured output is stripped,
+                # so the first entry loses its leading status column.
+                return 0, "\n".join(f" M {path}" for path in uncommitted).strip()
         raise AssertionError(f"unexpected git command: {command}")
 
-    monkeypatch.setattr(probe, "PUBLICATION_CLONE", clone)
+    monkeypatch.setattr(probe, "PUBLICATION_CLONE", published_root)
+    monkeypatch.setattr(probe, "PROJECT_ROOT", worktree_root)
     monkeypatch.setattr(probe, "_git", fake_git)
+    return fake_git
+
+
+def test_publication_probe_holds_on_a_committed_tree(tmp_path, monkeypatch):
+    """The probe must pass on the committed tree it is run against.
+
+    The earlier version required this worktree's HEAD to be a recorded
+    pre-publication commit with the repair still uncommitted, which a committed,
+    published tree cannot satisfy — the documented ``evidence.py all`` path failed
+    there. This drives the probe's own checks on a worktree whose HEAD is an older
+    commit and which still has uncommitted changes, and requires it to pass; a
+    branch ref and PR head that disagree must still fail, so the probe keeps its
+    teeth.
+    """
+    probe = _load_publication_probe()
+    fake_git = _drive_publication_probe(
+        probe, tmp_path, monkeypatch,
+        worktree_content=REPAIRED_CONTENT, uncommitted=list(probe.REPAIRED_PATHS))
     probe.check_publication()
 
     def disagreeing_git(cwd, *arguments):
@@ -1350,3 +1401,120 @@ def test_publication_probe_holds_on_a_committed_tree(tmp_path, monkeypatch):
     monkeypatch.setattr(probe, "_git", disagreeing_git)
     with pytest.raises(AssertionError):
         probe.check_publication()
+
+
+def test_publication_probe_reports_content_not_presence_when_the_refs_lag(
+    tmp_path, monkeypatch, capsys
+):
+    """A published tree that only happens to contain the paths is not the repair.
+
+    The reviewer's counterexample: the refs name the earlier publication
+    ``PUBLISHED_COMMIT``, whose repaired-path contents differ from the reviewed
+    worktree across many files, while every path exists in it. The probe must
+    compare content, report that the refs name an earlier publication and which
+    paths differ, and never print that this worktree's content is published.
+    """
+    probe = _load_publication_probe()
+    _drive_publication_probe(
+        probe, tmp_path, monkeypatch,
+        worktree_content=REPAIRED_CONTENT, uncommitted=list(probe.REPAIRED_PATHS))
+    probe.check_publication()
+
+    printed = capsys.readouterr().out
+    assert STATE_EARLIER_PREFIX in printed
+    assert STATE_EQUAL_PREFIX not in printed
+    for path in probe.REPAIRED_PATHS:
+        assert f"differs {path} " in printed, printed
+    assert f"{len(probe.REPAIRED_PATHS)} of {len(probe.REPAIRED_PATHS)} compared paths differ" \
+        in printed
+
+
+def test_publication_probe_detects_a_changed_path_outside_the_declared_list(
+    tmp_path, monkeypatch, capsys
+):
+    """Every path either tree tracks is compared, not only a declared list.
+
+    The reviewer's counterexample: the publication differs from this worktree in
+    one tracked path that the probe's declared list does not name, while every
+    declared path is equal. A comparison driven by the declared list alone prints
+    the equal-content certification there and certifies a publication that is not
+    this tree; the derived set must report the earlier-publication state and name
+    the differing path.
+    """
+    probe = _load_publication_probe()
+    outside = "experiments/003-tetris-aware-agent/config.json"
+    _drive_publication_probe(
+        probe, tmp_path, monkeypatch, worktree_content=PUBLISHED_CONTENT,
+        uncommitted=[outside], published_same=probe.REPAIRED_PATHS,
+        outside_paths=[outside])
+    probe.check_publication()
+
+    printed = capsys.readouterr().out
+    assert STATE_EARLIER_PREFIX in printed
+    assert STATE_EQUAL_PREFIX not in printed
+    assert f"differs {outside} (outside the declared repaired paths)" in printed
+    assert f"1 of {len(probe.REPAIRED_PATHS) + 1} compared paths differ" in printed
+
+
+def test_publication_probe_rejects_repaired_content_a_clean_worktree_lacks(
+    tmp_path, monkeypatch
+):
+    """A published tree differing from a clean worktree is not this task's work.
+
+    With nothing uncommitted here, a published tree whose repaired-path content
+    differs from this worktree cannot be this task's published repair; the probe
+    must fail rather than report a repair it cannot see.
+    """
+    probe = _load_publication_probe()
+    _drive_publication_probe(
+        probe, tmp_path, monkeypatch,
+        worktree_content=REPAIRED_CONTENT, uncommitted=[],
+        worktree_head=PUBLISHED_COMMIT)
+    with pytest.raises(AssertionError, match="clean worktree"):
+        probe.check_publication()
+
+
+def test_publication_probe_detects_a_result_only_difference(tmp_path, monkeypatch, capsys):
+    """The experiment's own record is one of the compared paths.
+
+    A publication check that compared only source and notes would certify a
+    published repair while the experiment's reported result was still the previous
+    round's. Every compared path is published content equal to this worktree's
+    except the result artifact, which this worktree holds uncommitted: the probe
+    must report the earlier-publication state and name the result instead of
+    printing the equal-content certification.
+    """
+    probe = _load_publication_probe()
+    result_path = "experiments/003-tetris-aware-agent/result.json"
+    published_same = tuple(path for path in probe.REPAIRED_PATHS if path != result_path)
+    _drive_publication_probe(
+        probe, tmp_path, monkeypatch, worktree_content=REPAIRED_CONTENT,
+        uncommitted=[result_path], published_same=published_same)
+    probe.check_publication()
+
+    printed = capsys.readouterr().out
+    assert STATE_EARLIER_PREFIX in printed
+    assert STATE_EQUAL_PREFIX not in printed
+    assert f"differs {result_path} " in printed
+    assert f"1 of {len(probe.REPAIRED_PATHS)} compared paths differ" in printed
+
+
+def test_publication_probe_certifies_a_published_repair_by_content(
+    tmp_path, monkeypatch, capsys
+):
+    """A clean checkout whose content is the published content certifies the repair.
+
+    The post-publication state: the refs name this worktree's commit, nothing is
+    uncommitted, and the repaired paths' content is identical, which is the state
+    the probe is allowed to report as published.
+    """
+    probe = _load_publication_probe()
+    _drive_publication_probe(
+        probe, tmp_path, monkeypatch,
+        worktree_content=PUBLISHED_CONTENT, uncommitted=[],
+        worktree_head=PUBLISHED_COMMIT, published_same=probe.REPAIRED_PATHS)
+    probe.check_publication()
+
+    printed = capsys.readouterr().out
+    assert STATE_EQUAL_PREFIX in printed
+    assert STATE_EARLIER_PREFIX not in printed

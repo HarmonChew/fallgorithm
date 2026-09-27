@@ -73,7 +73,7 @@
     "summary_matches_experiment_002_result_json": true
   },
   "clear_size_metric": {
-    "compatibility": "a record that carries neither the per-episode field nor the summary section is older and still verifies; a present section is compared with the same type-and-key rules as the mandatory ones; and presence is all-or-nothing across the complete suite — every episode and every agent summary in one record — so a record that stripped the histogram from one agent while another kept it, or that reports totals its episodes do not carry, is rejected rather than verified with a partial histogram",
+    "compatibility": "a record that carries neither the per-episode field nor the summary section is older and still verifies; a present section is compared with the same type-and-key rules as the mandatory ones; and presence is all-or-nothing across the complete suite \u2014 every episode and every agent summary in one record \u2014 so a record that stripped the histogram from one agent while another kept it, or that reports totals its episodes do not carry, is rejected rather than verified with a partial histogram",
     "definitions": {
       "headline_tetris_line_rate": "4 * tetrises / total lines; zero total lines is a rate of 0.0",
       "safety_cap": "an episode stopped at the configured frame_limit is a configured safety stop, never a game over",
@@ -90,22 +90,6 @@
     "place": "an optional top-level per-episode field beside pieces_placed, never a leaf inside result or result.event_counts, because verify_run compares a result object's keys with the replay's exactly",
     "source": "the engine's own per-step events.lines_cleared (1/2/3/4), the same event result.event_counts.lines_cleared sums, so the histogram adds up to result.lines",
     "summary": "each agent's summary carries the totals of its episodes' histograms"
-  },
-  "objective_record": {
-    "compatibility": "a suite record without the section is older and still verifies, which is what keeps the runs of this experiment written before it existed valid; a record whose configuration has no Tetris agent must not carry it, because no writer emits one",
-    "field": "objective",
-    "module": "block_stack_ai.tetris",
-    "place": "an optional top-level suite section beside the frozen heuristic mapping, never a leaf inside an episode or its result",
-    "source": "tetris.weights_record(): the declared weights, the well-depth cap and the tie-break rule",
-    "verification": "verify_run compares the recorded module name and weights with the current module's under the same exact type-and-key rules it applies to the heuristic mapping, so a suite that uses the Tetris agent cannot verify under a different objective merely because the change preserved its replayed choices; live play, the second path that writes suite records, records the same section for a live Tetris game",
-    "why": "the frozen heuristic mapping is recorded for every suite because every placement agent scores through it, and the Tetris agent's choices come from a second, separately declared objective; before this section existed a suite record was tied to its objective only through the replayed choices, so a changed objective still verified whenever the change happened to preserve them"
-  },
-  "legacy_record_verify": {
-    "command": "PYTHONPATH=$PWD/src $PY -m block_stack_ai.cli verify runs/20260927T155639890404Z-ffa2811a/run.json",
-    "exit": 0,
-    "note": "the previous round's cited record carries no objective section and no field this repair added; the new verifier replays all 20 episodes from its recorded inputs and accepts it, warning only that the engine is a working-tree run. The unit and integration regressions build the same shape from a freshly written record and assert the same acceptance",
-    "record": "runs/20260927T155639890404Z-ffa2811a/run.json",
-    "stdout": "Verified: runs/20260927T155639890404Z-ffa2811a/run.json\nWarning: The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source."
   },
   "configuration": {
     "agents": [
@@ -133,8 +117,9 @@
     ]
   },
   "determinism": {
-    "note": "thirteen runs of the same configuration in separate processes produced identical configuration, heuristic, episodes and summary: the three records written after this repair (ceb3fba6, dbdb1bb5 and 65f15d68, the last from the documented `evidence.py all` path, all carrying the new objective section) and the ten records of the previous round, which carry no objective section and still verify; every record made after the final objective capture replays with verify from its recorded inputs (exit 0, only the engine working-tree warning)",
+    "note": "fourteen runs of the same configuration in separate processes produced identical configuration, heuristic, episodes and summary: this round's repaired-tree record from the documented `evidence.py all` path (fc07196a), the three records written after the earlier repair (ceb3fba6, dbdb1bb5 and 65f15d68, all carrying the new objective section) and the ten records of the previous round, which carry no objective section and still verify; every record made after the final objective capture replays with verify from its recorded inputs (exit 0, only the engine working-tree warning)",
     "record_paths": [
+      "runs/20260927T175224947881Z-fc07196a/run.json",
       "runs/20260927T171756139218Z-ceb3fba6/run.json",
       "runs/20260927T172236989889Z-dbdb1bb5/run.json",
       "runs/20260927T172911183859Z-65f15d68/run.json",
@@ -152,9 +137,10 @@
     "repeat_run_configuration_identical": true,
     "repeat_run_episodes_identical": true,
     "repeat_run_summary_identical": true,
-    "runs_compared": 13,
+    "runs_compared": 14,
     "verify_exit_code": 0,
     "wall_clock_seconds": [
+      132.9,
       133.2,
       133.0,
       133.3,
@@ -479,9 +465,10 @@
     }
   ],
   "fallgorithm_git": {
-    "commit": "dc3c29c449c439ad8df415404d4df6d0eeb0087f",
+    "commit": "cfab11e264996929a10bd29168212c53e7973158",
     "dirty": true,
-    "kind": "working-tree"
+    "kind": "working-tree",
+    "note": "this worktree's HEAD: the publication of the previous repair round, carried forward unchanged by the service. This round's repair is uncommitted here and is published only after review; the tree is therefore a working-tree run, not a clean reproducible claim"
   },
   "heuristic": {
     "aggregate_height": -0.5,
@@ -490,6 +477,33 @@
     "lines_cleared": 1.0,
     "max_height": -1.0,
     "tie_break": "first highest-scoring placement in enumeration order: orientation ascending, then x ascending"
+  },
+  "legacy_record_verify": {
+    "command": "PYTHONPATH=$PWD/src $PY -m block_stack_ai.cli verify runs/20260927T155639890404Z-ffa2811a/run.json",
+    "exit": 0,
+    "note": "the previous round's cited record carries no objective section and no field this repair added; the new verifier replays all 20 episodes from its recorded inputs and accepts it, warning only that the engine is a working-tree run. The unit and integration regressions build the same shape from a freshly written record and assert the same acceptance",
+    "record": "runs/20260927T155639890404Z-ffa2811a/run.json",
+    "stdout": "Verified: runs/20260927T155639890404Z-ffa2811a/run.json\nWarning: The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.",
+    "this_round": {
+      "command": "PYTHONPATH=$PWD/src $PY -m block_stack_ai.cli verify <record> for each record below, which replays all 20 episodes from the record's own inputs",
+      "exit": 0,
+      "note": "this round's record and two records of the previous round, which carry no objective section and no clear-size field this repair touched, replay and verify; each such verify replays all 20 episodes, ~135 s, so the sweep of the remaining previous-round records was not repeated this round and the earlier entry above stands as its evidence",
+      "records": [
+        "runs/20260927T175224947881Z-fc07196a/run.json",
+        "runs/20260927T131642090444Z-c9e760e3/run.json",
+        "runs/20260927T132146569036Z-9c153077/run.json"
+      ],
+      "stdout": "Verified: runs/20260927T175224947881Z-fc07196a/run.json\nWarning: The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source."
+    }
+  },
+  "objective_record": {
+    "compatibility": "a suite record without the section is older and still verifies, which is what keeps the runs of this experiment written before it existed valid; a record whose configuration has no Tetris agent must not carry it, because no writer emits one",
+    "field": "objective",
+    "module": "block_stack_ai.tetris",
+    "place": "an optional top-level suite section beside the frozen heuristic mapping, never a leaf inside an episode or its result",
+    "source": "tetris.weights_record(): the declared weights, the well-depth cap and the tie-break rule",
+    "verification": "verify_run compares the recorded module name and weights with the current module's under the same exact type-and-key rules it applies to the heuristic mapping, so a suite that uses the Tetris agent cannot verify under a different objective merely because the change preserved its replayed choices; live play, the second path that writes suite records, records the same section for a live Tetris game",
+    "why": "the frozen heuristic mapping is recorded for every suite because every placement agent scores through it, and the Tetris agent's choices come from a second, separately declared objective; before this section existed a suite record was tied to its objective only through the replayed choices, so a changed objective still verified whenever the change happened to preserve them"
   },
   "predeclared_objective": {
     "capture_file": "experiments/003-tetris-aware-agent/probes/predeclared_objective.json",
@@ -502,8 +516,6 @@
     "note": "the capture records the module digest and the digest of the notes' declared-objective section \u2014 the weights table and rationale alone, delimited by the predeclared-objective markers \u2014 and is not overwritten while both still match; the cited record was created after this capture, which check-predeclaration re-checks mechanically. The capture was re-made three times as the marked section changed; the final text is the objective alone (the provenance and replay-guarantee note now sits below the end marker), and the superseded captures are kept beside it",
     "notes_section": "experiments/003-tetris-aware-agent/notes.md#predeclared-objective",
     "notes_section_sha256": "b676a981d184f5bcf53909d4f9201db5e7e05df411e624f32fa2a377d1df6e9b",
-    "pre_repair_capture": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-repair.json",
-    "pre_replay_note_capture": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-replay-note.json",
     "objective": {
       "aggregate_height": -0.5,
       "bumpiness": -0.5,
@@ -514,20 +526,59 @@
       "tie_break": "first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending",
       "well_depth": 1.0,
       "well_depth_cap": 4
-    }
+    },
+    "pre_repair_capture": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-repair.json",
+    "pre_replay_note_capture": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-replay-note.json"
   },
   "publication": {
     "branch": "rakazo/experiment-003-tetris-aware-agent",
-    "branch_head": "dc3c29c449c439ad8df415404d4df6d0eeb0087f",
-    "note": "publication is service-owned and gated on an exact-tree approval, so the branch ref and the PR head move together: the probe asserts that the two refs name one commit, that the commit descends from the recorded base, and that the repaired paths are present in its tree, and it reports this worktree's HEAD and dirty state instead of requiring the transient pre-publication state the earlier version demanded (which a committed tree can never satisfy)",
+    "branch_head": "cfab11e264996929a10bd29168212c53e7973158",
+    "compared_paths": "every path either tree tracks, plus this worktree's untracked files, derived from Git: a declared list can omit a path the task changes, and the review found that hole twice (first this record's own result.json, then any tracked path outside the list); 46 paths in the published tree at this round's run",
+    "compared_paths_count": 46,
+    "note": "publication is service-owned and gated on an exact-tree approval, so the branch ref and the PR head move together: the probe asserts that the two refs name one commit and that the commit descends from the recorded base, and it compares the repaired paths' content \u2014 per-file sha256 in the published clone beside this worktree's \u2014 instead of their presence, which cannot tell a published repair from an earlier publication that contains the same file names. When the contents differ it requires the difference to be exactly the repair this worktree holds uncommitted, prints the differing paths and reports the earlier-publication state instead of calling the repair published; a published tree differing from a clean worktree fails",
+    "observed_worktree_head": "cfab11e264996929a10bd29168212c53e7973158",
+    "paste_self_reference": {
+      "capture_command": "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/capture-P3.txt",
+      "cause": "the pasted stdout block lives in notes.md, and the run that follows it is recorded in this file; both are compared paths, so each write shifts that path's line in the next run's output",
+      "diff_capture_to_rerun": [
+        "--- capture-P3",
+        "+++ rerun",
+        "@@ -33 +33 @@",
+        "-#   | differs experiments/003-tetris-aware-agent/notes.md published sha256 77d73ded0848 this worktree sha256 8f5e6e70d1f2",
+        "+#   | differs experiments/003-tetris-aware-agent/notes.md published sha256 77d73ded0848 this worktree sha256 a73a7a46efd4"
+      ],
+      "observed": "one line, the worktree digest of notes.md, the file the block was pasted into; recording this entry shifts this file's line by the same mechanism, and every later re-run differs in this file's line alone. The published digests, the earlier-publication state line, the five differing paths and the counts are identical throughout",
+      "rerun_command": "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication"
+    },
     "probe": "experiments/003-tetris-aware-agent/probes/evidence.py publication",
-    "published_tree": "51bd596d4dcdb7aaed9ef160d71f8b3d96be5ebd",
+    "published_commit": "cfab11e264996929a10bd29168212c53e7973158",
+    "published_tree": "de938c93823455953aa57a2211c1da5953b69249",
     "pull_request": 11,
-    "pull_request_head": "dc3c29c449c439ad8df415404d4df6d0eeb0087f",
+    "pull_request_head": "cfab11e264996929a10bd29168212c53e7973158",
     "pull_request_url": "https://github.com/HarmonChew/fallgorithm/pull/11",
-    "repaired_paths_present_in_published_tree": 8,
-    "state": "open, branch ref and PR head at the published task commit dc3c29c, which is this worktree's HEAD; the repair reviewed here is still uncommitted in this worktree and the service pushes the approved tree after the review"
+    "regressions": {
+      "pre_change": "prechange_probe.py publication_content drives a probe file offline with the reviewer's counterexample: exit 1 on the replaced publication's probe file (it certified the repair from presence) and exit 0 on this tree",
+      "review_finding": "PRRT_kwDOUm-m7M6mc2_t (content, not presence); this round's first review finding (the record artifact was outside the compared set); this round's second review finding (any tracked path outside the declared list could be omitted). All three fixed and pinned by the regressions above.",
+      "unit": [
+        "test_publication_probe_reports_content_not_presence_when_the_refs_lag",
+        "test_publication_probe_detects_a_result_only_difference",
+        "test_publication_probe_detects_a_changed_path_outside_the_declared_list",
+        "test_publication_probe_rejects_repaired_content_a_clean_worktree_lacks",
+        "test_publication_probe_certifies_a_published_repair_by_content"
+      ]
+    },
+    "repaired_paths": "the files this experiment adds or repairs: the runner's metric, the live path that records it, the agents module, the Tetris objective, this record and the notes, both probes and the two suites; compared per file by sha256, since presence cannot tell a published repair from an earlier publication containing the same names. This record is in the list: the review found it missing, so a state where every other compared path matched but the reported result was still the previous round's would have been certified as published",
+    "repaired_paths_compared_by_content": 10,
+    "repaired_paths_differing_from_this_worktree": [
+      "experiments/003-tetris-aware-agent/notes.md",
+      "experiments/003-tetris-aware-agent/result.json",
+      "experiments/003-tetris-aware-agent/probes/evidence.py",
+      "experiments/003-tetris-aware-agent/probes/prechange_probe.py",
+      "tests/test_unit.py"
+    ],
+    "state": "open, branch ref and PR head at the previous publication cfab11e2; the refs do not name this worktree's content yet \u2014 5 of the 46 compared paths differ \u2014 the probe reports that earlier-publication state rather than certifying it, and the service pushes the approved tree after the review"
   },
+  "repaired_tree_suite_wall_clock_seconds": 132.9,
   "run_record": "runs/20260927T171756139218Z-ceb3fba6/run.json (temporary ignored run output: runs/ is ignored at any depth; the distilled per-episode rows are copied into this file under episodes_by_agent_seed)",
   "status": "passed",
   "stopping": {
@@ -547,6 +598,7 @@
     }
   },
   "suite_wall_clock_seconds": 133.9,
+  "suite_wall_clock_seconds_note": "the cited record's run. This round's repaired-tree run of the same 20-episode suite measured 132.9 s (runs/20260927T175224947881Z-fc07196a/run.json)",
   "summary": {
     "lookahead": {
       "clear_sizes": {
@@ -624,7 +676,7 @@
   },
   "tests": {
     "integration_passed": 26,
-    "unit_passed": 138
+    "unit_passed": 143
   },
   "tetris_agent": {
     "candidate_set": "the same reachable set Experiment 002's lookahead uses (pathaware._reachable), simulated from the engine's native spawn state with the same mask function the controller executes",
@@ -668,7 +720,11 @@
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py check-predeclaration runs/<run>/run.json",
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py evaluation",
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py report runs/<run>/run.json",
-    "$PY experiments/003-tetris-aware-agent/probes/evidence.py compare runs/<first>/run.json runs/<repeat>/run.json"
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py compare runs/<first>/run.json runs/<repeat>/run.json",
+    "PYTHONPATH=/tmp/exp003-before-cfab/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content",
+    "PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content $PWD/experiments/003-tetris-aware-agent/probes/evidence.py",
+    "cp tests/test_unit.py /tmp/exp003-before-cfab/tests/test_unit.py && PYTHONPATH=/tmp/exp003-before-cfab/src $PY -m pytest -q -p no:cacheprovider -m 'not integration' tests/test_unit.py -k publication",
+    "PYTHONPATH=$PWD/src $PY -m block_stack_ai.cli verify runs/<run>/run.json"
   ],
   "verification": "passed",
   "verification_warnings": [

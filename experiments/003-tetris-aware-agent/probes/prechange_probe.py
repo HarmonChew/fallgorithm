@@ -27,11 +27,21 @@ legacy-record and explicit-``--agent`` compatibility rows). A contract whose
 subject does not exist at a pre-change tree at all is never counted as a
 failure-before on an import: the probe reports the value it measured instead of
 aborting, and those rows carry an executed substitute named in ``notes.md``.
+
+``publication_content`` is the one id whose subject is a probe file rather than
+the tree's ``src``: it loads ``experiments/003-tetris-aware-agent/probes/evidence.py``
+from the tree under test and drives that file's ``check_publication`` with the
+reviewer's counterexample, so the run above shows whether that tree's probe
+compares the repaired paths' content or only their presence. Pass a probe file as
+the second argument when the tree under test carries only ``src``:
+
+    PYTHONPATH=$after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content $PWD/experiments/003-tetris-aware-agent/probes/evidence.py
 """
 
 from __future__ import annotations
 
 import contextlib
+import importlib.util
 import io
 import json
 import sys
@@ -43,6 +53,12 @@ from types import SimpleNamespace
 import block_stack_ai
 
 BASE_MODULE = block_stack_ai.__file__
+# The publication-content probe loads a probe file to drive it: the tree under
+# test's own copy by default, or the path in ``sys.argv[2]`` for the ``after``
+# tree, which carries only ``src``.
+DEFAULT_PUBLICATION_PROBE = (Path(BASE_MODULE).parents[2] / "experiments"
+                             / "003-tetris-aware-agent" / "probes" / "evidence.py")
+PUBLICATION_PROBE_OVERRIDE: Path | None = None
 
 
 def _guard() -> None:
@@ -677,6 +693,152 @@ def r14_live_objective_section():
         print(f"# recorded objective: {record['objective']}")
 
 
+def r15_publication_content():
+    """A publication probe must establish the repair from content, not presence.
+
+    The reviewer's counterexample, reproduced offline: the published refs name an
+    earlier publication whose repaired-path contents differ from the reviewed
+    worktree while every one of those paths exists in it, and the worktree holds
+    the repair uncommitted. A probe that certifies the repair from presence passes
+    there and reports nothing about content, which is the defect; the tree under
+    test must instead report the earlier-publication state, name the differing
+    paths, and refuse a published tree that differs from a clean worktree. A second
+    contract covers the same defect one level down: a probe that compares only a
+    hand-listed set of paths certifies a publication as this worktree's when the
+    only difference is a tracked path outside that list, so this probe also drives
+    that state and requires the differing path to be reported.
+
+    The target probe file is the tree under test's own
+    ``experiments/003-tetris-aware-agent/probes/evidence.py`` by default, or the
+    path given as a second argument — a copy of this tree's probe, for the
+    ``after`` run whose tree carries only ``src``.
+    """
+    target = PUBLICATION_PROBE_OVERRIDE or DEFAULT_PUBLICATION_PROBE
+    print(f"# target probe file: {target}")
+    spec = importlib.util.spec_from_file_location("exp003_publication_target", target)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    paths = tuple(getattr(module, "REPAIRED_PATHS", ()))
+    assert paths, f"{target} declares no REPAIRED_PATHS to compare"
+    earlier = "the refs name an earlier publication"
+    equal = "published content equals this worktree"
+    published_content = "the earlier publication's file\n"
+    repaired_content = "the repair this worktree holds uncommitted\n"
+    outside = "experiments/003-tetris-aware-agent/config.json"
+    violations = []
+
+    def drive(*, worktree_contents, published_contents, uncommitted, head):
+        """Run the target probe on real content with its Git commands stubbed."""
+        tracked = sorted(set(worktree_contents) | set(published_contents))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            published_root = root / "publication"
+            worktree_root = root / "worktree"
+            for path, content in worktree_contents.items():
+                destination = worktree_root / path
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_text(content, encoding="utf-8")
+
+            def fake_git(cwd, *arguments):
+                command = " ".join(arguments)
+                if command.startswith("ls-remote"):
+                    return 0, (f"{head}\t{module.TASK_BRANCH_REF}\n"
+                               f"{head}\t{module.TASK_PR_REF}")
+                if command.startswith("clone "):
+                    for path, content in published_contents.items():
+                        destination = published_root / path
+                        destination.parent.mkdir(parents=True, exist_ok=True)
+                        destination.write_text(content, encoding="utf-8")
+                    return 0, ""
+                if command == "ls-files -z":
+                    return 0, "\0".join(tracked) + "\0"
+                if Path(cwd) == published_root:
+                    if command == "rev-parse HEAD":
+                        return 0, head
+                    if command == "rev-parse HEAD^{tree}":
+                        return 0, "0" * 40
+                    if command.startswith("merge-base --is-ancestor"):
+                        return 0, ""
+                if Path(cwd) == worktree_root:
+                    if command == "rev-parse HEAD":
+                        return 0, head
+                    if command == "status --porcelain":
+                        return 0, ("\n".join(f" M {path}" for path in uncommitted)
+                                   .strip())
+                raise AssertionError(f"unexpected git command: {command}")
+
+            module.PUBLICATION_CLONE = published_root
+            module.PROJECT_ROOT = worktree_root
+            module._git = fake_git
+            captured = io.StringIO()
+            try:
+                with contextlib.redirect_stdout(captured):
+                    module.check_publication()
+            except AssertionError as error:
+                return str(error), captured.getvalue()
+        return None, captured.getvalue()
+
+    declared = tuple(paths)
+    earlier_commit = "1" * 40
+    error, output = drive(worktree_contents={p: repaired_content for p in declared},
+                          published_contents={p: published_content for p in declared},
+                          uncommitted=paths, head=earlier_commit)
+    print(f"# {earlier_commit[:7]} published, worktree dirty holding the repair: "
+          f"exit {'1' if error else '0'}"
+          f"{f' ({error})' if error else ''}")
+    if error is not None:
+        violations.append(f"the dirty-worktree case failed: {error}")
+    if earlier not in output:
+        violations.append("the dirty-worktree case reported no content comparison: "
+                          f"it certified from presence (stdout {len(output)} bytes, "
+                          f"no {earlier!r} line)")
+    if equal in output:
+        violations.append("the dirty-worktree case called the repair published")
+    for path in paths:
+        if f"differs {path}" not in output:
+            violations.append(f"the dirty-worktree case did not name the differing path {path}")
+    print(f"#   reported {output.count('| differs')} differing paths of {len(paths)}")
+
+    error, output = drive(worktree_contents={p: repaired_content for p in declared},
+                          published_contents={p: published_content for p in declared},
+                          uncommitted=(), head=earlier_commit)
+    print(f"# {earlier_commit[:7]} published, worktree clean: exit "
+          f"{'1' if error else '0'}{f' ({error})' if error else ''}")
+    if error is None:
+        violations.append("the clean-worktree case passed, so a published tree that is not "
+                          "this worktree's content was certified as carrying the repair")
+
+    error, output = drive(worktree_contents={p: published_content for p in declared},
+                          published_contents={p: published_content for p in declared},
+                          uncommitted=(), head=earlier_commit)
+    print(f"# {earlier_commit[:7]} published, worktree clean and equal: exit "
+          f"{'1' if error else '0'}{f' ({error})' if error else ''}")
+    if error is not None:
+        violations.append(f"the equal-content clean-worktree case failed: {error}")
+    elif equal not in output:
+        violations.append("the equal-content clean-worktree case reported no equal-content line")
+
+    worktree_contents = {p: published_content for p in declared}
+    worktree_contents[outside] = repaired_content
+    published_contents = {p: published_content for p in declared}
+    published_contents[outside] = published_content
+    error, output = drive(worktree_contents=worktree_contents,
+                          published_contents=published_contents,
+                          uncommitted=(outside,), head=earlier_commit)
+    print(f"# {earlier_commit[:7]} published, only {outside} differs, worktree dirty: exit "
+          f"{'1' if error else '0'}{f' ({error})' if error else ''}")
+    if error is not None:
+        violations.append(f"the path-outside-the-declared-list case failed: {error}")
+    if equal in output:
+        violations.append(f"the path-outside-the-declared-list case certified a publication "
+                          f"as this worktree when only {outside} differed, which the declared "
+                          f"list does not name")
+    if f"differs {outside}" not in output:
+        violations.append(f"the path-outside-the-declared-list case did not name {outside}")
+
+    assert not violations, "; ".join(violations)
+
+
 PROBES = {
     "clear_sizes_field": r1_clear_sizes_field,
     "clear_sizes_summary": r2_clear_sizes_summary,
@@ -692,14 +854,20 @@ PROBES = {
     "objective_is_verified": r12_objective_is_verified,
     "suite_wide_histogram": r13_suite_wide_histogram,
     "live_objective_section": r14_live_objective_section,
+    "publication_content": r15_publication_content,
 }
 
 
 def main() -> int:
     _guard()
-    if len(sys.argv) != 2 or sys.argv[1] not in PROBES:
-        print(f"usage: {sys.argv[0]} {{{','.join(PROBES)}}}", file=sys.stderr)
+    if (len(sys.argv) not in (2, 3) or sys.argv[1] not in PROBES
+            or (len(sys.argv) == 3 and sys.argv[1] != "publication_content")):
+        print(f"usage: {sys.argv[0]} {{{','.join(PROBES)}}} [probe-file]  "
+              "(the probe file is only for publication_content)", file=sys.stderr)
         return 2
+    global PUBLICATION_PROBE_OVERRIDE
+    if len(sys.argv) == 3:
+        PUBLICATION_PROBE_OVERRIDE = Path(sys.argv[2])
     name = sys.argv[1]
     print(f"# probe: {name}")
     try:
