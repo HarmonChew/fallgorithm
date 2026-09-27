@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 import sys
 
-from .agents import AGENT_NAMES
+from .agents import AGENT_NAMES, default_agent
 from .engine import EngineError, PROJECT_ROOT, engine_root, git_info, load_binding
 from .live import play_live
 from .menu import PLAY_SPEEDS, select_command
@@ -114,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:
     watch_parser.add_argument("record", type=Path)
     play_parser = subcommands.add_parser("play", help="start a fresh desktop game controlled live by an experiment agent")
     _add_experiment_selection(play_parser)
-    play_parser.add_argument("--agent", choices=AGENT_NAMES, default="greedy", help="agent within the selected experiment (default: greedy)")
+    play_parser.add_argument("--agent", choices=AGENT_NAMES, default=None, help="agent within the selected experiment (default: greedy when the experiment offers it, otherwise its first agent)")
     play_parser.add_argument("--seed", type=int, help="fixed seed; otherwise choose a fresh random seed")
     play_parser.add_argument("--speed", choices=PLAY_SPEEDS, default="1")
     play_parser.add_argument("--paused", action="store_true", help="start paused for frame stepping")
@@ -136,6 +136,14 @@ def main(argv: list[str] | None = None) -> int:
             if args.experiment is not None:
                 print(f"Experiment: {config_path.parent.name}", flush=True)
             print(f"Config: {config_path.resolve()}", flush=True)
+            if args.command == "play" and args.agent is None:
+                # The default is per experiment, resolved only after the config
+                # is known: an experiment that does not offer greedy starts with
+                # the first agent it configures. A scripted config keeps the
+                # default unset and play_live names it as unsupported.
+                source = load_config(config_path)
+                if isinstance(source, SuiteConfig):
+                    args.agent = default_agent(source.agents)
         if args.command == "experiments":
             _print_experiments()
         elif args.command == "play":

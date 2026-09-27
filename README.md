@@ -122,7 +122,8 @@ next input from the desktop's current state on every logical frame. The desktop
 owns the game clock and renders that game as it runs. No recorded game is loaded.
 The selected experiment supplies its game settings and frame limit; experiment
 001 uses a 60,000-frame limit. `--agent` chooses an algorithm within that
-experiment (default: `greedy`). Experiment 000 is a fixed controller script and
+experiment (default: `greedy` when the experiment offers it, otherwise the
+experiment's first agent). Experiment 000 is a fixed controller script and
 supports `run` and replay rather than live placement play.
 
 **P** pauses, **.** advances one frame while paused, **R** restarts the same seed,

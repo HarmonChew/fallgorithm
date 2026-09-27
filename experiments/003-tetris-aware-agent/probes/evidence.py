@@ -41,6 +41,21 @@ PUBLIC_REMOTE = "https://github.com/HarmonChew/fallgorithm.git"
 REMOTE_MAIN_REF = "refs/heads/main"
 # A stable, throwaway path for the writable shallow clone of the remote ref.
 REMOTE_MAIN_CLONE = Path(tempfile.gettempdir()) / "exp003-remote-main"
+# The branch's base: the commit this task branch was created from, which must be
+# the refreshed remote main tip. It is recorded here rather than read from the
+# worktree HEAD because the branch carries its own task commit, so HEAD is no
+# longer the base once that commit exists.
+BASE_COMMIT = "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f"
+# The task PR and the branch it publishes from. Publication is owned by the
+# service and happens only after an exact-tree approval, so the PR head is the
+# *earlier* publication until the approved tree is committed and pushed; this is
+# what identifies that earlier commit. It is recorded here rather than with
+# ``TASK_PR_REF`` because a pre-publication head is the expected state, and the
+# probe below has to assert which commit the lagging head is, not just that it
+# lags.
+TASK_BRANCH_REF = "refs/heads/rakazo/experiment-003-tetris-aware-agent"
+TASK_PR_REF = "refs/pull/11/head"
+TASK_PR_HEAD = "6e21ab8426b534c5de96e2f648b55fc0901e0ab6"
 
 
 def _git(cwd: Path, *arguments: str) -> tuple[int, str]:
@@ -60,7 +75,7 @@ def _show(label: str, argv: list[str], exit_code: int, output: str) -> None:
 
 
 def check_remote_main():
-    """The branch base is the refreshed remote main tip.
+    """The recorded branch base is the refreshed remote main tip.
 
     The harness creates the task branch and worktree before this session starts
     and the shared Git directory is read-only, so a ``git fetch`` cannot run
@@ -69,9 +84,13 @@ def check_remote_main():
     branch's base is the refreshed remote main tip. This probe establishes that
     state directly, with every command's exit status captured: the remote main
     ref resolved over HTTPS, the base commit and tree read from a fresh writable
-    shallow clone of that ref, and this worktree's own commit and tree. The
-    remote tip, the clone's commit and the worktree's commit must be one commit,
-    and the clone's tree and the worktree's tree one tree.
+    shallow clone of that ref, and the recorded base resolved in this worktree.
+
+    The base is resolved as the recorded commit, not as the worktree HEAD: the
+    branch carries its own task commit, so HEAD stopped being the base the
+    moment that commit was made. The remote tip and the recorded base must be
+    one commit with one tree; the worktree HEAD is then shown separately to
+    descend from that base.
     """
     if REMOTE_MAIN_CLONE.exists():
         shutil.rmtree(REMOTE_MAIN_CLONE)
@@ -92,8 +111,9 @@ def check_remote_main():
     probes = [
         ("refreshed remote main commit from the clone", REMOTE_MAIN_CLONE, "rev-parse", "HEAD"),
         ("refreshed remote main tree from the clone", REMOTE_MAIN_CLONE, "rev-parse", "HEAD^{tree}"),
-        ("this worktree's base commit", PROJECT_ROOT, "rev-parse", "HEAD"),
-        ("this worktree's base tree", PROJECT_ROOT, "rev-parse", "HEAD^{tree}"),
+        ("the recorded branch base commit", PROJECT_ROOT, "rev-parse", BASE_COMMIT),
+        ("the recorded branch base tree", PROJECT_ROOT, "rev-parse", f"{BASE_COMMIT}^{{tree}}"),
+        ("this worktree's HEAD", PROJECT_ROOT, "rev-parse", "HEAD"),
     ]
     values = {}
     for label, cwd, *arguments in probes:
@@ -104,12 +124,81 @@ def check_remote_main():
 
     remote_commit = values["refreshed remote main commit from the clone"]
     remote_tree = values["refreshed remote main tree from the clone"]
-    worktree_commit = values["this worktree's base commit"]
-    worktree_tree = values["this worktree's base tree"]
-    assert remote_commit == worktree_commit, (remote_commit, worktree_commit)
-    assert remote_tree == worktree_tree, (remote_tree, worktree_tree)
-    print(f"# the refreshed remote main tip equals this branch's base: {remote_commit}")
-    print(f"# its tree is {remote_tree}, and the worktree's own HEAD^{{tree}} is the same")
+    base_commit = values["the recorded branch base commit"]
+    base_tree = values["the recorded branch base tree"]
+    head = values["this worktree's HEAD"]
+    assert base_commit == BASE_COMMIT, (base_commit, BASE_COMMIT)
+    assert remote_commit == base_commit, (remote_commit, base_commit)
+    assert remote_tree == base_tree, (remote_tree, base_tree)
+
+    status, output = _git(PROJECT_ROOT, "merge-base", "--is-ancestor", BASE_COMMIT, "HEAD")
+    _show("the worktree HEAD descends from the recorded base",
+          ["git", "-C", str(PROJECT_ROOT), "merge-base", "--is-ancestor", BASE_COMMIT, "HEAD"],
+          status, output)
+    assert status == 0, f"the worktree HEAD does not descend from the base: exit {status}"
+
+    print(f"# the refreshed remote main tip equals the recorded branch base: {remote_commit}")
+    print(f"# its tree is {remote_tree}, and the recorded base tree is the same")
+    print(f"# this worktree's HEAD is {head}, which descends from the recorded base")
+
+
+def check_publication():
+    """The task PR is open at the earlier pre-repair head, and the repair is not
+    published yet.
+
+    Publication is service-owned and gated on an exact-tree approval, so the PR
+    head legitimately lags the reviewed worktree: this probe records the refs
+    with every command's exit status, checks that the branch ref and the PR head
+    are the same commit, checks that it is the recorded pre-publication commit,
+    and shows the repaired files still exist only as uncommitted working-tree
+    changes against the recorded base. A PR head that had advanced past the
+    recorded commit would mean the repair was published; a clean worktree would
+    mean the repair was committed. Neither is required for the review, which runs
+    on this worktree, so the probe reports the state instead of demanding it.
+    """
+    status, output = _git(PROJECT_ROOT, "ls-remote", "--exit-code", PUBLIC_REMOTE,
+                          TASK_BRANCH_REF, TASK_PR_REF)
+    _show("the task branch and the PR head over HTTPS",
+          ["git", "ls-remote", "--exit-code", PUBLIC_REMOTE, TASK_BRANCH_REF, TASK_PR_REF],
+          status, output)
+    assert status == 0, f"git ls-remote of the task branch and PR head failed with exit {status}"
+    refs = {}
+    for line in output.splitlines():
+        commit, _, name = line.partition("\t")
+        refs[name] = commit
+    assert set(refs) == {TASK_BRANCH_REF, TASK_PR_REF}, refs
+    branch, pull_request = refs[TASK_BRANCH_REF], refs[TASK_PR_REF]
+    assert branch == pull_request, (branch, pull_request)
+
+    status, output = _git(PROJECT_ROOT, "rev-parse", "HEAD")
+    _show("this worktree's HEAD", ["git", "-C", str(PROJECT_ROOT), "rev-parse", "HEAD"],
+          status, output)
+    assert status == 0, f"git rev-parse HEAD failed with exit {status}"
+    head = output.splitlines()[-1]
+
+    status, output = _git(PROJECT_ROOT, "diff", "--name-only", BASE_COMMIT, "--")
+    _show("files changed in this worktree against the recorded base",
+          ["git", "-C", str(PROJECT_ROOT), "diff", "--name-only", BASE_COMMIT, "--"],
+          status, output)
+    assert status == 0, f"git diff against the recorded base failed with exit {status}"
+
+    status, output = _git(PROJECT_ROOT, "diff", "--name-only", "HEAD", "--")
+    _show("changes not committed in this worktree",
+          ["git", "-C", str(PROJECT_ROOT), "diff", "--name-only", "HEAD", "--"],
+          status, output)
+    assert status == 0, f"git diff against HEAD failed with exit {status}"
+    uncommitted = output.splitlines()
+
+    assert branch == TASK_PR_HEAD, f"the PR head moved to {branch}, which is not the recorded pre-publication commit"
+    assert head == TASK_PR_HEAD, f"the worktree HEAD is {head}, not the recorded pre-publication commit"
+    repaired = "experiments/003-tetris-aware-agent/notes.md"
+    assert repaired in uncommitted, f"{repaired} is committed, not an uncommitted change: {uncommitted}"
+
+    print(f"# the branch {TASK_BRANCH_REF} and the PR head {TASK_PR_REF} are {branch}")
+    print(f"# that is the recorded pre-repair publication, and this worktree's HEAD is the same commit")
+    print(f"# the repair is not published yet: {repaired} is not committed, so the published commit")
+    print(f"# cannot be the tree under review, which is why the cited run is a working-tree run")
+    print(f"# the service commits and pushes the approved tree, so approval precedes publication")
 
 
 def grid_of(rows):
@@ -456,6 +545,7 @@ def report(path: Path):
 
 PROBES = {
     "remote-main": check_remote_main,
+    "publication": check_publication,
     "line-sizes": check_line_sizes,
     "tetris-choice": check_tetris_choice,
     "native-tetris": check_native_tetris,

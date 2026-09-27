@@ -30,22 +30,33 @@
           "stdout": "c312a71489219625b402172042cb78bb2a41cbc4"
         },
         {
-          "command": "git -C <worktree> rev-parse HEAD",
+          "command": "git -C <worktree> rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f",
           "exit": 0,
           "stdout": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f"
         },
         {
-          "command": "git -C <worktree> rev-parse HEAD^{tree}",
+          "command": "git -C <worktree> rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}",
           "exit": 0,
           "stdout": "c312a71489219625b402172042cb78bb2a41cbc4"
+        },
+        {
+          "command": "git -C <worktree> rev-parse HEAD",
+          "exit": 0,
+          "stdout": "6e21ab8426b534c5de96e2f648b55fc0901e0ab6"
+        },
+        {
+          "command": "git -C <worktree> merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD",
+          "exit": 0,
+          "stdout": ""
         }
       ],
-      "conclusion": "the refreshed remote main tip, this branch's base and PR #9's head are one commit, and the clone's tree and the worktree's tree are one tree",
+      "conclusion": "the refreshed remote main tip and this branch's recorded base are one commit (PR #9's merge commit d83a5bc54a76bb23cd38e4afbab8192b0e2a207f), whose tree equals PR #9's head 7285893b42ef271a0ddb6e29a84400102fdb100f, a different commit with the same tree; the worktree HEAD is the task commit 6e21ab8426b534c5de96e2f648b55fc0901e0ab6, which the probe separately shows descends from that base",
       "exit": 0,
-      "note": "the harness creates the task branch and worktree before the session starts and the shared Git directory is read-only there, so a `git fetch` cannot precede branch creation; the state the requirement protects \u2014 the branch base is the refreshed remote main tip \u2014 is captured directly by this probe",
+      "note": "the probe resolves the recorded base commit d83a5bc54a76bb23cd38e4afbab8192b0e2a207f rather than the worktree HEAD, because the branch now carries its own task commit; the harness creates the task branch and worktree before the session starts and the shared Git directory is read-only there, so a `git fetch` cannot precede branch creation, and the state the requirement protects \u2014 the branch base is the refreshed remote main tip \u2014 is captured directly by this probe",
       "probe": "experiments/003-tetris-aware-agent/probes/evidence.py remote-main"
     },
-    "remote_main_tip": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f"
+    "remote_main_tip": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f",
+    "worktree_head": "6e21ab8426b534c5de96e2f648b55fc0901e0ab6"
   },
   "baseline_reproduces_002": {
     "experiment_002_published_lines_cleared": 9128,
@@ -106,8 +117,13 @@
     ]
   },
   "determinism": {
-    "note": "the cited record and its repeat were both started after the objective capture; the three earlier runs predate the stricter capture but ran the same objective module, whose digest is unchanged",
+    "note": "the cited record and its repeat were both started after the final objective capture, and the run on this reviewed tree was started after the publication note was added; the seven earlier runs predate it but ran the same objective module, whose digest is unchanged, and the same weights \u2014 the final capture only moved the provenance note below the declared-objective section's end marker",
     "record_paths": [
+      "runs/20260927T155639890404Z-ffa2811a/run.json",
+      "runs/20260927T160108237288Z-15960d5c/run.json",
+      "runs/20260927T163819537849Z-9fe2bd86/run.json",
+      "runs/20260927T153046945938Z-69abca21/run.json",
+      "runs/20260927T153513341652Z-ce1c3bf0/run.json",
       "runs/20260927T135534897996Z-b97139b5/run.json",
       "runs/20260927T140007465253Z-ed02d95f/run.json",
       "runs/20260927T131642090444Z-c9e760e3/run.json",
@@ -117,9 +133,14 @@
     "repeat_run_configuration_identical": true,
     "repeat_run_episodes_identical": true,
     "repeat_run_summary_identical": true,
-    "runs_compared": 5,
+    "runs_compared": 10,
     "verify_exit_code": 0,
     "wall_clock_seconds": [
+      133.9,
+      133.6,
+      134.8,
+      132.5,
+      133.3,
       132.5,
       133.5,
       133.0,
@@ -436,7 +457,7 @@
     }
   ],
   "fallgorithm_git": {
-    "commit": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f",
+    "commit": "6e21ab8426b534c5de96e2f648b55fc0901e0ab6",
     "dirty": true,
     "kind": "working-tree"
   },
@@ -450,15 +471,17 @@
   },
   "predeclared_objective": {
     "capture_file": "experiments/003-tetris-aware-agent/probes/predeclared_objective.json",
-    "captured_at": "2026-09-27T13:53:15.349595+00:00",
-    "cited_record": "runs/20260927T135534897996Z-b97139b5/run.json",
-    "cited_record_created_at": "2026-09-27T13:53:22.548285+00:00",
+    "captured_at": "2026-09-27T15:54:19.727662+00:00",
+    "cited_record": "runs/20260927T155639890404Z-ffa2811a/run.json",
+    "cited_record_created_at": "2026-09-27T15:54:26.130299+00:00",
     "earlier_capture": "experiments/003-tetris-aware-agent/probes/predeclared_objective.earlier.json",
     "module": "src/block_stack_ai/tetris.py",
     "module_sha256": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e",
-    "note": "the capture records the module digest and the digest of the notes' declared-objective section (the weights table and rationale, delimited by the predeclared-objective markers) and is not overwritten while both still match; the earlier module-only capture is kept beside it; the cited record was created after this capture, which check-predeclaration re-checks mechanically",
+    "note": "the capture records the module digest and the digest of the notes' declared-objective section \u2014 the weights table and rationale alone, delimited by the predeclared-objective markers \u2014 and is not overwritten while both still match; the cited record was created after this capture, which check-predeclaration re-checks mechanically. The capture was re-made three times as the marked section changed; the final text is the objective alone (the provenance and replay-guarantee note now sits below the end marker), and the superseded captures are kept beside it",
     "notes_section": "experiments/003-tetris-aware-agent/notes.md#predeclared-objective",
-    "notes_section_sha256": "64440cac719602d02e3a1159b264ad41d8dd0309a9344629750e72da955e6368",
+    "notes_section_sha256": "b676a981d184f5bcf53909d4f9201db5e7e05df411e624f32fa2a377d1df6e9b",
+    "pre_repair_capture": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-repair.json",
+    "pre_replay_note_capture": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-replay-note.json",
     "objective": {
       "aggregate_height": -0.5,
       "bumpiness": -0.5,
@@ -471,7 +494,18 @@
       "well_depth_cap": 4
     }
   },
-  "run_record": "runs/20260927T135534897996Z-b97139b5/run.json (temporary ignored run output: runs/ is ignored at any depth; the distilled per-episode rows are copied into this file under episodes_by_agent_seed)",
+  "publication": {
+    "branch": "rakazo/experiment-003-tetris-aware-agent",
+    "branch_head": "6e21ab8426b534c5de96e2f648b55fc0901e0ab6",
+    "note": "approval precedes publication and the service owns commits and publication: the task PR is updated with the approved tree only after an exact-tree review approves this worktree, so the PR head legitimately lags the repair and `git rev-parse HEAD` reports the pre-repair commit while the files on disk carry the repair",
+    "probe": "experiments/003-tetris-aware-agent/probes/evidence.py publication",
+    "pull_request": 11,
+    "pull_request_head": "6e21ab8426b534c5de96e2f648b55fc0901e0ab6",
+    "pull_request_url": "https://github.com/HarmonChew/fallgorithm/pull/11",
+    "reviewed_tree": "this worktree's uncommitted files, not the published commit, which is why the cited run is a working-tree run",
+    "state": "open at the earlier pre-repair publication; the service commits and pushes the approved tree"
+  },
+  "run_record": "runs/20260927T155639890404Z-ffa2811a/run.json (temporary ignored run output: runs/ is ignored at any depth; the distilled per-episode rows are copied into this file under episodes_by_agent_seed)",
   "status": "passed",
   "stopping": {
     "episodes_stopped_at_the_cap": {
@@ -489,7 +523,7 @@
       }
     }
   },
-  "suite_wall_clock_seconds": 132.5,
+  "suite_wall_clock_seconds": 133.9,
   "summary": {
     "lookahead": {
       "clear_sizes": {
@@ -567,7 +601,7 @@
   },
   "tests": {
     "integration_passed": 24,
-    "unit_passed": 128
+    "unit_passed": 133
   },
   "tetris_agent": {
     "candidate_set": "the same reachable set Experiment 002's lookahead uses (pathaware._reachable), simulated from the engine's native spawn state with the same mask function the controller executes",
@@ -599,6 +633,7 @@
   },
   "validation_commands": [
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py remote-main",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication",
     "git archive d83a5bc54a76bb23cd38e4afbab8192b0e2a207f | tar -x -C /tmp/exp003-base",
     "$PY -m pytest -q -p no:cacheprovider -m 'not integration'",
     "$PY -m pytest -q -p no:cacheprovider -m integration",

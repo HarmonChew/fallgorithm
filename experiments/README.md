@@ -26,7 +26,9 @@ experiment into a suitable retained location; do not depend on the temporary
 run directory remaining available.
 
 For a fresh game controlled live, use `block-stack-ai play --experiment NNN`.
-`--agent` selects one of that experiment's placement agents; fixed-script
+`--agent` selects one of that experiment's placement agents, and defaults to
+`greedy` when the experiment offers it and otherwise to the experiment's first
+agent, so an experiment without greedy starts with an agent it has; fixed-script
 experiments support `run` and replay only. An explicit `--config` file is also
 accepted by both commands in place of `--experiment`.
 

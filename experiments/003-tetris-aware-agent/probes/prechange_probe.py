@@ -17,6 +17,8 @@ those rows carry an executed substitute instead, named in ``notes.md``.
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -128,6 +130,16 @@ SCRIPTED = {
              "height": 0, "seed": 42},
     "frame_limit": 5,
     "script": [{"mask": 0, "frames": 5}],
+}
+
+# A live suite whose agents exclude greedy, the shape that exposes the base
+# CLI's hard-coded default: 003 is ``lookahead`` and ``tetris``.
+SUITE_WITHOUT_GREEDY = {
+    "game": {"ruleset": "classic_ntsc_extended", "mode": "endless",
+             "start_level": 18, "height": 0},
+    "frame_limit": 200000,
+    "seeds": [2],
+    "agents": ["lookahead"],
 }
 
 
@@ -287,6 +299,84 @@ def r7_live_clear_sizes():
         assert episode["clear_sizes"]["singles"] + episode["clear_sizes"]["doubles"] > 0
 
 
+def r8_cli_default_agent():
+    """The new per-experiment ``--agent`` default, against the base CLI.
+
+    The base ``play`` hard-codes ``greedy`` as the default agent. A suite
+    experiment that does not offer greedy — like 003, whose agents are
+    ``lookahead`` and ``tetris`` — therefore cannot be started without an
+    explicit ``--agent``: the base CLI passes greedy and ``play_live`` rejects
+    it before any engine is needed. The new CLI resolves the default from the
+    selected config instead, so the same invocation starts the experiment's
+    first agent.
+    """
+    from block_stack_ai import cli
+
+    with tempfile.TemporaryDirectory() as directory:
+        config_path = Path(directory) / "config.json"
+        config_path.write_text(json.dumps(SUITE_WITHOUT_GREEDY), encoding="utf-8")
+        errors = io.StringIO()
+        with contextlib.redirect_stderr(errors):
+            status = cli.main(["play", "--config", str(config_path), "--seed", "2"])
+    message = errors.getvalue().strip()
+    print(f"# base cli play --config <agents=['lookahead']> exit: {status}")
+    print(f"# base cli stderr: {message}")
+    assert status == 0, (
+        "the base CLI hard-codes --agent greedy, so an experiment that does not "
+        f"offer greedy cannot start without an explicit --agent: exit {status}, {message!r}"
+    )
+
+
+def r9_cli_explicit_agent_is_passed_through():
+    """Compatibility pin: an explicit ``--agent`` wins over any default.
+
+    Both trees pass an explicit ``--agent`` straight through to ``play_live``;
+    the probe records what the base CLI passes, with ``play_live`` replaced by a
+    recorder so no desktop binary is needed. The new CLI must keep doing this,
+    which its regression asserts.
+    """
+    from block_stack_ai import cli
+
+    with tempfile.TemporaryDirectory() as directory:
+        config_path = Path(directory) / "config.json"
+        config_path.write_text(json.dumps(SUITE_WITHOUT_GREEDY), encoding="utf-8")
+        seen = []
+        original = cli.play_live
+        cli.play_live = lambda *args: seen.append(args)
+        try:
+            status = cli.main(["play", "--config", str(config_path), "--agent", "lookahead"])
+        finally:
+            cli.play_live = original
+    print(f"# base cli play --agent lookahead exit: {status}, recorded agent: "
+          f"{seen[0][1] if seen else None!r}")
+    assert status == 0 and seen and seen[0][1] == "lookahead", (
+        f"the base CLI did not pass the explicit --agent through: exit {status}, saw {seen}"
+    )
+
+
+def r10_cli_absent_agent_still_fails():
+    """Compatibility pin: an agent absent from the experiment still fails.
+
+    The base CLI imports the argparse ``choices`` list from the agent registry
+    and ``play_live`` checks membership in the selected config, so naming an
+    agent the config does not offer already fails there; the new CLI preserves
+    both checks, which its regression asserts.
+    """
+    from block_stack_ai import cli
+
+    with tempfile.TemporaryDirectory() as directory:
+        config_path = Path(directory) / "config.json"
+        config_path.write_text(json.dumps(SUITE_WITHOUT_GREEDY), encoding="utf-8")
+        errors = io.StringIO()
+        with contextlib.redirect_stderr(errors):
+            status = cli.main(["play", "--config", str(config_path), "--agent", "random"])
+    message = errors.getvalue().strip()
+    print(f"# base cli play --agent random exit: {status}, stderr: {message}")
+    assert status == 1 and "not in this experiment" in message, (
+        f"the base CLI accepted an agent absent from the experiment: exit {status}, {message!r}"
+    )
+
+
 PROBES = {
     "clear_sizes_field": r1_clear_sizes_field,
     "clear_sizes_summary": r2_clear_sizes_summary,
@@ -295,6 +385,9 @@ PROBES = {
     "tetris_term": r5_tetris_term,
     "agent_name": r6_agent_name,
     "live_clear_sizes": r7_live_clear_sizes,
+    "cli_default_agent": r8_cli_default_agent,
+    "cli_explicit_agent": r9_cli_explicit_agent_is_passed_through,
+    "cli_absent_agent": r10_cli_absent_agent_still_fails,
 }
 
 

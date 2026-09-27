@@ -15,6 +15,7 @@ of a plan and the controller executing it cannot drift apart.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 import random
 from typing import Any
@@ -35,6 +36,17 @@ from .pieces import orientation_count
 from .tetris import tetris_choice
 
 AGENT_NAMES = ("random", "greedy", "lookahead", "tetris")
+
+
+def default_agent(agents: Sequence[str]) -> str:
+    """The agent a live game starts with when none was named.
+
+    The rule is the one the interactive menu has always applied: ``greedy`` when
+    the experiment offers it, otherwise the first agent the experiment
+    configures, so an experiment without greedy starts with an agent it actually
+    has instead of one it does not.
+    """
+    return "greedy" if "greedy" in agents else agents[0]
 
 
 @dataclass(frozen=True)

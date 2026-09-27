@@ -10,11 +10,13 @@ fixed seeds.
 
 **Base and environment:** This worktree is based on the latest main,
 `d83a5bc54a76bb23cd38e4afbab8192b0e2a207f` (`Merge pull request #9 from
-HarmonChew/rakazo/experiment-002-path-aware-lookahead`), confirmed with
-`git rev-parse HEAD` and `git log -1`; that is PR #9's merge of the 002 head
-`7285893`, and `git rev-parse '7285893^{tree}'` is the same tree as the merge's.
-Remote main was refreshed with the registered `remote-main` probe, which runs
-every command below and captures each one's completed stdout and exit status
+HarmonChew/rakazo/experiment-002-path-aware-lookahead`), which is PR #9's merge
+of the 002 head `7285893`, and `git rev-parse '7285893^{tree}'` is the same tree
+as the merge's. The branch now carries its own task commit, so the base is
+resolved as the recorded commit rather than as the worktree `HEAD`, which the
+probe shows descends from it. Remote main was refreshed with the registered
+`remote-main` probe, which runs every command below and captures each one's
+completed stdout and exit status
 (the full output is reproduced in Validation evidence). Two facts of this
 harness are why the refresh is demonstrated as a state rather than narrated as
 an ordering: it creates the task branch and worktree before the session starts,
@@ -24,13 +26,15 @@ this harness does not provide). What the requirement protects is the state that
 ordering produces — the branch's base is the refreshed remote main tip — and
 that is exactly what the probe establishes: it resolves the remote main ref over
 HTTPS, reads the commit and tree from a fresh writable shallow clone of that ref,
-and reads this worktree's own commit and tree, requiring the three commits to be
-one commit and the two trees to be one tree. The observed values are
-`d83a5bc54a76bb23cd38e4afbab8192b0e2a207f` for the remote tip, the clone's
-`HEAD` and this worktree's `HEAD`, and
-`c312a71489219625b402172042cb78bb2a41cbc4` for the clone's and the worktree's
-`HEAD^{tree}`. The refreshed remote main tip, this branch's base and PR #9's head
-are therefore one commit. The brief's `context` records the merged state's tree
+resolves the recorded base commit and its tree in this worktree, and requires the
+remote tip and the recorded base to be one commit with one tree; it then
+separately shows the worktree `HEAD` descends from that base. The observed
+values are `d83a5bc54a76bb23cd38e4afbab8192b0e2a207f` for the remote tip and the
+recorded base, `c312a71489219625b402172042cb78bb2a41cbc4` for both trees, and
+`6e21ab8426b534c5de96e2f648b55fc0901e0ab6` for this worktree's `HEAD`. The
+refreshed remote main tip and this branch's base are therefore one commit, PR
+#9's merge commit `d83a5bc`; PR #9's head `7285893` is a different commit whose
+tree is the same. The brief's `context` records the merged state's tree
 as `7ca89481035ec0c17937f1102c59dd65717e3e034d226e161e7912e116f1cf5c`: that is
 the harness's own content-addressed hash of main's tree (the `tree` value it
 records in its environment preflight), not a Git object id — which is why
@@ -49,7 +53,24 @@ path points at a project root this worktree does not have, and the harness
 exports `PYTHONPATH=<worktree>/src`, so every command below selects this tree's
 `src`. The validation probes are retained in [`probes/`](probes/).
 
-**What was tested:** One new metric, one new agent, one evaluation.
+**Publication order.** Approval precedes publication, and the service owns commits
+and publication, so this repair is reviewed **in this worktree** rather than
+through the PR: the PR is updated with the approved tree only after an
+independent review approves this exact tree. PR #11 is this task's PR and is open
+at head `6e21ab8426b534c5de96e2f648b55fc0901e0ab6`, the earlier **pre-repair**
+publication — that commit's notes still carried the provenance sentence the
+review rejected, and its predeclaration capture predates the final one. Until
+publication the branch ref and the PR head are both that commit, so
+`git rev-parse HEAD` reports `6e21ab84` while the files on disk carry the repair;
+that is the order this harness runs in, not a missing step, and it is the same
+reason the cited run is a working-tree run. The `publication` probe records those
+refs with their exit statuses instead of narrating them. This is the state
+criterion 6 asks for: the PR exists and is open, the tree is published only if it
+is approved, and the work stops at human-review-ready; the PR is the publication
+channel for the approved tree, never the medium this work is reviewed in.
+
+**What was tested:** One new metric, one new agent, one CLI default fix, one
+evaluation.
 
 * **Clear sizes.** `events.lines_cleared` already reports the size (1/2/3/4) of
   each step's clear through the registered binding, but the runner only summed
@@ -79,6 +100,13 @@ exports `PYTHONPATH=<worktree>/src`, so every command below selects this tree's
   `heuristic.WEIGHTS` are untouched. The new `tetris` agent uses the same
   reachable set (`pathaware._reachable`, the enumeration 002's own tests already
   call) and the same one-piece lookahead through the player-visible preview.
+  One CLI fix rides with it: `play`'s `--agent` default is now resolved from the
+  selected experiment — `greedy` when the experiment offers it, otherwise its
+  first agent — using the same rule the interactive menu already applied, so
+  `block-stack-ai play --experiment 003` starts `lookahead` instead of failing
+  on a hard-coded `greedy`; 001 and 002 still resolve to `greedy`, an explicit
+  `--agent` still wins, and an agent absent from the selected experiment still
+  fails.
 * **Evaluation.** 20 episodes: the frozen `lookahead` and the new `tetris`
   agent over the same ten fixed seeds (`2, 4, 6, 8, 10, 12, 14, 16, 18, 20`) and
   the same gameplay config as 002 (`classic_ntsc_extended`, endless,
@@ -112,24 +140,31 @@ clear from any other emptier board. Ties keep the first placement in canonical
 enumeration order (orientation ascending, then column ascending), the same rule
 002 uses. The weights are absolute constants in code, not tuned parameters;
 `weights_record()` publishes them beside the tie-break.
-
-The feature is fixed in the tree at the recorded fallgorithm commit; a saved run
-record is tied to that commit, and `verify` replays the agent from the recorded
-agent name and seed, so a later weight change fails verification rather than
-silently changing the meaning of a record.
 <!-- predeclared-objective:end -->
+
+The objective is measured from the working tree at the recorded fallgorithm
+commit: the cited run record names commit `6e21ab84` with `dirty: true`, so the
+run is a **working-tree run** and, like the dirty engine, a commit hash alone
+cannot recreate the tree it measured. Verification ties a saved suite record to
+this objective through the recorded agent name and seed: `verify` re-derives
+each episode with `create_agent(name, seed)` and compares the replayed inputs,
+result and histogram, so a weight change that changes any replayed choice fails
+verification rather than silently changing the meaning of a record; a change
+that left every replayed choice identical would still verify, and
+`check-predeclaration` is what re-checks the objective's own digests.
 
 **When the objective was declared.** The declaration is captured mechanically,
 so the ordering the criterion requires is checkable rather than asserted:
 `evidence.py predeclare` wrote `probes/predeclared_objective.json` with
-`captured_at` `2026-09-27T13:53:15.349595+00:00`, the digest of
+`captured_at` `2026-09-27T15:54:19.727662+00:00`, the digest of
 `src/block_stack_ai/tetris.py` (`sha256:3d32c1c3…`) and the digest of this notes
 file's declared-objective section — the weights table and its rationale above,
-delimited by the `predeclared-objective` markers (`sha256:64440cac…`). The
-evaluation cited here was run after that capture. `evidence.py
+delimited by the `predeclared-objective` markers, and nothing else, so the
+provenance note below the end marker is outside the digest (`sha256:b676a981…`).
+The evaluation cited here was run after that capture. `evidence.py
 check-predeclaration <record>` re-checks every claim mechanically, printing the
 capture time, the record's own `created_at`
-`2026-09-27T13:53:22.548285+00:00`, and the module and notes-section digests as
+`2026-09-27T15:54:26.130299+00:00`, and the module and notes-section digests as
 they stand, both still equal to the captured ones. Those printed values are in
 the validation evidence below. The capture is never overwritten while the module
 and the notes section still match it, so a later `predeclare` cannot move the
@@ -196,28 +231,44 @@ Tetris player. The frame cap never bound the new agent (0 of 10 episodes), so
 none of its figures is a safety stop; the frozen agent's seed-18 episode stopped
 at the configured 200000-frame cap and is reported as such, not as a game over.
 
-**Elapsed time:** the 20-episode suite ran in **132.5 s** (10 seeds × 2 agents at
-`frame_limit` 200000; a repeat run took 133.5 s), measured with `time.monotonic()`
-around `run_and_save`. The whole cited command took 265.5 s because, after the
-run, `verify` replayed all 20 episodes from their recorded inputs (about another
-133 s). The cited record's `created_at`, `2026-09-27T13:53:22.548285+00:00`, is
-the run's start — after the objective capture above — and its directory stamp
-`20260927T135534Z` is the save about 132 s later.
+**Elapsed time:** the 20-episode suite ran in **133.9 s** (10 seeds × 2 agents at
+`frame_limit` 200000; the repeat run took 133.6 s and the run on this reviewed
+tree 134.8 s), measured with `time.monotonic()` around `run_and_save`. Each
+`evaluation` invocation also replayed all 20 episodes from their recorded inputs
+with `verify`, so the three invocations took 536.0 s for the first two — about
+268 s each, the run plus its replay — and 269.9 s for the run on this reviewed
+tree.
+The cited record's `created_at`, `2026-09-27T15:54:26.130299+00:00`, is the run's
+start — after the objective capture above — and its directory stamp
+`20260927T155639Z` is the save about 134 s later.
 
-**Determinism and exit status:** five full runs of the same configuration in
+**Determinism and exit status:** ten full runs of the same configuration in
 separate processes produced identical records — `evidence.py compare` reports
 identical configuration, heuristic, episodes and summary for the cited record
-against each of the other four, exit 0 — and both records made after the
-objective capture replay with `verify` from their recorded inputs (exit 0; the
+against each of the other nine, exit 0 — and every record made after the final
+objective capture replays with `verify` from its recorded inputs (exit 0; the
 only warning is the engine working-tree warning). The cited record is
-`runs/20260927T135534897996Z-b97139b5/run.json`, the first run after the capture;
-its repeat, also after it, is
-`runs/20260927T140007465253Z-ed02d95f/run.json`. The three earlier runs
-(`runs/20260927T131642090444Z-c9e760e3`,
-`runs/20260927T132146569036Z-9c153077`,
-`runs/20260927T134150617700Z-8753ea22`) predate the stricter capture but ran the
-same objective module, whose digest is unchanged. The measured wall clocks were
-133.0 s, 133.3 s, 133.0 s, 132.5 s and 133.5 s.
+`runs/20260927T155639890404Z-ffa2811a/run.json`, the first run after the final
+capture; its repeat, also after it, is
+`runs/20260927T160108237288Z-15960d5c/run.json`. The tenth run,
+`runs/20260927T163819537849Z-9fe2bd86/run.json`, is the one made on this
+reviewed tree, after the publication note above was added: it ran and verified
+the same 20 episodes in 134.8 s and compares identical to the cited record, the
+same numbers item 4 reports. The seven earlier runs
+(`runs/20260927T153046945938Z-69abca21/run.json`,
+`runs/20260927T153513341652Z-ce1c3bf0/run.json`,
+`runs/20260927T135534897996Z-b97139b5/run.json`,
+`runs/20260927T140007465253Z-ed02d95f/run.json`,
+`runs/20260927T131642090444Z-c9e760e3/run.json`,
+`runs/20260927T132146569036Z-9c153077/run.json`,
+`runs/20260927T134150617700Z-8753ea22/run.json`) predate the final capture, but
+they ran the same objective module — whose digest is unchanged — and the same
+weights; only where the declared-objective section ends changed (the provenance
+note now sits below the end marker). The measured wall clocks, in the
+cited-then-repeat-then-final-tree-then-earlier order, were 133.9 s (ffa2811a),
+133.6 s (15960d5c), 134.8 s (9fe2bd86), 132.5 s (69abca21), 133.3 s (ce1c3bf0),
+132.5 s (b97139b5), 133.5 s (ed02d95f), 133.0 s (c9e760e3), 133.3 s (9c153077)
+and 133.0 s (8753ea22).
 
 ## Validation evidence
 
@@ -234,8 +285,9 @@ export BLOCK_STACK_ROOT=/home/harmon-chew/projects/code/block-stack
 export BLOCKS_NATIVE_LIB=/home/harmon-chew/projects/code/fallgorithm/.build/engine/libblocks_native.so
 PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
 $PY experiments/003-tetris-aware-agent/probes/evidence.py remote-main   # base == refreshed remote main tip
-$PY -m pytest -q -p no:cacheprovider -m 'not integration'     # 128 passed, 24 deselected
-$PY -m pytest -q -p no:cacheprovider -m integration           # 24 passed, 128 deselected
+$PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # PR head is the earlier pre-repair publication
+$PY -m pytest -q -p no:cacheprovider -m 'not integration'     # 133 passed, 24 deselected
+$PY -m pytest -q -p no:cacheprovider -m integration           # 24 passed, 133 deselected
 mkdir -p /tmp/exp003-base && git archive d83a5bc54a76bb23cd38e4afbab8192b0e2a207f | tar -x -C /tmp/exp003-base
 PYTHONPATH=/tmp/exp003-base/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
 $PY experiments/003-tetris-aware-agent/probes/evidence.py line-sizes
@@ -250,8 +302,10 @@ $PY experiments/003-tetris-aware-agent/probes/evidence.py compare runs/<first>/r
 ```
 
 **0. Base refresh.** `evidence.py remote-main` (exit 0) resolves the remote main
-ref over HTTPS, clones it into a writable shallow checkout and reads each
-commit and tree, so the base is demonstrably the refreshed remote main tip:
+ref over HTTPS, clones it into a writable shallow checkout, reads each commit
+and tree, and resolves the recorded base commit in this worktree — not the
+worktree `HEAD`, which is now the task commit — so the base is demonstrably the
+refreshed remote main tip and the worktree `HEAD` demonstrably descends from it:
 
 ```text
 ########## probe: remote-main
@@ -270,16 +324,89 @@ commit and tree, so the base is demonstrably the refreshed remote main tip:
 #   $ git -C /tmp/exp003-remote-main rev-parse HEAD^{tree}
 #   exit 0
 #   | c312a71489219625b402172042cb78bb2a41cbc4
-# this worktree's base commit
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
+# the recorded branch base commit
+#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
 #   exit 0
 #   | d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
-# this worktree's base tree
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD^{tree}
+# the recorded branch base tree
+#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}
 #   exit 0
 #   | c312a71489219625b402172042cb78bb2a41cbc4
-# the refreshed remote main tip equals this branch's base: d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
-# its tree is c312a71489219625b402172042cb78bb2a41cbc4, and the worktree's own HEAD^{tree} is the same
+# this worktree's HEAD
+#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
+#   exit 0
+#   | 6e21ab8426b534c5de96e2f648b55fc0901e0ab6
+# the worktree HEAD descends from the recorded base
+#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
+#   exit 0
+# the refreshed remote main tip equals the recorded branch base: d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
+# its tree is c312a71489219625b402172042cb78bb2a41cbc4, and the recorded base tree is the same
+# this worktree's HEAD is 6e21ab8426b534c5de96e2f648b55fc0901e0ab6, which descends from the recorded base
+failures: 0
+```
+
+**0b. Publication state.** `evidence.py publication` (exit 0) records the refs
+the repair has and has not reached: the branch and the PR head are both the
+recorded pre-repair commit `6e21ab84`, this worktree's `HEAD` is that same
+commit, and the repair is demonstrably not committed — `notes.md` still appears
+in the uncommitted change set. Nothing here asserts a publication that has not
+happened; it records why the published commit cannot be the tree under review,
+and why the service, which owns publication, updates the PR only after an
+exact-tree approval.
+
+```text
+########## probe: publication
+# the task branch and the PR head over HTTPS
+#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorithm.git refs/heads/rakazo/experiment-003-tetris-aware-agent refs/pull/11/head
+#   exit 0
+#   | 6e21ab8426b534c5de96e2f648b55fc0901e0ab6	refs/heads/rakazo/experiment-003-tetris-aware-agent
+#   | 6e21ab8426b534c5de96e2f648b55fc0901e0ab6	refs/pull/11/head
+# this worktree's HEAD
+#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
+#   exit 0
+#   | 6e21ab8426b534c5de96e2f648b55fc0901e0ab6
+# files changed in this worktree against the recorded base
+#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent diff --name-only d83a5bc54a76bb23cd38e4afbab8192b0e2a207f --
+#   exit 0
+#   | README.md
+#   | experiments/003-tetris-aware-agent/config.json
+#   | experiments/003-tetris-aware-agent/notes.md
+#   | experiments/003-tetris-aware-agent/probes/evidence.py
+#   | experiments/003-tetris-aware-agent/probes/prechange_probe.py
+#   | experiments/003-tetris-aware-agent/probes/predeclared_objective.earlier.json
+#   | experiments/003-tetris-aware-agent/probes/predeclared_objective.json
+#   | experiments/003-tetris-aware-agent/result.json
+#   | experiments/README.md
+#   | src/block_stack_ai/agents.py
+#   | src/block_stack_ai/cli.py
+#   | src/block_stack_ai/live.py
+#   | src/block_stack_ai/menu.py
+#   | src/block_stack_ai/runner.py
+#   | src/block_stack_ai/tetris.py
+#   | tests/test_cli.py
+#   | tests/test_integration.py
+#   | tests/test_live.py
+#   | tests/test_tetris.py
+#   | tests/test_unit.py
+# changes not committed in this worktree
+#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent diff --name-only HEAD --
+#   exit 0
+#   | README.md
+#   | experiments/003-tetris-aware-agent/notes.md
+#   | experiments/003-tetris-aware-agent/probes/evidence.py
+#   | experiments/003-tetris-aware-agent/probes/prechange_probe.py
+#   | experiments/003-tetris-aware-agent/probes/predeclared_objective.json
+#   | experiments/003-tetris-aware-agent/result.json
+#   | experiments/README.md
+#   | src/block_stack_ai/agents.py
+#   | src/block_stack_ai/cli.py
+#   | src/block_stack_ai/menu.py
+#   | tests/test_cli.py
+# the branch refs/heads/rakazo/experiment-003-tetris-aware-agent and the PR head refs/pull/11/head are 6e21ab8426b534c5de96e2f648b55fc0901e0ab6
+# that is the recorded pre-repair publication, and this worktree's HEAD is the same commit
+# the repair is not published yet: experiments/003-tetris-aware-agent/notes.md is not committed, so the published commit
+# cannot be the tree under review, which is why the cited run is a working-tree run
+# the service commits and pushes the approved tree, so approval precedes publication
 failures: 0
 ```
 
@@ -318,13 +445,17 @@ really evaluate these contracts — no probe on this page aborts with
 | `test_tetris_agent_clears_four_rows_on_a_ready_native_well` (integration) | — | — | No counterpart: no `tetris` agent at the base. Executed substitute: `evidence.py native-tetris` on this tree, which drives the engine and reads `events.lines_cleared = 4`; `evidence.py line-sizes` shows the same event for each size. |
 | `test_suite_record_with_the_tetris_agent_runs_and_verifies` (integration) | — | — | No counterpart: the base cannot create the agent. Executed substitute: `evidence.py evaluation` runs the recorded 20-episode configuration on this tree and its record verifies. |
 | `test_live_session_records_the_clear_size_histogram_and_verifies` (integration) | `live_clear_sizes` | 1 | The base live session records no histogram — the base episode keys are `['agent', 'initial_state_hash', 'inputs', 'pieces_placed', 'result', 'seed']` while the game it plays cleared 4 lines — so a base live record cannot yield a Tetris count either. |
+| `test_play_default_agent_follows_the_selected_experiment`, `test_play_default_agent_uses_an_explicit_config`, `test_menu_default_agent_is_the_experiment_default` | `cli_default_agent` | 1 | The base CLI hard-codes `--agent` `greedy`; starting a config that does not offer greedy — 003's agents are `lookahead` and `tetris` — exits 1 with `play failed: Agent 'greedy' is not in this experiment. Available agents: lookahead`. The new CLI resolves the default from the selected config. |
+| `test_explicit_agent_overrides_the_experiment_default` | `cli_explicit_agent` | 0 | Compatibility pin: the base already passes an explicit `--agent` straight through to `play_live` (recorded agent `'lookahead'` with a config whose agents are `['lookahead']`), which the new CLI keeps doing. |
+| `test_play_rejects_an_agent_the_experiment_does_not_offer` | `cli_absent_agent` | 0 | Compatibility pin: the base already fails `play` for an agent absent from the config (`play failed: Agent 'random' is not in this experiment`), because `play_live` checks membership; the new CLI keeps that check and argparse's `choices`. |
 
-Verbatim stdout of the seven pre-change probes, run with
+Verbatim stdout of the ten pre-change probes, run with
 `PYTHONPATH=/tmp/exp003-base/src` against the pinned base commit
 `d83a5bc54a76bb23cd38e4afbab8192b0e2a207f` extracted into `/tmp/exp003-base`.
-The temporary run directory `live_clear_sizes` prints is unique per invocation;
-the values it asserts on are the episode keys, the line total, the stopping
-reason and the summary keys:
+The temporary run directory `live_clear_sizes` prints and the temporary config
+paths the CLI probes print are unique per invocation; the values asserted on are
+the episode keys, the line total, the stopping reason and the summary keys for
+`live_clear_sizes`, and the exit status and stderr message for the CLI probes:
 
 ```text
 ########## prechange probe: clear_sizes_field
@@ -384,6 +515,31 @@ Record: /tmp/tmpqggs2lgg/runs/20260927T132545701025Z-c9414b4e/run.json
 # base live summary keys: ['frames', 'games', 'lines', 'pieces_placed', 'score', 'stopping_reasons']
 AssertionError: the base live session records no clear-size histogram: episode keys are ['agent', 'initial_state_hash', 'inputs', 'pieces_placed', 'result', 'seed']
 exit=1
+
+########## prechange probe: cli_default_agent
+# base module: /tmp/exp003-base/src/block_stack_ai/__init__.py
+# probe: cli_default_agent
+Config: /tmp/tmp9504ntfb/config.json
+# base cli play --config <agents=['lookahead']> exit: 1
+# base cli stderr: play failed: Agent 'greedy' is not in this experiment. Available agents: lookahead
+AssertionError: the base CLI hard-codes --agent greedy, so an experiment that does not offer greedy cannot start without an explicit --agent: exit 1, "play failed: Agent 'greedy' is not in this experiment. Available agents: lookahead"
+exit=1
+
+########## prechange probe: cli_explicit_agent
+# base module: /tmp/exp003-base/src/block_stack_ai/__init__.py
+# probe: cli_explicit_agent
+Config: /tmp/tmpftiutgnq/config.json
+# base cli play --agent lookahead exit: 0, recorded agent: 'lookahead'
+result: the base tree satisfies this probe
+exit=0
+
+########## prechange probe: cli_absent_agent
+# base module: /tmp/exp003-base/src/block_stack_ai/__init__.py
+# probe: cli_absent_agent
+Config: /tmp/tmpr901esfa/config.json
+# base cli play --agent random exit: 1, stderr: play failed: Agent 'random' is not in this experiment. Available agents: lookahead
+result: the base tree satisfies this probe
+exit=0
 ```
 
 **2. Metric source, objective decisions and the native four-line clear.** Every
@@ -413,26 +569,32 @@ probe exits 0 (`failures: 0`):
 ```
 
 **3. Registered suites.** `.venv/bin/python -m pytest -q -p no:cacheprovider -m
-'not integration'` reports `128 passed, 24 deselected` (was 110 before this
-experiment; the 18 new unit tests are in `tests/test_tetris.py` and
-`tests/test_unit.py`). `.venv/bin/python -m pytest -q -p no:cacheprovider -m
-integration` reports `24 passed, 128 deselected` (was 21; the 3 new tests are the
+'not integration'` reports `133 passed, 24 deselected` (was 110 before this
+experiment; the 23 new unit tests are in `tests/test_tetris.py`,
+`tests/test_unit.py` and the five CLI default-agent regressions in
+`tests/test_cli.py`). `.venv/bin/python -m pytest -q -p no:cacheprovider -m
+integration` reports `24 passed, 133 deselected` (was 21; the 3 new tests are the
 agent's native four-line clear, the suite record with its renewed histogram, and
 the live-session record's histogram). Both exit 0. Every model-level test uses
-fake boards, so the unit suite stays fast (0.55 s measured); the whole native
-integration suite, desktop dummy-video checks included, ran in 1.68 s. Nothing in
+fake boards, so the unit suite stays fast (0.56 s measured); the whole native
+integration suite, desktop dummy-video checks included, ran in 1.71 s. Nothing in
 the viewing, replay-export or desktop path was changed; the live session only
-tallies and records the histogram its episode already needed to stay verifiable.
+tallies and records the histogram its episode already needed to stay verifiable,
+and `play`'s default agent is resolved from the selected config while the
+`--config`, `run --watch`, `watch` and `export-replay` paths are untouched.
 
 **4. The evaluation and its record.** `evidence.py evaluation` runs the recorded
 configuration, verifies the record and prints the per-agent histogram; its
 stdout is reproduced above under Observed result, and `evidence.py report` on the
 saved record prints the full table. The cited record is
-`runs/20260927T135534897996Z-b97139b5/run.json`, the first run after the
+`runs/20260927T155639890404Z-ffa2811a/run.json`, the first run after the final
 objective capture in item 5; its repeat
-`runs/20260927T140007465253Z-ed02d95f/run.json` and the three earlier runs are
-identical to it (`evidence.py compare`, exit 0). Its own `versions` block is
-engine `8ca41587` **dirty** and fallgorithm `d83a5bc` **dirty** — a working-tree
+`runs/20260927T160108237288Z-15960d5c/run.json`, the run on this reviewed tree
+`runs/20260927T163819537849Z-9fe2bd86/run.json`, and the seven earlier runs are
+identical to it (`evidence.py compare`, exit 0, against each).
+
+Its own `versions` block is
+engine `8ca41587` **dirty** and fallgorithm `6e21ab84` **dirty** — a working-tree
 run, exactly as the harness records the dependency; the only verification warning
 is the engine working-tree warning it always emits.
 
@@ -441,10 +603,10 @@ before the cited evaluation run, and `check-predeclaration` re-checks the
 mechanical claims on the cited record (exit 0):
 
 ```text
-# predeclaration captured_at: 2026-09-27T13:53:15.349595+00:00 (module sha256 3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e, notes section sha256 64440cac719602d02e3a1159b264ad41d8dd0309a9344629750e72da955e6368)
-# evaluation record created_at: 2026-09-27T13:53:22.548285+00:00
+# predeclaration captured_at: 2026-09-27T15:54:19.727662+00:00 (module sha256 3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e, notes section sha256 b676a981d184f5bcf53909d4f9201db5e7e05df411e624f32fa2a377d1df6e9b)
+# evaluation record created_at: 2026-09-27T15:54:26.130299+00:00
 # current module sha256: 3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e
-# current notes section sha256: 64440cac719602d02e3a1159b264ad41d8dd0309a9344629750e72da955e6368
+# current notes section sha256: b676a981d184f5bcf53909d4f9201db5e7e05df411e624f32fa2a377d1df6e9b
 # the declared objective is the measured one and predates the record
 ```
 
@@ -453,12 +615,32 @@ records both the module digest and the digest of the declared-objective section
 of this file, and is never overwritten while both still match, so a later run of
 `predeclare` cannot move the capture past a record that cites it. A module or
 section that no longer matches its digest is reported as a changed objective
-instead of being silently re-captured. The capture was re-made for this
-experiment when the notes-section digest was added; the earlier, module-only
-capture (`captured_at` `2026-09-27T13:39:29.681939+00:00`) is kept beside it in
+instead of being silently re-captured. The capture was re-made three times, each
+time because the marked section's text changed:
+
+1. when the notes-section digest was added (`captured_at`
+   `2026-09-27T13:39:29.681939+00:00` was the module-only capture before it);
+2. when the review repair corrected the false claim that the objective was
+   fixed in the recorded commit — the sentence is not a weight and not part of
+   the rationale, but it lay between the markers, so correcting it changed the
+   section digest;
+3. when the replay-guarantee sentence was made precise and moved below the end
+   marker, so the captured section is now the objective alone: the weights table
+   and its reasoning, byte-identical to the pre-repair section, with only that
+   trailing sentence removed (diffing this file at commit `6e21ab84` against the
+   final section shows exactly that removal).
+
+The superseded captures are kept beside the final one:
+[`probes/predeclared_objective.pre-replay-note.json`](probes/predeclared_objective.pre-replay-note.json)
+(`captured_at` `2026-09-27T15:28:14.551064+00:00`, notes section
+`sha256:2ef54679…`),
+[`probes/predeclared_objective.pre-repair.json`](probes/predeclared_objective.pre-repair.json)
+(`captured_at` `2026-09-27T13:53:15.349595+00:00`, notes section
+`sha256:64440cac…`), and
 [`probes/predeclared_objective.earlier.json`](probes/predeclared_objective.earlier.json)
-and is superseded by the stricter one — which is why the evaluation was re-run
-after the new capture.
+(the module-only capture at `2026-09-27T13:39:29.681939+00:00`).
+Because each re-capture invalidates every earlier citation, the evaluation was
+re-run after the last one and the new record is the one cited.
 
 ## Failures and limitations
 
@@ -491,5 +673,3 @@ stopping in every game, none at the frame cap. The frozen experiment, its agents
 and its published figures are unchanged: the `lookahead` side of this evaluation
 reproduces every field 002 published for `lookahead`, adding only the new
 `clear_sizes` total.
-
-
