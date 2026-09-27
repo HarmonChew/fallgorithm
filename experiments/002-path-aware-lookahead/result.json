@@ -1,0 +1,182 @@
+{
+  "configuration": {
+    "agents": [
+      "greedy",
+      "lookahead"
+    ],
+    "frame_limit": 200000,
+    "game": {
+      "height": 0,
+      "mode": "endless",
+      "ruleset": "classic_ntsc_extended",
+      "start_level": 18
+    },
+    "seeds": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      20
+    ]
+  },
+  "determinism": {
+    "repeat_run_configuration_identical": true,
+    "repeat_run_episodes_identical": true,
+    "repeat_run_summary_identical": true,
+    "verify_exit_code": 0
+  },
+  "doctor": "passed",
+  "engine_git": {
+    "commit": "8ca4158711c2d6339cab1ee8d78aa65bd624c89d",
+    "dirty": true,
+    "kind": "working-tree"
+  },
+  "episodes": 20,
+  "fallgorithm_git": {
+    "commit": "6d0b886cc325ca47df14a7e14b28ac36aa67f5c7",
+    "dirty": true,
+    "kind": "working-tree"
+  },
+  "heuristic": {
+    "aggregate_height": -0.5,
+    "bumpiness": -0.5,
+    "holes": -1.0,
+    "lines_cleared": 1.0,
+    "max_height": -1.0,
+    "tie_break": "first highest-scoring placement in enumeration order: orientation ascending, then x ascending"
+  },
+  "lookahead": {
+    "depth": 1,
+    "next_piece_level": "the next piece's gravity uses the level the current clear would leave (mirrored from Game::update_level), since a clear can raise the level",
+    "preview": "the next piece is read from State.next_piece, the player-visible preview the registered binding exposes on the observation act(state) receives (built from State::next, the piece Game::spawn promotes into play); no hidden RNG state is read and the engine is not modified",
+    "tie_break": "first placement in canonical enumeration order: orientation ascending, then column ascending",
+    "value": "for each admissible current placement, the piece is locked into the model grid, the next piece is placed on the result by the same reachable-set rule, and the value is the highest score among those placements, scored with the existing fixed features and weights; a current placement whose next piece has no admissible placement at all has value -inf, so it loses to every placement that leaves the next piece one and is kept only when every current placement shares that fate",
+    "weight_tuning": "none"
+  },
+  "model_fidelity": {
+    "greedy": {
+      "divergences_with_a_column_difference": 29,
+      "divergences_with_a_row_difference": 27,
+      "divergences_with_an_orientation_difference": 9,
+      "lines_cleared_by_the_engine": 1189,
+      "lines_predicted_by_the_model": 1208,
+      "locks": 3357,
+      "locks_landed_exactly_as_modelled": 3328,
+      "locks_note": "lock events, including each episode's terminal topping-out lock that writes nothing",
+      "matches_experiment_001_published_fidelity": true,
+      "model_divergences": 29
+    },
+    "level_model": "the mirrored level function was compared with the engine's reported level at every frame of all 20 recorded episodes: 1078262 frames, 0 mismatches",
+    "lookahead": {
+      "fallback_note": "the terminal lock of each of the nine games that topped out: no placement is admissible, the controller holds Down where the piece spawned, and the engine rejects the origin, so nothing is written and the game ends; each is the last frame of its episode",
+      "fallback_top_out_locks": 9,
+      "lines_cleared_by_the_engine": 9128,
+      "lines_predicted_by_the_model": 9128,
+      "locks": 23153,
+      "locks_landed_exactly_as_modelled": 23144,
+      "model_divergences": 0
+    },
+    "method": "replay each recorded episode (the replayed inputs are compared with the record first) and compare the placement the agent chose for that piece's spawn state with the origin the engine actually locked the piece at"
+  },
+  "piece_metric": {
+    "field": "pieces_placed",
+    "frame_limit_stop": "an episode stopped at the configured frame limit has no failed lock, so its placed count equals its lock events",
+    "legacy_field": "pieces",
+    "legacy_meaning": "the pre-fix records' key, which held state.piece_count (the RNG/preview selection counter); still verified under that meaning",
+    "meaning": "the number of pieces the engine wrote to the board: lock events minus the failed top-out lock, so a piece still in play at a frame-limit stop and the topping-out lock that places nothing are both excluded"
+  },
+  "placement_model": {
+    "admissibility": "a candidate is listed only when the simulated lock is exactly the aimed (orientation, x) and the engine would really write the piece there; a lock Game::lock rejects as a top-out writes nothing and is not a placement",
+    "baseline_001": "unchanged: enumerate unique orientations and legal columns of the current piece and simulate a straight drop entering at the spawn origin row and descending only; a column blocked at that origin contributes no placement",
+    "fallback": "when no placement is admissible the controller keeps pressing Down where the piece spawned, as greedy does; that is the only remaining model-versus-engine divergence, and in this suite it is the terminal lock of each game that topped out",
+    "gravity": "the mirror includes the engine's gravity period for the piece's level (mirrored from core/src/rules.cpp) and the 96-frame first-piece delay, because the controller keeps pressing while gravity lowers the piece",
+    "implementation": "ten column bitmasks; the bitmask settle and feature code mirrors heuristic.settle/board_features and is pinned to it by a unit test",
+    "path_aware": "new capability, not a change to the baseline: a candidate (orientation, x) is simulated frame by frame from the engine's native spawn state with the same mask function the controller executes (rotate toward the aim by the shorter way, one press per horizontal step, a release frame after every press, then Down held), mirroring Game::tick's active-phase order in core/src/game.cpp (horizontal, rotation, gravity/soft drop) with its per-frame counters, Game::fits and Game::lock"
+  },
+  "run_record": "runs/20260927T052746268934Z-dbeb0c30/run.json (temporary ignored run output: `runs/` is ignored at any depth, so this record is present only in a working tree and is not part of the repository; rerun config.json to recreate it)",
+  "status": "passed",
+  "suite_wall_clock_seconds": 86.0,
+  "summary": {
+    "greedy": {
+      "frames": {
+        "max": 38158,
+        "mean": 15801.3,
+        "median": 12911.0,
+        "min": 4686
+      },
+      "games": 10,
+      "lines": {
+        "max": 309,
+        "mean": 118.9,
+        "median": 97.0,
+        "min": 28
+      },
+      "pieces_placed": {
+        "max": 805,
+        "mean": 334.7,
+        "median": 280.0,
+        "min": 108
+      },
+      "score": {
+        "max": 334495,
+        "mean": 106621.9,
+        "median": 77953.5,
+        "min": 22482
+      },
+      "stopping_reasons": {
+        "game_over": 10
+      }
+    },
+    "lookahead": {
+      "frames": {
+        "max": 200000,
+        "mean": 92024.9,
+        "median": 76491.0,
+        "min": 33940
+      },
+      "games": 10,
+      "lines": {
+        "max": 2137,
+        "mean": 912.8,
+        "median": 734.5,
+        "min": 254
+      },
+      "pieces_placed": {
+        "max": 5353,
+        "mean": 2314.4,
+        "median": 1872.5,
+        "min": 669
+      },
+      "score": {
+        "max": 10334568,
+        "mean": 2822959.9,
+        "median": 1513435.5,
+        "min": 256671
+      },
+      "stopping_reasons": {
+        "frame_limit": 1,
+        "game_over": 9
+      }
+    }
+  },
+  "tests": {
+    "integration_passed": 21,
+    "unit_passed": 110
+  },
+  "validation_commands": [
+    ".venv/bin/block-stack-ai doctor",
+    ".venv/bin/block-stack-ai run --experiment 002",
+    ".venv/bin/block-stack-ai verify runs/<run-id>/run.json",
+    ".venv/bin/python -m pytest -q -m 'not integration'",
+    ".venv/bin/python -m pytest -q -m integration"
+  ],
+  "verification": "passed",
+  "verification_warnings": [
+    "The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source."
+  ]
+}

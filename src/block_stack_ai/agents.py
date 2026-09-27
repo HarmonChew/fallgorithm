@@ -1,9 +1,14 @@
 """Agents that emit one gameplay mask per logical frame.
 
 `ScriptedAgent` is the fixed Stage 0 controller script. `PlacementAgent` plays
-placed pieces: it chooses one enumerated placement per spawned piece with the
-configured policy, then steers the engine there with the button masks the
-engine's AI API accepts.
+placed pieces: it chooses one placement per spawned piece with the configured
+policy, then steers the engine there with the button masks the engine's AI API
+accepts. `LookaheadAgent` plays the same way but chooses from the placements the
+controller can really reach, one piece of lookahead deep.
+
+The mask the controller emits for a chosen placement is decided by
+`pathaware.plan_mask`, which the reachability simulation calls too, so the model
+of a plan and the controller executing it cannot drift apart.
 """
 
 from __future__ import annotations
@@ -13,16 +18,20 @@ import random
 from typing import Any
 
 from .heuristic import Placement, board_grid, enumerate_placements
+# Gameplay bits of the engine's controller mask, defined with the plan model and
+# re-exported here for the module that has always published them.
+from .pathaware import (
+    DOWN,
+    LEFT,
+    RIGHT,
+    ROTATE_CCW,
+    ROTATE_CW,
+    lookahead_choice,
+    plan_mask,
+)
 from .pieces import orientation_count
 
-# Gameplay bits of the engine's controller mask (AI API input table).
-LEFT = 1
-RIGHT = 2
-DOWN = 4
-ROTATE_CW = 8
-ROTATE_CCW = 16
-
-AGENT_NAMES = ("random", "greedy")
+AGENT_NAMES = ("random", "greedy", "lookahead")
 
 
 @dataclass(frozen=True)
@@ -109,9 +118,13 @@ class PlacementAgent:
     followed by a release frame so every press is a fresh edge. One placement is
     chosen per spawned piece, keyed on the engine's piece counter, and the
     observed orientation and column drive the remaining button presses.
+
+    ``_choose`` is the choice hook: the base class enumerates the straight-drop
+    placements and asks the policy, and a subclass may replace it with a
+    different candidate set.
     """
 
-    def __init__(self, policy: GreedyPolicy | RandomPolicy):
+    def __init__(self, policy: GreedyPolicy | RandomPolicy | None):
         self.policy = policy
         self.reset()
 
@@ -125,6 +138,11 @@ class PlacementAgent:
         """A placement agent plays until the engine stops the episode."""
         return False
 
+    def _choose(self, state: Any, grid: Any) -> Placement | None:
+        """The placement to execute for the piece that just spawned."""
+        assert self.policy is not None
+        return self.policy.choose(enumerate_placements(grid, state.current_piece))
+
     def act(self, state: Any) -> int:
         if state.phase != "active" or state.terminal:
             self._release = False
@@ -132,25 +150,40 @@ class PlacementAgent:
         if state.piece_count != self._piece_count:
             self._piece_count = state.piece_count
             grid = board_grid(state.board, state.hidden_rows)
-            self._placement = self.policy.choose(enumerate_placements(grid, state.current_piece))
+            self._placement = self._choose(state, grid)
             self._release = False
-        if self._release:
-            # The frame after a press releases it, so the next press is a new edge.
-            self._release = False
-            return 0
-        if self._placement is None:
-            # No placement fits under the model; drop the piece where it spawned.
-            return DOWN
-        if state.orientation != self._placement.orientation:
-            count = orientation_count(state.current_piece)
-            clockwise = (self._placement.orientation - state.orientation) % count
-            counterclockwise = (state.orientation - self._placement.orientation) % count
-            self._release = True
-            return ROTATE_CW if clockwise <= counterclockwise else ROTATE_CCW
-        if state.x != self._placement.x:
-            self._release = True
-            return LEFT if self._placement.x < state.x else RIGHT
-        return DOWN
+        plan = (self._placement.orientation, self._placement.x) if self._placement else None
+        mask, self._release = plan_mask(
+            state.orientation, state.x, plan, self._release, orientation_count(state.current_piece),
+        )
+        return mask
+
+
+class LookaheadAgent(PlacementAgent):
+    """Path-aware greedy placement with one piece of lookahead.
+
+    The candidate set is the placements the controller can actually execute from
+    the engine's native spawn state (:func:`pathaware.reachable_placements`), and
+    the chosen one is the placement whose best reachable placement of the preview
+    piece scores highest. When the reachable set is empty this keeps pressing
+    Down where the piece spawned, the same fallback the straight-drop agent uses.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(None)
+
+    def _choose(self, state: Any, grid: Any) -> Placement | None:
+        return lookahead_choice(
+            grid,
+            state.current_piece,
+            state.next_piece,
+            level=state.level,
+            lines=state.lines,
+            start_level=state.start_level,
+            first_delay_remaining=state.first_delay_remaining,
+            ruleset=state.ruleset,
+            mode=state.mode,
+        )
 
 
 def create_agent(name: str, seed: int) -> PlacementAgent:
@@ -159,4 +192,6 @@ def create_agent(name: str, seed: int) -> PlacementAgent:
         return PlacementAgent(GreedyPolicy())
     if name == "random":
         return PlacementAgent(RandomPolicy(random.Random(seed)))
+    if name == "lookahead":
+        return LookaheadAgent()
     raise ValueError(f"unknown agent: {name!r}")

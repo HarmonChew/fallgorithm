@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import random
 import subprocess
 
 import pytest
@@ -10,6 +11,13 @@ from block_stack_ai.agents import DOWN
 from block_stack_ai.engine import PROJECT_ROOT, create_game, engine_executable
 from block_stack_ai.replay import export_replay
 from block_stack_ai.heuristic import SPAWN_ORIGIN_Y, WIDTH, board_grid, enumerate_placements, settle
+from block_stack_ai.pathaware import (
+    grid_columns,
+    plan_mask,
+    reachable_placements,
+    settle_columns,
+    simulate_plan,
+)
 from block_stack_ai.pieces import PIECES, cells, orientation_count
 from block_stack_ai.runner import (
     VerificationError,
@@ -24,6 +32,7 @@ from block_stack_ai.runner import (
 pytestmark = pytest.mark.integration
 CONFIG = PROJECT_ROOT / "experiments" / "000-connection" / "config.json"
 SUITE_CONFIG = PROJECT_ROOT / "experiments" / "001-greedy-heuristic" / "config.json"
+LOOKAHEAD_CONFIG = PROJECT_ROOT / "experiments" / "002-path-aware-lookahead" / "config.json"
 
 
 def test_create_read_and_advance_exact_frames():
@@ -371,3 +380,235 @@ def test_desktop_replay_preserves_verified_run(tmp_path: Path, variant: str):
     with pytest.raises(VerificationError, match="final_state_hash"):
         export_replay(path)
     assert replay_path.read_bytes() == original
+
+
+
+def _aims(piece: str):
+    """Every orientation and legal column of a piece, in canonical order."""
+    for orientation in range(orientation_count(piece)):
+        offsets = cells(piece, orientation)
+        first = min(offset_x for offset_x, _ in offsets)
+        last = max(offset_x for offset_x, _ in offsets)
+        for x in range(-first, WIDTH - last):
+            yield orientation, x
+
+
+def _spawn_template(configuration, board, first_piece: bool, seed_hidden: bool = False):
+    """A native spawn state on a chosen board, with the engine's own timing.
+
+    A later piece is reached the way the runner reaches it: the current piece is
+    driven to its lock with Down held, then release frames carry the engine
+    through the entry delay into the next spawn, so the state has no first-piece
+    delay and a zero previous input. The game's first piece is used straight out
+    of ``reset``, where the 96-frame delay is the model's to expect. Both
+    ``previous_input`` and the delay are asserted rather than assumed. The board
+    is replaced last, and ``set_piece`` puts a chosen piece back at the spawn
+    origin.
+
+    ``seed_hidden`` locks an O above the ceiling first, leaving minos in the
+    hidden buffer, and then spawns on top of them, so the visible board can be
+    replaced while the buffer stays occupied.
+    """
+    with create_game(**configuration) as game:
+        state = game.state
+        if seed_hidden:
+            blocker = [[0] * WIDTH for _ in range(20)]
+            blocker[0][8] = blocker[0][9] = 1  # the O comes to rest above the ceiling
+            game.set_board(blocker)
+            game.set_piece("O", x=9, y=-2)
+            for _ in range(200):
+                state, events = game.step(DOWN)
+                if events.locked:
+                    break
+            else:
+                raise AssertionError("the ceiling O never locked")
+            assert events.lines_cleared == 0
+            assert all(game.state.hidden_rows[1][8:10])
+            for _ in range(200):
+                state, events = game.step(0)
+                if events.spawned:
+                    break
+            else:
+                raise AssertionError("no spawn after the ceiling lock")
+        elif not first_piece:
+            for _ in range(1000):
+                state, events = game.step(DOWN)
+                if events.locked:
+                    break
+            else:
+                raise AssertionError("the first piece never locked")
+            for _ in range(200):
+                state, events = game.step(0)
+                if events.spawned:
+                    break
+            else:
+                raise AssertionError("no spawn after the first lock")
+        assert (state.x, state.y, state.orientation) == (5, 0, 0)
+        assert state.previous_input == 0
+        assert state.first_delay_remaining == (96 if first_piece else 0)
+        game.set_board(board)
+        return game.clone(), state.first_delay_remaining
+
+
+def _native_plan_lock(template, piece: str, plan, obstruct=None):
+    """Drive the engine with the controller's masks and report where it locked.
+
+    The masks come from ``plan_mask`` on the engine's own observation, not from
+    the model's simulation, so this compares the two independently. With
+    ``obstruct``, the piece is placed on the template's own board first and the
+    obstructing board is installed afterwards: ``set_piece`` refuses an
+    overlapping piece and ``Game::spawn`` has no collision test, so this is how
+    the engine reaches an overlapped spawn.
+    """
+    with template.clone() as trial:
+        trial.set_piece(piece, x=5, y=SPAWN_ORIGIN_Y, rotation=0)
+        if obstruct is not None:
+            trial.set_board(obstruct)
+        release = False
+        count = orientation_count(piece)
+        state = trial.state
+        for _ in range(4096):
+            if state.phase != "active" or state.terminal:
+                break
+            mask, release = plan_mask(state.orientation, state.x, plan, release, count)
+            state, events = trial.step(mask)
+            if events.locked:
+                return (state.orientation, state.x, state.y, events.game_over,
+                        board_grid(state.board, state.hidden_rows))
+        raise AssertionError(f"{piece} aiming at {plan} never locked")
+
+
+def test_reachable_placements_match_engine_locks_from_the_spawn_state():
+    """Whole-set gate: every plan locks exactly where the path model says.
+
+    The boards put both directions of the contract on the engine itself:
+
+    * a ceiling two visible rows tall over columns 7-9, which a piece can only
+      get under by descending while it presses -- the straight-drop model rejects
+      those columns and the reachable set must not;
+    * a wall in column 3 from visible row 2 down, which no plan can cross even
+      though a straight drop into the columns beyond it fits -- the straight-drop
+      model offers those columns and the reachable set must not;
+    * minos in the hidden buffer beside a tall stack, so a piece descending there
+    meets the buffer;
+    * visible row 0 filled over a wall, so every piece's spawn footprint is
+      occupied: the engine has no collision test at spawn, so the plan has to
+      descend out of the overlap rather than declare a top-out;
+    * two seeded irregular boards (30% and 55% fill), also installed after the
+      piece so the origin overlaps wherever they cover it — the case a
+      randomized comparison exposed and the structured fixtures missed.
+
+    Each board is driven as a later piece (gravity from the first active frame)
+    and the ceiling also as the game's first piece (96 frames without a gravity
+    attempt). For every piece, orientation and legal column the native engine is
+    driven from the spawn state with exactly the masks the controller emits, and
+    its locked ``(orientation, x, y)`` must equal the model's ``PlanOutcome``. A
+    lock the engine turns into a top-out must correspond to no reachable
+    placement; every other lock is a placement exactly when the plan reached its
+    aim, and then the settled board must match cell for cell. This compares the
+    whole placement set of every board, not a sample.
+    """
+    configuration = {**load_config(LOOKAHEAD_CONFIG).game, "seed": 3}
+
+    ceiling = [[0] * WIDTH for _ in range(20)]
+    for row in (0, 1):
+        for column in range(7, WIDTH):
+            ceiling[row][column] = 1
+
+    wall = [[0] * WIDTH for _ in range(20)]
+    for row in range(2, 20):
+        wall[row][3] = 1
+
+    stack = [[0] * WIDTH for _ in range(20)]
+    for row in range(12, 20):
+        for column in range(8, WIDTH):
+            stack[row][column] = 1
+
+    empty = [[0] * WIDTH for _ in range(20)]
+
+    # Visible row 0 filled at columns 2-5 over a wall in column 2: every piece's
+    # spawn footprint at x = 5 covers row 0, so the spawn origin is occupied.
+    overhang = [[0] * WIDTH for _ in range(20)]
+    for column in range(2, 6):
+        overhang[0][column] = 1
+    for row in range(20):
+        overhang[row][2] = 1
+
+    cases = [
+        ("ceiling", ceiling, None, False, False),
+        ("ceiling", ceiling, None, True, False),
+        ("wall", wall, None, False, False),
+        ("hidden-stack", stack, None, False, True),
+        # An overlapped spawn: the engine has no collision test at spawn, so the
+        # plan must descend out of the overlap instead of topping out.
+        ("overhang-spawn", empty, overhang, False, False),
+    ]
+
+    # Irregular boards, placed after the piece so the spawn overlaps wherever the
+    # board covers the origin: the structured fixtures above never did that, and
+    # a randomized comparison is what exposed the rescue case. Seeded, so the
+    # boards are the same on every run.
+    generator = random.Random(20260927)
+    for label, fill in (("random-sparse", 0.30), ("random-dense", 0.55)):
+        cases.append((label, empty,
+                      [[1 if generator.random() < fill else 0 for _ in range(WIDTH)]
+                       for _ in range(20)], False, False))
+
+    compared = 0
+    for label, board, obstruct, first_piece, seed_hidden in cases:
+        template, first_delay = _spawn_template(configuration, board, first_piece, seed_hidden)
+        with template:
+            state = template.state
+            model_board = board if obstruct is None else obstruct
+            grid = board_grid(tuple(tuple(int(cell) for cell in row) for row in model_board),
+                              state.hidden_rows)
+            columns = grid_columns(grid)
+            if seed_hidden:
+                assert grid[1][8:10] == (1, 1)
+            for piece in PIECES:
+                model = {
+                    (placement.orientation, placement.x): placement
+                    for placement in reachable_placements(
+                        grid, piece, level=state.level, first_delay_remaining=first_delay)
+                }
+                for orientation, x in _aims(piece):
+                    plan = (orientation, x)
+                    native = _native_plan_lock(template, piece, plan, obstruct)
+                    outcome = simulate_plan(grid, piece, plan, level=state.level,
+                                            first_delay_remaining=first_delay)
+                    compared += 1
+                    placement = model.get(plan)
+                    assert (outcome.orientation, outcome.x, outcome.y) == native[:3], (
+                        label, first_piece, piece, plan, outcome, native[:3])
+                    assert (outcome.reached and not outcome.top_out) == (placement is not None), (
+                        label, first_piece, piece, plan, outcome)
+                    if native[3]:  # Game::lock rejected the origin, so nothing was written
+                        assert placement is None, (label, first_piece, piece, plan)
+                        continue
+                    assert (native[:2] == plan) == (placement is not None), (
+                        label, first_piece, piece, plan, native[:3])
+                    if placement is not None:
+                        assert placement.y == native[2]
+                        settled, cleared = settle_columns(columns, piece, orientation, x,
+                                                          placement.y)
+                        assert cleared == placement.lines_cleared
+                        assert settled == grid_columns(native[4]), (label, first_piece, piece, plan)
+
+    assert compared == sum(1 for piece in PIECES for _ in _aims(piece)) * len(cases)
+
+
+def test_suite_record_with_the_lookahead_agent_runs_and_verifies(tmp_path: Path):
+    """The new agent plays a suite episode and its record replays."""
+    raw = json.loads(LOOKAHEAD_CONFIG.read_text(encoding="utf-8"))
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps({**raw, "frame_limit": 400, "seeds": [2], "agents": ["lookahead"]}),
+        encoding="utf-8",
+    )
+    path = run_and_save(config_path, tmp_path / "runs")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["format_version"] == 2
+    assert sorted(record["summary"]) == ["lookahead"]
+    assert len(record["episodes"]) == 1
+    assert record["episodes"][0]["result"]["stopping_reason"] in {"game_over", "frame_limit"}
+    verify_run(path)
