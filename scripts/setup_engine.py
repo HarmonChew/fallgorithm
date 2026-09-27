@@ -1,7 +1,8 @@
-"""Build the sibling headless/native engine and install its binding into this venv."""
+"""Build the sibling engine, optionally its desktop client, and install the binding."""
 
 from __future__ import annotations
 
+import argparse
 import os
 from pathlib import Path
 import subprocess
@@ -13,6 +14,12 @@ BUILD_DIR = PROJECT_ROOT / ".build" / "engine"
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--desktop", action="store_true", help="also build the SDL3 game for visual replay")
+    parser.add_argument("--sdl3-include-dir", type=Path, help="optional SDL3 headers directory when only the runtime is installed")
+    args = parser.parse_args()
+    if args.sdl3_include_dir and not args.desktop:
+        parser.error("--sdl3-include-dir requires --desktop")
     if sys.prefix == sys.base_prefix:
         print("Activate a virtual environment before running this setup script.", file=sys.stderr)
         return 1
@@ -20,11 +27,18 @@ def main() -> int:
     if not (source / "CMakeLists.txt").is_file() or not (source / "python" / "block_stack" / "__init__.py").is_file():
         print(f"Block Stack checkout not found at {source}; set BLOCK_STACK_ROOT to its path.", file=sys.stderr)
         return 1
+    targets = ["blocks_native", "block_stack_headless", "block_stack_replay"]
+    if args.desktop:
+        targets.append("block_stack")
+    extra_config = []
+    if args.sdl3_include_dir:
+        extra_config.append(f"-DBLOCK_STACK_SDL3_INCLUDE_DIR={args.sdl3_include_dir.expanduser().resolve()}")
     commands = [
         ["cmake", "-S", str(source), "-B", str(BUILD_DIR), "-DCMAKE_BUILD_TYPE=Release",
-         "-DBLOCK_STACK_BUILD_APP=OFF", "-DBLOCK_STACK_BUILD_PYTHON=ON", "-DBLOCK_STACK_BUILD_TESTS=OFF"],
+         f"-DBLOCK_STACK_BUILD_APP={'ON' if args.desktop else 'OFF'}",
+         "-DBLOCK_STACK_BUILD_PYTHON=ON", "-DBLOCK_STACK_BUILD_TESTS=OFF", *extra_config],
         ["cmake", "--build", str(BUILD_DIR), "--config", "Release", "--target",
-         "blocks_native", "block_stack_headless", "--parallel"],
+         *targets, "--parallel"],
         [sys.executable, "-m", "pip", "install", "--no-deps", "-e", str(source / "python")],
     ]
     try:
@@ -47,6 +61,8 @@ def main() -> int:
         return 1
     print(f"Engine checkout: {source}")
     print(f"Native library: {built}")
+    if args.desktop:
+        print(f"Desktop client built in {BUILD_DIR}; use `block-stack-ai run --config ... --watch`.")
     if os.environ.get("BLOCKS_NATIVE_LIB"):
         print(f"Runtime override BLOCKS_NATIVE_LIB: {os.environ['BLOCKS_NATIVE_LIB']}")
     print("Binding installed in the active virtual environment. Run `block-stack-ai doctor`.")

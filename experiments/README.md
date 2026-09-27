@@ -10,7 +10,8 @@ uncommitted code is a **working-tree run**: a commit hash alone cannot recreate
 those edits. Keep small configurations and summaries here; the source code in
 `src/` is the maintained implementation, and Git history holds earlier versions.
 
-Use `block-stack-ai run --config experiments/NNN-name/config.json`, then
+Use `block-stack-ai experiments` to list the recorded experiments, and
+`block-stack-ai run --experiment NNN` (or the full `NNN-name`), then
 `block-stack-ai verify runs/<run-id>/run.json`. Mention the temporary run path in
 the notes along with the code versions and commands. To reproduce later, restore
 both recorded code versions (and any uncommitted edits, if possible), rebuild the
@@ -18,6 +19,11 @@ native engine, rerun the configuration, and verify the new record. `runs/` is
 disposable ignored output. Deliberately copy any artifact needed for a lasting
 experiment into a suitable retained location; do not depend on the temporary
 run directory remaining available.
+
+For a fresh game controlled live, use `block-stack-ai play --experiment NNN`.
+`--agent` selects one of that experiment's placement agents; fixed-script
+experiments support `run` and replay only. An explicit `--config` file is also
+accepted by both commands in place of `--experiment`.
 
 Future "best" references can point to a selected experiment for each approach.
 Choose one using a stated evaluation over enough games, rather than one lucky

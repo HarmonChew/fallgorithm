@@ -349,6 +349,11 @@ def run_and_save(
     else:
         record["format_version"] = FORMAT_VERSION
         record.update(run_episode(config, game_factory))
+    return save_record(record, runs_dir)
+
+
+def save_record(record: dict[str, Any], runs_dir: Path = PROJECT_ROOT / "runs") -> Path:
+    """Persist a completed headless or live episode in the existing run layout."""
     name = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + "-" + uuid4().hex[:8]
     run_dir = runs_dir / name
     run_dir.mkdir(parents=True, exist_ok=False)

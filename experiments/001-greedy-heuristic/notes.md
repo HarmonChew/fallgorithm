@@ -1,5 +1,27 @@
 # 001: Greedy heuristic placement baseline
 
+**Live viewing (2026-09-27):** `block-stack-ai play --experiment 001` starts a fresh desktop
+game with this experiment's greedy agent, settings and frame limit. The seed is
+selected afresh unless supplied with `--seed`; `--agent random` selects the
+comparison baseline. Inputs are chosen from the current desktop state through
+a local pipe, one frame at a time. Each desktop snapshot must match the native
+library's predicted state before the controller sends the next input. Completed
+games save normal suite records for the existing `verify` command.
+
+The live seed-2 greedy run matched the existing headless episode in every input,
+event count, result and hash: 15036 frames, 119 lines, score 94796, ending by game
+over at `d4bb1563f96f2aa4`. Its temporary record is
+`runs/20260926T163817451947Z-cc2e8ee3/run.json`; `verify` passed. All 85 local tests
+passed, including desktop pause/step/restart, seeded random-policy restart,
+native state drift rejection, invalid masks, pipe closure and both terminal and
+frame-limit records. An additional paced SDL dummy-driver run with fresh seed
+62583 rendered the agent playing; its frame-600 screenshot was inspected. This
+adds a way to watch the existing algorithm; the evaluation configuration,
+weights, retained summary and conclusions below are unchanged.
+The live check used dirty working trees at engine commit
+`0e56c3beb7e4165e793ff326e3600d973e236cb8` and fallgorithm commit
+`2bac938f10c33eb239874ad7e090d16aaeddf06b`; its record retains those versions.
+
 **Question:** Does a one-piece greedy heuristic that scores the settled board
 outperform a uniform random legal-placement baseline on identical fixed seeds,
 using only the existing engine connection and run-recording path?

@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import subprocess
 
 import pytest
 
 from block_stack_ai.agents import DOWN
-from block_stack_ai.engine import PROJECT_ROOT, create_game
+from block_stack_ai.engine import PROJECT_ROOT, create_game, engine_executable
+from block_stack_ai.replay import export_replay
 from block_stack_ai.heuristic import SPAWN_ORIGIN_Y, WIDTH, board_grid, enumerate_placements, settle
 from block_stack_ai.pieces import PIECES, cells, orientation_count
 from block_stack_ai.runner import (
@@ -341,3 +343,31 @@ def test_recorded_placed_pieces_agree_with_the_native_engine():
         state, _ = game.step(0)
     assert state.stats.pieces == 1  # the active piece is spawned, not locked
     assert state.piece_count == 2
+
+
+@pytest.mark.parametrize("variant", ["experiment", "strict_challenge", "frame_limit"])
+def test_desktop_replay_preserves_verified_run(tmp_path: Path, variant: str):
+    config = load_config(CONFIG).to_dict()
+    if variant == "strict_challenge":
+        config["game"].update(ruleset="classic_ntsc_strict", mode="challenge", height=5, seed=65535)
+    elif variant == "frame_limit":
+        config["frame_limit"] = 3
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    path = run_and_save(config_path, tmp_path / "runs")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    replay_path, _ = export_replay(path)
+    verification = subprocess.run(
+        [str(engine_executable("block_stack_replay")), str(replay_path)],
+        check=True, capture_output=True, text=True,
+    )
+    assert f"{len(record['inputs'])} frames" in verification.stdout
+    assert f"hash {int(record['result']['final_state_hash'], 16):x}" in verification.stdout
+
+    # A broken record must fail verification before replacing a valid export.
+    original = replay_path.read_bytes()
+    record["result"]["final_state_hash"] = "0000000000000000"
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(VerificationError, match="final_state_hash"):
+        export_replay(path)
+    assert replay_path.read_bytes() == original
