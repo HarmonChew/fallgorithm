@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-09-27T13:39:29.681939+00:00",
+  "module": "src/block_stack_ai/tetris.py",
+  "module_sha256": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e",
+  "note": "the declared objective, captured from the unmodified tree before the evaluation run; no weight is revised against evaluation outcomes",
+  "objective": {
+    "aggregate_height": -0.5,
+    "bumpiness": -0.5,
+    "holes": -1.0,
+    "max_height": -1.0,
+    "premature_clear": -1.0,
+    "tetrises": 8.0,
+    "tie_break": "first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending",
+    "well_depth": 1.0,
+    "well_depth_cap": 4
+  }
+}

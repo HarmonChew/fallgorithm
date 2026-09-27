@@ -861,3 +861,217 @@ def test_missing_native_library_has_actionable_error(monkeypatch, tmp_path):
     monkeypatch.setattr(engine, "BUILD_DIR", Path(tmp_path / "empty"))
     with pytest.raises(engine.EngineError, match="setup_engine.py"):
         engine.native_library_path()
+
+
+CLEAR_SIZES = {"singles": 1, "doubles": 1, "triples": 1, "tetrises": 1}
+
+
+class ClearGame:
+    """A scripted stand-in that reports the engine's per-step clear size.
+
+    Each step emits the next entry of ``clears`` as the ``lines_cleared`` event
+    and adds it to ``state.lines``, and locks one piece, so the histogram, the
+    line total and the placed count can be checked against one another. The same
+    sequence is replayed from a fresh instance for every episode, so a suite
+    summary of two agents over two seeds sums four identical histograms.
+    """
+
+    def __init__(self, clears, **_):
+        self.state = SuiteState()
+        self.clears = list(clears)
+        self.index = 0
+        self.locks = 0
+        self.closed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.closed = True
+
+    def state_hash(self):
+        return self.state.frame
+
+    def step(self, mask):
+        cleared = self.clears[self.index]
+        self.index += 1
+        self.state.frame += 1
+        self.state.lines += cleared
+        self.locks += 1
+        self.state.stats.pieces = self.locks
+        self.state.piece_count = self.locks + 1
+        fields = {name: 0 for name in EVENT_NAMES}
+        fields["locked"] = True
+        fields["lines_cleared"] = cleared
+        return self.state, SimpleNamespace(**fields)
+
+
+SCRIPTED_CLEARS = {**BASE, "frame_limit": 5, "script": [{"mask": 0, "frames": 5}]}
+
+
+def test_clear_sizes_are_tallied_from_the_engine_clear_result():
+    """The per-episode histogram is the engine's own per-step clear size.
+
+    The stand-in reports one single, one double, one triple, one four-line clear
+    and one empty step. The histogram must count exactly those, and its rows must
+    add up to the ``lines_cleared`` total the runner already accumulates and to
+    the state's line count.
+    """
+    config = parse_config(SCRIPTED_CLEARS)
+    episode = run_episode(config, lambda **_: ClearGame([1, 2, 4, 0, 3]))
+    sizes = episode["clear_sizes"]
+    assert sizes == CLEAR_SIZES
+    assert episode["result"]["lines"] == 10
+    assert episode["result"]["event_counts"]["lines_cleared"] == 10
+    assert (1 * sizes["singles"] + 2 * sizes["doubles"]
+            + 3 * sizes["triples"] + 4 * sizes["tetrises"]) == 10
+    assert episode["pieces_placed"] == 5
+
+
+def test_clear_size_recording_rejects_a_size_the_engine_cannot_report():
+    """A clear size outside 0..4 is a broken binding, not a play outcome.
+
+    Silently dropping it would leave the histogram and the line total
+    disagreeing, which is exactly what the verifier would then reject.
+    """
+    config = parse_config(SCRIPTED_CLEARS)
+    with pytest.raises(ValueError, match="impossible clear size: 5"):
+        run_episode(config, lambda **_: ClearGame([5, 0, 0, 0, 0]))
+
+
+def _clear_suite(tmp_path, monkeypatch, clears=(1, 2, 4, 0, 3)):
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps({**SUITE, "frame_limit": len(clears)}), encoding="utf-8")
+    factory = lambda **_: ClearGame(clears)
+    path = run_and_save(config_path, tmp_path / "runs", factory)
+    return path, factory, json.loads(path.read_text(encoding="utf-8"))
+
+
+def test_suite_summary_totals_the_clear_sizes_per_agent(tmp_path, monkeypatch):
+    """Each agent's summary carries the totals its episodes recorded."""
+    path, factory, record = _clear_suite(tmp_path, monkeypatch)
+    assert len(record["episodes"]) == 4
+    for episode in record["episodes"]:
+        assert episode["clear_sizes"] == CLEAR_SIZES
+    for name in ("greedy", "random"):
+        assert record["summary"][name]["clear_sizes"] == {
+            field: 2 * count for field, count in CLEAR_SIZES.items()
+        }
+    assert verify_run(path, factory) == []
+
+
+def test_records_written_before_the_clear_size_metric_still_verify(tmp_path, monkeypatch):
+    """A record without the histogram is older and keeps verifying under its meaning.
+
+    Both formats are covered: the suite record loses the per-episode field and
+    the summary section, the scripted record loses the top-level field, and both
+    still verify because the section is optional and is not compared when absent.
+    """
+    suite_path, suite_factory, suite_record = _clear_suite(tmp_path, monkeypatch)
+    for episode in suite_record["episodes"]:
+        episode.pop("clear_sizes")
+    for summary in suite_record["summary"].values():
+        summary.pop("clear_sizes")
+    suite_path.write_text(json.dumps(suite_record), encoding="utf-8")
+    assert verify_run(suite_path, suite_factory) == []
+
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+    config_path = tmp_path / "scripted-config.json"
+    config_path.write_text(json.dumps(SCRIPTED_CLEARS), encoding="utf-8")
+    factory = lambda **_: ClearGame([1, 2, 4, 0, 3])
+    scripted_path = run_and_save(config_path, tmp_path / "runs", factory)
+    scripted_record = json.loads(scripted_path.read_text(encoding="utf-8"))
+    scripted_record.pop("clear_sizes")
+    scripted_path.write_text(json.dumps(scripted_record), encoding="utf-8")
+    assert verify_run(scripted_path, factory) == []
+
+
+def test_verification_compares_a_present_clear_size_histogram(tmp_path, monkeypatch):
+    """A present histogram is compared with the writer's type and key rules.
+
+    The replay re-derives the counts, so a changed count, a missing key, an
+    extra key and a JSON boolean in a count are each reported; the summary total
+    is checked with the same rules.
+    """
+    path, factory, record = _clear_suite(tmp_path, monkeypatch)
+    assert verify_run(path, factory) == []
+
+    def rejected(tamper, message):
+        tampered = json.loads(json.dumps(record))
+        path.write_text(json.dumps(tamper(tampered)), encoding="utf-8")
+        with pytest.raises(VerificationError, match=message):
+            verify_run(path, factory)
+
+    def changed_count(tampered):
+        tampered["episodes"][0]["clear_sizes"]["tetrises"] = 0
+        return tampered
+
+    def boolean_count(tampered):
+        tampered["episodes"][0]["clear_sizes"]["singles"] = True
+        return tampered
+
+    def missing_key(tampered):
+        del tampered["episodes"][0]["clear_sizes"]["triples"]
+        return tampered
+
+    def extra_key(tampered):
+        tampered["episodes"][0]["clear_sizes"]["quintuples"] = 0
+        return tampered
+
+    def summary_total(tampered):
+        tampered["summary"]["greedy"]["clear_sizes"]["doubles"] = 1
+        return tampered
+
+    rejected(changed_count, r"episode 0 clear_sizes\.tetrises: recorded 0, replayed 1")
+    rejected(boolean_count, r"episode 0 clear_sizes\.singles must be int, not True")
+    rejected(missing_key, r"episode 0 clear_sizes keys .* do not match")
+    rejected(extra_key, r"episode 0 clear_sizes keys .* do not match")
+    rejected(summary_total, r"summary\.greedy\.clear_sizes\.doubles: recorded 1, replayed 2")
+
+
+def test_verification_rejects_a_summary_that_omits_the_histogram_its_episodes_record(
+    tmp_path, monkeypatch
+):
+    """An agent's totals are required once its episodes record the histogram.
+
+    The totals are summed from the episodes, so dropping only the summary
+    section would verify yet leave ``report``'s reader with no per-agent totals
+    for an agent whose episodes carry them. Legacy records, which carry the
+    histogram nowhere, keep verifying (``records_written_before...``).
+    """
+    path, factory, record = _clear_suite(tmp_path, monkeypatch)
+    assert verify_run(path, factory) == []
+    del record["summary"]["random"]["clear_sizes"]
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"summary\.random\.clear_sizes: the episodes record the clear-size histogram "
+              r"but the summary reports no totals",
+    ):
+        verify_run(path, factory)
+
+
+def test_verification_rejects_a_partially_histogramned_agent(tmp_path, monkeypatch):
+    """One agent's episodes are all-or-nothing: no writer mixes the two formats.
+
+    A record with one random episode carrying the histogram and one not, and no
+    summary totals, would otherwise verify with a histogram that covers only
+    half the agent's lines.
+    """
+    path, factory, record = _clear_suite(tmp_path, monkeypatch)
+    del record["episodes"][0]["clear_sizes"]
+    del record["summary"]["random"]["clear_sizes"]
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"summary\.random\.clear_sizes: only 1 of 2 recorded episodes carry "
+              r"the clear-size histogram",
+    ):
+        verify_run(path, factory)

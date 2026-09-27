@@ -106,3 +106,40 @@ def test_native_controller_exits_when_input_pipe_closes(desktop_environment):
     with create_game() as game:
         state = game.load_state(bytes.fromhex(messages[-1].split(" ", 1)[1]))
         assert state.frame == 0
+
+
+def test_live_session_records_the_clear_size_histogram_and_verifies(tmp_path):
+    """A completed live game records the same histogram a suite episode does.
+
+    Live play builds its own episode, so it is the second path that writes
+    episodes. The desktop protocol is driven here with a plain native mirror: the
+    greedy agent clears lines within the frame limit, and the recorded histogram
+    must be non-empty, add up to the line total the record already carries, equal
+    the summary total derived from it, and replay under ``verify_run``. Without
+    the histogram in the episode the summary would carry totals the episode did
+    not record, and the replay would reject the record.
+    """
+    limit = 600
+    config = SuiteConfig(GAME, limit, (2,), ("greedy",))
+    session = LiveSession(config, tmp_path / "runs")
+    try:
+        with create_game(**GAME, seed=2) as desktop:
+            snapshot = desktop.save_state()
+            session.receive("BEGIN", snapshot)
+            while not desktop.state.terminal and desktop.state.frame < limit:
+                mask = session.receive("STATE", snapshot)
+                desktop.step(mask)
+                snapshot = desktop.save_state()
+            session.receive("END", snapshot)
+    finally:
+        session.close()
+    records = list((tmp_path / "runs").glob("*/run.json"))
+    assert len(records) == 1
+    record = json.loads(records[0].read_text(encoding="utf-8"))
+    episode = record["episodes"][0]
+    sizes = episode["clear_sizes"]
+    assert sizes["singles"] + sizes["doubles"] + sizes["triples"] + sizes["tetrises"] > 0
+    assert (sizes["singles"] + 2 * sizes["doubles"] + 3 * sizes["triples"]
+            + 4 * sizes["tetrises"]) == episode["result"]["lines"]
+    assert record["summary"]["greedy"]["clear_sizes"] == sizes
+    verify_run(records[0])

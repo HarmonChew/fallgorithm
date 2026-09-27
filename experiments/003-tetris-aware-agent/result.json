@@ -1,0 +1,619 @@
+{
+  "base_commit": {
+    "commit": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f",
+    "git_tree_id": "c312a71489219625b402172042cb78bb2a41cbc4",
+    "harness_recorded_tree_content_hash": "7ca89481035ec0c17937f1102c59dd65717e3e034d226e161e7912e116f1cf5c",
+    "note": "the harness records its own content-addressed hash of the tree (the `tree` value in its environment preflight), which is not a Git object id and cannot be resolved by `git cat-file`; the brief's `context` quoted that value for the merged state, while Git's tree id for the same commit is the git_tree_id above",
+    "pull_request": 9,
+    "pull_request_head": "7285893b42ef271a0ddb6e29a84400102fdb100f",
+    "pull_request_head_tree": "c312a71489219625b402172042cb78bb2a41cbc4",
+    "remote_main_refresh": {
+      "commands": [
+        {
+          "command": "git ls-remote --exit-code https://github.com/HarmonChew/fallgorithm.git refs/heads/main",
+          "exit": 0,
+          "stdout": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f\trefs/heads/main"
+        },
+        {
+          "command": "git clone --quiet --depth 1 --branch main https://github.com/HarmonChew/fallgorithm.git <tmp>/exp003-remote-main",
+          "exit": 0,
+          "stdout": ""
+        },
+        {
+          "command": "git -C <clone> rev-parse HEAD",
+          "exit": 0,
+          "stdout": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f"
+        },
+        {
+          "command": "git -C <clone> rev-parse HEAD^{tree}",
+          "exit": 0,
+          "stdout": "c312a71489219625b402172042cb78bb2a41cbc4"
+        },
+        {
+          "command": "git -C <worktree> rev-parse HEAD",
+          "exit": 0,
+          "stdout": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f"
+        },
+        {
+          "command": "git -C <worktree> rev-parse HEAD^{tree}",
+          "exit": 0,
+          "stdout": "c312a71489219625b402172042cb78bb2a41cbc4"
+        }
+      ],
+      "conclusion": "the refreshed remote main tip, this branch's base and PR #9's head are one commit, and the clone's tree and the worktree's tree are one tree",
+      "exit": 0,
+      "note": "the harness creates the task branch and worktree before the session starts and the shared Git directory is read-only there, so a `git fetch` cannot precede branch creation; the state the requirement protects \u2014 the branch base is the refreshed remote main tip \u2014 is captured directly by this probe",
+      "probe": "experiments/003-tetris-aware-agent/probes/evidence.py remote-main"
+    },
+    "remote_main_tip": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f"
+  },
+  "baseline_reproduces_002": {
+    "experiment_002_published_lines_cleared": 9128,
+    "fields_checked": [
+      "score mean/median/min/max",
+      "lines mean/median/min/max",
+      "frames mean/median/min/max",
+      "pieces_placed",
+      "stopping_reasons"
+    ],
+    "lines_cleared_by_the_engine": 9128,
+    "note": "every summary field 002's result.json published for lookahead matches the replayed summary exactly; the replayed summary adds only the new clear_sizes total",
+    "only_added_section": "clear_sizes",
+    "summary_matches_experiment_002_result_json": true
+  },
+  "clear_size_metric": {
+    "compatibility": "a record that carries neither the per-episode field nor the summary section is older and still verifies; a present section is compared with the same type-and-key rules as the mandatory ones; and presence is all-or-nothing per agent and must agree between the episodes and the summary, so a summary that omitted the totals its episodes record, or an agent with some episodes histogrammed and some not, is rejected rather than verified without them",
+    "definitions": {
+      "headline_tetris_line_rate": "4 * tetrises / total lines; zero total lines is a rate of 0.0",
+      "safety_cap": "an episode stopped at the configured frame_limit is a configured safety stop, never a game over",
+      "tetrises_per_100_placed_pieces": "100 * tetrises / pieces_placed"
+    },
+    "field": "clear_sizes",
+    "fields": [
+      "singles",
+      "doubles",
+      "triples",
+      "tetrises"
+    ],
+    "live_path": "live desktop play builds its own episode and suite record, so it tallies and records the same histogram before saving; without it a live game that cleared a line would save a record whose summary did not match its episode and would fail verification",
+    "place": "an optional top-level per-episode field beside pieces_placed, never a leaf inside result or result.event_counts, because verify_run compares a result object's keys with the replay's exactly",
+    "source": "the engine's own per-step events.lines_cleared (1/2/3/4), the same event result.event_counts.lines_cleared sums, so the histogram adds up to result.lines",
+    "summary": "each agent's summary carries the totals of its episodes' histograms"
+  },
+  "configuration": {
+    "agents": [
+      "lookahead",
+      "tetris"
+    ],
+    "frame_limit": 200000,
+    "game": {
+      "height": 0,
+      "mode": "endless",
+      "ruleset": "classic_ntsc_extended",
+      "start_level": 18
+    },
+    "seeds": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      20
+    ]
+  },
+  "determinism": {
+    "note": "the cited record and its repeat were both started after the objective capture; the three earlier runs predate the stricter capture but ran the same objective module, whose digest is unchanged",
+    "record_paths": [
+      "runs/20260927T135534897996Z-b97139b5/run.json",
+      "runs/20260927T140007465253Z-ed02d95f/run.json",
+      "runs/20260927T131642090444Z-c9e760e3/run.json",
+      "runs/20260927T132146569036Z-9c153077/run.json",
+      "runs/20260927T134150617700Z-8753ea22/run.json"
+    ],
+    "repeat_run_configuration_identical": true,
+    "repeat_run_episodes_identical": true,
+    "repeat_run_summary_identical": true,
+    "runs_compared": 5,
+    "verify_exit_code": 0,
+    "wall_clock_seconds": [
+      132.5,
+      133.5,
+      133.0,
+      133.3,
+      133.0
+    ]
+  },
+  "engine_git": {
+    "commit": "8ca4158711c2d6339cab1ee8d78aa65bd624c89d",
+    "dirty": true,
+    "kind": "working-tree"
+  },
+  "episodes": 20,
+  "episodes_by_agent_seed": [
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 56,
+        "singles": 420,
+        "tetrises": 0,
+        "triples": 5
+      },
+      "frames": 59916,
+      "lines": 547,
+      "pieces_placed": 1404,
+      "score": 854880,
+      "seed": 2,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 41,
+        "singles": 399,
+        "tetrises": 0,
+        "triples": 0
+      },
+      "frames": 54559,
+      "lines": 481,
+      "pieces_placed": 1238,
+      "score": 656489,
+      "seed": 4,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 27,
+        "singles": 194,
+        "tetrises": 0,
+        "triples": 2
+      },
+      "frames": 33940,
+      "lines": 254,
+      "pieces_placed": 669,
+      "score": 256671,
+      "seed": 6,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 35,
+        "singles": 286,
+        "tetrises": 0,
+        "triples": 0
+      },
+      "frames": 42572,
+      "lines": 356,
+      "pieces_placed": 924,
+      "score": 405490,
+      "seed": 8,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 102,
+        "singles": 708,
+        "tetrises": 1,
+        "triples": 2
+      },
+      "frames": 93066,
+      "lines": 922,
+      "pieces_placed": 2341,
+      "score": 2171991,
+      "seed": 10,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 126,
+        "singles": 1082,
+        "tetrises": 0,
+        "triples": 4
+      },
+      "frames": 131805,
+      "lines": 1346,
+      "pieces_placed": 3400,
+      "score": 4272028,
+      "seed": 12,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 156,
+        "singles": 1169,
+        "tetrises": 1,
+        "triples": 10
+      },
+      "frames": 143005,
+      "lines": 1515,
+      "pieces_placed": 3820,
+      "score": 5602465,
+      "seed": 14,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 43,
+        "singles": 338,
+        "tetrises": 0,
+        "triples": 3
+      },
+      "frames": 50218,
+      "lines": 433,
+      "pieces_placed": 1119,
+      "score": 573143,
+      "seed": 16,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 209,
+        "singles": 1695,
+        "tetrises": 0,
+        "triples": 8
+      },
+      "frames": 200000,
+      "lines": 2137,
+      "pieces_placed": 5353,
+      "score": 10334568,
+      "seed": 18,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 123,
+        "singles": 888,
+        "tetrises": 0,
+        "triples": 1
+      },
+      "frames": 111168,
+      "lines": 1137,
+      "pieces_placed": 2876,
+      "score": 3101874,
+      "seed": 20,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris",
+      "clear_sizes": {
+        "doubles": 62,
+        "singles": 266,
+        "tetrises": 2,
+        "triples": 11
+      },
+      "frames": 47500,
+      "lines": 431,
+      "pieces_placed": 1112,
+      "score": 697090,
+      "seed": 2,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris",
+      "clear_sizes": {
+        "doubles": 59,
+        "singles": 355,
+        "tetrises": 4,
+        "triples": 10
+      },
+      "frames": 57216,
+      "lines": 519,
+      "pieces_placed": 1332,
+      "score": 932664,
+      "seed": 4,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris",
+      "clear_sizes": {
+        "doubles": 118,
+        "singles": 518,
+        "tetrises": 1,
+        "triples": 23
+      },
+      "frames": 81516,
+      "lines": 827,
+      "pieces_placed": 2102,
+      "score": 1973340,
+      "seed": 6,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris",
+      "clear_sizes": {
+        "doubles": 36,
+        "singles": 165,
+        "tetrises": 1,
+        "triples": 5
+      },
+      "frames": 33440,
+      "lines": 256,
+      "pieces_placed": 676,
+      "score": 293497,
+      "seed": 8,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris",
+      "clear_sizes": {
+        "doubles": 8,
+        "singles": 24,
+        "tetrises": 1,
+        "triples": 2
+      },
+      "frames": 7384,
+      "lines": 50,
+      "pieces_placed": 166,
+      "score": 69095,
+      "seed": 10,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris",
+      "clear_sizes": {
+        "doubles": 35,
+        "singles": 127,
+        "tetrises": 0,
+        "triples": 2
+      },
+      "frames": 26057,
+      "lines": 203,
+      "pieces_placed": 548,
+      "score": 193346,
+      "seed": 12,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris",
+      "clear_sizes": {
+        "doubles": 52,
+        "singles": 329,
+        "tetrises": 1,
+        "triples": 9
+      },
+      "frames": 51663,
+      "lines": 464,
+      "pieces_placed": 1196,
+      "score": 732767,
+      "seed": 14,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris",
+      "clear_sizes": {
+        "doubles": 38,
+        "singles": 147,
+        "tetrises": 0,
+        "triples": 3
+      },
+      "frames": 30973,
+      "lines": 232,
+      "pieces_placed": 615,
+      "score": 233904,
+      "seed": 16,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris",
+      "clear_sizes": {
+        "doubles": 30,
+        "singles": 199,
+        "tetrises": 0,
+        "triples": 4
+      },
+      "frames": 35598,
+      "lines": 271,
+      "pieces_placed": 713,
+      "score": 287608,
+      "seed": 18,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris",
+      "clear_sizes": {
+        "doubles": 38,
+        "singles": 148,
+        "tetrises": 0,
+        "triples": 6
+      },
+      "frames": 30743,
+      "lines": 242,
+      "pieces_placed": 641,
+      "score": 259351,
+      "seed": 20,
+      "stopping_reason": "game_over"
+    }
+  ],
+  "fallgorithm_git": {
+    "commit": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f",
+    "dirty": true,
+    "kind": "working-tree"
+  },
+  "heuristic": {
+    "aggregate_height": -0.5,
+    "bumpiness": -0.5,
+    "holes": -1.0,
+    "lines_cleared": 1.0,
+    "max_height": -1.0,
+    "tie_break": "first highest-scoring placement in enumeration order: orientation ascending, then x ascending"
+  },
+  "predeclared_objective": {
+    "capture_file": "experiments/003-tetris-aware-agent/probes/predeclared_objective.json",
+    "captured_at": "2026-09-27T13:53:15.349595+00:00",
+    "cited_record": "runs/20260927T135534897996Z-b97139b5/run.json",
+    "cited_record_created_at": "2026-09-27T13:53:22.548285+00:00",
+    "earlier_capture": "experiments/003-tetris-aware-agent/probes/predeclared_objective.earlier.json",
+    "module": "src/block_stack_ai/tetris.py",
+    "module_sha256": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e",
+    "note": "the capture records the module digest and the digest of the notes' declared-objective section (the weights table and rationale, delimited by the predeclared-objective markers) and is not overwritten while both still match; the earlier module-only capture is kept beside it; the cited record was created after this capture, which check-predeclaration re-checks mechanically",
+    "notes_section": "experiments/003-tetris-aware-agent/notes.md#predeclared-objective",
+    "notes_section_sha256": "64440cac719602d02e3a1159b264ad41d8dd0309a9344629750e72da955e6368",
+    "objective": {
+      "aggregate_height": -0.5,
+      "bumpiness": -0.5,
+      "holes": -1.0,
+      "max_height": -1.0,
+      "premature_clear": -1.0,
+      "tetrises": 8.0,
+      "tie_break": "first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending",
+      "well_depth": 1.0,
+      "well_depth_cap": 4
+    }
+  },
+  "run_record": "runs/20260927T135534897996Z-b97139b5/run.json (temporary ignored run output: runs/ is ignored at any depth; the distilled per-episode rows are copied into this file under episodes_by_agent_seed)",
+  "status": "passed",
+  "stopping": {
+    "episodes_stopped_at_the_cap": {
+      "lookahead": 1,
+      "tetris": 0
+    },
+    "frame_limit": 200000,
+    "stopping_reasons": {
+      "lookahead": {
+        "frame_limit": 1,
+        "game_over": 9
+      },
+      "tetris": {
+        "game_over": 10
+      }
+    }
+  },
+  "suite_wall_clock_seconds": 132.5,
+  "summary": {
+    "lookahead": {
+      "clear_sizes": {
+        "doubles": 918,
+        "singles": 7179,
+        "tetrises": 2,
+        "triples": 35
+      },
+      "frames": {
+        "max": 200000,
+        "mean": 92024.9,
+        "median": 76491.0,
+        "min": 33940
+      },
+      "games": 10,
+      "lines": {
+        "max": 2137,
+        "mean": 912.8,
+        "median": 734.5,
+        "min": 254
+      },
+      "pieces_placed": {
+        "max": 5353,
+        "mean": 2314.4,
+        "median": 1872.5,
+        "min": 669
+      },
+      "score": {
+        "max": 10334568,
+        "mean": 2822959.9,
+        "median": 1513435.5,
+        "min": 256671
+      },
+      "stopping_reasons": {
+        "frame_limit": 1,
+        "game_over": 9
+      }
+    },
+    "tetris": {
+      "clear_sizes": {
+        "doubles": 476,
+        "singles": 2278,
+        "tetrises": 10,
+        "triples": 75
+      },
+      "frames": {
+        "max": 81516,
+        "mean": 40209.0,
+        "median": 34519.0,
+        "min": 7384
+      },
+      "games": 10,
+      "lines": {
+        "max": 827,
+        "mean": 349.5,
+        "median": 263.5,
+        "min": 50
+      },
+      "pieces_placed": {
+        "max": 2102,
+        "mean": 910.1,
+        "median": 694.5,
+        "min": 166
+      },
+      "score": {
+        "max": 1973340,
+        "mean": 567266.2,
+        "median": 290552.5,
+        "min": 69095
+      },
+      "stopping_reasons": {
+        "game_over": 10
+      }
+    }
+  },
+  "tests": {
+    "integration_passed": 24,
+    "unit_passed": 128
+  },
+  "tetris_agent": {
+    "candidate_set": "the same reachable set Experiment 002's lookahead uses (pathaware._reachable), simulated from the engine's native spawn state with the same mask function the controller executes",
+    "lookahead": "one piece deep, on the player-visible next piece (State.next_piece); no hidden RNG state is read and the engine is not modified",
+    "name": "tetris",
+    "predeclared": "declared in src/block_stack_ai/tetris.py and, as the weights table and rationale, in the notes' predeclared-objective section; both are captured with a timestamp and digest before the evaluation run, and not revised after it",
+    "unchanged": "random, greedy and lookahead and their behaviour, and heuristic.WEIGHTS, are unchanged; the 002 config still parses and its episodes here reproduce every field 002 published for lookahead, adding only the new clear_sizes total",
+    "value": "the current placement's own clear term plus the best declared value the preview piece reaches on the board it leaves; a placement whose preview piece has no admissible placement has value -inf; ties keep the first placement in canonical enumeration order",
+    "weight_tuning": "none against evaluation outcomes"
+  },
+  "tetris_line_rate": {
+    "lookahead": 0.000876,
+    "tetris": 0.011445
+  },
+  "tetris_weights": {
+    "aggregate_height": -0.5,
+    "bumpiness": -0.5,
+    "holes": -1.0,
+    "max_height": -1.0,
+    "premature_clear": -1.0,
+    "tetrises": 8.0,
+    "tie_break": "first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending",
+    "well_depth": 1.0,
+    "well_depth_cap": 4
+  },
+  "tetrises_per_100_placed_pieces": {
+    "lookahead": 0.008642,
+    "tetris": 0.109878
+  },
+  "validation_commands": [
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py remote-main",
+    "git archive d83a5bc54a76bb23cd38e4afbab8192b0e2a207f | tar -x -C /tmp/exp003-base",
+    "$PY -m pytest -q -p no:cacheprovider -m 'not integration'",
+    "$PY -m pytest -q -p no:cacheprovider -m integration",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py line-sizes",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py tetris-choice",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py native-tetris",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py determinism",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py predeclare",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py check-predeclaration runs/<run>/run.json",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py evaluation",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py report runs/<run>/run.json",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py compare runs/<first>/run.json runs/<repeat>/run.json"
+  ],
+  "verification": "passed",
+  "verification_warnings": [
+    "The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source."
+  ]
+}

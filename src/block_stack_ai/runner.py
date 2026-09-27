@@ -3,13 +3,14 @@
 Two record formats share this module and both replay against the native engine.
 Version 1 is one scripted episode. The replay requires the recorded inputs and
 compares them alongside the recorded initial state hash and every ``result``
-field, and it compares a top-level piece count when the record carries one.
-Version 2 is a suite of placement-agent episodes over fixed seeds: the replay
-compares each episode's agent and seed, inputs, initial state hash, ``result``
-fields and piece count, then the summary derived from them. Both verifiers
-compare a recorded value only after its type — and, for mappings, its keys —
-equals the replayed value's, so JSON booleans, which compare equal to ``0``/``1``
-and ``0.0``, are rejected instead of verifying.
+field, and it compares a top-level piece count and clear-size histogram when the
+record carries them. Version 2 is a suite of placement-agent episodes over fixed
+seeds: the replay compares each episode's agent and seed, inputs, initial state
+hash, ``result`` fields, piece count and clear-size histogram, then the summary
+derived from them. Both verifiers compare a recorded value only after its type —
+and, for mappings, its keys — equals the replayed value's, so JSON booleans,
+which compare equal to ``0``/``1`` and ``0.0``, are rejected instead of
+verifying.
 
 The piece count is ``pieces_placed``: the number of pieces the engine actually
 wrote to the board. It is counted from the engine's ``locked`` events minus the
@@ -22,6 +23,20 @@ field existed carry the legacy ``pieces`` key instead, which held
 ``state.piece_count``; the replay compares it against that counter so those
 records keep verifying under their original semantics. A record that carries
 neither key is older still and keeps verifying.
+
+The clear-size histogram is ``clear_sizes``: per episode, how many locks cleared
+one, two, three and four rows, tallied from the engine's own per-step
+``lines_cleared`` event (the same event ``result.event_counts`` sums, so the
+sizes add up to that total). It is a top-level per-episode field beside
+``pieces_placed``, never a leaf inside ``result``: ``_compare_fields`` requires
+a ``result`` object's keys to equal the replay's exactly, so a new key there
+would invalidate every record written before it. Like the piece count it is
+optional — a record that carries neither the field nor the entry in its summary
+is older and keeps verifying — and a present one is compared with the same
+type-and-key rules as the mandatory sections. Presence is all-or-nothing per
+agent and must agree between the episodes and the summary: the totals are summed
+from the episodes, so a summary that omitted them while its episodes recorded
+them would verify yet report nothing.
 """
 
 from __future__ import annotations
@@ -45,6 +60,11 @@ _EVENT_FIELDS = (
     "moved", "rotated", "locked", "spawned", "gravity_drop", "soft_drop",
     "game_over", "challenge_completed", "lines_cleared", "score_delta",
 )
+# One histogram field per number of rows a single lock can clear, so index
+# ``size - 1`` is that size. The engine clears between zero and four rows in a
+# lock, which the binding reports in the step's ``lines_cleared`` event.
+_CLEAR_SIZE_FIELDS = ("singles", "doubles", "triples", "tetrises")
+_CLEAR_SIZES_FIELD = "clear_sizes"
 
 
 class VerificationError(RuntimeError):
@@ -167,6 +187,25 @@ def _count_events(counts: dict[str, int], events: Any) -> None:
         counts[name] += int(getattr(events, name))
 
 
+def _empty_clear_sizes() -> dict[str, int]:
+    return {name: 0 for name in _CLEAR_SIZE_FIELDS}
+
+
+def _count_clear_sizes(counts: dict[str, int], events: Any) -> None:
+    """Tally one step's clear size from the engine's own ``lines_cleared`` event.
+
+    The engine clears between zero and four rows per lock, which is exactly the
+    range the histogram names. A size outside it is a broken connection rather
+    than a play outcome, so it is rejected instead of being dropped: a silent
+    drop would leave the histogram and ``result.lines`` disagreeing.
+    """
+    lines = int(events.lines_cleared)
+    if not 0 <= lines <= len(_CLEAR_SIZE_FIELDS):
+        raise ValueError(f"engine reported an impossible clear size: {lines}")
+    if lines:
+        counts[_CLEAR_SIZE_FIELDS[lines - 1]] += 1
+
+
 def _placed_pieces(event_counts: dict[str, int]) -> int:
     """Pieces written to the board: lock events minus the failed top-out lock.
 
@@ -192,6 +231,21 @@ def _compare_piece_count(record: dict[str, Any], field: str, replayed: int, wher
     if value != replayed:
         return f"{field}: recorded {value!r}, replayed {replayed!r}"
     return None
+
+
+def _compare_optional_fields(record: dict[str, Any], field: str, replayed: Any,
+                             where: str) -> list[str]:
+    """Differences for an optional section, or none when the record omits it.
+
+    ``clear_sizes`` is recorded only by runs written after the clear-size metric
+    existed. A record that carries neither the per-episode field nor the summary
+    section is older and keeps verifying; a present section is compared with the
+    same type-and-key rules as the mandatory ones, so a wrong type, a missing key
+    or an extra one is still reported.
+    """
+    if field not in record:
+        return []
+    return _compare_fields(record[field], replayed, where)
 
 
 def _compare_fields(recorded: Any, replayed: Any, where: str) -> list[str]:
@@ -234,6 +288,7 @@ def _play(
     agent.reset()
     actual_inputs: list[int] = []
     event_counts = _empty_event_counts()
+    clear_sizes = _empty_clear_sizes()
     with game_factory(**game_config) as game:
         state = game.state
         initial_hash = _hash(game)
@@ -251,6 +306,7 @@ def _play(
             state, events = game.step(action)
             actual_inputs.append(action)
             _count_events(event_counts, events)
+            _count_clear_sizes(clear_sizes, events)
         result = {
             "score": state.score,
             "lines": state.lines,
@@ -269,12 +325,13 @@ def _play(
         "inputs": actual_inputs,
         "result": result,
         "pieces_placed": pieces_placed,
+        _CLEAR_SIZES_FIELD: clear_sizes,
         "piece_count": piece_count,
     }
 
 
 def _persisted(episode: dict[str, Any]) -> dict[str, Any]:
-    """The saved episode: the placed-piece count, without the engine RNG counter."""
+    """The saved episode: every recorded field, without the engine RNG counter."""
     return {key: value for key, value in episode.items() if key != "piece_count"}
 
 
@@ -321,8 +378,70 @@ def _summarize(episodes: list[dict[str, Any]]) -> dict[str, Any]:
             "lines": _metric([episode["result"]["lines"] for episode in group]),
             "frames": _metric([episode["result"]["frame_count"] for episode in group]),
             pieces: _metric([episode[pieces] for episode in group]),
+            # The clear sizes add up to each episode's ``result.lines``; an
+            # episode written before the histogram existed contributes nothing.
+            _CLEAR_SIZES_FIELD: {
+                field: sum(episode.get(_CLEAR_SIZES_FIELD, {}).get(field, 0)
+                           for episode in group)
+                for field in _CLEAR_SIZE_FIELDS
+            },
         }
     return summary
+
+
+def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
+                     episodes: list[dict[str, Any]]) -> list[str]:
+    """Compare a recorded per-agent summary with the replayed one.
+
+    Every pre-existing section — the game count, the stopping reasons, the four
+    metrics and the piece count — is compared exactly as ``_compare_fields``
+    compared the whole summary before, with the same type and key rules. The
+    clear-size totals are newer, and a record written before the histogram
+    existed carries them neither in its episodes nor in its summary and still
+    verifies. Presence is all-or-nothing per agent and must agree between the two
+    places: the totals are summed from the episodes, so a summary that omits them
+    while its episodes record them would verify yet leave a reader of the record
+    without the per-agent totals ``report`` reads, and a partial agent (some
+    episodes with the histogram, some without) is not a record any writer
+    produces.
+    """
+    if type(recorded) is not dict:
+        raise VerificationError(f"Recorded {where} must be dict, not {recorded!r}")
+    if set(recorded) != set(replayed):
+        raise VerificationError(
+            f"Recorded {where} keys {sorted(recorded)} do not match {sorted(replayed)}"
+        )
+    differences = []
+    for name, replayed_agent in replayed.items():
+        recorded_agent = recorded[name]
+        if type(recorded_agent) is not dict:
+            raise VerificationError(f"Recorded {where}.{name} must be dict, not {recorded_agent!r}")
+        recorded_base = {key: value for key, value in recorded_agent.items()
+                         if key != _CLEAR_SIZES_FIELD}
+        replayed_base = {key: value for key, value in replayed_agent.items()
+                         if key != _CLEAR_SIZES_FIELD}
+        differences.extend(_compare_fields(recorded_base, replayed_base, f"{where}.{name}"))
+        agent_episodes = [episode for episode in episodes if episode.get("agent") == name]
+        histogrammed = [episode for episode in agent_episodes if _CLEAR_SIZES_FIELD in episode]
+        reported = _CLEAR_SIZES_FIELD in recorded_agent
+        if histogrammed and len(histogrammed) != len(agent_episodes):
+            differences.append(
+                f"{where}.{name}.{_CLEAR_SIZES_FIELD}: only {len(histogrammed)} of "
+                f"{len(agent_episodes)} recorded episodes carry the clear-size histogram"
+            )
+        elif bool(histogrammed) != reported:
+            differences.append(
+                f"{where}.{name}.{_CLEAR_SIZES_FIELD}: "
+                + ("the episodes record the clear-size histogram but the summary reports no totals"
+                   if histogrammed else
+                   "the summary reports clear-size totals but the episodes record no histogram")
+            )
+        else:
+            differences.extend(_compare_optional_fields(
+                recorded_agent, _CLEAR_SIZES_FIELD, replayed_agent[_CLEAR_SIZES_FIELD],
+                f"{where}.{name}.{_CLEAR_SIZES_FIELD}",
+            ))
+    return differences
 
 
 def _record_versions() -> dict[str, Any]:
@@ -412,6 +531,7 @@ def _verify_scripted(record: dict[str, Any], path: Path, game_factory: Callable[
             raise VerificationError(f"Recorded input at frame {index + 1} does not match the scripted agent")
 
     event_counts = _empty_event_counts()
+    clear_sizes = _empty_clear_sizes()
     with game_factory(**config.game) as game:
         state = game.state
         actual_initial = _hash(game)
@@ -420,6 +540,7 @@ def _verify_scripted(record: dict[str, Any], path: Path, game_factory: Callable[
                 raise VerificationError(f"Recorded input at frame {index + 1} follows a terminal state")
             state, events = game.step(mask)
             _count_events(event_counts, events)
+            _count_clear_sizes(clear_sizes, events)
         reason = _terminal_reason(state)
         if reason is None:
             if agent.done:
@@ -454,6 +575,9 @@ def _verify_scripted(record: dict[str, Any], path: Path, game_factory: Callable[
         difference = _compare_piece_count(record, field, replayed, "")
         if difference:
             differences.append(difference)
+    differences.extend(_compare_optional_fields(
+        record, _CLEAR_SIZES_FIELD, clear_sizes, _CLEAR_SIZES_FIELD,
+    ))
     differences.extend(_compare_fields(expected, actual, "result"))
     warnings = _engine_warnings(recorded_engine)
     if differences:
@@ -537,12 +661,16 @@ def _verify_suite(record: dict[str, Any], path: Path, game_factory: Callable[...
             difference = _compare_piece_count(episode, field, actual_value, f" in episode {index}")
             if difference:
                 differences.append(difference)
+        differences.extend(_compare_optional_fields(
+            episode, _CLEAR_SIZES_FIELD, actual[_CLEAR_SIZES_FIELD],
+            f"episode {index} {_CLEAR_SIZES_FIELD}",
+        ))
         if differences:
             raise VerificationError(
                 f"Replay mismatch in episode {index} ({name}, seed {seed}):\n  " + "\n  ".join(differences)
             )
         replayed.append(episode)
-    summary_differences = _compare_fields(summary, _summarize(replayed), "summary")
+    summary_differences = _compare_summary(summary, _summarize(replayed), "summary", replayed)
     if summary_differences:
         raise VerificationError(
             "Recorded summary does not match the replayed episodes:\n  "

@@ -8,7 +8,9 @@ playing algorithms on top of that path: a one-piece greedy placement heuristic
 and a uniform random legal-placement baseline. Experiment 002 adds a path-aware
 agent: it only aims at placements its own frame controller can really execute
 under the engine's gravity, and it uses the player-visible next piece for one
-piece of lookahead. There is no machine learning yet.
+piece of lookahead. Experiment 003 records the per-step clear-size breakdown
+(singles, doubles, triples and Tetrises) the line total alone discards, and adds
+a Tetris-oriented agent on 002's reachable set. There is no machine learning yet.
 Development proceeds one measured experiment at a time, reusing this engine
 connection and recording path.
 
@@ -91,7 +93,11 @@ and summary reports `pieces_placed`, the number of pieces the engine wrote to
 the board (its `locked` events minus the failed top-out lock; a piece still in
 play at a frame-limit stop and the topping-out lock that places nothing are not
 counted); records written before that field carry the legacy `pieces` key
-holding the preview counter and still verify under that meaning.
+holding the preview counter and still verify under that meaning. Each episode
+and summary also reports `clear_sizes`, how many locks cleared one, two, three
+and four rows, tallied from the engine's own per-step clear result; a record
+whose episodes carry the histogram must carry the per-agent totals too, and
+records written before that field existed are an older format and still verify.
 
 Only gameplay masks 0–31 are used. A `0` frame releases held buttons. Rotation
 fires on a new press edge, so the connection script and the placement agents
@@ -197,7 +203,13 @@ rule, placement enumeration including the spawn-origin entry and the
 downward-only descent rule, board scoring, deterministic tie-breaking, the
 placement controller, the placed-piece metric (the engine's board placements,
 above which sit its lock and preview counters) in both record formats and the
-suite record's episode identity check, without the native engine. The second
+suite record's episode identity check, the clear-size metric (the engine's own
+per-step clear result tallied per episode and per agent, with the optional-field
+replay compatibility that keeps older records verifying and the rule that the
+summary totals must be present exactly when the episodes record them), the
+Tetris objective's
+clear, well and board terms and the new agent's choices on constructed boards,
+without the native engine. The second
 requires the completed setup and tests native state reads, logical frame counts,
 seeded hash determinism, the placement model against native locks including a
 lock that straddles the ceiling and hidden minos surviving a later clear, the
@@ -205,9 +217,11 @@ whole enumerated placement set against engine-reachable straight drops from the
 spawn origin, the whole reachable plan set against the origins the engine locks
 at when it is driven with each plan's masks, the recorded piece count against the
 native engine's own counters,
-run-record verification for both record formats, and desktop replay exports
+run-record verification for both record formats, the Tetris agent's four-line
+clear on the native engine, and desktop replay exports
 through the native writer and verifier. The desktop checks additionally require
-the SDL3 target; they exercise live input, pause/step/restart, record verification,
+the SDL3 target; they exercise live input, pause/step/restart, record verification
+including the live session's clear-size histogram,
 invalid masks and pipe closure using dummy video/audio. None needs a display.
 Integration tests are never treated as passing when the native library is
 unavailable. The measured results are in
