@@ -31,6 +31,28 @@ native library is selected from that build directory on the local platform.
 a suitable build elsewhere. Setup does not change tracked files in the game
 checkout.
 
+## Interactive launcher
+
+Launch without arguments to choose options in a terminal:
+
+```sh
+.venv/bin/block-stack-ai
+```
+
+`block-stack-ai menu` opens the same launcher. Type a menu option's number and
+press Enter to select an experiment, then choose live play or full evaluation.
+Live play offers the experiment's agents, a fresh or fixed seed, speed, and
+whether to start paused. Full evaluation uses all agents and fixed seeds from
+the saved experiment configuration. Scripted experiments offer a run or a run
+followed by replay playback.
+
+The launcher shows your selections and the equivalent command before you choose
+**Start**. Choose **Choose again** to change them, or enter **q** at any prompt
+to quit. The experiment and action always require an explicit selection; Enter
+accepts the displayed defaults for the remaining options. The command exits
+when the selected run or game window finishes. The menu requires an interactive
+terminal; use the commands below in scripts.
+
 ## Run and verify
 
 From the fallgorithm root:
@@ -164,7 +186,9 @@ checkout and rebuild with `--desktop`.
 .venv/bin/python -m pytest -q -p no:cacheprovider -m desktop
 ```
 
-The first command tests configuration, deterministic scripted inputs, release
+The first command also checks menu selection, live defaults and custom options,
+input validation, cancellation, and dispatch without a native engine. It tests
+configuration, deterministic scripted inputs, release
 frames, stop reasons, missing-path diagnostics, the lock and line-clear grid
 rule, placement enumeration including the spawn-origin entry and the
 downward-only descent rule, board scoring, deterministic tie-breaking, the
