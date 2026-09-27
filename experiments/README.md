@@ -41,3 +41,4 @@ registry in Stage 0.
 | --- | --- | --- |
 | [000-connection](000-connection/notes.md) | Can the project control and replay the sibling engine? | See its measured result. |
 | [001-greedy-heuristic](001-greedy-heuristic/notes.md) | Does a one-piece greedy placement heuristic beat a random legal-placement baseline on fixed seeds? | The heuristic survived about 20x longer and cleared about 119 lines per game against none; 3328 of its 3357 locks matched the placement model. |
+| [002-path-aware-lookahead](002-path-aware-lookahead/notes.md) | Does path-aware reachability plus one piece of lookahead on the player-visible next piece beat 001's straight-drop greedy on the same seeds? | The new agent survived about 5.8x longer and cleared about 7.7x the lines per game, and 23144 of its 23153 locks landed exactly as modelled against greedy's 3328 of 3357; one of its ten games stopped at the configured 200000-frame safety cap. |

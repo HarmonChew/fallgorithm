@@ -5,7 +5,10 @@ headless [Block Stack](../block-stack/README.md) game. Stage 0 is a connection
 test: send a fixed controller script to the native simulation, save the outcome,
 and replay the executed inputs to check it. Experiment 001 adds the first
 playing algorithms on top of that path: a one-piece greedy placement heuristic
-and a uniform random legal-placement baseline. There is no machine learning yet.
+and a uniform random legal-placement baseline. Experiment 002 adds a path-aware
+agent: it only aims at placements its own frame controller can really execute
+under the engine's gravity, and it uses the player-visible next piece for one
+piece of lookahead. There is no machine learning yet.
 Development proceeds one measured experiment at a time, reusing this engine
 connection and recording path.
 
@@ -199,7 +202,9 @@ requires the completed setup and tests native state reads, logical frame counts,
 seeded hash determinism, the placement model against native locks including a
 lock that straddles the ceiling and hidden minos surviving a later clear, the
 whole enumerated placement set against engine-reachable straight drops from the
-spawn origin, the recorded piece count against the native engine's own counters,
+spawn origin, the whole reachable plan set against the origins the engine locks
+at when it is driven with each plan's masks, the recorded piece count against the
+native engine's own counters,
 run-record verification for both record formats, and desktop replay exports
 through the native writer and verifier. The desktop checks additionally require
 the SDL3 target; they exercise live input, pause/step/restart, record verification,

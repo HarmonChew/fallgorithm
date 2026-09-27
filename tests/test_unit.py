@@ -160,6 +160,8 @@ class SuiteState:
     current_piece: str = "T"
     board: object = ((1,) * 10,) * 20
     hidden_rows: object = ((1,) * 10,) * 2
+    orientation: int = 0
+    x: int = 5
 
 
 class SuiteGame:
