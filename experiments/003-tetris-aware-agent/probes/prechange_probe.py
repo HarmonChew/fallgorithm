@@ -1,18 +1,32 @@
-"""Pre-change probes: each new 003 regression's contract, run on the base tree.
+"""Pre-change probes: each new 003 regression's contract, run on a pre-change tree.
 
-Run this file with the recorded base commit's ``src`` on ``PYTHONPATH``:
+Run this file with a pre-change tree's ``src`` on ``PYTHONPATH`` — the recorded
+base commit, or the tree of the earlier publication this repair replaces:
 
     sandbox=/tmp/exp003-base
     mkdir -p $sandbox && git archive d83a5bc54a76bb23cd38e4afbab8192b0e2a207f | tar -x -C $sandbox
     PYTHONPATH=$sandbox/src python experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
 
+    before=/tmp/exp003-before
+    mkdir -p $before && git archive dc3c29c449c439ad8df415404d4df6d0eeb0087f | tar -x -C $before
+    PYTHONPATH=$before/src python experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
+
+Copying this tree's ``src`` into an equally plain directory shows the same ids
+satisfied after the change:
+
+    after=/tmp/exp003-after
+    mkdir -p $after && cp -r src $after/src
+    PYTHONPATH=$after/src python experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
+
 Each id evaluates one new regression's contract against pre-change code as far
-as that code can express it, prints what the base tree reports, and exits 1 when
-the base behaviour violates the regression's assertion (the expected result for
-the clear-size and Tetris-objective rows) or 0 when the contract already held
-before the change (the legacy-record compatibility row). A contract whose
-subject does not exist at the base at all is never counted as a failure-before;
-those rows carry an executed substitute instead, named in ``notes.md``.
+as that code can express it, prints what the tree under test reports, and exits 1
+when that tree's behaviour violates the regression's assertion (the expected
+result for the rows added by the clear-size, Tetris-objective and suite-wide
+histogram changes) or 0 when the contract already held before the change (the
+legacy-record and explicit-``--agent`` compatibility rows). A contract whose
+subject does not exist at a pre-change tree at all is never counted as a
+failure-before on an import: the probe reports the value it measured instead of
+aborting, and those rows carry an executed substitute named in ``notes.md``.
 """
 
 from __future__ import annotations
@@ -32,15 +46,21 @@ BASE_MODULE = block_stack_ai.__file__
 
 
 def _guard() -> None:
+    """Refuse to run against this worktree, and report which tree is under test.
+
+    The path check is the real guard: pointing ``PYTHONPATH`` at this worktree
+    would evaluate the contracts against the code the change already made. The
+    tree's own shape is printed instead of being required, because the tree of the
+    earlier publication this repair replaces also carries ``block_stack_ai.tetris``
+    while it still records no objective and still compares the histogram per
+    agent, and those are exactly the values these probes measure.
+    """
     if "003-tetris-aware-agent" in str(BASE_MODULE):
         raise SystemExit(f"refusing to run: imported {BASE_MODULE}, not a pre-change tree")
-    try:
-        import block_stack_ai.tetris  # noqa: F401
-    except ModuleNotFoundError:
-        pass
-    else:
-        raise SystemExit(f"refusing to run: {BASE_MODULE} already carries the tetris module")
-    print(f"# base module: {BASE_MODULE}")
+    print(f"# tree under test: {BASE_MODULE}")
+    tetris_module = Path(block_stack_ai.__file__).parent / "tetris.py"
+    print(f"# block_stack_ai/tetris.py: {'present' if tetris_module.exists() else 'absent'}; "
+          f"runner declares the objective section: {hasattr(runner, '_OBJECTIVE_FIELD')}")
 
 
 from block_stack_ai import runner  # noqa: E402
@@ -377,6 +397,286 @@ def r10_cli_absent_agent_still_fails():
     )
 
 
+@dataclass
+class ChoiceState:
+    """The placement-agent fields of an engine state, on an empty board.
+
+    The board is empty, so every placement agent's reachable set is a real one;
+    the stand-in ignores the mask, so the episode is deterministic whatever the
+    agent chooses.
+    """
+
+    frame: int = 0
+    score: int = 0
+    lines: int = 0
+    terminal: bool = False
+    phase: str = "active"
+    piece_count: int = 0
+    current_piece: str = "T"
+    next_piece: str = "O"
+    board: object = ((0,) * WIDTH,) * HEIGHT
+    hidden_rows: object = ((0,) * WIDTH,) * 2
+    orientation: int = 0
+    x: int = 5
+    level: int = 18
+    start_level: int = 18
+    first_delay_remaining: int = 0
+    ruleset: str = "classic_ntsc_extended"
+    mode: str = "endless"
+
+
+class ChoiceGame:
+    """A stand-in whose suite episodes carry a real clear-size histogram.
+
+    One piece locks every step and each step reports the next entry of ``clears``
+    as the engine's own per-step clear size, so a two-frame episode records one
+    single and one double.
+    """
+
+    def __init__(self, clears=(1, 2), **_):
+        self.state = ChoiceState()
+        self.clears = list(clears)
+        self.index = 0
+        self.locks = 0
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return None
+
+    def state_hash(self):
+        return self.state.frame
+
+    def step(self, mask):
+        cleared = self.clears[self.index]
+        self.index += 1
+        self.state.frame += 1
+        self.state.lines += cleared
+        self.locks += 1
+        self.state.piece_count = self.locks + 1
+        fields = {name: 0 for name in EVENT_NAMES}
+        fields["locked"] = True
+        fields["lines_cleared"] = cleared
+        return self.state, SimpleNamespace(**fields)
+
+
+# The experiment's own agent pair over one seed: the frozen lookahead agent and
+# the Tetris agent whose objective the suite record must declare.
+OBJECTIVE_SUITE = {
+    "game": {"ruleset": "classic_ntsc_extended", "mode": "endless", "start_level": 18,
+             "height": 0},
+    "frame_limit": 2,
+    "seeds": [1],
+    "agents": ["lookahead", "tetris"],
+}
+# A suite every pre-change tree can run: the histogram is agent-independent.
+HISTOGRAM_SUITE = {**OBJECTIVE_SUITE, "agents": ["greedy", "lookahead"]}
+
+
+def _suite_record(configuration):
+    """A suite record from the tree under test, and the factory that replays it."""
+    runner.engine_root = lambda: Path("/engine")
+    runner.git_info = lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    directory = tempfile.mkdtemp(prefix="exp003-probe-")
+    config_path = Path(directory) / "config.json"
+    config_path.write_text(json.dumps(configuration), encoding="utf-8")
+    factory = lambda **_: ChoiceGame()
+    path = runner.run_and_save(config_path, Path(directory) / "runs", factory)
+    return path, factory
+
+
+def _run_experiment_suite(probe: str):
+    """The experiment's suite through the tree's own writer, or a reported failure."""
+    try:
+        return _suite_record(OBJECTIVE_SUITE)
+    except ValueError as error:
+        raise AssertionError(
+            f"{probe}: the tree cannot run the experiment's suite at all: "
+            f"run_and_save raised {error!r}"
+        ) from error
+
+
+def r11_suite_objective_section():
+    """A suite record declares the objective that chose its placements.
+
+    The new writer records the Tetris agent's declared objective beside the frozen
+    heuristic mapping. This runs the experiment's own configuration through the
+    tree's own writer and requires the record to carry the section. A tree whose
+    registry has no Tetris agent cannot run the suite at all, and a tree that runs
+    it without recording the objective fails at the record's own keys; both are
+    the pre-change values this row pins, and neither is an import error.
+    """
+    path, _ = _run_experiment_suite("suite_objective_section")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    print(f"# record top-level keys: {sorted(record)}")
+    assert "objective" in record, (
+        "the tree writes no declared-objective section for a suite that uses the "
+        f"Tetris agent: record keys are {sorted(record)}"
+    )
+    print(f"# recorded objective: {record['objective']}")
+
+
+def r12_objective_is_verified():
+    """A recorded objective is compared, not ignored.
+
+    The new verifier rejects a suite record whose declared objective differs from
+    the module's current one. This writes the experiment's suite and then changes
+    the recorded objective — a changed weight and a module name that is not the
+    declaring module — and requires ``verify_run`` to reject it. A verifier that
+    ignores the section accepts the record and reports no difference, which is the
+    pre-change value this row pins.
+    """
+    path, factory = _run_experiment_suite("objective_is_verified")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    print(f"# recorded objective: {record.get('objective')}")
+    if "objective" in record:
+        record["objective"]["weights"]["tetrises"] = 1.0
+        record["objective"]["module"] = "block_stack_ai.heuristic"
+    else:
+        record["objective"] = {
+            "module": "block_stack_ai.heuristic",
+            "weights": {**record["heuristic"], "tetrises": 1.0},
+        }
+    path.write_text(json.dumps(record), encoding="utf-8")
+    print(f"# mutated objective written: {record['objective']}")
+    try:
+        warnings = runner.verify_run(path, factory)
+    except runner.VerificationError as error:
+        print(f"# verify_run rejected the mutated objective: {error}")
+        return
+    raise AssertionError(
+        "the tree accepted a suite record whose declared objective is not the one that "
+        f"chose its placements: verify_run returned {warnings}"
+    )
+
+
+def r13_suite_wide_histogram():
+    """Clear-size presence is one suite-wide invariant.
+
+    The new verifier requires the histogram on every episode and every agent
+    summary of a record, or on none: a record that stripped it from one agent
+    while another kept it reports only part of the lines it cleared, and a record
+    that reports totals its episodes do not carry leaves its own reader without
+    them. This builds a record with the tree's own writer and checks three cases
+    on it — one agent stripped everywhere, one agent's summary stripped while its
+    episodes keep the histogram, and the histogram stripped everywhere, which must
+    still verify as a legacy record. The mixed states are built from whatever the
+    writer records, so the same probe runs on a tree that records no histogram at
+    all.
+    """
+    path, factory = _suite_record(HISTOGRAM_SUITE)
+    record = json.loads(path.read_text(encoding="utf-8"))
+    stripped = sorted(record["summary"])[0]
+    print(f"# record top-level keys: {sorted(record)}")
+    print(f"# agents: {sorted(record['summary'])}; first agent: {stripped}")
+    violations = []
+
+    def verdict(label, edited, must_reject):
+        path.write_text(json.dumps(edited), encoding="utf-8")
+        try:
+            warnings = runner.verify_run(path, factory)
+        except runner.VerificationError as error:
+            print(f"# {label}: rejected: {error}")
+            if not must_reject:
+                violations.append(f"{label}: rejected a record that must verify: {error}")
+            return
+        print(f"# {label}: accepted, warnings {warnings}")
+        if must_reject:
+            violations.append(f"{label}: accepted a record that must be rejected")
+
+    def mixed(record):
+        """One agent stripped everywhere, or given a histogram when none exists."""
+        edited = json.loads(json.dumps(record))
+        others = [name for name in edited["summary"] if name != stripped]
+        if any("clear_sizes" in episode for episode in edited["episodes"]):
+            for episode in edited["episodes"]:
+                if episode["agent"] == stripped:
+                    episode.pop("clear_sizes", None)
+            edited["summary"][stripped].pop("clear_sizes", None)
+            return edited, f"one agent ({stripped}) stripped from its episodes and summary"
+        zero = {field: 0 for field in ("singles", "doubles", "triples", "tetrises")}
+        for episode in edited["episodes"]:
+            if episode["agent"] in others:
+                episode["clear_sizes"] = dict(zero)
+        for name in others:
+            edited["summary"][name]["clear_sizes"] = dict(zero)
+        return edited, f"one agent ({others[0]}) given a histogram while {stripped} has none"
+
+    edited, label = mixed(record)
+    verdict(label, edited, True)
+
+    summary_only = json.loads(json.dumps(record))
+    if any("clear_sizes" in episode for episode in summary_only["episodes"]):
+        summary_only["summary"][stripped].pop("clear_sizes", None)
+        label = (f"one agent's ({stripped}) summary stripped while its episodes keep "
+                 "the histogram")
+    else:
+        zero = {field: 0 for field in ("singles", "doubles", "triples", "tetrises")}
+        for episode in summary_only["episodes"]:
+            if episode["agent"] == stripped:
+                episode["clear_sizes"] = dict(zero)
+        label = (f"one agent's ({stripped}) episodes given a histogram while its summary "
+                 "reports none")
+    verdict(label, summary_only, True)
+
+    legacy = json.loads(json.dumps(record))
+    for episode in legacy["episodes"]:
+        episode.pop("clear_sizes", None)
+    for summary in legacy["summary"].values():
+        summary.pop("clear_sizes", None)
+    verdict("the histogram stripped everywhere (a legacy record)", legacy, False)
+
+    assert not violations, "; ".join(violations)
+
+
+def r14_live_objective_section():
+    """A live Tetris game's record declares the objective, like a headless suite.
+
+    Live play builds its own episode and saves it as a suite record, so the new
+    writer records the declared objective there too. This drives the desktop
+    protocol with the registered native mirror exactly as the live regression does
+    and requires the saved record to carry the section. A tree without the agent
+    cannot play the game at all, and a tree that plays it without recording the
+    objective fails at the record's keys.
+    """
+    from block_stack_ai.engine import create_game
+    from block_stack_ai.live import LiveSession
+    from block_stack_ai.runner import SuiteConfig
+
+    game = {"ruleset": "classic_ntsc_extended", "mode": "endless", "start_level": 18,
+            "height": 0}
+    limit = 600
+    with tempfile.TemporaryDirectory() as directory:
+        try:
+            session = LiveSession(SuiteConfig(game, limit, (2,), ("tetris",)),
+                                  Path(directory) / "runs")
+        except ValueError as error:
+            raise AssertionError(
+                f"the tree cannot play a live Tetris game at all: {error!r}"
+            ) from error
+        try:
+            with create_game(**game, seed=2) as desktop:
+                snapshot = desktop.save_state()
+                session.receive("BEGIN", snapshot)
+                while not desktop.state.terminal and desktop.state.frame < limit:
+                    mask = session.receive("STATE", snapshot)
+                    desktop.step(mask)
+                    snapshot = desktop.save_state()
+                session.receive("END", snapshot)
+        finally:
+            session.close()
+        record = json.loads(next((Path(directory) / "runs").glob("*/run.json"))
+                            .read_text(encoding="utf-8"))
+        print(f"# live episode keys: {sorted(record['episodes'][0])}")
+        print(f"# live record top-level keys: {sorted(record)}")
+        assert "objective" in record, (
+            "the tree writes no declared-objective section for a live Tetris game: "
+            f"record keys are {sorted(record)}"
+        )
+        print(f"# recorded objective: {record['objective']}")
+
+
 PROBES = {
     "clear_sizes_field": r1_clear_sizes_field,
     "clear_sizes_summary": r2_clear_sizes_summary,
@@ -388,6 +688,10 @@ PROBES = {
     "cli_default_agent": r8_cli_default_agent,
     "cli_explicit_agent": r9_cli_explicit_agent_is_passed_through,
     "cli_absent_agent": r10_cli_absent_agent_still_fails,
+    "suite_objective_section": r11_suite_objective_section,
+    "objective_is_verified": r12_objective_is_verified,
+    "suite_wide_histogram": r13_suite_wide_histogram,
+    "live_objective_section": r14_live_objective_section,
 }
 
 
@@ -403,7 +707,7 @@ def main() -> int:
     except AssertionError as error:
         print(f"AssertionError: {error}")
         return 1
-    print("result: the base tree satisfies this probe")
+    print("result: the tree under test satisfies this probe")
     return 0
 
 

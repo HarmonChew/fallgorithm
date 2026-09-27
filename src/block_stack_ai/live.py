@@ -14,8 +14,8 @@ from .heuristic import weights_record
 from .runner import (
     SUITE_FORMAT_VERSION, SuiteConfig, VerificationError, _CLEAR_SIZES_FIELD,
     _count_clear_sizes, _count_events, _empty_clear_sizes, _empty_event_counts,
-    _hash, _placed_pieces, _record_versions, _summarize, _terminal_reason,
-    load_config, parse_config, save_record,
+    _hash, _objective_section, _placed_pieces, _record_versions, _summarize,
+    _terminal_reason, load_config, parse_config, save_record,
 )
 
 
@@ -110,6 +110,9 @@ class LiveSession:
             "heuristic": weights_record(),
             "episodes": [episode],
             "summary": _summarize([episode]),
+            # Live play is the second path that writes a suite record, so a live
+            # Tetris game declares its objective exactly as a headless suite does.
+            **_objective_section(self.config),
         }
         path = save_record(record, self.runs_dir)
         self.records.append(path)

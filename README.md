@@ -86,8 +86,12 @@ configuration and 16-bit seed, the executed mask for each frame, event totals,
 outcome, initial/final native state hashes, and Git commit/dirty status for both
 repositories. A dirty or no-commit run is labeled a working-tree run; a matching
 hash verifies this replay, while the Git commit alone cannot restore uncommitted
-edits. A suite record also states the fixed heuristic weights it used, and
-`verify` re-derives every episode from the recorded agent name and seed, which
+edits. A suite record also states the fixed heuristic weights it used, and, when
+it uses the Tetris agent, that agent's declared objective — the module that
+declares it and the weights it publishes — which `verify` compares as it compares
+the heuristic mapping, so a record cannot verify under a different objective
+merely because the change preserved its replayed choices. `verify` re-derives
+every episode from the recorded agent name and seed, which
 must appear in the configured order: agent order, then seed order. Each episode
 and summary reports `pieces_placed`, the number of pieces the engine wrote to
 the board (its `locked` events minus the failed top-out lock; a piece still in
@@ -95,9 +99,10 @@ play at a frame-limit stop and the topping-out lock that places nothing are not
 counted); records written before that field carry the legacy `pieces` key
 holding the preview counter and still verify under that meaning. Each episode
 and summary also reports `clear_sizes`, how many locks cleared one, two, three
-and four rows, tallied from the engine's own per-step clear result; a record
-whose episodes carry the histogram must carry the per-agent totals too, and
-records written before that field existed are an older format and still verify.
+and four rows, tallied from the engine's own per-step clear result; the
+histogram is present on every episode and every agent summary of a record or on
+none of them, and records written before that field existed are an older format
+and still verify.
 
 Only gameplay masks 0–31 are used. A `0` frame releases held buttons. Rotation
 fires on a new press edge, so the connection script and the placement agents
@@ -206,9 +211,10 @@ placement controller, the placed-piece metric (the engine's board placements,
 above which sit its lock and preview counters) in both record formats and the
 suite record's episode identity check, the clear-size metric (the engine's own
 per-step clear result tallied per episode and per agent, with the optional-field
-replay compatibility that keeps older records verifying and the rule that the
-summary totals must be present exactly when the episodes record them), the
-Tetris objective's
+replay compatibility that keeps older records verifying and the suite-wide rule
+that the histogram is present on every episode and every agent summary or on
+none), the Tetris objective's
+recorded section and its comparison on replay,
 clear, well and board terms and the new agent's choices on constructed boards,
 without the native engine. The second
 requires the completed setup and tests native state reads, logical frame counts,
@@ -219,10 +225,10 @@ spawn origin, the whole reachable plan set against the origins the engine locks
 at when it is driven with each plan's masks, the recorded piece count against the
 native engine's own counters,
 run-record verification for both record formats, the Tetris agent's four-line
-clear on the native engine, and desktop replay exports
+clear on the native engine, the suite record's declared objective and the live
+session's clear-size histogram and objective, and desktop replay exports
 through the native writer and verifier. The desktop checks additionally require
-the SDL3 target; they exercise live input, pause/step/restart, record verification
-including the live session's clear-size histogram,
+the SDL3 target; they exercise live input, pause/step/restart, record verification,
 invalid masks and pipe closure using dummy video/audio. None needs a display.
 Integration tests are never treated as passing when the native library is
 unavailable. The measured results are in

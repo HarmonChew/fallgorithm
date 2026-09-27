@@ -33,10 +33,23 @@ a ``result`` object's keys to equal the replay's exactly, so a new key there
 would invalidate every record written before it. Like the piece count it is
 optional — a record that carries neither the field nor the entry in its summary
 is older and keeps verifying — and a present one is compared with the same
-type-and-key rules as the mandatory sections. Presence is all-or-nothing per
-agent and must agree between the episodes and the summary: the totals are summed
-from the episodes, so a summary that omitted them while its episodes recorded
-them would verify yet report nothing.
+type-and-key rules as the mandatory sections. Presence is all-or-nothing across
+the complete suite: every episode and every agent summary in one record carries
+the histogram, or a record older than the metric carries it nowhere. A per-agent
+rule would accept a record that stripped the histogram from one agent while
+another kept it, and such a record verifies while reporting a fraction of the
+lines it cleared.
+
+A suite that uses the Tetris agent records that agent's declared objective as
+``objective``: the module that declares it and the mapping its
+``weights_record()`` returns, mirroring the ``heuristic`` section beside it. The
+frozen heuristic mapping is written for every suite because every placement agent
+scores through it, and the Tetris agent's choices come from a second, separately
+declared objective instead; without the section a tetris suite verifies under
+whatever objective is current whenever the change happens to preserve its
+replayed choices. Like the histogram the section is optional — the runs of this
+experiment written before it existed carry it nowhere and keep verifying — and a
+present one is compared with the same type-and-key rules.
 """
 
 from __future__ import annotations
@@ -49,7 +62,10 @@ from statistics import fmean, median
 from typing import Any, Callable
 from uuid import uuid4
 
-from .agents import AGENT_NAMES, ScriptedAgent, Segment, create_agent, parse_script
+from . import tetris
+from .agents import (
+    AGENT_NAMES, TETRIS_AGENT, ScriptedAgent, Segment, create_agent, parse_script,
+)
 from .engine import PROJECT_ROOT, create_game, engine_root, git_info
 from .heuristic import weights_record
 
@@ -65,6 +81,10 @@ _EVENT_FIELDS = (
 # lock, which the binding reports in the step's ``lines_cleared`` event.
 _CLEAR_SIZE_FIELDS = ("singles", "doubles", "triples", "tetrises")
 _CLEAR_SIZES_FIELD = "clear_sizes"
+# The declared objective of the one agent that does not score through the frozen
+# heuristic mapping. The section names the module that declares it, so the
+# mapping cannot be read as the heuristic's own.
+_OBJECTIVE_FIELD = "objective"
 
 
 class VerificationError(RuntimeError):
@@ -398,12 +418,11 @@ def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
     compared the whole summary before, with the same type and key rules. The
     clear-size totals are newer, and a record written before the histogram
     existed carries them neither in its episodes nor in its summary and still
-    verifies. Presence is all-or-nothing per agent and must agree between the two
-    places: the totals are summed from the episodes, so a summary that omits them
-    while its episodes record them would verify yet leave a reader of the record
-    without the per-agent totals ``report`` reads, and a partial agent (some
-    episodes with the histogram, some without) is not a record any writer
-    produces.
+    verifies. Presence is all-or-nothing across the complete suite — every episode
+    and every agent summary in one record — because the totals are summed from the
+    episodes: a record that stripped the histogram from one agent's episodes while
+    another agent kept them would verify under a per-agent rule yet report only
+    part of the lines it cleared.
     """
     if type(recorded) is not dict:
         raise VerificationError(f"Recorded {where} must be dict, not {recorded!r}")
@@ -411,37 +430,84 @@ def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
         raise VerificationError(
             f"Recorded {where} keys {sorted(recorded)} do not match {sorted(replayed)}"
         )
+    histogram_episodes = sum(1 for episode in episodes if _CLEAR_SIZES_FIELD in episode)
+    histogram_agents = 0
+    for name, agent in recorded.items():
+        if type(agent) is not dict:
+            raise VerificationError(f"Recorded {where}.{name} must be dict, not {agent!r}")
+        histogram_agents += int(_CLEAR_SIZES_FIELD in agent)
     differences = []
+    if (
+        histogram_episodes not in (0, len(episodes))
+        or histogram_agents not in (0, len(recorded))
+        or bool(histogram_episodes) != bool(histogram_agents)
+    ):
+        differences.append(
+            f"{where}.{_CLEAR_SIZES_FIELD}: the clear-size histogram must be recorded on "
+            f"every episode and every agent summary, or on none: {histogram_episodes} of "
+            f"{len(episodes)} episodes and {histogram_agents} of {len(recorded)} agent "
+            "summaries carry it"
+        )
     for name, replayed_agent in replayed.items():
         recorded_agent = recorded[name]
-        if type(recorded_agent) is not dict:
-            raise VerificationError(f"Recorded {where}.{name} must be dict, not {recorded_agent!r}")
         recorded_base = {key: value for key, value in recorded_agent.items()
                          if key != _CLEAR_SIZES_FIELD}
         replayed_base = {key: value for key, value in replayed_agent.items()
                          if key != _CLEAR_SIZES_FIELD}
         differences.extend(_compare_fields(recorded_base, replayed_base, f"{where}.{name}"))
-        agent_episodes = [episode for episode in episodes if episode.get("agent") == name]
-        histogrammed = [episode for episode in agent_episodes if _CLEAR_SIZES_FIELD in episode]
-        reported = _CLEAR_SIZES_FIELD in recorded_agent
-        if histogrammed and len(histogrammed) != len(agent_episodes):
-            differences.append(
-                f"{where}.{name}.{_CLEAR_SIZES_FIELD}: only {len(histogrammed)} of "
-                f"{len(agent_episodes)} recorded episodes carry the clear-size histogram"
-            )
-        elif bool(histogrammed) != reported:
-            differences.append(
-                f"{where}.{name}.{_CLEAR_SIZES_FIELD}: "
-                + ("the episodes record the clear-size histogram but the summary reports no totals"
-                   if histogrammed else
-                   "the summary reports clear-size totals but the episodes record no histogram")
-            )
-        else:
-            differences.extend(_compare_optional_fields(
-                recorded_agent, _CLEAR_SIZES_FIELD, replayed_agent[_CLEAR_SIZES_FIELD],
+        # The suite-wide rule above has already rejected a record where only some
+        # agents or episodes carry the totals; an agent that carries them is
+        # compared key-for-key.
+        if _CLEAR_SIZES_FIELD in recorded_agent:
+            differences.extend(_compare_fields(
+                recorded_agent[_CLEAR_SIZES_FIELD], replayed_agent[_CLEAR_SIZES_FIELD],
                 f"{where}.{name}.{_CLEAR_SIZES_FIELD}",
             ))
     return differences
+
+
+def _objective_record(config: SuiteConfig) -> dict[str, Any] | None:
+    """The declared objective a suite record must carry, or ``None`` without the agent.
+
+    The ``heuristic`` mapping is written for every suite because every placement
+    agent scores through it; the Tetris agent's choices come from a second,
+    separately declared objective, so a suite that uses it records that objective
+    too, naming the module that declares it. A suite without the agent has no such
+    objective to record.
+    """
+    if TETRIS_AGENT not in config.agents:
+        return None
+    return {"module": tetris.__name__, "weights": tetris.weights_record()}
+
+
+def _objective_section(config: SuiteConfig) -> dict[str, Any]:
+    """The record entry that declares a suite's Tetris objective, if it has one."""
+    objective = _objective_record(config)
+    return {} if objective is None else {_OBJECTIVE_FIELD: objective}
+
+
+def _compare_objective(record: dict[str, Any], config: SuiteConfig) -> list[str]:
+    """Differences for the optional declared-objective section of a suite record.
+
+    A suite that uses the Tetris agent records the module and weights that chose
+    its placements, so a record cannot keep verifying under a different objective
+    merely because the changed weights happen to preserve the replayed choices.
+    The section is optional: the runs of this experiment written before it existed
+    carry no section and keep verifying, exactly as a record predating the
+    clear-size histogram does. A section in a record whose configuration has no
+    Tetris agent is a difference too, because no writer emits one.
+    """
+    expected = _objective_record(config)
+    if expected is None:
+        if _OBJECTIVE_FIELD in record:
+            return [
+                f"{_OBJECTIVE_FIELD}: the configuration has no Tetris agent, so the "
+                "record must not declare an objective"
+            ]
+        return []
+    if _OBJECTIVE_FIELD not in record:
+        return []
+    return _compare_fields(record[_OBJECTIVE_FIELD], expected, _OBJECTIVE_FIELD)
 
 
 def _record_versions() -> dict[str, Any]:
@@ -462,6 +528,10 @@ def run_and_save(
     if isinstance(config, SuiteConfig):
         record["format_version"] = SUITE_FORMAT_VERSION
         record["heuristic"] = weights_record()
+        # A suite that uses the Tetris agent declares its objective beside the
+        # frozen heuristic mapping, so the record names the weights that chose
+        # its placements.
+        record.update(_objective_section(config))
         episodes = run_suite(config, game_factory)
         record["episodes"] = episodes
         record["summary"] = _summarize(episodes)
@@ -606,6 +676,12 @@ def _verify_suite(record: dict[str, Any], path: Path, game_factory: Callable[...
         raise VerificationError(f"Malformed run record in {path}: {error}") from error
     if not isinstance(config, SuiteConfig):
         raise VerificationError(f"Malformed run record in {path}: not a suite configuration")
+    objective_differences = _compare_objective(record, config)
+    if objective_differences:
+        raise VerificationError(
+            "Recorded objective differs from the current implementation:\n  "
+            + "\n  ".join(objective_differences)
+        )
     # The record must carry exactly the sequence run_suite emits: agent order,
     # then seed order. Membership alone would accept a record that duplicates one
     # configured pair and omits another.

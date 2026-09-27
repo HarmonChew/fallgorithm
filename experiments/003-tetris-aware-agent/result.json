@@ -42,7 +42,7 @@
         {
           "command": "git -C <worktree> rev-parse HEAD",
           "exit": 0,
-          "stdout": "6e21ab8426b534c5de96e2f648b55fc0901e0ab6"
+          "stdout": "dc3c29c449c439ad8df415404d4df6d0eeb0087f"
         },
         {
           "command": "git -C <worktree> merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD",
@@ -50,13 +50,13 @@
           "stdout": ""
         }
       ],
-      "conclusion": "the refreshed remote main tip and this branch's recorded base are one commit (PR #9's merge commit d83a5bc54a76bb23cd38e4afbab8192b0e2a207f), whose tree equals PR #9's head 7285893b42ef271a0ddb6e29a84400102fdb100f, a different commit with the same tree; the worktree HEAD is the task commit 6e21ab8426b534c5de96e2f648b55fc0901e0ab6, which the probe separately shows descends from that base",
+      "conclusion": "the refreshed remote main tip and this branch's recorded base are one commit (PR #9's merge commit d83a5bc54a76bb23cd38e4afbab8192b0e2a207f), whose tree equals PR #9's head 7285893b42ef271a0ddb6e29a84400102fdb100f, a different commit with the same tree; the worktree HEAD is the task branch's own published commit dc3c29c449c439ad8df415404d4df6d0eeb0087f, which the probe separately shows descends from that base",
       "exit": 0,
       "note": "the probe resolves the recorded base commit d83a5bc54a76bb23cd38e4afbab8192b0e2a207f rather than the worktree HEAD, because the branch now carries its own task commit; the harness creates the task branch and worktree before the session starts and the shared Git directory is read-only there, so a `git fetch` cannot precede branch creation, and the state the requirement protects \u2014 the branch base is the refreshed remote main tip \u2014 is captured directly by this probe",
       "probe": "experiments/003-tetris-aware-agent/probes/evidence.py remote-main"
     },
     "remote_main_tip": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f",
-    "worktree_head": "6e21ab8426b534c5de96e2f648b55fc0901e0ab6"
+    "worktree_head": "dc3c29c449c439ad8df415404d4df6d0eeb0087f"
   },
   "baseline_reproduces_002": {
     "experiment_002_published_lines_cleared": 9128,
@@ -73,7 +73,7 @@
     "summary_matches_experiment_002_result_json": true
   },
   "clear_size_metric": {
-    "compatibility": "a record that carries neither the per-episode field nor the summary section is older and still verifies; a present section is compared with the same type-and-key rules as the mandatory ones; and presence is all-or-nothing per agent and must agree between the episodes and the summary, so a summary that omitted the totals its episodes record, or an agent with some episodes histogrammed and some not, is rejected rather than verified without them",
+    "compatibility": "a record that carries neither the per-episode field nor the summary section is older and still verifies; a present section is compared with the same type-and-key rules as the mandatory ones; and presence is all-or-nothing across the complete suite — every episode and every agent summary in one record — so a record that stripped the histogram from one agent while another kept it, or that reports totals its episodes do not carry, is rejected rather than verified with a partial histogram",
     "definitions": {
       "headline_tetris_line_rate": "4 * tetrises / total lines; zero total lines is a rate of 0.0",
       "safety_cap": "an episode stopped at the configured frame_limit is a configured safety stop, never a game over",
@@ -90,6 +90,22 @@
     "place": "an optional top-level per-episode field beside pieces_placed, never a leaf inside result or result.event_counts, because verify_run compares a result object's keys with the replay's exactly",
     "source": "the engine's own per-step events.lines_cleared (1/2/3/4), the same event result.event_counts.lines_cleared sums, so the histogram adds up to result.lines",
     "summary": "each agent's summary carries the totals of its episodes' histograms"
+  },
+  "objective_record": {
+    "compatibility": "a suite record without the section is older and still verifies, which is what keeps the runs of this experiment written before it existed valid; a record whose configuration has no Tetris agent must not carry it, because no writer emits one",
+    "field": "objective",
+    "module": "block_stack_ai.tetris",
+    "place": "an optional top-level suite section beside the frozen heuristic mapping, never a leaf inside an episode or its result",
+    "source": "tetris.weights_record(): the declared weights, the well-depth cap and the tie-break rule",
+    "verification": "verify_run compares the recorded module name and weights with the current module's under the same exact type-and-key rules it applies to the heuristic mapping, so a suite that uses the Tetris agent cannot verify under a different objective merely because the change preserved its replayed choices; live play, the second path that writes suite records, records the same section for a live Tetris game",
+    "why": "the frozen heuristic mapping is recorded for every suite because every placement agent scores through it, and the Tetris agent's choices come from a second, separately declared objective; before this section existed a suite record was tied to its objective only through the replayed choices, so a changed objective still verified whenever the change happened to preserve them"
+  },
+  "legacy_record_verify": {
+    "command": "PYTHONPATH=$PWD/src $PY -m block_stack_ai.cli verify runs/20260927T155639890404Z-ffa2811a/run.json",
+    "exit": 0,
+    "note": "the previous round's cited record carries no objective section and no field this repair added; the new verifier replays all 20 episodes from its recorded inputs and accepts it, warning only that the engine is a working-tree run. The unit and integration regressions build the same shape from a freshly written record and assert the same acceptance",
+    "record": "runs/20260927T155639890404Z-ffa2811a/run.json",
+    "stdout": "Verified: runs/20260927T155639890404Z-ffa2811a/run.json\nWarning: The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source."
   },
   "configuration": {
     "agents": [
@@ -117,8 +133,11 @@
     ]
   },
   "determinism": {
-    "note": "the cited record and its repeat were both started after the final objective capture, and the run on this reviewed tree was started after the publication note was added; the seven earlier runs predate it but ran the same objective module, whose digest is unchanged, and the same weights \u2014 the final capture only moved the provenance note below the declared-objective section's end marker",
+    "note": "thirteen runs of the same configuration in separate processes produced identical configuration, heuristic, episodes and summary: the three records written after this repair (ceb3fba6, dbdb1bb5 and 65f15d68, the last from the documented `evidence.py all` path, all carrying the new objective section) and the ten records of the previous round, which carry no objective section and still verify; every record made after the final objective capture replays with verify from its recorded inputs (exit 0, only the engine working-tree warning)",
     "record_paths": [
+      "runs/20260927T171756139218Z-ceb3fba6/run.json",
+      "runs/20260927T172236989889Z-dbdb1bb5/run.json",
+      "runs/20260927T172911183859Z-65f15d68/run.json",
       "runs/20260927T155639890404Z-ffa2811a/run.json",
       "runs/20260927T160108237288Z-15960d5c/run.json",
       "runs/20260927T163819537849Z-9fe2bd86/run.json",
@@ -133,9 +152,12 @@
     "repeat_run_configuration_identical": true,
     "repeat_run_episodes_identical": true,
     "repeat_run_summary_identical": true,
-    "runs_compared": 10,
+    "runs_compared": 13,
     "verify_exit_code": 0,
     "wall_clock_seconds": [
+      133.2,
+      133.0,
+      133.3,
       133.9,
       133.6,
       134.8,
@@ -457,7 +479,7 @@
     }
   ],
   "fallgorithm_git": {
-    "commit": "6e21ab8426b534c5de96e2f648b55fc0901e0ab6",
+    "commit": "dc3c29c449c439ad8df415404d4df6d0eeb0087f",
     "dirty": true,
     "kind": "working-tree"
   },
@@ -472,8 +494,8 @@
   "predeclared_objective": {
     "capture_file": "experiments/003-tetris-aware-agent/probes/predeclared_objective.json",
     "captured_at": "2026-09-27T15:54:19.727662+00:00",
-    "cited_record": "runs/20260927T155639890404Z-ffa2811a/run.json",
-    "cited_record_created_at": "2026-09-27T15:54:26.130299+00:00",
+    "cited_record": "runs/20260927T171756139218Z-ceb3fba6/run.json",
+    "cited_record_created_at": "2026-09-27T17:15:43.122494+00:00",
     "earlier_capture": "experiments/003-tetris-aware-agent/probes/predeclared_objective.earlier.json",
     "module": "src/block_stack_ai/tetris.py",
     "module_sha256": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e",
@@ -496,16 +518,17 @@
   },
   "publication": {
     "branch": "rakazo/experiment-003-tetris-aware-agent",
-    "branch_head": "6e21ab8426b534c5de96e2f648b55fc0901e0ab6",
-    "note": "approval precedes publication and the service owns commits and publication: the task PR is updated with the approved tree only after an exact-tree review approves this worktree, so the PR head legitimately lags the repair and `git rev-parse HEAD` reports the pre-repair commit while the files on disk carry the repair",
+    "branch_head": "dc3c29c449c439ad8df415404d4df6d0eeb0087f",
+    "note": "publication is service-owned and gated on an exact-tree approval, so the branch ref and the PR head move together: the probe asserts that the two refs name one commit, that the commit descends from the recorded base, and that the repaired paths are present in its tree, and it reports this worktree's HEAD and dirty state instead of requiring the transient pre-publication state the earlier version demanded (which a committed tree can never satisfy)",
     "probe": "experiments/003-tetris-aware-agent/probes/evidence.py publication",
+    "published_tree": "51bd596d4dcdb7aaed9ef160d71f8b3d96be5ebd",
     "pull_request": 11,
-    "pull_request_head": "6e21ab8426b534c5de96e2f648b55fc0901e0ab6",
+    "pull_request_head": "dc3c29c449c439ad8df415404d4df6d0eeb0087f",
     "pull_request_url": "https://github.com/HarmonChew/fallgorithm/pull/11",
-    "reviewed_tree": "this worktree's uncommitted files, not the published commit, which is why the cited run is a working-tree run",
-    "state": "open at the earlier pre-repair publication; the service commits and pushes the approved tree"
+    "repaired_paths_present_in_published_tree": 8,
+    "state": "open, branch ref and PR head at the published task commit dc3c29c, which is this worktree's HEAD; the repair reviewed here is still uncommitted in this worktree and the service pushes the approved tree after the review"
   },
-  "run_record": "runs/20260927T155639890404Z-ffa2811a/run.json (temporary ignored run output: runs/ is ignored at any depth; the distilled per-episode rows are copied into this file under episodes_by_agent_seed)",
+  "run_record": "runs/20260927T171756139218Z-ceb3fba6/run.json (temporary ignored run output: runs/ is ignored at any depth; the distilled per-episode rows are copied into this file under episodes_by_agent_seed)",
   "status": "passed",
   "stopping": {
     "episodes_stopped_at_the_cap": {
@@ -600,8 +623,8 @@
     }
   },
   "tests": {
-    "integration_passed": 24,
-    "unit_passed": 133
+    "integration_passed": 26,
+    "unit_passed": 138
   },
   "tetris_agent": {
     "candidate_set": "the same reachable set Experiment 002's lookahead uses (pathaware._reachable), simulated from the engine's native spawn state with the same mask function the controller executes",

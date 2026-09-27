@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+import importlib.util
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -18,6 +19,7 @@ from block_stack_ai.runner import (
     run_episode,
     verify_run,
 )
+from block_stack_ai.tetris import weights_record as tetris_weights_record
 
 
 EVENT_NAMES = (
@@ -1039,12 +1041,14 @@ def test_verification_compares_a_present_clear_size_histogram(tmp_path, monkeypa
 def test_verification_rejects_a_summary_that_omits_the_histogram_its_episodes_record(
     tmp_path, monkeypatch
 ):
-    """An agent's totals are required once its episodes record the histogram.
+    """A summary's totals are required once any episode records the histogram.
 
     The totals are summed from the episodes, so dropping only the summary
     section would verify yet leave ``report``'s reader with no per-agent totals
-    for an agent whose episodes carry them. Legacy records, which carry the
-    histogram nowhere, keep verifying (``records_written_before...``).
+    for an agent whose episodes carry them. The rule is suite-wide, so a record
+    that carries the histogram for every episode but not for every agent is
+    rejected. Legacy records, which carry the histogram nowhere, keep verifying
+    (``records_written_before...``).
     """
     path, factory, record = _clear_suite(tmp_path, monkeypatch)
     assert verify_run(path, factory) == []
@@ -1052,18 +1056,19 @@ def test_verification_rejects_a_summary_that_omits_the_histogram_its_episodes_re
     path.write_text(json.dumps(record), encoding="utf-8")
     with pytest.raises(
         VerificationError,
-        match=r"summary\.random\.clear_sizes: the episodes record the clear-size histogram "
-              r"but the summary reports no totals",
+        match=r"summary\.clear_sizes: the clear-size histogram must be recorded on every "
+              r"episode and every agent summary, or on none: 4 of 4 episodes and 1 of 2 "
+              r"agent summaries carry it",
     ):
         verify_run(path, factory)
 
 
 def test_verification_rejects_a_partially_histogramned_agent(tmp_path, monkeypatch):
-    """One agent's episodes are all-or-nothing: no writer mixes the two formats.
+    """The histogram is all-or-nothing across the whole suite, not per agent.
 
-    A record with one random episode carrying the histogram and one not, and no
-    summary totals, would otherwise verify with a histogram that covers only
-    half the agent's lines.
+    A record with one random episode carrying the histogram and one not, while
+    the other agent's episodes and summary keep theirs, would otherwise verify
+    with a histogram that covers only part of the suite's lines.
     """
     path, factory, record = _clear_suite(tmp_path, monkeypatch)
     del record["episodes"][0]["clear_sizes"]
@@ -1071,7 +1076,277 @@ def test_verification_rejects_a_partially_histogramned_agent(tmp_path, monkeypat
     path.write_text(json.dumps(record), encoding="utf-8")
     with pytest.raises(
         VerificationError,
-        match=r"summary\.random\.clear_sizes: only 1 of 2 recorded episodes carry "
-              r"the clear-size histogram",
+        match=r"summary\.clear_sizes: the clear-size histogram must be recorded on every "
+              r"episode and every agent summary, or on none: 3 of 4 episodes and 1 of 2 "
+              r"agent summaries carry it",
     ):
         verify_run(path, factory)
+
+
+def test_verification_rejects_a_suite_wide_partial_histogram(tmp_path, monkeypatch):
+    """One agent stripped while another keeps the histogram is a rejected record.
+
+    The totals are summed from the episodes, so a record that stripped the
+    histogram from one agent's episodes and summary would verify under a
+    per-agent rule yet report only the other agent's clear sizes. The same record
+    with the histogram stripped everywhere is a legacy record and still verifies.
+    """
+    path, factory, record = _clear_suite(tmp_path, monkeypatch)
+    assert verify_run(path, factory) == []
+
+    stripped = json.loads(json.dumps(record))
+    for episode in stripped["episodes"]:
+        if episode["agent"] == "random":
+            del episode["clear_sizes"]
+    del stripped["summary"]["random"]["clear_sizes"]
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"summary\.clear_sizes: the clear-size histogram must be recorded on every "
+              r"episode and every agent summary, or on none: 2 of 4 episodes and 1 of 2 "
+              r"agent summaries carry it",
+    ):
+        verify_run(path, factory)
+
+    legacy = json.loads(json.dumps(stripped))
+    del legacy["summary"]["greedy"]["clear_sizes"]
+    for episode in legacy["episodes"]:
+        episode.pop("clear_sizes", None)
+    path.write_text(json.dumps(legacy), encoding="utf-8")
+    assert verify_run(path, factory) == []
+
+
+@dataclass
+class ChoiceState:
+    """The placement-agent fields of an engine state, on an empty board.
+
+    The board is empty, so the reachable set the lookahead and Tetris agents
+    enumerate is a real one rather than the empty set a full board yields. The
+    stand-in ignores the mask it is given, so the episode replays identically
+    whatever the agent chooses.
+    """
+
+    frame: int = 0
+    score: int = 0
+    lines: int = 0
+    terminal: bool = False
+    phase: str = "active"
+    piece_count: int = 0
+    current_piece: str = "T"
+    next_piece: str = "O"
+    board: object = ((0,) * 10,) * 20
+    hidden_rows: object = ((0,) * 10,) * 2
+    orientation: int = 0
+    x: int = 5
+    level: int = 18
+    start_level: int = 18
+    first_delay_remaining: int = 0
+    ruleset: str = "classic_ntsc_extended"
+    mode: str = "endless"
+
+
+class ChoiceGame:
+    """A stand-in whose suite episodes carry a real clear-size histogram.
+
+    One piece locks every step, and each step reports the next entry of ``clears``
+    as the engine's per-step clear size, so a two-frame episode records one single
+    and one double and each agent's summary totals its own episode's histogram.
+    """
+
+    def __init__(self, clears=(1, 2), **_):
+        self.state = ChoiceState()
+        self.clears = list(clears)
+        self.index = 0
+        self.locks = 0
+        self.closed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.closed = True
+
+    def state_hash(self):
+        return self.state.frame
+
+    def step(self, mask):
+        cleared = self.clears[self.index]
+        self.index += 1
+        self.state.frame += 1
+        self.state.lines += cleared
+        self.locks += 1
+        self.state.piece_count = self.locks + 1
+        fields = {name: 0 for name in EVENT_NAMES}
+        fields["locked"] = True
+        fields["lines_cleared"] = cleared
+        return self.state, SimpleNamespace(**fields)
+
+
+# The experiment's own agent pair over one seed: the frozen lookahead agent and
+# the Tetris agent, whose objective the suite record must declare.
+OBJECTIVE_SUITE = {**SUITE, "frame_limit": 2, "seeds": [1], "agents": ["lookahead", "tetris"]}
+
+
+def _objective_suite(tmp_path, monkeypatch, agents=("lookahead", "tetris")):
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info", lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"}
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps({**OBJECTIVE_SUITE, "agents": list(agents)}), encoding="utf-8"
+    )
+    factory = lambda **_: ChoiceGame()
+    path = run_and_save(config_path, tmp_path / "runs", factory)
+    return path, factory, json.loads(path.read_text(encoding="utf-8"))
+
+
+def test_suite_records_the_objective_of_the_tetris_agent(tmp_path, monkeypatch):
+    """A suite that uses the Tetris agent declares the objective it scores by.
+
+    The frozen heuristic mapping is recorded for every suite, because every
+    placement agent scores through it; the Tetris agent's choices come from a
+    second objective, so its suite records that objective too, naming the module
+    that declares it. A suite without the agent declares none, and a record that
+    predates the section — the runs of this experiment written before it existed —
+    keeps verifying while it is absent.
+    """
+    path, factory, record = _objective_suite(tmp_path, monkeypatch)
+    assert record["objective"] == {
+        "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
+    }
+    assert verify_run(path, factory) == []
+
+    greedy_path, greedy_factory, greedy_record = _objective_suite(
+        tmp_path, monkeypatch, agents=("greedy",)
+    )
+    assert "objective" not in greedy_record
+    assert verify_run(greedy_path, greedy_factory) == []
+
+    legacy = json.loads(json.dumps(record))
+    del legacy["objective"]
+    path.write_text(json.dumps(legacy), encoding="utf-8")
+    assert verify_run(path, factory) == []
+
+
+def test_verification_rejects_a_tampered_objective(tmp_path, monkeypatch):
+    """A declared objective is compared, not merely recorded.
+
+    A record whose objective was changed after it was written — a weight, the
+    module name, a missing key, or a JSON boolean in a weight — must not verify,
+    or the record would keep its authority under an objective that is not the one
+    that chose its placements.
+    """
+    path, factory, record = _objective_suite(tmp_path, monkeypatch)
+    assert verify_run(path, factory) == []
+
+    def rejected(tamper, message):
+        tampered = json.loads(json.dumps(record))
+        path.write_text(json.dumps(tamper(tampered)), encoding="utf-8")
+        with pytest.raises(VerificationError, match=message):
+            verify_run(path, factory)
+
+    def changed_weight(tampered):
+        tampered["objective"]["weights"]["tetrises"] = 1.0
+        return tampered
+
+    def changed_module(tampered):
+        tampered["objective"]["module"] = "block_stack_ai.heuristic"
+        return tampered
+
+    def missing_key(tampered):
+        del tampered["objective"]["weights"]["well_depth"]
+        return tampered
+
+    def boolean_weight(tampered):
+        tampered["objective"]["weights"]["well_depth"] = True
+        return tampered
+
+    rejected(changed_weight, r"objective\.weights\.tetrises: recorded 1\.0, replayed 8\.0")
+    rejected(changed_module, r"objective\.module: recorded 'block_stack_ai\.heuristic', "
+                             r"replayed 'block_stack_ai\.tetris'")
+    rejected(missing_key, r"Recorded objective\.weights keys .* do not match")
+    rejected(boolean_weight, r"Recorded objective\.weights\.well_depth must be float, not True")
+
+
+def test_verification_rejects_an_objective_in_a_suite_without_the_tetris_agent(
+    tmp_path, monkeypatch
+):
+    """No writer declares an objective for a suite that does not use the agent."""
+    path, factory, record = _objective_suite(tmp_path, monkeypatch, agents=("greedy",))
+    assert "objective" not in record
+    record["objective"] = {
+        "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
+    }
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(
+        VerificationError, match=r"objective: the configuration has no Tetris agent"
+    ):
+        verify_run(path, factory)
+
+
+PUBLISHED_COMMIT = "dc3c29c449c439ad8df415404d4df6d0eeb0087f"
+OLDER_WORKTREE_HEAD = "6e21ab8426b534c5de96e2f648b55fc0901e0ab6"
+
+
+def _load_publication_probe():
+    """The 003 publication probe, loaded from its own file in the experiment."""
+    path = (engine.PROJECT_ROOT / "experiments" / "003-tetris-aware-agent" / "probes"
+            / "evidence.py")
+    spec = importlib.util.spec_from_file_location("exp003_publication_probe", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_publication_probe_holds_on_a_committed_tree(tmp_path, monkeypatch):
+    """The probe must pass on the committed tree it is run against.
+
+    The earlier version required this worktree's HEAD to be a recorded
+    pre-publication commit with the repair still uncommitted, which a committed,
+    published tree cannot satisfy — the documented ``evidence.py all`` path failed
+    there. This drives the probe's own checks with its Git commands stubbed, on a
+    worktree whose HEAD is an older commit and which still has uncommitted
+    changes, and requires it to pass; a branch ref and PR head that disagree must
+    still fail, so the probe keeps its teeth.
+    """
+    probe = _load_publication_probe()
+    clone = tmp_path / "publication"
+
+    def fake_git(cwd, *arguments):
+        command = " ".join(arguments)
+        if command.startswith("ls-remote"):
+            return 0, (f"{PUBLISHED_COMMIT}\t{probe.TASK_BRANCH_REF}\n"
+                       f"{PUBLISHED_COMMIT}\t{probe.TASK_PR_REF}")
+        if command.startswith("clone "):
+            for path in probe.REPAIRED_PATHS:
+                target = clone / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text("present", encoding="utf-8")
+            return 0, ""
+        if Path(cwd) == clone:
+            if command == "rev-parse HEAD":
+                return 0, PUBLISHED_COMMIT
+            if command == "rev-parse HEAD^{tree}":
+                return 0, "a" * 40
+            if command.startswith("merge-base --is-ancestor"):
+                return 0, ""
+        if command == "rev-parse HEAD":
+            return 0, OLDER_WORKTREE_HEAD
+        if command == "status --porcelain":
+            return 0, " M experiments/003-tetris-aware-agent/notes.md"
+        raise AssertionError(f"unexpected git command: {command}")
+
+    monkeypatch.setattr(probe, "PUBLICATION_CLONE", clone)
+    monkeypatch.setattr(probe, "_git", fake_git)
+    probe.check_publication()
+
+    def disagreeing_git(cwd, *arguments):
+        if arguments[0] == "ls-remote":
+            return 0, (f"{PUBLISHED_COMMIT}\t{probe.TASK_BRANCH_REF}\n"
+                       f"{OLDER_WORKTREE_HEAD}\t{probe.TASK_PR_REF}")
+        return fake_git(cwd, *arguments)
+
+    monkeypatch.setattr(probe, "_git", disagreeing_git)
+    with pytest.raises(AssertionError):
+        probe.check_publication()

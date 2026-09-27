@@ -27,6 +27,7 @@ from block_stack_ai.runner import (
     run_episode,
     verify_run,
 )
+from block_stack_ai.tetris import weights_record as tetris_weights_record
 
 
 pytestmark = pytest.mark.integration
@@ -672,4 +673,31 @@ def test_suite_record_with_the_tetris_agent_runs_and_verifies(tmp_path: Path):
             + 4 * episode["clear_sizes"]["tetrises"]) == episode["result"]["lines"]
     assert episode["result"]["stopping_reason"] in {"game_over", "frame_limit"}
     # The replay re-derives the histogram from the engine's own clear result.
+    verify_run(path)
+
+
+def test_suite_record_with_the_tetris_agent_declares_its_objective(tmp_path: Path):
+    """A real tetris suite records the objective that chose its placements.
+
+    The record names the module that declares the objective and the weights it
+    publishes, and the replay compares them. Stripping the section leaves exactly
+    the record the runs of this experiment written before it existed have, which
+    must keep verifying: the section is optional, never a mandatory new section.
+    """
+    raw = json.loads(TETRIS_CONFIG.read_text(encoding="utf-8"))
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps({**raw, "frame_limit": 400, "seeds": [2], "agents": ["tetris"]}),
+        encoding="utf-8",
+    )
+    path = run_and_save(config_path, tmp_path / "runs")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["objective"] == {
+        "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
+    }
+    verify_run(path)
+
+    legacy = json.loads(json.dumps(record))
+    del legacy["objective"]
+    path.write_text(json.dumps(legacy), encoding="utf-8")
     verify_run(path)

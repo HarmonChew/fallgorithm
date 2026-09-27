@@ -46,16 +46,33 @@ REMOTE_MAIN_CLONE = Path(tempfile.gettempdir()) / "exp003-remote-main"
 # worktree HEAD because the branch carries its own task commit, so HEAD is no
 # longer the base once that commit exists.
 BASE_COMMIT = "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f"
-# The task PR and the branch it publishes from. Publication is owned by the
-# service and happens only after an exact-tree approval, so the PR head is the
-# *earlier* publication until the approved tree is committed and pushed; this is
-# what identifies that earlier commit. It is recorded here rather than with
-# ``TASK_PR_REF`` because a pre-publication head is the expected state, and the
-# probe below has to assert which commit the lagging head is, not just that it
-# lags.
+# The task PR and the branch it publishes from. Publication is service-owned and
+# happens only after an exact-tree approval, so the service commits the approved
+# tree and pushes it; the branch ref and the PR head therefore move together and
+# the commit they name is this task branch's own commit. The probe asserts that
+# state, which holds on the committed tree as well as before publication, rather
+# than the transient pre-publication worktree that a later checkout cannot
+# re-observe.
 TASK_BRANCH_REF = "refs/heads/rakazo/experiment-003-tetris-aware-agent"
 TASK_PR_REF = "refs/pull/11/head"
-TASK_PR_HEAD = "6e21ab8426b534c5de96e2f648b55fc0901e0ab6"
+# A stable, throwaway path for the writable clone of the published branch: this
+# worktree's Git directory is read-only, so the published tree is read from a
+# clone of the ref instead of from the local checkout.
+PUBLICATION_CLONE = Path(tempfile.gettempdir()) / "exp003-publication"
+# The files this experiment adds or repairs. They must be present in the
+# published tree, which is what makes the published commit this task's work and
+# not an unrelated branch state; all of them exist in every publication of this
+# branch, so the probe holds before and after the next push.
+REPAIRED_PATHS = (
+    "src/block_stack_ai/runner.py",
+    "src/block_stack_ai/live.py",
+    "src/block_stack_ai/agents.py",
+    "src/block_stack_ai/tetris.py",
+    "experiments/003-tetris-aware-agent/notes.md",
+    "experiments/003-tetris-aware-agent/probes/evidence.py",
+    "tests/test_unit.py",
+    "tests/test_integration.py",
+)
 
 
 def _git(cwd: Path, *arguments: str) -> tuple[int, str]:
@@ -143,19 +160,22 @@ def check_remote_main():
 
 
 def check_publication():
-    """The task PR is open at the earlier pre-repair head, and the repair is not
-    published yet.
+    """The published task commit is this branch's own commit and carries the repair.
 
-    Publication is service-owned and gated on an exact-tree approval, so the PR
-    head legitimately lags the reviewed worktree: this probe records the refs
-    with every command's exit status, checks that the branch ref and the PR head
-    are the same commit, checks that it is the recorded pre-publication commit,
-    and shows the repaired files still exist only as uncommitted working-tree
-    changes against the recorded base. A PR head that had advanced past the
-    recorded commit would mean the repair was published; a clean worktree would
-    mean the repair was committed. Neither is required for the review, which runs
-    on this worktree, so the probe reports the state instead of demanding it.
+    Publication is service-owned and gated on an exact-tree approval: the service
+    commits the approved tree and pushes it, so the branch ref and the PR head
+    move together. This probe asserts what stays true on a committed tree — the
+    branch ref and the PR head are one commit, that commit descends from the
+    recorded base (so it is this task branch's own work, not the base itself), and
+    the repaired files are present in its tree — and it reports this worktree's
+    HEAD and dirty state instead of requiring the transient pre-publication state
+    (an uncommitted repair behind a lagging head) that only the reviewing session
+    can observe. The published tree is read from a writable clone of the branch,
+    because this worktree's Git directory is read-only.
     """
+    if PUBLICATION_CLONE.exists():
+        shutil.rmtree(PUBLICATION_CLONE)
+
     status, output = _git(PROJECT_ROOT, "ls-remote", "--exit-code", PUBLIC_REMOTE,
                           TASK_BRANCH_REF, TASK_PR_REF)
     _show("the task branch and the PR head over HTTPS",
@@ -169,6 +189,42 @@ def check_publication():
     assert set(refs) == {TASK_BRANCH_REF, TASK_PR_REF}, refs
     branch, pull_request = refs[TASK_BRANCH_REF], refs[TASK_PR_REF]
     assert branch == pull_request, (branch, pull_request)
+    assert branch != BASE_COMMIT, f"the published refs still name the recorded base {branch}"
+
+    branch_name = TASK_BRANCH_REF.removeprefix("refs/heads/")
+    status, output = _git(PROJECT_ROOT, "clone", "--quiet", "--branch", branch_name,
+                          PUBLIC_REMOTE, str(PUBLICATION_CLONE))
+    _show("writable clone of the published branch",
+          ["git", "clone", "--quiet", "--branch", branch_name, PUBLIC_REMOTE,
+           str(PUBLICATION_CLONE)],
+          status, output)
+    assert status == 0, f"git clone of {branch_name} failed with exit {status}"
+
+    probes = [
+        ("the published task commit from the clone", PUBLICATION_CLONE, "rev-parse", "HEAD"),
+        ("the published tree from the clone", PUBLICATION_CLONE, "rev-parse", "HEAD^{tree}"),
+    ]
+    values = {}
+    for label, cwd, *arguments in probes:
+        status, output = _git(cwd, *arguments)
+        _show(label, ["git", "-C", str(cwd), *arguments], status, output)
+        assert status == 0, f"{label} failed with exit {status}"
+        values[label] = output.splitlines()[-1]
+    published = values["the published task commit from the clone"]
+    assert published == branch, (published, branch)
+
+    status, output = _git(PUBLICATION_CLONE, "merge-base", "--is-ancestor", BASE_COMMIT, "HEAD")
+    _show("the published commit descends from the recorded base",
+          ["git", "-C", str(PUBLICATION_CLONE), "merge-base", "--is-ancestor", BASE_COMMIT, "HEAD"],
+          status, output)
+    assert status == 0, (
+        f"the published commit {published} does not descend from the recorded base: exit {status}"
+    )
+
+    missing = [path for path in REPAIRED_PATHS if not (PUBLICATION_CLONE / path).is_file()]
+    for path in REPAIRED_PATHS:
+        print(f"#   | {'present' if path not in missing else 'MISSING'} {path}")
+    assert not missing, f"the published tree lacks the repaired files: {missing}"
 
     status, output = _git(PROJECT_ROOT, "rev-parse", "HEAD")
     _show("this worktree's HEAD", ["git", "-C", str(PROJECT_ROOT), "rev-parse", "HEAD"],
@@ -176,29 +232,20 @@ def check_publication():
     assert status == 0, f"git rev-parse HEAD failed with exit {status}"
     head = output.splitlines()[-1]
 
-    status, output = _git(PROJECT_ROOT, "diff", "--name-only", BASE_COMMIT, "--")
-    _show("files changed in this worktree against the recorded base",
-          ["git", "-C", str(PROJECT_ROOT), "diff", "--name-only", BASE_COMMIT, "--"],
-          status, output)
-    assert status == 0, f"git diff against the recorded base failed with exit {status}"
-
-    status, output = _git(PROJECT_ROOT, "diff", "--name-only", "HEAD", "--")
+    status, output = _git(PROJECT_ROOT, "status", "--porcelain")
     _show("changes not committed in this worktree",
-          ["git", "-C", str(PROJECT_ROOT), "diff", "--name-only", "HEAD", "--"],
-          status, output)
-    assert status == 0, f"git diff against HEAD failed with exit {status}"
+          ["git", "-C", str(PROJECT_ROOT), "status", "--porcelain"], status, output)
+    assert status == 0, f"git status failed with exit {status}"
     uncommitted = output.splitlines()
 
-    assert branch == TASK_PR_HEAD, f"the PR head moved to {branch}, which is not the recorded pre-publication commit"
-    assert head == TASK_PR_HEAD, f"the worktree HEAD is {head}, not the recorded pre-publication commit"
-    repaired = "experiments/003-tetris-aware-agent/notes.md"
-    assert repaired in uncommitted, f"{repaired} is committed, not an uncommitted change: {uncommitted}"
-
-    print(f"# the branch {TASK_BRANCH_REF} and the PR head {TASK_PR_REF} are {branch}")
-    print(f"# that is the recorded pre-repair publication, and this worktree's HEAD is the same commit")
-    print(f"# the repair is not published yet: {repaired} is not committed, so the published commit")
-    print(f"# cannot be the tree under review, which is why the cited run is a working-tree run")
-    print(f"# the service commits and pushes the approved tree, so approval precedes publication")
+    print(f"# the branch {TASK_BRANCH_REF} and the PR head {TASK_PR_REF} are {published}")
+    print(f"# that commit descends from the recorded base {BASE_COMMIT}, so it is this task's own")
+    print(f"# commit, and its tree contains the {len(REPAIRED_PATHS)} repaired paths listed above")
+    print(f"# this worktree's HEAD is {head}, "
+          f"{'the published commit' if head == published else 'a commit the refs do not name yet'}, "
+          f"with {len(uncommitted)} uncommitted change(s)")
+    print(f"# the reviewed tree is this worktree; the service owns commits and publication, so")
+    print(f"# approval precedes publication and the refs above name the last published tree")
 
 
 def grid_of(rows):

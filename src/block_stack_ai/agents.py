@@ -35,7 +35,11 @@ from .pathaware import (
 from .pieces import orientation_count
 from .tetris import tetris_choice
 
-AGENT_NAMES = ("random", "greedy", "lookahead", "tetris")
+# The one agent that scores through a separately declared objective
+# (``block_stack_ai.tetris``) rather than the frozen heuristic mapping, which is
+# why the runner records that objective for any suite that uses it.
+TETRIS_AGENT = "tetris"
+AGENT_NAMES = ("random", "greedy", "lookahead", TETRIS_AGENT)
 
 
 def default_agent(agents: Sequence[str]) -> str:
@@ -239,6 +243,6 @@ def create_agent(name: str, seed: int) -> PlacementAgent:
         return PlacementAgent(RandomPolicy(random.Random(seed)))
     if name == "lookahead":
         return LookaheadAgent()
-    if name == "tetris":
+    if name == TETRIS_AGENT:
         return TetrisAgent()
     raise ValueError(f"unknown agent: {name!r}")

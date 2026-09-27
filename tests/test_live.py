@@ -10,6 +10,7 @@ import pytest
 from block_stack_ai.engine import create_game, engine_executable
 from block_stack_ai.live import LiveSession
 from block_stack_ai.runner import SuiteConfig, VerificationError, verify_run
+from block_stack_ai.tetris import weights_record as tetris_weights_record
 
 
 pytestmark = pytest.mark.integration
@@ -142,4 +143,38 @@ def test_live_session_records_the_clear_size_histogram_and_verifies(tmp_path):
     assert (sizes["singles"] + 2 * sizes["doubles"] + 3 * sizes["triples"]
             + 4 * sizes["tetrises"]) == episode["result"]["lines"]
     assert record["summary"]["greedy"]["clear_sizes"] == sizes
+    verify_run(records[0])
+
+
+def test_live_tetris_session_records_the_objective_and_verifies(tmp_path):
+    """A live Tetris game declares the same objective a headless suite does.
+
+    Live play is the second path that writes a suite record, so the declared
+    objective has to be recorded there too: without it a live Tetris record would
+    verify under whatever objective is current whenever the change happens to
+    preserve the replayed choices. The desktop protocol is driven with a plain
+    native mirror, and the record must name the declaring module and its weights
+    and replay under ``verify_run``.
+    """
+    limit = 600
+    config = SuiteConfig(GAME, limit, (2,), ("tetris",))
+    session = LiveSession(config, tmp_path / "runs")
+    try:
+        with create_game(**GAME, seed=2) as desktop:
+            snapshot = desktop.save_state()
+            session.receive("BEGIN", snapshot)
+            while not desktop.state.terminal and desktop.state.frame < limit:
+                mask = session.receive("STATE", snapshot)
+                desktop.step(mask)
+                snapshot = desktop.save_state()
+            session.receive("END", snapshot)
+    finally:
+        session.close()
+    records = list((tmp_path / "runs").glob("*/run.json"))
+    assert len(records) == 1
+    record = json.loads(records[0].read_text(encoding="utf-8"))
+    assert record["objective"] == {
+        "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
+    }
+    assert sorted(record["summary"]) == ["tetris"]
     verify_run(records[0])
