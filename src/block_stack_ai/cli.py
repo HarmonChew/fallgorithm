@@ -11,6 +11,7 @@ import sys
 from .agents import AGENT_NAMES
 from .engine import EngineError, PROJECT_ROOT, engine_root, git_info, load_binding
 from .live import play_live
+from .menu import PLAY_SPEEDS, select_command
 from .replay import export_replay, watch_run
 from .runner import SuiteConfig, VerificationError, load_config, run_and_save, verify_run
 
@@ -94,8 +95,12 @@ def doctor() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="block-stack-ai")
-    subcommands = parser.add_subparsers(dest="command", required=True)
+    parser = argparse.ArgumentParser(
+        prog="block-stack-ai", description="Run without a command to open the interactive experiment menu.",
+    )
+    subcommands = parser.add_subparsers(dest="command")
+    parser.set_defaults(command="menu")
+    subcommands.add_parser("menu", help="choose an experiment and run options interactively")
     subcommands.add_parser("doctor", help="check the sibling engine and one native frame")
     subcommands.add_parser("experiments", help="list available experiments and their live agents")
     run_parser = subcommands.add_parser("run", help="run the experiment in a config")
@@ -111,12 +116,21 @@ def main(argv: list[str] | None = None) -> int:
     _add_experiment_selection(play_parser)
     play_parser.add_argument("--agent", choices=AGENT_NAMES, default="greedy", help="agent within the selected experiment (default: greedy)")
     play_parser.add_argument("--seed", type=int, help="fixed seed; otherwise choose a fresh random seed")
-    play_parser.add_argument("--speed", choices=("0.25", "0.5", "1", "2", "4", "8"), default="1")
+    play_parser.add_argument("--speed", choices=PLAY_SPEEDS, default="1")
     play_parser.add_argument("--paused", action="store_true", help="start paused for frame stepping")
     args = parser.parse_args(argv)
     if args.command == "doctor":
         return doctor()
     try:
+        if args.command == "menu":
+            if not sys.stdin.isatty():
+                parser.error("the interactive menu needs a terminal; use `experiments`, "
+                             "`play --experiment ID` or `run --experiment ID` for non-interactive use")
+            command = select_command(_experiments())
+            if command is None:
+                print("Cancelled.")
+                return 0
+            args = parser.parse_args(command)
         if args.command in ("play", "run"):
             config_path = _experiment_config(args.experiment) if args.experiment is not None else args.config
             if args.experiment is not None:

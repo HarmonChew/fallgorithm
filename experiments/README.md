@@ -10,6 +10,11 @@ uncommitted code is a **working-tree run**: a commit hash alone cannot recreate
 those edits. Keep small configurations and summaries here; the source code in
 `src/` is the maintained implementation, and Git history holds earlier versions.
 
+Run `block-stack-ai` (or `block-stack-ai menu`) in a terminal for a selectable
+experiment launcher. It offers live-play options or the full evaluation with
+the experiment's configured agents and seeds, and shows the command before
+starting. It does not edit saved experiment configurations.
+
 Use `block-stack-ai experiments` to list the recorded experiments, and
 `block-stack-ai run --experiment NNN` (or the full `NNN-name`), then
 `block-stack-ai verify runs/<run-id>/run.json`. Mention the temporary run path in
