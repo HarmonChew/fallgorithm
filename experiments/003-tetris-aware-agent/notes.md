@@ -8,6 +8,17 @@ well and penalises buried holes and premature non-Tetris clears — plays a high
 Tetris rate than the frozen Experiment 002 `lookahead` baseline on the same
 fixed seeds.
 
+**Rounds.** This record is cumulative, and its passages were written over several
+review rounds. Each round is named by the head it was reviewed against —
+`dc3c29c` (the per-agent histogram rule and the
+unrecorded objective), `cfab11e2` (the record-format version marker), `fbe21e1`
+(the publication probe's tracked deletion and the declared objective's weight
+comparison), and **this round**, reviewed against the published head `ed8830a1`
+(the objective's source identity, one measured publication snapshot, and the
+version numbers' reuse). A passage written in an earlier round that says "this
+round" means the round it was written in; the passages this round adds say so,
+and item 1 lists the tree each round's probes were run against.
+
 **Base and environment:** This worktree is based on the latest main,
 `d83a5bc54a76bb23cd38e4afbab8192b0e2a207f` (`Merge pull request #9 from
 HarmonChew/rakazo/experiment-002-path-aware-lookahead`), which is PR #9's merge
@@ -31,7 +42,7 @@ remote tip and the recorded base to be one commit with one tree; it then
 separately shows the worktree `HEAD` descends from that base. The observed
 values are `d83a5bc54a76bb23cd38e4afbab8192b0e2a207f` for the remote tip and the
 recorded base, `c312a71489219625b402172042cb78bb2a41cbc4` for both trees, and
-`fbe21e1345caf04970320b35689548c1efefd216` for this worktree's `HEAD` (the
+`ed8830a15d05a70fbd1783e4a6faa26df78a1d05` for this worktree's `HEAD` (the
 publication of the previous repair round, which this round repairs further). The
 refreshed remote main tip and this branch's base are therefore one commit, PR
 #9's merge commit `d83a5bc`; PR #9's head `7285893` is a different commit whose
@@ -58,7 +69,7 @@ exports `PYTHONPATH=<worktree>/src`, so every command below selects this tree's
 and publication, so this repair is reviewed **in this worktree** rather than
 through the PR: the PR is updated with the approved tree only after an
 independent review approves this exact tree. PR #11 is this task's PR and is open
-at head `fbe21e1345caf04970320b35689548c1efefd216`, the publication of the
+at head `ed8830a15d05a70fbd1783e4a6faa26df78a1d05`, the publication of the
 previous repair round, which the service committed and pushed after that round's
 review. The branch ref and the PR head name that one commit, so the probe asserts
 what stays true of a published task commit — the two refs agree, and the commit
@@ -70,13 +81,21 @@ earlier publication that happens to contain the same file names, and a hand-list
 set cannot tell it from a publication that omits a file this task changes. Two
 earlier defects in that comparison are repaired in the earlier rounds' blocks
 below (a presence-only list, then a declared list that omitted a changed path).
-This round repaired a third: the comparison read a worktree digest for every
+The previous round repaired a third: the comparison read a worktree digest for every
 compared path and sliced it, so a path the publication tracks and this worktree
 has deleted — which has no digest here — raised `TypeError` instead of reporting
 the deletion, and the whole report aborted. Each compared path is now reported in
 one of the states a comparison has (identical, differing, deleted here,
 added here, present in neither), which is what the `publication_content` probe drives offline in item
-1. When the content differs, the probe
+1. **This round repairs a fourth**, in the record rather than the probe: the
+`publication` object this file retains had been assembled from two runs, so its
+`state` line still described the earlier publication `cfab11e2` and 5 differing
+paths while the commit fields and the counts beside it had been updated from a
+later run to `fbe21e1` and 9. It is now one run's snapshot, labelled with the
+command that produced it and its capture time, and
+`evidence.py publication-record` checks every field of it against the run it
+names; the counterexample is reproduced in item 1's table and its stdout is
+pasted there. When the content differs, the probe
 requires the difference to be exactly the repair this worktree still holds
 uncommitted, prints the differing paths, and reports the earlier-publication state
 instead of calling the repair published; a published tree that differs from a
@@ -95,9 +114,11 @@ tree, never the medium this work is reviewed in.
 evaluation — and, in the repair rounds recorded here, verification for the
 objective that chose the new agent's placements, one suite-wide histogram rule,
 a record-format version marker that makes the sections a writer always emits
-required, and a publication probe that holds on a committed tree and establishes
-the repair from the repaired paths' content rather than their presence, with no
-new metric, agent or measured number.
+required, a publication probe that holds on a committed tree and establishes
+the repair from the repaired paths' content rather than their presence, and, this
+round, the objective's **source identity**, one measured publication snapshot,
+and the reuse the version numbers actually have — with no new metric, agent or
+measured number in any of them.
 
 * **Clear sizes.** `events.lines_cleared` already reports the size (1/2/3/4) of
   each step's clear through the registered binding, but the runner only summed
@@ -111,9 +132,10 @@ new metric, agent or measured number.
   `clear_sizes` follows the `pieces_placed` precedent — a top-level field that
   is compared, with the same type-and-key rules, only when the record carries it
   — and the **record's own `format_version` says which of the two cases it is**:
-  versions 1 and 2 predate the field and are the records allowed to omit it
+  the legacy versions 1 and 2 are the records allowed to omit it
   (the `legacy_record_verifies` probe builds one at the base commit and verifies
-  it), while versions 3 and 4, which the current writer emits, always record it,
+  it), while versions 3, 4 and 5, which the writers of this experiment emit,
+  always record it,
   so its absence there is a deleted section and is reported. Presence is
   all-or-nothing across a version-2 suite too: every episode and every agent
   summary in one record carries the histogram, or a record older than the metric
@@ -128,20 +150,22 @@ new metric, agent or measured number.
   tree does not (it records none, while the game it plays really clears lines).
 * **The recorded objective.** A suite that uses the `tetris` agent also records
   that agent's declared objective, as a top-level `objective` section: the module
-  that declares it (`block_stack_ai.tetris`) and the mapping
-  `weights_record()` publishes. The frozen `heuristic` mapping is recorded for
+  that declares it (`block_stack_ai.tetris`), the mapping
+  `weights_record()` publishes, and — since this round — the source identity of
+  the modules the objective's decisions are computed from (its own bullet below).
+  The frozen `heuristic` mapping is recorded for
   every suite because every placement agent scores through it, and the `tetris`
   agent's choices come from a second objective instead; before this section
   existed a suite record was tied to its objective only through the replayed
   choices, so a changed objective still verified whenever the change happened to
   preserve them. `verify` now compares the recorded objective with the current
   module's exactly as it compares the heuristic mapping, and a suite without the
-  agent must not carry the section. A version 4 Tetris suite must carry it,
-  because that version's writer always emits it; a version-2 record — the runs of
+  agent must not carry the section. A version 4 or 5 Tetris suite must carry it,
+  because those versions' writers always emit it; a version-2 record — the runs of
   this experiment written before the section, which the `suite_objective_section`
   probe prints the keys of — carries it nowhere and still verifies. Live play,
   the second path that writes suite records, records it for a live Tetris game
-  too. This is the section whose absence a version 2 record and a version 4
+  too. This is the section whose absence a version 2 record and a version 4 or 5
   record with a deleted section both expressed: `objective_required_when_versioned`
   measures that the current version reports the absence
   (`objective: absent, but a record of this format version declares the objective
@@ -151,19 +175,36 @@ new metric, agent or measured number.
   which verifier to run (1: a scripted episode, 2: a suite). It now also says
   which sections the record's writer always emitted, because that is the only
   thing that can: an absent section and a section deleted after the fact are the
-  same JSON. Versions 1 and 2 are the older formats of each shape and may omit
-  `pieces_placed`, `clear_sizes` and `objective`; versions 3 and 4 are what the
-  current writer emits and must carry every section it writes — the placed-piece
+  same JSON. The legacy versions 1 and 2 may omit
+  `pieces_placed`, `clear_sizes` and `objective`; version 3 (a scripted episode),
+  version 4 (the `fbe21e1` round's suite) and version 5 (this round's suite) are
+  what the writers of this experiment emit and must carry every section they
+  wrote — the placed-piece
   count and the histogram in both shapes, the histogram on every episode and
   every agent summary of a suite, and the declared objective of a suite that uses
-  the Tetris agent. Nothing about which placements are chosen changes: the
-  weights, the agents and every recorded value are the same, and the repaired
-  writer's records carry exactly the sections the previous writer's did. The
+  the Tetris agent. Version 4 must carry everything its writer wrote except the
+  objective's source identity, which it never recorded; version 5 must carry that
+  too, so the identity is gated by its own flag rather than by the section's.
+  **The numbers are reused, not a schema history.** The base commit's writer
+  emitted `pieces_placed` at version 1 and at version 2 — item 4 re-runs it on
+  experiments 000, 001 and 002 and prints the records — and an earlier writer
+  wrote the same numbers without that key; this experiment's own earlier rounds
+  wrote suites at version 2 as well. A version therefore says which sections the
+  verifier must require, and a legacy version's sections may be absent and are
+  compared when present; only the current version's must be present. An earlier
+  round's `record_format_versions` described versions 1 and 2 as written before
+  the placed-piece count, which this record's own evidence contradicts; that
+  wording is corrected in [`result.json`](result.json) and item 1's table, and
+  the verifier's gating is unchanged.
+  Nothing about which placements are chosen changes: the
+  weights, the agents and every recorded value are the same, and the writer's
+  records carry exactly the sections the previous writer's did plus the identity.
+  The
   reviewer's counterexample — deleting a section from a newly written record —
   is reported now instead of verifying (`objective_required_when_versioned`, and
   the histogram and piece-count cases in the same unit tests), while a record
   declared at a legacy version still verifies. The piece count is part of the
-  same rule because deleting it from a version-4 suite left `verify` re-deriving
+  same rule because deleting it from a suite record left `verify` re-deriving
   the summary from episodes with no piece key at all, which raised `KeyError`
   instead of reporting anything; `_summarize` now omits the metric for a group
   that carries neither key.
@@ -177,6 +218,45 @@ new metric, agent or measured number.
   `TypeError` before any state could be reported. The `publication_content`
   probe drives that state with its Git commands stubbed, so the counterexample is
   offline and deterministic.
+* **The objective's source identity (this round).** The `objective` section named
+  the declaring module and the published weights, and neither identifies the
+  objective's *formula*: the weights are constants, so a change to the clear term
+  or to how the current and preview placements compose leaves every weight
+  comparing equal, and the replayed choices catch it only when the change happens
+  to move one of them. A suite that uses the `tetris` agent therefore records the
+  objective's **source identity** as well — `objective.sources`, one sha256 per
+  package module the objective's decisions are computed from
+  (`block_stack_ai.tetris`, `.heuristic`, `.pathaware`, `.pieces`), discovered by
+  walking the objective's own namespace so the closure cannot fall behind it and
+  a helper's change cannot go unrecorded. The writer's version moves to **5**,
+  whose verifier requires the identity; the version-4 writer recorded the
+  objective without it and the version-2 writer recorded no objective at all, so
+  those records keep verifying, and an identity a record does carry is compared
+  at every version. The reviewer's counterexample — the clear term charging a
+  premature clear at twice the declared rate, every weight unchanged — is
+  reported by the identity alone (`objective_identity` in item 1).
+* **One measured publication snapshot (this round).** The retained
+  `publication` object had been assembled from two runs: its `state` still
+  described `cfab11e2` and 5 differing paths while `published_commit`,
+  `branch_head`, `pull_request_head`, `observed_worktree_head` and the counts
+  beside it had been updated to `fbe21e1` and 9, so no single run produced it.
+  It is regenerated from one run of `evidence.py publication`, labelled with that
+  command and its capture time, and `evidence.py publication-record` (and the
+  unit regression that drives it) checks every field against the run it names —
+  one commit across the four commit fields, the state line quoting that commit
+  and the differing count, the count equal to the list it summarises and to the
+  uncommitted-change count, and the label present.
+* **The version numbers are reused (this round).** `record_format_versions`
+  described versions 1 and 2 as written before the placed-piece count, the
+  clear-size histogram and the declared objective. The record's own retained
+  evidence contradicts that: re-running the base commit's writer on experiments
+  000, 001 and 002 emits `pieces_placed` at version 1 and at version 2 (the
+  version-1 row's earlier "no pieces key" clause was wrong and is corrected
+  here), because the number was reused by a later writer than the one that first
+  used it. The section now says what the evidence shows — a version says which
+  sections the verifier must require, a legacy version's sections may be absent
+  and are compared when present, and only the current version's must be present —
+  instead of a schema history. The verifier's gating is unchanged.
 * **Agents.** `random`, `greedy` and `lookahead` and their behaviour are
   unchanged: 002's config still parses and its `lookahead` episodes in this
   evaluation are the same 002 agent, and the frozen weights in
@@ -342,21 +422,16 @@ plus its replay. This round's record is
 separate processes, are identical across configuration, heuristic, episodes and
 summary — comparing every record in `runs/` against the earlier rounds' cited
 record (`runs/20260927T171756139218Z-ceb3fba6/run.json`) is identical for all of
-them — and every record made after the final objective capture replays with
-`verify` from its recorded inputs (exit 0; the only warning is the engine
-working-tree warning). This round's record is one of the fifteen, so the metric
-persistence above is confirmed unchanged under this repair; its own `format_version` is 4,
-the version whose sections the verifier requires, while every record of the
-earlier rounds carries version 2 and still verifies as a legacy record. The
-records of the earlier rounds are the fourteen
-`runs/20260927T13*`, `runs/20260927T14*`, `runs/20260927T15*`, `runs/20260927T16*`
-and `runs/20260927T17*` records listed in item 4; they carry no `objective`
-section (four of them carry it, written after that section was added), all
-carry no `format_version` above 2, and they replay with `verify` under the new
-rule (exit 0), which is the compatibility the version marker exists for. The
-measured wall clock for this round's record was 140.8 s; the earlier runs of the
-same configuration measured 132.5–134.8 s, and the spread is the machine's — the
-repair changes only the record's `format_version`.
+them. The `fbe21e1` round's record is one of the fifteen, so the metric
+persistence above is confirmed unchanged under that repair; its own
+`format_version` is 4, the version whose sections the verifier requires, and this
+round's writer emits version 5, which adds the objective's source identity. The
+records the earlier rounds left in `runs/` are fourteen at version 2 and seven at
+version 4; ten of the version-2 records carry no `objective` section at all, four
+carry it (written after it was added) and all fourteen carry the histogram, while
+the seven version-4 records carry the objective without the source identity. None
+of the 21 carries an identity, so both legacy gates are exercised by retained
+records.
 
 ## Validation evidence
 
@@ -374,18 +449,28 @@ export BLOCKS_NATIVE_LIB=/home/harmon-chew/projects/code/fallgorithm/.build/engi
 PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
 $PY experiments/003-tetris-aware-agent/probes/evidence.py remote-main   # base == refreshed remote main tip
 $PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # refs, base descent and per-path content comparison
-$PY -m pytest -q -p no:cacheprovider -m 'not integration'     # 147 passed, 26 deselected
-$PY -m pytest -q -p no:cacheprovider -m integration           # 26 passed, 147 deselected
+$PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record   # the retained snapshot is one run's
+$PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-published-result.json   # exit 1: the pre-change record mixed two runs
+PYTHONPATH=/tmp/exp003-attempt8/src $PY /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/result.json   # exit 1: repaired_paths_compared_by_content is 11 but 12 repaired paths are declared
+PYTHONPATH=/tmp/exp003-attempt8/src $PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/result.json   # exit 1: …is 11 but the probe's counts line declares 12 repaired paths compared by content
+$PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-drift-state.json   # exit 1: state is not the line these fields reconstruct
+PYTHONPATH=/tmp/exp003-attempt8/src $PY /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-drift-state.json   # exit 0: the pre-change check matched the state line by substring
+git show ed8830a15d05a70fbd1783e4a6faa26df78a1d05:experiments/003-tetris-aware-agent/result.json > /tmp/exp003-published-result.json
+$PY -m pytest -q -p no:cacheprovider -m 'not integration'     # 152 passed, 26 deselected
+$PY -m pytest -q -p no:cacheprovider -m integration           # 26 passed, 152 deselected
 mkdir -p /tmp/exp003-base && git archive d83a5bc54a76bb23cd38e4afbab8192b0e2a207f | tar -x -C /tmp/exp003-base
 mkdir -p /tmp/exp003-before && git archive dc3c29c449c439ad8df415404d4df6d0eeb0087f | tar -x -C /tmp/exp003-before
 mkdir -p /tmp/exp003-reviewed && git archive fbe21e1345caf04970320b35689548c1efefd216 | tar -x -C /tmp/exp003-reviewed
+mkdir -p /tmp/exp003-published && git archive ed8830a15d05a70fbd1783e4a6faa26df78a1d05 | tar -x -C /tmp/exp003-published
 mkdir -p /tmp/exp003-after && cp -r src /tmp/exp003-after/src
 PYTHONPATH=/tmp/exp003-base/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
 PYTHONPATH=/tmp/exp003-before/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
 PYTHONPATH=/tmp/exp003-reviewed/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
+PYTHONPATH=/tmp/exp003-published/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py objective_identity   # exit 1: the changed formula verified
 PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
+PYTHONPATH=$PWD/src $PY -c "from pathlib import Path; from block_stack_ai.runner import verify_run; [verify_run(p) for p in sorted(Path('runs').glob('*/run.json'))]"   # exit 0 for all 21
 # the publication probe file of the tree this repair replaces has to be passed for that tree only if it carries no probe
-PYTHONPATH=/tmp/exp003-reviewed/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content   # exit 1, this round's finding: the tracked deletion raises TypeError
+PYTHONPATH=/tmp/exp003-reviewed/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content   # exit 1, the fbe21e1 round's finding: the tracked deletion raises TypeError
 PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content $PWD/experiments/003-tetris-aware-agent/probes/evidence.py   # exit 0
 mkdir -p /tmp/exp003-before-cfab && git archive cfab11e264996929a10bd29168212c53e7973158 | tar -x -C /tmp/exp003-before-cfab
 PYTHONPATH=/tmp/exp003-before-cfab/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content   # exit 1, the probe file of the round before the list-based one
@@ -448,13 +533,14 @@ refreshed remote main tip and the worktree `HEAD` demonstrably descends from it:
 # this worktree's HEAD
 #   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
 #   exit 0
-#   | fbe21e1345caf04970320b35689548c1efefd216
+#   | ed8830a15d05a70fbd1783e4a6faa26df78a1d05
 # the worktree HEAD descends from the recorded base
 #   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
 # the refreshed remote main tip equals the recorded branch base: d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
 # its tree is c312a71489219625b402172042cb78bb2a41cbc4, and the recorded base tree is the same
-# this worktree's HEAD is fbe21e1345caf04970320b35689548c1efefd216, which descends from the recorded base
+# this worktree's HEAD is ed8830a15d05a70fbd1783e4a6faa26df78a1d05, which descends from the recorded base
+failures: 0
 ```
 
 **0b. Publication state.** `evidence.py publication` (exit 0) records what a
@@ -477,78 +563,116 @@ repaired in the earlier rounds' blocks of item 1: the first version asserted the
 transient pre-publication worktree, so it necessarily failed on a committed tree;
 the second checked only that the repaired paths existed, so it certified a repair
 that was not published; the third compared a declared list, so a tracked path
-outside it could differ while the run reported the equal-content state. This
-round repaired a fourth: the loop read a worktree digest for every compared path
-and sliced it, so a path the publication tracks and this worktree has deleted —
-which has no digest here — raised `TypeError` and aborted the whole report. Each
-compared path is now reported in one of the states a comparison has
+outside it could differ while the run reported the equal-content state. The
+previous round repaired a fourth: the loop read a worktree digest for every
+compared path and sliced it, so a path the publication tracks and this worktree
+has deleted — which has no digest here — raised `TypeError` and aborted the whole
+report. Each compared path is now reported in one of the states a comparison has
 (identical, differing, deleted here, added here, present in neither, not a file).
-The digest the
-block below prints for `notes.md` is the file's value at that run:
+
+**A previous round repaired the record this probe feeds.** The `publication` object in
+[`result.json`](result.json) had been assembled from two runs of the probe: its
+`state` still described the earlier publication `cfab11e2` and 5 differing paths
+while `published_commit`, `branch_head`, `pull_request_head`,
+`observed_worktree_head` and the counts beside it had been updated to `fbe21e1`
+and 9, so no single measured state produced the object and a reader could not tell
+which one it described. Every field is regenerated from one run, labelled with the
+command that produced it and the time it was captured, and `evidence.py
+publication-record` (and the unit regression that drives it) checks the snapshot
+against the run it names: the four commit fields name one commit, the state line is
+that run's line for the record's own commit, compared-path count and differing-path
+list, the differing count equals the list it summarises and the uncommitted-change
+count, and the label is present. The counterexample is reproduced in item 1's
+table, with the pre-change record's own values.
+
+**This round repairs the snapshot's own counts.** That fix produced a record that
+was still not one run's on every field: `repaired_paths_compared_by_content` had
+been transcribed from an earlier round's declaration and stayed at **11** when
+`experiments/README.md` joined the declared list at **12**, so the record
+certified a comparison set it no longer described and the tree's own
+`publication-record` check — and the unit regression driving it — failed with
+`repaired_paths_compared_by_content is 11 but the probe's counts line declares 12
+repaired paths compared by content`. The count is no longer transcribed: the probe
+derives and prints its own counts at the run on one machine-readable line —
+`declared_paths_compared_by_content=12 compared_paths_count=46
+observed_differing_paths=9 observed_uncommitted_paths=9` — the record cites that
+line verbatim in `publication.counts_line`, and `publication-record` requires the
+cited line to be the probe's own `counts_line` for the fields beside it and the
+declared count to be the declared list's own length. The state line is no longer
+accepted by substring: it is reconstructed from the record's commit, compared-path
+count and differing-path list through the probe's own `state_line` and must be that
+exact line, so a state left behind by an earlier run cannot sit beside a later
+run's counts. The snapshot below is the run that regenerated every field, captured
+after the declared list and the probe stopped changing.
+
+The digest the block below prints for `notes.md` is the file's value at that run:
 pasting the block into that same file changes it, so a re-run reports the same
 state and the same differing paths with a different `notes.md` worktree digest;
-the same holds for `result.json`, the other compared path this record writes.
-The pair of runs and the line diff between them are recorded under
-`publication.paste_self_reference` in [`result.json`](result.json).
+the same holds for `result.json`, the other compared path this record writes. The
+record does not carry that pair of runs: the fields it does carry are the run's own
+emitted `state` and `counts_line`, and the digests it cites for those two paths are
+the values before the paste.
 
 ```text
 ########## probe: publication
 # the task branch and the PR head over HTTPS
 #   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorithm.git refs/heads/rakazo/experiment-003-tetris-aware-agent refs/pull/11/head
 #   exit 0
-#   | fbe21e1345caf04970320b35689548c1efefd216	refs/heads/rakazo/experiment-003-tetris-aware-agent
-#   | fbe21e1345caf04970320b35689548c1efefd216	refs/pull/11/head
+#   | ed8830a15d05a70fbd1783e4a6faa26df78a1d05	refs/heads/rakazo/experiment-003-tetris-aware-agent
+#   | ed8830a15d05a70fbd1783e4a6faa26df78a1d05	refs/pull/11/head
 # writable clone of the published branch
 #   $ git clone --quiet --branch rakazo/experiment-003-tetris-aware-agent https://github.com/HarmonChew/fallgorithm.git /tmp/exp003-publication
 #   exit 0
 # the published task commit from the clone
 #   $ git -C /tmp/exp003-publication rev-parse HEAD
 #   exit 0
-#   | fbe21e1345caf04970320b35689548c1efefd216
+#   | ed8830a15d05a70fbd1783e4a6faa26df78a1d05
 # the published tree from the clone
 #   $ git -C /tmp/exp003-publication rev-parse HEAD^{tree}
 #   exit 0
-#   | 011ed99989e6484a934ef35980fd4b3003c6041d
+#   | a3b132358189a5fc931d7ef3253893f8ba463d45
 # the published commit descends from the recorded base
 #   $ git -C /tmp/exp003-publication merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
 # this worktree's HEAD
 #   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
 #   exit 0
-#   | fbe21e1345caf04970320b35689548c1efefd216
+#   | ed8830a15d05a70fbd1783e4a6faa26df78a1d05
 # changes not committed in this worktree
 #   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent status --porcelain
 #   exit 0
-#   | M README.md
-#   |  M experiments/003-tetris-aware-agent/notes.md
+#   | M experiments/003-tetris-aware-agent/notes.md
 #   |  M experiments/003-tetris-aware-agent/probes/evidence.py
 #   |  M experiments/003-tetris-aware-agent/probes/prechange_probe.py
 #   |  M experiments/003-tetris-aware-agent/result.json
 #   |  M experiments/README.md
 #   |  M src/block_stack_ai/runner.py
 #   |  M tests/test_integration.py
+#   |  M tests/test_live.py
 #   |  M tests/test_unit.py
-#   | differs README.md (outside the declared repaired paths) published sha256 6232b4f4a76c this worktree sha256 dbae0210bb7c
-#   | differs experiments/003-tetris-aware-agent/notes.md published sha256 a73a7a46efd4 this worktree sha256 f3c62dc06ecf
-#   | differs experiments/003-tetris-aware-agent/probes/evidence.py published sha256 3574badaaca6 this worktree sha256 a1aea67e0479
-#   | differs experiments/003-tetris-aware-agent/probes/prechange_probe.py published sha256 bf3ef3179636 this worktree sha256 70a66b79c886
-#   | differs experiments/003-tetris-aware-agent/result.json published sha256 b3dfe94a956a this worktree sha256 dacbed3492ea
-#   | differs experiments/README.md (outside the declared repaired paths) published sha256 c87457db8417 this worktree sha256 6fa2507d6e40
+#   | differs experiments/003-tetris-aware-agent/notes.md published sha256 9ed1bd53a837 this worktree sha256 12321983adac
+#   | differs experiments/003-tetris-aware-agent/probes/evidence.py published sha256 a1aea67e0479 this worktree sha256 243726fd7b46
+#   | differs experiments/003-tetris-aware-agent/probes/prechange_probe.py published sha256 70a66b79c886 this worktree sha256 08f95c59a63e
+#   | differs experiments/003-tetris-aware-agent/result.json published sha256 f44feba468d2 this worktree sha256 d12bb0d30314
+#   | differs experiments/README.md published sha256 6fa2507d6e40 this worktree sha256 532614c392d6
 #   | same src/block_stack_ai/agents.py sha256 2b24e1b25e2c
 #   | same src/block_stack_ai/live.py sha256 b03ef0f69194
-#   | differs src/block_stack_ai/runner.py published sha256 5322723b41a6 this worktree sha256 460f5dfaaae9
+#   | differs src/block_stack_ai/runner.py published sha256 460f5dfaaae9 this worktree sha256 2117c1c53b87
 #   | same src/block_stack_ai/tetris.py sha256 3d32c1c3c1f3
-#   | differs tests/test_integration.py published sha256 98040bf901c9 this worktree sha256 0e436979080e
-#   | differs tests/test_unit.py published sha256 040096d7d266 this worktree sha256 9c7a69c95183
+#   | differs tests/test_integration.py published sha256 0e436979080e this worktree sha256 babb55c786d6
+#   | differs tests/test_live.py published sha256 d69fa018056a this worktree sha256 c217994cbb60
+#   | differs tests/test_unit.py published sha256 9c7a69c95183 this worktree sha256 3fb2909b655a
 #   | compared 46 paths: every path either tree tracks, plus this worktree's untracked files
-# the refs name an earlier publication: fbe21e1345caf04970320b35689548c1efefd216; 9 of 46 compared paths differ from this worktree (README.md, experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/003-tetris-aware-agent/result.json, experiments/README.md, src/block_stack_ai/runner.py, tests/test_integration.py, tests/test_unit.py), and this worktree holds the unpublished repair
-# the branch refs/heads/rakazo/experiment-003-tetris-aware-agent and the PR head refs/pull/11/head are fbe21e1345caf04970320b35689548c1efefd216
+# the refs name an earlier publication: ed8830a15d05a70fbd1783e4a6faa26df78a1d05; 9 of 46 compared paths differ from this worktree (experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/003-tetris-aware-agent/result.json, experiments/README.md, src/block_stack_ai/runner.py, tests/test_integration.py, tests/test_live.py, tests/test_unit.py), and this worktree holds the unpublished repair
+#   | declared_paths_compared_by_content=12 compared_paths_count=46 observed_differing_paths=9 observed_uncommitted_paths=9
+# the branch refs/heads/rakazo/experiment-003-tetris-aware-agent and the PR head refs/pull/11/head are ed8830a15d05a70fbd1783e4a6faa26df78a1d05
 # that commit descends from the recorded base d83a5bc54a76bb23cd38e4afbab8192b0e2a207f, so it is this task's own
 # commit; its tree carries the last publication's content for the 46 compared paths, 9 of which differ from this
 # worktree's, so the repair reviewed here is not in it
-# this worktree's HEAD is fbe21e1345caf04970320b35689548c1efefd216, the published commit, with 9 uncommitted change(s)
+# this worktree's HEAD is ed8830a15d05a70fbd1783e4a6faa26df78a1d05, the published commit, with 9 uncommitted change(s)
 # the reviewed tree is this worktree; the service owns commits and publication, so
 # approval precedes publication and the refs above name the last published tree
+failures: 0
 ```
 
 **1. Pre-change baseline, test by test.** The pre-change tree is the recorded
@@ -559,11 +683,16 @@ each probe with *that* tree's `src` on `PYTHONPATH`, so every probe runs against
 the base commit's behaviour. The rows added by the earlier repair rounds are also
 run against the tree of the publication they replaced — `dc3c29c` for the
 per-agent histogram rule and the unrecorded objective, extracted into
-`/tmp/exp003-before` — and the two rows this round adds are run against the tree
-this repair replaces, `fbe21e1`, in `/tmp/exp003-reviewed`: that is the tree the
-findings were measured on, and it carries both — a `format_version` that does not
-say which sections its writer emitted, and a publication probe that reads a
-per-path digest a state need not have. Each of those probes is run a further time
+`/tmp/exp003-before`, and `fbe21e1` for the version marker and the publication
+probe's tracked deletion, extracted into `/tmp/exp003-reviewed` — and **this
+round's rows** are run against two trees: the published head `ed8830a1`,
+extracted into `/tmp/exp003-published`, whose objective section carries no
+source identity so a changed formula that leaves the weights alone verifies
+there, and the tree the snapshot finding was measured on — the previous round's
+uncommitted worktree, kept in `/tmp/exp003-attempt8`, which no commit records and
+which the harness's preflight named by its content hash `b4d1bf03`, so it is
+copied rather than extracted with `git archive`. Each of those probes is run a
+further time
 with a copy of *this* tree's `src` (`/tmp/exp003-after`) to show the contract
 holds after the change. The base is the
 002 merge, so `pathaware`, `heuristic`, `GreedyPolicy` and the frozen
@@ -609,8 +738,20 @@ status is read three ways:
 | `test_play_default_agent_follows_the_selected_experiment`, `test_play_default_agent_uses_an_explicit_config`, `test_menu_default_agent_is_the_experiment_default` | `cli_default_agent` | 1 | The base CLI hard-codes `--agent` `greedy`; starting a config that does not offer greedy — 003's agents are `lookahead` and `tetris` — exits 1 with `play failed: Agent 'greedy' is not in this experiment. Available agents: lookahead`. The new CLI resolves the default from the selected config. |
 | `test_explicit_agent_overrides_the_experiment_default` | `cli_explicit_agent` | 0 | Compatibility pin: the base already passes an explicit `--agent` straight through to `play_live` (recorded agent `'lookahead'` with a config whose agents are `['lookahead']`), which the new CLI keeps doing. |
 | `test_play_rejects_an_agent_the_experiment_does_not_offer` | `cli_absent_agent` | 0 | Compatibility pin: the base already fails `play` for an agent absent from the config (`play failed: Agent 'random' is not in this experiment`), because `play_live` checks membership; the new CLI keeps that check and argparse's `choices`. |
+| `test_verification_rejects_a_formula_change_that_leaves_the_weights_alone`, `test_the_objective_identity_is_the_source_of_the_modules_it_runs` | `objective_identity` | 1 | The reviewer's counterexample, measured on the published head `ed8830a1` (`/tmp/exp003-published`): the experiment's suite is written by that tree's own writer (version 4, objective keys `['module', 'weights']`), the clear term is changed to charge a premature clear at twice the declared rate (`clear_term(1)` becomes `-6.0`), every weight is unchanged (`weights unchanged: True`), and `verify_run` returns `[]` — so a record verifies under an objective that did not produce it. On this tree the same change is reported by `objective.sources.block_stack_ai.tetris: recorded '3d32c1c3…', replayed '300f6c6e…'` (exit 0), and the unchanged objective verifies again. The base cannot run the suite at all (`run_and_save raised ValueError('agents must be chosen from random, greedy, lookahead')`). |
+| `test_objective_identity_is_required_at_the_current_version_and_optional_before` | `objective_identity`, `objective_required_when_versioned` | 1 | The identity is the newer half of the section, so it is gated separately: on this tree deleting it from a version-5 record is reported (`objective.sources: absent, but a record of this format version always carries it`) while the same JSON at version 4 — the published head's own writer, which recorded no identity — and at version 2 still verifies, and an identity a version-4 record does carry is compared. The published head accepts the identity-less record it wrote (`objective_identity` exit 1); the tree before it, `fbe21e1`, accepted a record with the whole section deleted (`objective_required_when_versioned` exit 1). |
+| `test_retained_publication_snapshot_describes_one_measured_run` | `publication-record` on the pre-change record | 1 | Two counterexamples, both measured on the tree this repair replaces (`ed8830a`'s uncommitted worktree, tree `b4d1bf03`, kept in `/tmp/exp003-attempt8`). The reviewer's: the object mixed two runs — `state` describing `cfab11e2` with 5 differing paths while `published_commit` and the counts beside it named `fbe21e1` with 9 (`AssertionError: observed_differing_paths is 9 but repaired_paths_differing_from_this_worktree lists 5`). This round's: that tree's `evidence.py publication-record` on its own record exits 1 with `AssertionError: repaired_paths_compared_by_content is 11 but 12 repaired paths are declared`, because the count had been transcribed from an earlier declaration and left behind when `experiments/README.md` joined it at 12; this tree's probe reports the same record as `… is 11 but the probe's counts line declares 12 repaired paths compared by content`. The **state-line** tightening runs both ways as well: a record whose `state` is a valid probe line for the same commit and count but a shorter differing list is accepted by the pre-change check (`exit 0` — it matched by substring) and rejected by this tree's reconstruction (`exit 1`). On this tree the regenerated snapshot passes (`exit 0`), and the unit test drives six further tamper cases — a stale state line, a state line reconstructed from a shorter differing list beside regenerated counts, a stale commit field, a count that does not match its list, a declared count off by one from the declaration, and a missing label. |
+| `test_retained_publication_snapshot_cites_the_counts_the_probe_emits` | the probe's emitted `counts_line`, which does not exist before this round | — | No pre-change counterpart: no earlier probe emitted a machine-readable counts line, so the assertion that the record's counts are the probe's own emitted values cannot be expressed on the pre-change tree. Executed substitute: the tree this repair replaces fails `evidence.py publication-record` on its own record with `repaired_paths_compared_by_content is 11 but 12 repaired paths are declared` — the drift the test now catches mechanically — and this test drives the probe offline in the state the record describes (the same differing paths, the same uncommitted set) and requires the emitted `declared_paths_compared_by_content`, `observed_differing_paths` and `observed_uncommitted_paths` to be the record's own fields. |
+| the `record_format_versions` wording (finding 3) | — | — | Documentation-only row, with no pre-change code contract to violate: the claim "versions 1 and 2 were written before the placed-piece count" is contradicted by this record's own retained evidence. Executed substitute: the base writer re-run on experiments 000, 001 and 002 emits `pieces_placed` at version 1 and at version 2 (item 4), and the previous round's version-1 row, which claimed the record carries no `pieces` key, is corrected. The verifier's gating is unchanged, so no new assertion is added and no test is weakened. |
 
-The replaced presence-only probe, re-run on this tree as item 1's table describes (its file written into `probes/` as `.publication-before.py`, run, removed): it reads the refs, lists each repaired path as `present`, and exits 0 — `its tree contains the 8 repaired paths listed above` — while the same worktree's own probe reports **9 of 46 compared paths differing** from the published tree. Presence cannot tell the repair from an earlier publication that happens to contain the names, which is why the comparison is by content:
+The replaced presence-only probe, re-run in the `fbe21e1` round on that round's
+worktree as item 1's table describes (its file written into `probes/` as
+`.publication-before.py`, run, removed): it reads the refs, lists each repaired
+path as `present`, and exits 0 — `its tree contains the 8 repaired paths listed
+above` — while the same worktree's own probe reports **9 of 46 compared paths
+differing** from the published tree. Presence cannot tell the repair from an
+earlier publication that happens to contain the names, which is why the
+comparison is by content:
 
 ```text
 ########## probe: publication
@@ -697,10 +838,11 @@ content was reviewed:
   stale clone before re-cloning; they assert nothing.
 * **`prechange_probe.py`'s `_guard`** prints `block_stack_ai/tetris.py: present`
   as a diagnostic of the tree under test and asserts nothing about it.
-* **notes.md and result.json** carried two presence claims, both rewritten in
-  this round: the 0b sentence "the repaired paths are present in its tree" and
-  result.json's `publication.repaired_paths_present_in_published_tree`, and the
-  pasted publication stdout block now carries the compared digests instead of
+* **notes.md and result.json** carried two presence claims, both rewritten in an
+  earlier round: the 0b sentence "the repaired paths are present in its tree" and
+  result.json's earlier `publication.repaired_paths_present_in_published_tree`
+  field (now `publication.repaired_paths`, compared per file by sha256), and the
+  pasted publication stdout block carries the compared digests instead of
   `present` rows.
 * **Every optional section a writer always emits — the record format's version
   marker.** The check with the widest reach was not a line but a shape: each of
@@ -740,6 +882,47 @@ content was reviewed:
   `prechange_probe.py`'s `_guard` prints presence as a diagnostic and asserts
   nothing, and its `publication_content` driver now reports a pre-change probe's
   `TypeError` as that case's value instead of aborting the row.
+
+**1c. This round's analogous checks audited.** The three findings are the same
+class one level deeper, so the analogous checks were audited in the same patch:
+
+* **The objective section — a comparison that cannot distinguish what it
+  compares.** `_compare_objective` compared a module name and a weight mapping,
+  neither of which identifies the objective's formula, so a changed formula
+  verified whenever the replayed choices were preserved. The repair is a
+  **content** comparison, not a presence one: `objective.sources` is the sha256 of
+  the source of every module the objective's code runs, compared key for key, and
+  the modules are discovered by walking the objective's own namespace so no
+  hand-kept list can fall behind it. The audit asked what else in the record is
+  identified by a constant rather than by content: the `heuristic` mapping is
+  compared value for value (already), the episodes are replayed and compared
+  field by field, and `versions` (the Git metadata) stays advisory on purpose,
+  because a working-tree run cannot prove identical uncommitted source — that
+  limitation is stated in Failures and limitations rather than papered over.
+* **The retained publication object — a snapshot that named no single run.** The
+  finding is not a presence check but a *mixing*: `state` described one run while
+  its sibling fields described another. `check_publication_record` now compares
+  the fields against each other and against the run they name (one commit across
+  the four commit fields, the state line quoting that commit and the differing
+  count, the count equal to the list it summarises and to the uncommitted-change
+  count, and the command and capture time recorded), and the object is
+  regenerated from one run rather than transcribed by hand. This round closes a
+  second hole in the same object: the count that certified the comparison set was
+  transcribed by hand and stayed at 11 while 12 paths were declared. The probe now
+  emits its counts as one machine-readable line, the record cites that line
+  verbatim in `publication.counts_line`, `publication-record` requires the cited
+  line to be the probe's own `counts_line` for the fields beside it and the
+  declared count to be the declared list's length, and the state line is
+  reconstructed from the record's own fields through the probe's `state_line`
+  instead of being matched by substring. The same block in
+  notes.md is that run's stdout.
+* **The version numbers — a history the record's own evidence contradicted.** The
+  `record_format_versions.versions` text and the runner's docstring described
+  versions 1 and 2 as predating the placed-piece count; item 4 re-runs the base
+  writer and shows it emits that key at both. Both texts now say what the
+  evidence shows — the numbers are reused, a legacy version's sections may be
+  absent and are compared when present — and the verifier's gating is unchanged,
+  so no record's acceptance changed.
 
 Verbatim stdout of the ten pre-change probes, run with
 `PYTHONPATH=/tmp/exp003-base/src` against the pinned base commit
@@ -841,11 +1024,17 @@ Verbatim stdout of the probes added by these repair rounds, run against the
 trees they need: the recorded base commit in `/tmp/exp003-base`, the publication
 the earlier rounds replaced — `dc3c29c449c439ad8df415404d4df6d0eeb0087f` in
 `/tmp/exp003-before`, where the per-agent histogram rule and the unrecorded
-objective live — the publication this round replaces, `fbe21e1` in
-`/tmp/exp003-reviewed`, which is also the tree the two findings were measured on,
-and a copy of this tree's `src` in `/tmp/exp003-after`. The base, before and
-reviewed runs exit 1 with the value that violates the regression; the after run
-exits 0, which is what shows the contract holds after the change. A tree that
+objective live — the publication the previous round replaced, `fbe21e1` in
+`/tmp/exp003-reviewed`, which is the tree its two findings were measured on, the
+published head **this** round's finding was measured on, `ed8830a1` in
+`/tmp/exp003-published`, and a copy of this tree's `src` in `/tmp/exp003-after`.
+The base, before and reviewed runs exit 1 with the value that violates the
+regression; the after run exits 0, which is what shows the contract holds after
+the change, and the published run shows both sides at once — it satisfies the
+version marker the previous round added (exit 0 for
+`objective_required_when_versioned` and `suite_wide_histogram`) and still accepts
+a record whose objective's formula changed while its weights did not
+(`objective_identity` exit 1). A tree that
 cannot build the probe's subject reports the value it measured — `the tree cannot
 run the experiment's suite at all: run_and_save raised ValueError(...)`, or the
 missing section's keys — rather than aborting on an import. The
@@ -891,6 +1080,12 @@ exit=1
 # probe: objective_required_when_versioned
 AssertionError: objective_required_when_versioned: the tree cannot run the experiment's suite at all: run_and_save raised ValueError('agents must be chosen from random, greedy, lookahead')
 exit=1
+########## tree: base | probe: objective_identity
+# tree under test: /tmp/exp003-base/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: absent; runner declares the objective section: False
+# probe: objective_identity
+AssertionError: objective_identity: the tree cannot run the experiment's suite at all: run_and_save raised ValueError('agents must be chosen from random, greedy, lookahead')
+exit=1
 ########## tree: before | probe: suite_objective_section
 # tree under test: /tmp/exp003-before/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: False
@@ -925,7 +1120,7 @@ exit=1
 # probe: live_objective_section
 Live tetris: seed 2. P: pause; .: step; R: restart; [ / ]: speed; Esc: quit.
 frame_limit: 600 frames, score 1686, lines 2, hash b8e69fd6cbe92fd3
-Record: /tmp/tmphdm4grz2/runs/20260928T021951956339Z-6261f898/run.json
+Record: /tmp/tmpkdqaxbcu/runs/20260928T121313142893Z-2df9a4d9/run.json
 # live episode keys: ['agent', 'clear_sizes', 'initial_state_hash', 'inputs', 'pieces_placed', 'result', 'seed']
 # live record top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'summary', 'versions']
 AssertionError: the tree writes no declared-objective section for a live Tetris game: record keys are ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'summary', 'versions']
@@ -937,6 +1132,13 @@ exit=1
 # record format_version: 2
 # record top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'summary', 'versions']
 AssertionError: the tree writes no declared-objective section for a suite that uses the Tetris agent, so there is nothing for the version to require: record keys are ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'summary', 'versions']
+exit=1
+########## tree: before | probe: objective_identity
+# tree under test: /tmp/exp003-before/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: False
+# probe: objective_identity
+# record format_version: 2
+AssertionError: the tree writes no declared-objective section for a suite that uses the Tetris agent, so no identity could be recorded: record keys are ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'summary', 'versions']
 exit=1
 ########## tree: reviewed | probe: suite_objective_section
 # tree under test: /tmp/exp003-reviewed/src/block_stack_ai/__init__.py
@@ -977,7 +1179,7 @@ exit=1
 # probe: live_objective_section
 Live tetris: seed 2. P: pause; .: step; R: restart; [ / ]: speed; Esc: quit.
 frame_limit: 600 frames, score 1686, lines 2, hash b8e69fd6cbe92fd3
-Record: /tmp/tmpvc5aezzu/runs/20260928T021952278846Z-279677b5/run.json
+Record: /tmp/tmps1qyp9v4/runs/20260928T121313473535Z-dab976f0/run.json
 # live episode keys: ['agent', 'clear_sizes', 'initial_state_hash', 'inputs', 'pieces_placed', 'result', 'seed']
 # live record top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'objective', 'summary', 'versions']
 # recorded objective: {'module': 'block_stack_ai.tetris', 'weights': {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}}
@@ -991,20 +1193,99 @@ exit=0
 # record top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'objective', 'summary', 'versions']
 AssertionError: the tree accepted a record of its own version with the declared objective deleted, so the record verifies under whatever objective is current: verify_run returned []
 exit=1
-########## tree: after | probe: suite_objective_section
-# tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
+########## tree: reviewed | probe: objective_identity
+# tree under test: /tmp/exp003-reviewed/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: objective_identity
+# record format_version: 2
+# recorded objective keys: ['module', 'weights']
+# recorded weights: {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}
+# recorded identity: None
+# changed clear term: clear_term(1) is now -6.0 (declared -3.0), weights unchanged: True
+AssertionError: the tree accepted a record whose objective's formula changed while its weights did not, so the record verifies under an objective that did not produce it: verify_run returned []
+exit=1
+########## tree: published | probe: suite_objective_section
+# tree under test: /tmp/exp003-published/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: suite_objective_section
 # record top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'objective', 'summary', 'versions']
 # recorded objective: {'module': 'block_stack_ai.tetris', 'weights': {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}}
 result: the tree under test satisfies this probe
 exit=0
-########## tree: after | probe: objective_is_verified
-# tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
+########## tree: published | probe: objective_is_verified
+# tree under test: /tmp/exp003-published/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: objective_is_verified
 # recorded objective: {'module': 'block_stack_ai.tetris', 'weights': {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}}
 # mutated objective written: {'module': 'block_stack_ai.heuristic', 'weights': {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 1.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}}
+# verify_run rejected the mutated objective: Recorded objective differs from the current implementation:
+  objective.module: recorded 'block_stack_ai.heuristic', replayed 'block_stack_ai.tetris'
+  objective.weights.tetrises: recorded 1.0, replayed 8.0
+result: the tree under test satisfies this probe
+exit=0
+########## tree: published | probe: suite_wide_histogram
+# tree under test: /tmp/exp003-published/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: suite_wide_histogram
+# record top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'summary', 'versions']
+# agents: ['greedy', 'lookahead']; first agent: greedy
+# one agent (greedy) stripped from its episodes and summary: rejected: Replay mismatch in episode 0 (greedy, seed 1):
+  episode 0 clear_sizes: absent, but a record of this format version always carries it
+# one agent's (greedy) summary stripped while its episodes keep the histogram: rejected: Recorded summary does not match the replayed episodes:
+  summary.clear_sizes: absent from 0 of 2 episodes and 1 of 2 agent summaries, but a record of this format version carries it on every one
+# the histogram stripped everywhere at the current version: rejected: Replay mismatch in episode 0 (greedy, seed 1):
+  episode 0 clear_sizes: absent, but a record of this format version always carries it
+# the histogram stripped everywhere at the legacy version: accepted, warnings []
+result: the tree under test satisfies this probe
+exit=0
+########## tree: published | probe: live_objective_section
+# tree under test: /tmp/exp003-published/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: live_objective_section
+Live tetris: seed 2. P: pause; .: step; R: restart; [ / ]: speed; Esc: quit.
+frame_limit: 600 frames, score 1686, lines 2, hash b8e69fd6cbe92fd3
+Record: /tmp/tmpdd8_tuau/runs/20260928T121313829794Z-4c6fc529/run.json
+# live episode keys: ['agent', 'clear_sizes', 'initial_state_hash', 'inputs', 'pieces_placed', 'result', 'seed']
+# live record top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'objective', 'summary', 'versions']
+# recorded objective: {'module': 'block_stack_ai.tetris', 'weights': {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}}
+result: the tree under test satisfies this probe
+exit=0
+########## tree: published | probe: objective_required_when_versioned
+# tree under test: /tmp/exp003-published/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: objective_required_when_versioned
+# record format_version: 4
+# record top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'objective', 'summary', 'versions']
+# the same record with the section deleted is reported: Recorded objective differs from the current implementation:
+  objective: absent, but a record of this format version declares the objective of the Tetris agent whose placements it replayed
+# the same JSON at the legacy version still verifies: warnings []
+result: the tree under test satisfies this probe
+exit=0
+########## tree: published | probe: objective_identity
+# tree under test: /tmp/exp003-published/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: objective_identity
+# record format_version: 4
+# recorded objective keys: ['module', 'weights']
+# recorded weights: {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}
+# recorded identity: None
+# changed clear term: clear_term(1) is now -6.0 (declared -3.0), weights unchanged: True
+AssertionError: the tree accepted a record whose objective's formula changed while its weights did not, so the record verifies under an objective that did not produce it: verify_run returned []
+exit=1
+########## tree: after | probe: suite_objective_section
+# tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: suite_objective_section
+# record top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'objective', 'summary', 'versions']
+# recorded objective: {'module': 'block_stack_ai.tetris', 'sources': {'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}, 'weights': {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}}
+result: the tree under test satisfies this probe
+exit=0
+########## tree: after | probe: objective_is_verified
+# tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: objective_is_verified
+# recorded objective: {'module': 'block_stack_ai.tetris', 'sources': {'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}, 'weights': {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}}
+# mutated objective written: {'module': 'block_stack_ai.heuristic', 'sources': {'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}, 'weights': {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 1.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}}
 # verify_run rejected the mutated objective: Recorded objective differs from the current implementation:
   objective.module: recorded 'block_stack_ai.heuristic', replayed 'block_stack_ai.tetris'
   objective.weights.tetrises: recorded 1.0, replayed 8.0
@@ -1031,24 +1312,37 @@ exit=0
 # probe: live_objective_section
 Live tetris: seed 2. P: pause; .: step; R: restart; [ / ]: speed; Esc: quit.
 frame_limit: 600 frames, score 1686, lines 2, hash b8e69fd6cbe92fd3
-Record: /tmp/tmp7g6jw9te/runs/20260928T021952591356Z-363d36bc/run.json
+Record: /tmp/tmpb26magod/runs/20260928T121314175849Z-aa8b8229/run.json
 # live episode keys: ['agent', 'clear_sizes', 'initial_state_hash', 'inputs', 'pieces_placed', 'result', 'seed']
 # live record top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'objective', 'summary', 'versions']
-# recorded objective: {'module': 'block_stack_ai.tetris', 'weights': {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}}
+# recorded objective: {'module': 'block_stack_ai.tetris', 'sources': {'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}, 'weights': {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}}
 result: the tree under test satisfies this probe
 exit=0
 ########## tree: after | probe: objective_required_when_versioned
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: objective_required_when_versioned
-# record format_version: 4
+# record format_version: 5
 # record top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'objective', 'summary', 'versions']
 # the same record with the section deleted is reported: Recorded objective differs from the current implementation:
   objective: absent, but a record of this format version declares the objective of the Tetris agent whose placements it replayed
 # the same JSON at the legacy version still verifies: warnings []
 result: the tree under test satisfies this probe
 exit=0
-
+########## tree: after | probe: objective_identity
+# tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: objective_identity
+# record format_version: 5
+# recorded objective keys: ['module', 'sources', 'weights']
+# recorded weights: {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}
+# recorded identity: {'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
+# changed clear term: clear_term(1) is now -6.0 (declared -3.0), weights unchanged: True
+# the record is reported under the changed objective: Recorded objective differs from the current implementation:
+  objective.sources.block_stack_ai.tetris: recorded '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e', replayed '300f6c6ed4bf225d19c469683198f5cf182d23610329c626f2b35760f0a05fc0'
+# the unchanged objective verifies again: warnings []
+result: the tree under test satisfies this probe
+exit=0
 ```
 
 Verbatim stdout of this round's `publication_content` rows: the probe file of the
@@ -1079,12 +1373,80 @@ exit=1
 # probe: publication_content
 # target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
 # 1111111 published, worktree dirty holding the repair: exit 0
-#   reported 10 differing paths of 10
-# 1111111 published, worktree clean: exit 1 (the published tree 1111111111111111111111111111111111111111 differs from this clean worktree on ['experiments/003-tetris-aware-agent/notes.md', 'experiments/003-tetris-aware-agent/probes/evidence.py', 'experiments/003-tetris-aware-agent/probes/prechange_probe.py', 'experiments/003-tetris-aware-agent/result.json', 'src/block_stack_ai/agents.py', 'src/block_stack_ai/live.py', 'src/block_stack_ai/runner.py', 'src/block_stack_ai/tetris.py', 'tests/test_integration.py', 'tests/test_unit.py'], and nothing here is uncommitted to account for it)
+#   reported 11 differing paths of 11
+# 1111111 published, worktree clean: exit 1 (the published tree 1111111111111111111111111111111111111111 differs from this clean worktree on ['experiments/003-tetris-aware-agent/notes.md', 'experiments/003-tetris-aware-agent/probes/evidence.py', 'experiments/003-tetris-aware-agent/probes/prechange_probe.py', 'experiments/003-tetris-aware-agent/result.json', 'src/block_stack_ai/agents.py', 'src/block_stack_ai/live.py', 'src/block_stack_ai/runner.py', 'src/block_stack_ai/tetris.py', 'tests/test_integration.py', 'tests/test_live.py', 'tests/test_unit.py'], and nothing here is uncommitted to account for it)
 # 1111111 published, worktree clean and equal: exit 0
 # 1111111 published, only experiments/003-tetris-aware-agent/config.json differs, worktree dirty: exit 0
 # 1111111 published, src/block_stack_ai/runner.py deleted in the worktree: exit 0
 result: the tree under test satisfies this probe
+exit=0
+```
+
+Verbatim stdout of this round's snapshot rows. The pre-change probe is the tree this repair replaces (`/tmp/exp003-attempt8`, copied from the previous round's uncommitted worktree), run with that tree's own `src` on `PYTHONPATH` against its own record and against `/tmp/exp003-drift-state.json`, a copy of this record whose `state` is a valid probe line for the same commit and count but a shorter differing list. The first run is this round's finding (`exit 1`); the second shows this tree's probe reports the same record by the declared count it cites (`exit 1`); the third shows the state-line tightening (`exit 1`) where the fourth shows the pre-change check accepted the drift (`exit 0`, matched by substring):
+
+```text
+########## tree: attempt8 (its own probe file) | probe: publication-record on its own record
+$ PYTHONPATH=/tmp/exp003-attempt8/src $PY /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/result.json
+# /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/result.json: publication snapshot
+#   captured_at: '2026-09-28T12:23:24.226503+00:00'
+#   command: '$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/capture-P14.txt'
+#   published ed8830a15d05a70fbd1783e4a6faa26df78a1d05, tree a3b132358189a5fc931d7ef3253893f8ba463d45
+#   8 of 46 compared paths differ from this worktree
+Traceback (most recent call last):
+  File "/tmp/exp003-attempt8/experiments/003-tetris-aware-agent/probes/evidence.py", line 908, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/tmp/exp003-attempt8/experiments/003-tetris-aware-agent/probes/evidence.py", line 880, in main
+    check_publication_record(Path(sys.argv[2]))
+  File "/tmp/exp003-attempt8/experiments/003-tetris-aware-agent/probes/evidence.py", line 514, in check_publication_record
+    assert not problems, "; ".join(problems)
+           ^^^^^^^^^^^^
+AssertionError: repaired_paths_compared_by_content is 11 but 12 repaired paths are declared
+exit=1
+########## tree: after-this-repair | probe: publication-record on the attempt-8 record
+$ PYTHONPATH=/tmp/exp003-attempt8/src $PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/result.json
+# /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/result.json: publication snapshot
+#   captured_at: '2026-09-28T12:23:24.226503+00:00'
+#   command: '$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/capture-P14.txt'
+#   published ed8830a15d05a70fbd1783e4a6faa26df78a1d05, tree a3b132358189a5fc931d7ef3253893f8ba463d45
+#   8 of 46 compared paths differ from this worktree
+Traceback (most recent call last):
+  File "/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py", line 948, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py", line 920, in main
+    check_publication_record(Path(sys.argv[2]))
+  File "/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py", line 554, in check_publication_record
+    assert not problems, "; ".join(problems)
+           ^^^^^^^^^^^^
+AssertionError: repaired_paths_compared_by_content is 11 but the probe's counts line declares 12 repaired paths compared by content; counts_line is None, not the probe's counts line for the fields beside it
+exit=1
+########## tree: after-this-repair | probe: publication-record on the drift-state record
+$ PYTHONPATH=$PWD/src $PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-drift-state.json
+# /tmp/exp003-drift-state.json: publication snapshot
+#   captured_at: '2026-09-28T12:40:33.329828+00:00'
+#   command: '$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/exp003-publication-final.txt'
+#   published ed8830a15d05a70fbd1783e4a6faa26df78a1d05, tree a3b132358189a5fc931d7ef3253893f8ba463d45
+#   9 of 46 compared paths differ from this worktree
+Traceback (most recent call last):
+  File "/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py", line 948, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py", line 920, in main
+    check_publication_record(Path(sys.argv[2]))
+  File "/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py", line 554, in check_publication_record
+    assert not problems, "; ".join(problems)
+           ^^^^^^^^^^^^
+AssertionError: state is not the line these fields reconstruct, so the line and the counts beside it are not one run's: 'the refs name an earlier publication: ed8830a15d05a70fbd1783e4a6faa26df78a1d05; 9 of 46 compared paths differ from this worktree (experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/003-tetris-aware-agent/result.json, experiments/README.md, src/block_stack_ai/runner.py, tests/test_integration.py, tests/test_live.py), and this worktree holds the unpublished repair' != 'the refs name an earlier publication: ed8830a15d05a70fbd1783e4a6faa26df78a1d05; 9 of 46 compared paths differ from this worktree (experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/003-tetris-aware-agent/result.json, experiments/README.md, src/block_stack_ai/runner.py, tests/test_integration.py, tests/test_live.py, tests/test_unit.py), and this worktree holds the unpublished repair'
+exit=1
+########## tree: attempt8 (its own probe file) | probe: publication-record on the drift-state record
+$ PYTHONPATH=/tmp/exp003-attempt8/src $PY /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-drift-state.json
+# /tmp/exp003-drift-state.json: publication snapshot
+#   captured_at: '2026-09-28T12:40:33.329828+00:00'
+#   command: '$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/exp003-publication-final.txt'
+#   published ed8830a15d05a70fbd1783e4a6faa26df78a1d05, tree a3b132358189a5fc931d7ef3253893f8ba463d45
+#   9 of 46 compared paths differ from this worktree
+# every field of the snapshot is consistent with that one run
 exit=0
 ```
 
@@ -1591,20 +1953,36 @@ FAILED tests/test_unit.py::test_publication_probe_reports_a_path_present_in_neit
 ```
 
 **3. Registered suites.** `.venv/bin/python -m pytest -q -p no:cacheprovider -m
-'not integration'` reports `147 passed, 26 deselected` (the base commit's own
-suite reports `110 passed, 21 deselected`): the 37 added unit tests are the Tetris
+'not integration'` reports `152 passed, 26 deselected` (the base commit's own
+suite reports `110 passed, 21 deselected`): the added unit tests are the Tetris
 agent and objective in `tests/test_tetris.py`, the record-format, histogram,
-piece-count and publication-probe regressions in `tests/test_unit.py`, and the
-five CLI default-agent regressions in `tests/test_cli.py`. This round adds four
-of them — the tracked deletion, a path added here since the publication, a path
-present in neither tree, and a compared path that is a directory — each driving
-the publication probe offline with its Git commands stubbed and requiring the
-state to be reported rather than raised. The version-marker regressions changed no test's subject: the objective,
+piece-count, objective-identity and publication-probe regressions in
+`tests/test_unit.py`, and the five CLI default-agent regressions in
+`tests/test_cli.py`. This round adds two of them —
+`test_retained_publication_snapshot_describes_one_measured_run`, which drives the
+`publication-record` check against the retained record and then against six
+tampered copies (a stale state line, a state line reconstructed from a shorter
+differing list beside regenerated counts, a stale commit field, a count that does
+not match the list it summarises, a declared count off by one from the
+declaration, and a missing label), and
+`test_retained_publication_snapshot_cites_the_counts_the_probe_emits`, which drives
+the probe offline in the state the record describes and requires its emitted
+counts to be the record's own fields — and extends two others:
+`test_suite_records_the_objective_of_the_tetris_agent` now asserts the recorded
+identity is the source of each module the objective runs, and the new
+`test_verification_rejects_a_formula_change_that_leaves_the_weights_alone` and
+`test_objective_identity_is_required_at_the_current_version_and_optional_before`
+pin the reviewer's counterexample and the identity's version gating. The
+`fbe21e1` round added four — the tracked deletion, a path added here since the
+publication, a path present in neither tree, and a compared path that is a
+directory — each driving the publication probe offline with its Git commands
+stubbed and requiring the state to be reported rather than raised. The
+version-marker regressions changed no test's subject: the objective,
 histogram and piece-count tests now assert both sides of the marker — reported at
 the current version, still verifying at the legacy version — so they are the same
 rows with the counterexample added.
 `.venv/bin/python -m pytest -q -p no:cacheprovider -m integration` reports
-`26 passed, 147 deselected` (the base's integration run had 21 tests; the 3 new
+`26 passed, 152 deselected` (the base's integration run had 21 tests; the 3 new
 ones are the agent's native four-line clear, the suite record with its histogram,
 and the live-session record's histogram, and the earlier repair adds the
 real-engine objective record and the live Tetris objective). Both exit 0. Every
@@ -1618,20 +1996,33 @@ and `play`'s default agent is resolved from the selected config while the
 **4. The evaluation and its record.** `evidence.py evaluation` runs the recorded
 configuration, verifies the record and prints the per-agent histogram; its
 stdout is reproduced above under Observed result, and `evidence.py report` on the
-saved record prints the full table. This round's record is
-`runs/20260928T021454222451Z-83ce7937/run.json`: it carries `clear_sizes`,
-`pieces_placed` and the `objective` section (`block_stack_ai.tetris` with the
-published weights) and `format_version` 4, the version whose sections `verify`
-requires. `evidence.py compare` reports identical configuration, heuristic,
+saved record prints the full table. The cited evaluation record is
+`runs/20260928T021454222451Z-83ce7937/run.json`, written by the `fbe21e1`
+round's writer: it carries `clear_sizes`, `pieces_placed` and the `objective`
+section (`block_stack_ai.tetris` with the published weights) at `format_version`
+4, the version whose sections `verify` requires but which does not require the
+source identity this round adds. `evidence.py compare` reports identical
+configuration, heuristic,
 episodes and summary between it and the earlier rounds' cited record
-(`runs/20260927T171756139218Z-ceb3fba6/run.json`, `exit 0`), so this repair moved
-no measured number — the 9128 lines, 3495 lines, 2 and 10 Tetrises and every
+(`runs/20260927T171756139218Z-ceb3fba6/run.json`, `exit 0`), so neither this
+repair nor the previous one moved
+a measured number — the 9128 lines, 3495 lines, 2 and 10 Tetrises and every
 other figure above are the same values, reproduced by a fresh run. `report` on
 it prints the same histogram, line totals, rates, score, frames and cap counts the
 Observed result table gives. Its own `versions` block is engine `8ca41587`
 **dirty** and fallgorithm `fbe21e1` **dirty** — a working-tree run, exactly as the
 harness records the dependency; the only verification warning is the engine
 working-tree warning it always emits.
+
+**Every record already in `runs/` still verifies.** The repair touches the
+writer and verifier, so the compatibility claim is about the 21 records the
+earlier rounds left there: 14 at `format_version` 2 and 7 at `format_version` 4.
+Each is replayed from its own recorded inputs this round, one process after
+another, and all 21 exit 0 with only the engine working-tree warning — the
+version-2 records carry no objective at all, and the version-4 records carry the
+objective without the identity, which is exactly the pair of shapes the separate
+gating allows. The sweep is recorded under `determinism.runs_verified` in
+[`result.json`](result.json).
 
 Records written before this experiment's sections existed still verify, which is
 the compatibility the version marker keeps for them. Three of them are not
@@ -1642,43 +2033,47 @@ verification, so the claim is about the file that was verified:
 
 ```text
 # writer tree: /tmp/exp003-base/src (base commit d83a5bc, before the clear-size metric and the objective)
-# record: /tmp/exp003-legacy-records/20260928T021849098714Z-74ae5488/run.json
+# record: /tmp/exp003-legacy-records/20260928T120435075426Z-95ad6ec6/run.json
 #   format_version: 1
 #   top-level keys: ['configuration', 'created_at', 'format_version', 'initial_state_hash', 'inputs', 'pieces_placed', 'result', 'versions']
 #   result.lines: 0 frames: 31 reason: script_complete   (experiment 000: the scripted 40-frame config)
-# record: /tmp/exp003-legacy-records/20260928T021851270411Z-7cea1d5b/run.json
+# record: /tmp/exp003-legacy-records/20260928T120447381167Z-fe4584d0/run.json
 #   format_version: 2
 #   top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'summary', 'versions']
 #   episode keys: ['agent', 'initial_state_hash', 'inputs', 'pieces_placed', 'result', 'seed']
 #   episodes: 20 agents: ['greedy', 'random'] summary lines: greedy mean 118.9   (experiment 001's config)
-# record: /tmp/exp003-legacy-records/20260928T022018218867Z-316006a2/run.json
+# record: /tmp/exp003-legacy-records/20260928T120612901936Z-f1824a59/run.json
 #   format_version: 2
 #   top-level keys: ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'summary', 'versions']
 #   episode keys: ['agent', 'initial_state_hash', 'inputs', 'pieces_placed', 'result', 'seed']
 #   episodes: 20 agents: ['greedy', 'lookahead'] summary lines: lookahead mean 912.8   (experiment 002's config)
 # this worktree's verifier: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/src
-# verify_run /tmp/exp003-legacy-records/20260928T021849098714Z-74ae5488/run.json
+# verify_run /tmp/exp003-legacy-records/20260928T120435075426Z-95ad6ec6/run.json
 #   format_version: 1
 #   warnings: ['The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.']
-#   verified: /tmp/exp003-legacy-records/20260928T021849098714Z-74ae5488/run.json
+#   verified: /tmp/exp003-legacy-records/20260928T120435075426Z-95ad6ec6/run.json
 # exit 0
-# verify_run /tmp/exp003-legacy-records/20260928T021851270411Z-7cea1d5b/run.json
+# verify_run /tmp/exp003-legacy-records/20260928T120447381167Z-fe4584d0/run.json
 #   format_version: 2
 #   warnings: ['The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.']
-#   verified: /tmp/exp003-legacy-records/20260928T021851270411Z-7cea1d5b/run.json
+#   verified: /tmp/exp003-legacy-records/20260928T120447381167Z-fe4584d0/run.json
 # exit 0
-# verify_run /tmp/exp003-legacy-records/20260928T022018218867Z-316006a2/run.json
+# verify_run /tmp/exp003-legacy-records/20260928T120612901936Z-f1824a59/run.json
 #   format_version: 2
 #   warnings: ['The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.']
-#   verified: /tmp/exp003-legacy-records/20260928T022018218867Z-316006a2/run.json
+#   verified: /tmp/exp003-legacy-records/20260928T120612901936Z-f1824a59/run.json
 # exit 0
 ```
 
-The scripted record carries no `clear_sizes` and no `pieces` key, the two suites
-carry no `clear_sizes` and no `objective`, and all three verify — the shapes whose
-absence the version marker allows. The 002 record reproduces the frozen baseline
-002 published (`lookahead` mean 912.8 lines, total 9128), so the verification is
-of the same gameplay the earlier experiments measured.
+All three records carry `pieces_placed` — the base writer emitted the
+placed-piece count at version 1 and at version 2 — and none carries
+`clear_sizes` or `objective`, and all three verify: those are the shapes whose
+absence the version marker allows, and the placed-piece count is not one of them.
+An earlier round's row for the version-1 record claimed it carried "no pieces
+key"; the re-run above shows otherwise, and the claim is corrected in
+[`result.json`](result.json) rather than kept. The 002 record reproduces the
+frozen baseline 002 published (`lookahead` mean 912.8 lines, total 9128), so the
+verification is of the same gameplay the earlier experiments measured.
 
 **5. Predeclaration ordering.** `evidence.py predeclare` captured the objective
 before the cited evaluation run, and `check-predeclaration` re-checks the
@@ -1741,8 +2136,15 @@ re-run after the last one and the new record is the one cited.
   cannot recreate it.
 * **One agent pair, ten seeds.** The comparison is the brief's fixed set; no
   significance claim is made beyond the measured episodes.
-* **What verification does not prove.** A record is now tied to its objective and
-  its histogram, but `created_at` and the Git metadata stay advisory: a version
+* **What verification does not prove.** A record is now tied to its objective's
+  weights *and* to the source of the modules its decisions run, but that identity
+  is a digest of source text, not of behaviour: a comment-only edit to any of
+  those four modules invalidates a version-5 record even though nothing the agent
+  computes changed. That is the conservative direction — the check can reject an
+  unchanged objective, never accept a changed one — and it is deliberate, because
+  the alternative (a behavioural fingerprint over a fixed board battery) accepts
+  every change the battery does not happen to exercise. `created_at` and the Git
+  metadata stay advisory: a version
   difference is reported as a warning rather than failing, because a
   working-tree run cannot prove identical uncommitted source. The objective is
   compared as recorded metadata and re-derived choices, not as a proof that the
@@ -1767,7 +2169,8 @@ reproduces every field 002 published for `lookahead`, adding only the new
 This repair round strengthens verification without moving a measured number: the
 record's own `format_version` now says which sections its writer always emitted,
 so the placed-piece count, the clear-size histogram and the declared Tetris
-objective are required at the current versions (3 and 4) and only a legacy record
+objective are required at the current versions (3, 4 and 5) and only a legacy
+record
 (1 and 2) may omit them — the shape that used to be inferred from the absence
 itself, which made a current record with a deleted section indistinguishable from
 an older one and let it verify; and the publication probe reports every compared
@@ -1776,5 +2179,18 @@ publication and deleted in the worktree is reported as that deletion instead of
 aborting the report with `TypeError`. The records of the earlier rounds carry
 version 2 and still verify, as do records of experiments 000, 001 and 002 written
 by the pre-change writer; the histogram, line totals and rates above are unchanged,
-reproduced by a fresh 140.8 s run whose record compares identical to the earlier
+reproduced by a fresh run whose record compares identical to the earlier
 rounds' across configuration, heuristic, episodes and summary.
+
+This round closes the same class one level deeper, in three places. A record now
+names the **source** of the objective's modules as well as its weights, so a
+formula change that leaves every weight alone no longer verifies (the published
+head accepted exactly that); the identity is gated by its own version flag, so the
+version-4 and version-2 records of the earlier rounds still verify. The retained
+`publication` object is one measured run's, labelled with its command and capture
+time and checked against the run it names, instead of a mix of two that named
+neither. And the version numbers are described as what they are — reused, so a
+legacy version's sections may be absent and are compared when present — rather
+than as a schema history the record's own evidence contradicts. No weight, agent,
+placement or measured figure changed, and all 21 records already in `runs/` still
+verify.

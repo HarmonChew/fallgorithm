@@ -19,8 +19,10 @@ from block_stack_ai.pathaware import (
     simulate_plan,
 )
 from block_stack_ai.pieces import PIECES, cells, orientation_count
+from block_stack_ai import runner
 from block_stack_ai.runner import (
     LEGACY_SUITE_FORMAT_VERSION,
+    PRIOR_SUITE_FORMAT_VERSION,
     SUITE_FORMAT_VERSION,
     FORMAT_VERSION,
     VerificationError,
@@ -682,12 +684,16 @@ def test_suite_record_with_the_tetris_agent_runs_and_verifies(tmp_path: Path):
 def test_suite_record_with_the_tetris_agent_declares_its_objective(tmp_path: Path):
     """A real tetris suite records the objective that chose its placements.
 
-    The record names the module that declares the objective and the weights it
-    publishes, and the replay compares them. The section is required at the
-    version this writer emits, because the writer always records it for a suite
-    that uses the agent: deleting it makes the record verify under whatever
-    objective is current, so it is reported. The same JSON under the legacy
-    version, which never emitted the section, still verifies.
+    The record names the module that declares the objective, the weights it
+    publishes and the source identity of the modules its decisions are computed
+    from, and the replay compares them. The section is required at the version
+    this writer emits, because the writer always records it for a suite that uses
+    the agent: deleting it makes the record verify under whatever objective is
+    current, so it is reported, and deleting only the identity is reported too,
+    because the current writer always records that. The same JSON under the
+    legacy version, which never emitted the section, still verifies, and so does
+    the same JSON under the prior version, whose writer emitted the objective
+    without the identity.
     """
     raw = json.loads(TETRIS_CONFIG.read_text(encoding="utf-8"))
     config_path = tmp_path / "config.json"
@@ -700,6 +706,7 @@ def test_suite_record_with_the_tetris_agent_declares_its_objective(tmp_path: Pat
     assert record["format_version"] == SUITE_FORMAT_VERSION
     assert record["objective"] == {
         "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
+        "sources": runner._objective_sources(),
     }
     verify_run(path)
 
@@ -713,4 +720,18 @@ def test_suite_record_with_the_tetris_agent_declares_its_objective(tmp_path: Pat
     legacy = json.loads(json.dumps(stripped))
     legacy["format_version"] = LEGACY_SUITE_FORMAT_VERSION
     path.write_text(json.dumps(legacy), encoding="utf-8")
+    verify_run(path)
+
+    # The identity is the newer half of the section, gated separately: a version-5
+    # record without it had it deleted, while the version-4 writer never recorded
+    # it and its records keep verifying.
+    without_identity = json.loads(json.dumps(record))
+    del without_identity["objective"]["sources"]
+    path.write_text(json.dumps(without_identity), encoding="utf-8")
+    with pytest.raises(VerificationError, match=r"objective\.sources: absent, but a record of "
+                                                r"this format version always carries it"):
+        verify_run(path)
+
+    without_identity["format_version"] = PRIOR_SUITE_FORMAT_VERSION
+    path.write_text(json.dumps(without_identity), encoding="utf-8")
     verify_run(path)

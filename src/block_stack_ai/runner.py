@@ -1,13 +1,20 @@
 """Run bounded episodes and replay exactly the inputs that were executed.
 
-Four record versions share this module and all replay against the native engine.
+Five record versions share this module and all replay against the native engine.
 Versions 1 (one scripted episode) and 2 (a suite of placement-agent episodes over
-fixed seeds) predate the placed-piece count, the clear-size histogram and the
-declared objective: the writer of those versions emitted none of the three, so
-the verifier accepts each one absent and compares it when present. Versions 3 (a
-scripted episode) and 4 (a suite) are written after them and must carry every
+fixed seeds) are the older formats of each shape: the verifier accepts the
+placed-piece count, the clear-size histogram and the declared objective absent
+there and compares each one when present. Versions 3 (a
+scripted episode), 4 and 5 (suites) are written after them and must carry every
 section their writer emits — the placed-piece count, the clear-size histogram,
 and, for a suite that uses the Tetris agent, that agent's declared objective.
+Version 4's writer recorded that objective without the source identity its
+successor adds, so version 4 records require everything except the identity and
+version 5 records require it too. The numbers are reused rather than a schema
+history — the base commit's writer emitted the placed-piece count at versions 1
+and 2, and an earlier writer wrote the same numbers without it — so a version
+says which sections the verifier must require: a legacy version's may be absent
+and are compared when present, and only the current version's must be present.
 
 The version is the marker that makes the two cases distinguishable, because
 absence alone cannot tell a record that predates a section from a current record
@@ -30,8 +37,8 @@ not locked and is not counted either, and the RNG/preview selection counter
 field existed carry the legacy ``pieces`` key instead, which held
 ``state.piece_count``; the replay compares it against that counter so those
 records keep verifying under their original semantics. A record that carries
-neither key is older still and keeps verifying at a legacy version; a version 3
-or 4 record must carry ``pieces_placed``, because that is the key its writer
+neither key is older still and keeps verifying at a legacy version; a version 3,
+4 or 5 record must carry ``pieces_placed``, because that is the key its writer
 emits and its absence there is a deleted section rather than an older record.
 
 The clear-size histogram is ``clear_sizes``: per episode, how many locks cleared
@@ -43,9 +50,9 @@ a ``result`` object's keys to equal the replay's exactly, so a new key there
 would invalidate every record written before it. Like the piece count a legacy
 record may omit it — a record that carries neither the field nor the entry in its
 summary is older and keeps verifying — and a present one is compared with the
-same type-and-key rules as the mandatory sections. In a version 3 or 4 record the
-histogram is required: a scripted episode carries it, and a suite carries it on
-every episode and every agent summary. Presence is all-or-nothing in a legacy
+same type-and-key rules as the mandatory sections. In a version 3, 4 or 5 record
+the histogram is required: a scripted episode carries it, and a suite carries it
+on every episode and every agent summary. Presence is all-or-nothing in a legacy
 suite too: every episode and every agent summary in one record carries the
 histogram, or a record older than the metric carries it nowhere. A per-agent rule
 would accept a record that stripped the histogram from one agent while another
@@ -53,25 +60,33 @@ kept it, and such a record verifies while reporting a fraction of the lines it
 cleared.
 
 A suite that uses the Tetris agent records that agent's declared objective as
-``objective``: the module that declares it and the mapping its
-``weights_record()`` returns, mirroring the ``heuristic`` section beside it. The
-frozen heuristic mapping is written for every suite because every placement agent
-scores through it, and the Tetris agent's choices come from a second, separately
+``objective``: the module that declares it, the mapping its ``weights_record()``
+returns and the source identity of the modules the objective's decisions are
+computed from, mirroring the ``heuristic`` section beside it. The frozen
+heuristic mapping is written for every suite because every placement agent scores
+through it, and the Tetris agent's choices come from a second, separately
 declared objective instead; without the section a tetris suite verifies under
 whatever objective is current whenever the change happens to preserve its
-replayed choices. A version 4 suite that uses the agent must carry the section,
-because its writer always emits it; a legacy suite may omit it — the runs of this
-experiment written before it existed carry it nowhere and keep verifying — and a
-present one is compared with the same type-and-key rules.
+replayed choices. The identity closes the case the weights cannot: they are
+constants, so a formula change that leaves them alone changes every value the
+objective computes while the weights still compare equal, and the recorded
+choices only catch it when the change happens to move one of them. A version 5
+suite that uses the agent must carry the identity, because its writer always
+emits it; the version 4 writer emitted the objective without it and the
+version 2 writer emitted no objective at all, so those records keep verifying —
+the runs of this experiment written by both writers do — and a present identity
+is compared with the same type-and-key rules in every case.
 """
 
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 from statistics import fmean, median
+import sys
 from typing import Any, Callable
 from uuid import uuid4
 
@@ -86,14 +101,27 @@ from .heuristic import weights_record
 LEGACY_FORMAT_VERSION = 1  # a scripted episode written before the new sections
 FORMAT_VERSION = 3  # a scripted episode, which always records its sections
 LEGACY_SUITE_FORMAT_VERSION = 2  # a suite written before the new sections
-SUITE_FORMAT_VERSION = 4  # a suite, which always records them (and the Tetris objective)
-# The marker each verifier dispatches on: the record's own version, and whether a
-# record of that version must carry the sections its writer emitted. Inferring
+# A suite written after the sections and before the objective's source identity:
+# its writer recorded the objective's module and weights, which do not identify
+# the objective's formula. Superseded by SUITE_FORMAT_VERSION.
+PRIOR_SUITE_FORMAT_VERSION = 4
+SUITE_FORMAT_VERSION = 5  # a suite, which always records the sections and the identity
+# What each suite version's own writer always emitted, as ``(sections,
+# identity)``: the placed-piece count, the clear-size histogram and the declared
+# objective, then the objective's source identity inside that objective. Inferring
 # "legacy" from an absent section instead would accept a current record whose
 # section was deleted, because a stripped record and a pre-section record are the
-# same JSON.
+# same JSON. The prior version stays strict about everything its writer did emit —
+# its records carry the objective, so its verifier still requires it — and gates
+# only the identity, which its writer never recorded. The identity is the newer
+# of the two: a version whose writer emitted the sections therefore also requires
+# the ones that preceded it.
+_SUITE_FORMAT_VERSIONS = {
+    LEGACY_SUITE_FORMAT_VERSION: (False, False),
+    PRIOR_SUITE_FORMAT_VERSION: (True, False),
+    SUITE_FORMAT_VERSION: (True, True),
+}
 _SCRIPTED_FORMAT_VERSIONS = {LEGACY_FORMAT_VERSION: False, FORMAT_VERSION: True}
-_SUITE_FORMAT_VERSIONS = {LEGACY_SUITE_FORMAT_VERSION: False, SUITE_FORMAT_VERSION: True}
 _EVENT_FIELDS = (
     "moved", "rotated", "locked", "spawned", "gravity_drop", "soft_drop",
     "game_over", "challenge_completed", "lines_cleared", "score_delta",
@@ -107,6 +135,15 @@ _CLEAR_SIZES_FIELD = "clear_sizes"
 # heuristic mapping. The section names the module that declares it, so the
 # mapping cannot be read as the heuristic's own.
 _OBJECTIVE_FIELD = "objective"
+# The objective's semantic identity, beside its weights: the sha256 of the source
+# of every package module its decisions are computed from. The weights are
+# constants and cannot identify the formula around them, so without this a record
+# kept verifying under an objective whose formula changed whenever the replayed
+# choices happened to be preserved.
+_OBJECTIVE_SOURCES_FIELD = "sources"
+# Every package module belongs to this namespace; the objective's modules are
+# discovered from its own namespace rather than hand-listed.
+_PACKAGE_PREFIX = f"{__package__}."
 
 
 class VerificationError(RuntimeError):
@@ -266,8 +303,8 @@ def _compare_piece_count(record: dict[str, Any], field: str, replayed: int, wher
     the integers ``0``/``1``, so the type is checked before the value; a record
     that omits the field is older and is left alone, unless ``required`` says this
     record's version always records it — then the absence is a difference, because
-    a version 3 or 4 writer emits the count and a current record without it had the
-    section deleted.
+    a version 3, 4 or 5 writer emits the count and a current record without it had
+    the section deleted.
     """
     if field not in record:
         if not required:
@@ -286,11 +323,14 @@ def _compare_section(record: dict[str, Any], field: str, replayed: Any, where: s
                      *, required: bool = False) -> list[str]:
     """Differences for a section, including its absence when the version requires it.
 
-    ``clear_sizes`` is written by every version 3 and 4 record and may be absent
-    only from a legacy one, which ``required`` distinguishes: presence alone cannot
-    tell a record that predates the section from a current record whose section was
-    deleted. A present section is compared with the same type-and-key rules as the
-    mandatory ones, so a wrong type, a missing key or an extra one is reported.
+    ``clear_sizes`` and the objective's source identity are both written by the
+    current writer and may be absent only from a record whose version predates
+    them, which ``required`` distinguishes: presence alone cannot tell a record
+    that predates the section from a current record whose section was deleted. The
+    identity is the newer of the two, so a record that carries the first need not
+    carry it; each caller passes the flag its own version dictates. A present
+    section is compared with the same type-and-key rules as the mandatory ones, so
+    a wrong type, a missing key or an extra one is reported.
     """
     if field not in record:
         if not required:
@@ -453,9 +493,9 @@ def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
     Every pre-existing section — the game count, the stopping reasons, the four
     metrics and the piece count — is compared exactly as ``_compare_fields``
     compared the whole summary before, with the same type and key rules. The
-    clear-size totals are newer. A version 4 record must carry them on every agent
-    summary, because its writer always does; a legacy record may carry them
-    nowhere and still verifies, and one that carries them must carry them
+    clear-size totals are newer. A version 3, 4 or 5 record must carry them on
+    every agent summary, because its writer always does; a legacy record may carry
+    them nowhere and still verifies, and one that carries them must carry them
     everywhere. Presence is all-or-nothing across the complete suite — every episode
     and every agent summary in one record — because the totals are summed from the
     episodes: a record that stripped the histogram from one agent's episodes while
@@ -512,18 +552,50 @@ def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
     return differences
 
 
+def _objective_sources() -> dict[str, str]:
+    """sha256 of the source of every package module the objective runs.
+
+    The objective's decisions are computed from the module that declares it and
+    the package modules its code calls: the frozen geometry and board model it
+    imports, and Experiment 002's reachable-set enumeration it reuses. Hashing
+    only the declaring module would leave the same hole one level deeper — a
+    helper's change alters every value the objective computes while the declaring
+    module's own text is unchanged — so the closure is walked from the objective's
+    own namespace instead of being hand-listed, and a module that stops being used
+    drops out of it by itself.
+    """
+    sources: dict[str, str] = {}
+    pending = [tetris]
+    while pending:
+        module = pending.pop()
+        if module.__name__ in sources:
+            continue
+        sources[module.__name__] = hashlib.sha256(
+            Path(module.__file__).read_bytes()).hexdigest()
+        for value in vars(module).values():
+            origin = getattr(value, "__module__", None)
+            if isinstance(origin, str) and origin.startswith(_PACKAGE_PREFIX):
+                pending.append(sys.modules[origin])
+    return {name: sources[name] for name in sorted(sources)}
+
+
 def _objective_record(config: SuiteConfig) -> dict[str, Any] | None:
     """The declared objective a suite record must carry, or ``None`` without the agent.
 
     The ``heuristic`` mapping is written for every suite because every placement
     agent scores through it; the Tetris agent's choices come from a second,
     separately declared objective, so a suite that uses it records that objective
-    too, naming the module that declares it. A suite without the agent has no such
-    objective to record.
+    too: the module that declares it, the weights its ``weights_record()``
+    publishes, and the source identity of the modules its decisions are computed
+    from. A suite without the agent has no such objective to record.
     """
     if TETRIS_AGENT not in config.agents:
         return None
-    return {"module": tetris.__name__, "weights": tetris.weights_record()}
+    return {
+        "module": tetris.__name__,
+        "weights": tetris.weights_record(),
+        _OBJECTIVE_SOURCES_FIELD: _objective_sources(),
+    }
 
 
 def _objective_section(config: SuiteConfig) -> dict[str, Any]:
@@ -533,19 +605,24 @@ def _objective_section(config: SuiteConfig) -> dict[str, Any]:
 
 
 def _compare_objective(record: dict[str, Any], config: SuiteConfig,
-                       required: bool) -> list[str]:
+                       required: bool, identity_required: bool) -> list[str]:
     """Differences for the declared-objective section of a suite record.
 
-    A suite that uses the Tetris agent records the module and weights that chose
-    its placements, so a record cannot keep verifying under a different objective
-    merely because the changed weights happen to preserve the replayed choices.
-    The section is required at version 4, whose writer always emits it for such a
-    suite: a version-4 record that lacks it had the section deleted, and accepting
-    that would verify a record under whatever objective is current — exactly the
-    hole the section closes. A legacy suite (version 2, or the runs of this
-    experiment written before the section existed) carries no section and keeps
-    verifying. A section in a record whose configuration has no Tetris agent is a
-    difference too, because no writer emits one.
+    A suite that uses the Tetris agent records the module, the weights and the
+    source identity of the objective that chose its placements, so a record
+    cannot keep verifying under a different objective merely because the changed
+    weights or the changed formula happen to preserve the replayed choices: the
+    weight mapping is compared value for value, and the identity is compared
+    against the source of the modules the objective's code runs. The section is
+    required at the current version, whose writer always emits it for such a
+    suite: a record of that version which lacks it had the section deleted, and
+    accepting that would verify the record under whatever objective is current —
+    exactly the hole the section closes. The identity inside it is gated the same
+    way, because the writer that emitted the prior version recorded no identity
+    and the writer that emitted the legacy version recorded no section at all;
+    both keep verifying, and a present identity is compared in every case. A
+    section in a record whose configuration has no Tetris agent is a difference
+    too, because no writer emits one.
     """
     expected = _objective_record(config)
     if expected is None:
@@ -562,7 +639,21 @@ def _compare_objective(record: dict[str, Any], config: SuiteConfig,
             f"{_OBJECTIVE_FIELD}: absent, but a record of this format version declares the "
             "objective of the Tetris agent whose placements it replayed"
         ]
-    return _compare_fields(record[_OBJECTIVE_FIELD], expected, _OBJECTIVE_FIELD)
+    recorded = record[_OBJECTIVE_FIELD]
+    if not isinstance(recorded, dict):
+        raise VerificationError(
+            f"Recorded {_OBJECTIVE_FIELD} must be dict, not {recorded!r}"
+        )
+    differences = _compare_fields(
+        {key: value for key, value in recorded.items() if key != _OBJECTIVE_SOURCES_FIELD},
+        {key: value for key, value in expected.items() if key != _OBJECTIVE_SOURCES_FIELD},
+        _OBJECTIVE_FIELD,
+    )
+    differences.extend(_compare_section(
+        recorded, _OBJECTIVE_SOURCES_FIELD, expected[_OBJECTIVE_SOURCES_FIELD],
+        f"{_OBJECTIVE_FIELD}.{_OBJECTIVE_SOURCES_FIELD}", required=identity_required,
+    ))
+    return differences
 
 
 def _record_versions() -> dict[str, Any]:
@@ -716,7 +807,7 @@ def _verify_scripted(record: dict[str, Any], path: Path, sections_required: bool
 
 
 def _verify_suite(record: dict[str, Any], path: Path, sections_required: bool,
-                  game_factory: Callable[..., Any]) -> list[str]:
+                  identity_required: bool, game_factory: Callable[..., Any]) -> list[str]:
     recorded_engine, configuration = _record_sections(record, path)
     # ``weights_record()`` carries the writer's float weights and the tie-break
     # string, so the same type-and-key comparison the episodes and summary get
@@ -736,7 +827,8 @@ def _verify_suite(record: dict[str, Any], path: Path, sections_required: bool,
         raise VerificationError(f"Malformed run record in {path}: {error}") from error
     if not isinstance(config, SuiteConfig):
         raise VerificationError(f"Malformed run record in {path}: not a suite configuration")
-    objective_differences = _compare_objective(record, config, sections_required)
+    objective_differences = _compare_objective(record, config, sections_required,
+                                               identity_required)
     if objective_differences:
         raise VerificationError(
             "Recorded objective differs from the current implementation:\n  "
@@ -834,5 +926,6 @@ def verify_run(path: Path, game_factory: Callable[..., Any] = create_game) -> li
     if version in _SCRIPTED_FORMAT_VERSIONS:
         return _verify_scripted(record, path, _SCRIPTED_FORMAT_VERSIONS[version], game_factory)
     if version in _SUITE_FORMAT_VERSIONS:
-        return _verify_suite(record, path, _SUITE_FORMAT_VERSIONS[version], game_factory)
+        sections_required, identity_required = _SUITE_FORMAT_VERSIONS[version]
+        return _verify_suite(record, path, sections_required, identity_required, game_factory)
     raise VerificationError(f"Unsupported run record format in {path}")

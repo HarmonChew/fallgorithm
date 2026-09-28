@@ -934,6 +934,82 @@ def r16_objective_required_when_versioned():
     print(f"# the same JSON at the legacy version still verifies: warnings {warnings}")
 
 
+def r17_objective_identity():
+    """A record's objective is identified by its source, not only by its weights.
+
+    The reviewer's counterexample: the objective's clear term is changed — a
+    premature clear is charged at twice the declared rate — while every weight
+    constant stays exactly as it was. The recorded weights therefore still compare
+    equal, and a record written under the old formula verifies under the new one
+    whenever the replayed choices happen to be preserved. This writes the
+    experiment's suite with the tree's own writer, changes the declaring module's
+    source, and requires the tree to reject the record. A tree whose objective
+    section is the module name and the weights accepts it and reports nothing,
+    which is the pre-change value this row pins; a tree whose writer records the
+    objective's source identity reports the changed digest instead. The record's
+    episodes are replayed through a stand-in that ignores the mask, so the changed
+    formula cannot move the recorded inputs: the identity is the only thing that
+    can tell the two objectives apart.
+    """
+    import importlib
+
+    path, factory = _run_experiment_suite("objective_identity")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    print(f"# record format_version: {record.get('format_version')}")
+    objective = record.get("objective")
+    if objective is None:
+        raise AssertionError(
+            "the tree writes no declared-objective section for a suite that uses the Tetris "
+            f"agent, so no identity could be recorded: record keys are {sorted(record)}"
+        )
+    print(f"# recorded objective keys: {sorted(objective)}")
+    print(f"# recorded weights: {objective.get('weights')}")
+    print(f"# recorded identity: {objective.get('sources')}")
+
+    try:
+        from block_stack_ai import tetris
+    except ImportError as error:
+        raise AssertionError(
+            "the tree declares no Tetris objective module, so there is no objective whose "
+            f"formula this probe could change: {error}"
+        ) from error
+    module = Path(tetris.__file__)
+    original = module.read_text(encoding="utf-8")
+    changed = original.replace(
+        'return TETRIS_WEIGHTS["premature_clear"] * (4 - lines_cleared)',
+        'return 2 * TETRIS_WEIGHTS["premature_clear"] * (4 - lines_cleared)',
+    )
+    if changed == original:
+        raise AssertionError(
+            f"the tree's objective does not contain the clear term this probe changes: {module}"
+        )
+    try:
+        module.write_text(changed, encoding="utf-8")
+        importlib.reload(tetris)
+        print(f"# changed clear term: clear_term(1) is now {tetris.clear_term(1)} "
+              f"(declared -3.0), weights unchanged: "
+              f"{tetris.weights_record() == objective.get('weights')}")
+        try:
+            warnings = runner.verify_run(path, factory)
+        except runner.VerificationError as error:
+            print(f"# the record is reported under the changed objective: {error}")
+            if "objective" not in str(error):
+                raise AssertionError(
+                    "the tree rejected the record, but not for the objective's identity: "
+                    f"{error}"
+                ) from error
+        else:
+            raise AssertionError(
+                "the tree accepted a record whose objective's formula changed while its "
+                f"weights did not, so the record verifies under an objective that did not "
+                f"produce it: verify_run returned {warnings}"
+            )
+    finally:
+        module.write_text(original, encoding="utf-8")
+        importlib.reload(tetris)
+    print(f"# the unchanged objective verifies again: warnings {runner.verify_run(path, factory)}")
+
+
 PROBES = {
     "clear_sizes_field": r1_clear_sizes_field,
     "clear_sizes_summary": r2_clear_sizes_summary,
@@ -951,6 +1027,7 @@ PROBES = {
     "live_objective_section": r14_live_objective_section,
     "publication_content": r15_publication_content,
     "objective_required_when_versioned": r16_objective_required_when_versioned,
+    "objective_identity": r17_objective_identity,
 }
 
 

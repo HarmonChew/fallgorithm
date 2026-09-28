@@ -72,8 +72,10 @@ REPAIRED_PATHS = (
     "experiments/003-tetris-aware-agent/result.json",
     "experiments/003-tetris-aware-agent/probes/evidence.py",
     "experiments/003-tetris-aware-agent/probes/prechange_probe.py",
+    "experiments/README.md",
     "tests/test_unit.py",
     "tests/test_integration.py",
+    "tests/test_live.py",
 )
 # The two states the publication probe can observe, pinned here so the
 # regressions and the experiment record can cite the lines it prints: the
@@ -81,6 +83,36 @@ REPAIRED_PATHS = (
 # refs still name an earlier publication and this worktree holds the difference.
 STATE_EQUAL_PREFIX = "published content equals this worktree"
 STATE_EARLIER_PREFIX = "the refs name an earlier publication"
+
+
+def state_line(published: str, compared_count: int, differing) -> str:
+    """The one state line a comparison's outcome prints.
+
+    The probe prints this line and the retained record quotes it, and
+    ``check_publication_record`` reconstructs it from the record's own fields, so
+    the line and the counts beside it have to be one run's: a state line left
+    behind by an earlier run cannot sit under commit fields and counts a later run
+    wrote, which is the counterexample this repair closes.
+    """
+    if differing:
+        return (f"{STATE_EARLIER_PREFIX}: {published}; {len(differing)} of {compared_count} "
+                f"compared paths differ from this worktree ({', '.join(differing)}), and this "
+                f"worktree holds the unpublished repair")
+    return f"{STATE_EQUAL_PREFIX} for all {compared_count} compared paths: {published}"
+
+
+def counts_line(compared_count: int, differing: int, uncommitted: int) -> str:
+    """The probe's own emitted counts, the machine-readable line the record cites.
+
+    ``declared_paths_compared_by_content`` is derived from the declared list here,
+    at the run, so the number the record cites is read from the run rather than
+    transcribed from an earlier list: the record this repair replaces cited 11
+    while 12 paths were declared, because the count had been copied from an
+    earlier round and left behind when the declaration grew.
+    """
+    return (f"declared_paths_compared_by_content={len(REPAIRED_PATHS)} "
+            f"compared_paths_count={compared_count} observed_differing_paths={differing} "
+            f"observed_uncommitted_paths={uncommitted}")
 
 
 def _file_sha256(path: Path) -> str | None:
@@ -287,8 +319,16 @@ def check_publication():
     calling the repair published. For the same reason it reports this worktree's
     HEAD and dirty state rather than requiring the transient pre-publication state
     (an uncommitted repair behind a lagging head) that only the reviewing session
-    can observe. The published tree is read from a writable clone of the branch,
+    worktree. The published tree is read from a writable clone of the branch,
     because this worktree's Git directory is read-only.
+
+    The run also prints its own counts — the declared paths it compared by content,
+    the compared-path total, and the differing and uncommitted counts — on one
+    machine-readable ``counts_line``, and the outcome on one ``state_line``. The
+    retained record cites those lines rather than numbers transcribed by hand, and
+    ``check_publication_record`` reconstructs the state line from the record's own
+    fields, so a count or a state left behind by an earlier run is reported instead
+    of certified.
     """
     if PUBLICATION_CLONE.exists():
         shutil.rmtree(PUBLICATION_CLONE)
@@ -408,11 +448,8 @@ def check_publication():
             f"{unexplained}, which this worktree does not hold uncommitted, so the "
             f"difference is not this task's unpublished repair"
         )
-        print(f"# {STATE_EARLIER_PREFIX}: {published}; {len(differing)} of "
-              f"{len(states)} compared paths differ from this worktree "
-              f"({', '.join(differing)}), and this worktree holds the unpublished repair")
-    else:
-        print(f"# {STATE_EQUAL_PREFIX} for all {len(states)} compared paths: {published}")
+    print(f"# {state_line(published, len(states), differing)}")
+    print(f"#   | {counts_line(len(states), len(differing), len(uncommitted))}")
 
     print(f"# the branch {TASK_BRANCH_REF} and the PR head {TASK_PR_REF} are {published}")
     print(f"# that commit descends from the recorded base {BASE_COMMIT}, so it is this task's own")
@@ -428,6 +465,94 @@ def check_publication():
           f"with {len(uncommitted)} uncommitted change(s)")
     print(f"# the reviewed tree is this worktree; the service owns commits and publication, so")
     print(f"# approval precedes publication and the refs above name the last published tree")
+
+
+# The published record this experiment retains. Its ``publication`` object is a
+# snapshot of one run of the probe above, and every field in it has to come from
+# that run.
+RESULT_PATH = PROJECT_ROOT / "experiments" / "003-tetris-aware-agent" / "result.json"
+
+
+def check_publication_record(path: Path = RESULT_PATH) -> None:
+    """The retained publication snapshot describes one measured probe run.
+
+    Two counterexamples are checked here. The first: the record's ``state`` still
+    described the earlier publication — that commit and that differing-path count
+    — while the sibling fields around it had been updated from a later run, so no
+    single run produced the object. The state line is therefore *reconstructed*
+    from the record's own commit, compared-path count and differing-path list,
+    through the same ``state_line`` the probe prints it with, and has to be that
+    exact line: a line from one run cannot sit beside counts another run wrote.
+    The second: ``repaired_paths_compared_by_content`` had been transcribed from
+    an earlier declaration and left at 11 when the declared list grew to 12, so
+    the record certified a comparison set it no longer described; the count is
+    compared with the declared list itself, the source the probe's emitted
+    ``counts_line`` derives it from, and the record's own cited ``counts_line``
+    must be that line for the fields beside it. The three commit fields and the
+    observed worktree head name one commit, the differing count is the length of
+    the list it summarises and matches the uncommitted-change count, and the run is
+    labelled with the command that produced it and the time it was captured. The
+    commit fields and the counts are the whole machine-readable state, so a field
+    left behind by an earlier run cannot survive this check.
+    """
+    record = json.loads(path.read_text(encoding="utf-8"))
+    publication = record["publication"]
+    problems: list[str] = []
+
+    def require(condition: bool, message: str) -> None:
+        if not condition:
+            problems.append(message)
+
+    published = publication["published_commit"]
+    for field in ("branch_head", "published_commit", "pull_request_head",
+                  "observed_worktree_head"):
+        require(publication.get(field) == published,
+                f"{field} is {publication.get(field)!r} but published_commit is {published!r}")
+
+    differing = publication["observed_differing_paths"]
+    listed = publication["repaired_paths_differing_from_this_worktree"]
+    require(differing == len(listed),
+            f"observed_differing_paths is {differing} but "
+            f"repaired_paths_differing_from_this_worktree lists {len(listed)}")
+    require(publication.get("observed_uncommitted_paths") == differing,
+            f"observed_uncommitted_paths is {publication.get('observed_uncommitted_paths')!r} "
+            f"but observed_differing_paths is {differing!r}")
+    declared = len(REPAIRED_PATHS)
+    require(publication.get("repaired_paths_compared_by_content") == declared,
+            f"repaired_paths_compared_by_content is "
+            f"{publication.get('repaired_paths_compared_by_content')!r} but the probe's counts "
+            f"line declares {declared} repaired paths compared by content")
+    require(publication.get("counts_line") == counts_line(
+                publication.get("compared_paths_count"), differing,
+                publication.get("observed_uncommitted_paths")),
+            f"counts_line is {publication.get('counts_line')!r}, not the probe's counts line for "
+            f"the fields beside it")
+
+    state = publication.get("state", "")
+    expected_state = state_line(published, publication.get("compared_paths_count"), listed)
+    require(state == expected_state,
+            f"state is not the line these fields reconstruct, so the line and the counts "
+            f"beside it are not one run's: {state!r} != {expected_state!r}")
+
+    # The run is labelled, so a later reader can tell which probe run the snapshot
+    # came from instead of inferring it from the values.
+    captured = publication.get("captured_at")
+    require(isinstance(captured, str), f"captured_at is not a recorded timestamp: {captured!r}")
+    if isinstance(captured, str):
+        require(datetime.fromisoformat(captured).tzinfo is not None,
+                f"captured_at carries no timezone: {captured!r}")
+    command = publication.get("command")
+    require(isinstance(command, str) and "evidence.py publication" in command,
+            f"command does not name the publication probe: {command!r}")
+
+    print(f"# {path}: publication snapshot")
+    print(f"#   captured_at: {captured!r}")
+    print(f"#   command: {command!r}")
+    print(f"#   published {published}, tree {publication['published_tree']}")
+    print(f"#   {differing} of {publication['compared_paths_count']} compared paths differ "
+          f"from this worktree")
+    assert not problems, "; ".join(problems)
+    print("# every field of the snapshot is consistent with that one run")
 
 
 def grid_of(rows):
@@ -775,6 +900,7 @@ def report(path: Path):
 PROBES = {
     "remote-main": check_remote_main,
     "publication": check_publication,
+    "publication-record": check_publication_record,
     "line-sizes": check_line_sizes,
     "tetris-choice": check_tetris_choice,
     "native-tetris": check_native_tetris,
@@ -789,6 +915,9 @@ def main() -> int:
         return 0
     if len(sys.argv) == 3 and sys.argv[1] == "report":
         report(Path(sys.argv[2]))
+        return 0
+    if len(sys.argv) == 3 and sys.argv[1] == "publication-record":
+        check_publication_record(Path(sys.argv[2]))
         return 0
     if len(sys.argv) == 3 and sys.argv[1] == "check-predeclaration":
         check_predeclaration(Path(sys.argv[2]))

@@ -9,6 +9,7 @@ import pytest
 
 from block_stack_ai.engine import create_game, engine_executable
 from block_stack_ai.live import LiveSession
+from block_stack_ai import runner
 from block_stack_ai.runner import SuiteConfig, VerificationError, verify_run
 from block_stack_ai.tetris import weights_record as tetris_weights_record
 
@@ -152,9 +153,11 @@ def test_live_tetris_session_records_the_objective_and_verifies(tmp_path):
     Live play is the second path that writes a suite record, so the declared
     objective has to be recorded there too: without it a live Tetris record would
     verify under whatever objective is current whenever the change happens to
-    preserve the replayed choices. The desktop protocol is driven with a plain
-    native mirror, and the record must name the declaring module and its weights
-    and replay under ``verify_run``.
+    preserve the replayed choices, and without the objective's source identity it
+    would verify under a changed formula whenever the weights were unchanged. The
+    desktop protocol is driven with a plain native mirror, and the record must
+    name the declaring module, its weights and the source identity, and replay
+    under ``verify_run``.
     """
     limit = 600
     config = SuiteConfig(GAME, limit, (2,), ("tetris",))
@@ -175,6 +178,7 @@ def test_live_tetris_session_records_the_objective_and_verifies(tmp_path):
     record = json.loads(records[0].read_text(encoding="utf-8"))
     assert record["objective"] == {
         "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
+        "sources": runner._objective_sources(),
     }
     assert sorted(record["summary"]) == ["tetris"]
     verify_run(records[0])

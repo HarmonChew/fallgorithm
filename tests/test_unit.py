@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass, field
 import importlib.util
 from pathlib import Path
+import re
+import sys
 from types import SimpleNamespace
 
 import pytest
 
 from block_stack_ai.agents import ScriptedAgent, parse_script
-from block_stack_ai import engine, runner
+from block_stack_ai import engine, runner, tetris as tetris_module
 from block_stack_ai.runner import (
     RunConfig,
     SuiteConfig,
@@ -789,7 +792,7 @@ def test_verify_run_requires_the_written_integer_format_version(tmp_path, monkey
     """``verify_run`` dispatched on plain equality, which JSON coercion reaches.
 
     JSON ``true`` compares equal to the integer 1 and ``2.0`` to 2, while the
-    writer records the integers 1, 2, 3 and 4. A suite record whose
+    writer records whole-numbered versions. A suite record whose
     ``format_version`` was edited from 2 to ``2.0`` therefore still routed to the
     suite verifier and verified (exit 0 on the retained record before the
     change), and an edited ``true`` (or ``1.0``) routed a v1 record to the
@@ -816,7 +819,7 @@ def test_verify_run_requires_the_written_integer_format_version(tmp_path, monkey
     config_path.write_text(json.dumps(SUITE), encoding="utf-8")
     suite_path = run_and_save(config_path, tmp_path / "runs", suite_factory)
     suite_record = json.loads(suite_path.read_text(encoding="utf-8"))
-    assert suite_record["format_version"] == 4  # the writer's own type
+    assert suite_record["format_version"] == runner.SUITE_FORMAT_VERSION  # the writer's own type
     assert verify_run(suite_path, suite_factory) == []
     for version in (4.0, 2.0, 1.0, True, False, None, "2"):
         rejected(suite_path, suite_record, suite_factory, version)
@@ -1296,9 +1299,10 @@ def test_suite_records_the_objective_of_the_tetris_agent(tmp_path, monkeypatch):
 
     The frozen heuristic mapping is recorded for every suite, because every
     placement agent scores through it; the Tetris agent's choices come from a
-    second objective, so its suite records that objective too, naming the module
-    that declares it. A suite without the agent declares none. The record's
-    version is what decides whether the section may be absent: the current
+    second objective, so its suite records that objective too: the module that
+    declares it, the weights it publishes, and the source identity of the modules
+    its decisions are computed from. A suite without the agent declares none. The
+    record's version is what decides whether the section may be absent: the current
     version's writer always emits it for this suite, so deleting it is reported,
     while the same JSON at the legacy version — a record that predates the
     section — keeps verifying.
@@ -1306,7 +1310,9 @@ def test_suite_records_the_objective_of_the_tetris_agent(tmp_path, monkeypatch):
     path, factory, record = _objective_suite(tmp_path, monkeypatch)
     assert record["format_version"] == runner.SUITE_FORMAT_VERSION
     assert record["objective"] == {
-        "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
+        "module": "block_stack_ai.tetris",
+        "weights": tetris_weights_record(),
+        "sources": runner._objective_sources(),
     }
     assert verify_run(path, factory) == []
 
@@ -1335,6 +1341,136 @@ def test_suite_records_the_objective_of_the_tetris_agent(tmp_path, monkeypatch):
     )
     assert "objective" not in greedy_record
     assert verify_run(greedy_path, greedy_factory) == []
+
+
+def test_the_objective_identity_is_the_source_of_the_modules_it_runs(tmp_path, monkeypatch):
+    """The identity names every module the objective's decisions are computed from.
+
+    A digest of the declaring module alone would leave the same hole one level
+    deeper — the frozen geometry, the board model and Experiment 002's
+    reachable-set enumeration all decide the objective's values — so the recorded
+    identity is the sha256 of each of those modules' own source, discovered from
+    the objective's namespace. Each recorded digest is checked against the file
+    the interpreter loaded, so the mapping is the source it claims to be rather
+    than a constant the writer and verifier could agree on while both were wrong.
+    """
+    path, factory, record = _objective_suite(tmp_path, monkeypatch)
+    sources = record["objective"]["sources"]
+    assert set(sources) == {
+        "block_stack_ai.tetris",
+        "block_stack_ai.heuristic",
+        "block_stack_ai.pathaware",
+        "block_stack_ai.pieces",
+    }
+    for name, digest in sources.items():
+        assert digest == hashlib.sha256(
+            Path(sys.modules[name].__file__).read_bytes()).hexdigest(), name
+    assert sources["block_stack_ai.tetris"] == hashlib.sha256(
+        Path(tetris_module.__file__).read_bytes()).hexdigest()
+    assert verify_run(path, factory) == []
+
+
+def test_objective_identity_is_required_at_the_current_version_and_optional_before(
+    tmp_path, monkeypatch
+):
+    """The identity is newer than the objective section, so it is gated separately.
+
+    The version-4 writer recorded the objective's module and weights but no
+    identity, and the version-2 writer recorded no objective at all; the retained
+    records of both keep verifying. The current version's writer always records
+    the identity, so deleting it from a record of that version is a deleted
+    section and is reported. An identity a record does carry is compared at every
+    version, so an edited one does not verify merely because its version predates
+    the writer that emits it.
+    """
+    path, factory, record = _objective_suite(tmp_path, monkeypatch)
+
+    stripped = json.loads(json.dumps(record))
+    del stripped["objective"]["sources"]
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"objective\.sources: absent, but a record of this format version always "
+              r"carries it",
+    ):
+        verify_run(path, factory)
+
+    for version in (runner.PRIOR_SUITE_FORMAT_VERSION, runner.LEGACY_SUITE_FORMAT_VERSION):
+        prior = json.loads(json.dumps(stripped))
+        prior["format_version"] = version
+        path.write_text(json.dumps(prior), encoding="utf-8")
+        assert verify_run(path, factory) == [], version
+
+        edited = json.loads(json.dumps(record))
+        edited["format_version"] = version
+        edited["objective"]["sources"]["block_stack_ai.tetris"] = "0" * 64
+        path.write_text(json.dumps(edited), encoding="utf-8")
+        with pytest.raises(
+            VerificationError,
+            match=r"objective\.sources\.block_stack_ai\.tetris: recorded '0{64}', "
+                  r"replayed '[0-9a-f]{64}'",
+        ):
+            verify_run(path, factory)
+
+
+def test_verification_rejects_a_formula_change_that_leaves_the_weights_alone(
+    tmp_path, monkeypatch
+):
+    """The weights are constants; the formula around them is what the identity pins.
+
+    The reviewer's counterexample: the objective's clear term charges a premature
+    clear at twice the declared rate. Every weight is unchanged — the changed
+    module's own ``weights_record()`` equals the record's, value for value — so the
+    weight comparison cannot tell the two objectives apart, and the replayed
+    choices need not move either: the recorded episode is replayed through a
+    stand-in that ignores the mask, so it matches under both formulas. The
+    identity is what changes, and the record no longer verifies. Patching
+    ``__file__`` points the verifier at a copy holding the changed formula, which
+    is what a tree whose module was edited looks like, without rewriting this
+    checkout's source.
+    """
+    path, factory, record = _objective_suite(tmp_path, monkeypatch)
+    assert verify_run(path, factory) == []
+
+    source = Path(tetris_module.__file__).read_text(encoding="utf-8")
+    changed = source.replace(
+        'return TETRIS_WEIGHTS["premature_clear"] * (4 - lines_cleared)',
+        'return 2 * TETRIS_WEIGHTS["premature_clear"] * (4 - lines_cleared)',
+    )
+    # The one edit is the clear term's multiple: putting it back recovers the
+    # original module byte for byte, so no weight constant moved.
+    assert changed != source
+    assert changed.replace(
+        'return 2 * TETRIS_WEIGHTS["premature_clear"] * (4 - lines_cleared)',
+        'return TETRIS_WEIGHTS["premature_clear"] * (4 - lines_cleared)',
+    ) == source
+
+    # The changed formula is a real second objective: its weights are the record's
+    # and its clear term is not, so nothing but the identity can separate them.
+    qualified = (changed
+                 .replace("from .heuristic import", "from block_stack_ai.heuristic import")
+                 .replace("from .pathaware import", "from block_stack_ai.pathaware import"))
+    namespace: dict = {}
+    exec(compile(qualified, "tetris_changed.py", "exec"), namespace)
+    assert namespace["weights_record"]() == record["objective"]["weights"]
+    assert namespace["clear_term"](1) == 2 * tetris_module.clear_term(1) == -6.0
+
+    original = tetris_module.__file__
+    copied = tmp_path / "tetris.py"
+    copied.write_text(changed, encoding="utf-8")
+    monkeypatch.setattr(tetris_module, "__file__", str(copied))
+    with pytest.raises(
+        VerificationError,
+        match=r"objective\.sources\.block_stack_ai\.tetris: recorded "
+              rf"'{record['objective']['sources']['block_stack_ai.tetris']}', "
+              r"replayed '[0-9a-f]{64}'",
+    ):
+        verify_run(path, factory)
+
+    # The module's own file leaves the same record verifying: the identity rejects
+    # the changed formula and nothing else.
+    monkeypatch.setattr(tetris_module, "__file__", original)
+    assert verify_run(path, factory) == []
 
 
 def test_verification_rejects_a_tampered_objective(tmp_path, monkeypatch):
@@ -1749,3 +1885,141 @@ def test_publication_probe_certifies_a_published_repair_by_content(
     printed = capsys.readouterr().out
     assert STATE_EQUAL_PREFIX in printed
     assert STATE_EARLIER_PREFIX not in printed
+
+
+# The state lines the record this repair replaces (ed8830a's) carried for the
+# earlier round's finding, verbatim from the record it replaced: its ``state``
+# still described ``cfab11e2`` and 5 differing paths while the commit fields and
+# the counts beside it had been updated from a later run.
+MIXED_STATE = (
+    "open, branch ref and PR head at the previous publication cfab11e2; the refs do not name "
+    "this worktree's content yet — 5 of the 46 compared paths differ — the probe reports that "
+    "earlier-publication state rather than certifying it, and the service pushes the approved "
+    "tree after the review"
+)
+
+
+def _retained_publication(tmp_path):
+    """The retained record's publication object, as a writable copy."""
+    record_path = (engine.PROJECT_ROOT / "experiments" / "003-tetris-aware-agent"
+                   / "result.json")
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    copy = tmp_path / "result.json"
+    copy.write_text(json.dumps(record), encoding="utf-8")
+    return copy, record
+
+
+def test_retained_publication_snapshot_describes_one_measured_run(tmp_path):
+    """The record's publication object is one probe run's, not a mix of two.
+
+    Two counterexamples are checked. The first is the reviewer's: ``state`` still
+    named the earlier publication (``cfab11e2`` and 5 differing paths) while
+    ``published_commit`` and the counts beside it had been updated from a later
+    run, so no single measured state produced the object. The check reconstructs
+    the state line from the record's own commit, compared-path count and
+    differing-path list — through the probe's own ``state_line`` — and requires the
+    record to quote exactly that line, so a line from one run cannot sit beside
+    counts from another. The second is this repair round's finding: the record
+    cited 11 ``repaired_paths_compared_by_content`` while 12 paths were declared,
+    because the count had been transcribed from an earlier declaration and left
+    behind when that list grew; the count must be the declared list's own length,
+    the value the probe's emitted ``counts_line`` derives it from. The other fields
+    must agree too — one commit across the four commit fields, the differing count
+    equal to the list it summarises and to the uncommitted-change count, and the run
+    labelled with its command and capture time — which is what
+    ``evidence.py publication-record`` runs.
+    """
+    probe = _load_publication_probe()
+    path, record = _retained_publication(tmp_path)
+    probe.check_publication_record(path)
+
+    def rejected(tamper, message):
+        tampered = json.loads(json.dumps(record))
+        path.write_text(json.dumps(tamper(tampered)), encoding="utf-8")
+        with pytest.raises(AssertionError, match=message):
+            probe.check_publication_record(path)
+
+    def stale_state(tampered):
+        tampered["publication"]["state"] = MIXED_STATE
+        return tampered
+
+    def stale_commit(tampered):
+        tampered["publication"]["published_commit"] = "c" * 40
+        return tampered
+
+    def unlisted_difference(tampered):
+        tampered["publication"]["observed_differing_paths"] += 1
+        return tampered
+
+    def stale_declared_count(tampered):
+        tampered["publication"]["repaired_paths_compared_by_content"] = (
+            len(probe.REPAIRED_PATHS) - 1)
+        return tampered
+
+    def drifted_state_count(tampered):
+        # The line from an earlier run, with the sibling counts regenerated: the
+        # state line still names the previous differing count and path list.
+        tampered["publication"]["state"] = probe.state_line(
+            tampered["publication"]["published_commit"],
+            tampered["publication"]["compared_paths_count"],
+            tampered["publication"]["repaired_paths_differing_from_this_worktree"][:-1])
+        return tampered
+
+    def unlabelled(tampered):
+        del tampered["publication"]["captured_at"]
+        return tampered
+
+    def unlabelled_command(tampered):
+        tampered["publication"]["command"] = "python -c 'import json'"
+        return tampered
+
+    rejected(stale_state, r"state is not the line these fields reconstruct")
+    rejected(drifted_state_count, r"state is not the line these fields reconstruct")
+    rejected(stale_commit, r"branch_head is .* but published_commit is 'c{40}'")
+    rejected(unlisted_difference,
+             r"observed_differing_paths is \d+ but repaired_paths_differing_from_this_worktree "
+             r"lists \d+")
+    rejected(stale_declared_count,
+             r"repaired_paths_compared_by_content is \d+ but the probe's counts line declares "
+             r"\d+ repaired paths compared by content")
+    rejected(unlabelled, r"captured_at is not a recorded timestamp")
+    rejected(unlabelled_command, r"command does not name the publication probe")
+
+
+def test_retained_publication_snapshot_cites_the_counts_the_probe_emits(
+    tmp_path, monkeypatch, capsys
+):
+    """The record's counts are the values the probe emits for the state it describes.
+
+    The record this repair replaces certified a comparison set it no longer
+    described: ``repaired_paths_compared_by_content`` was 11 — transcribed from an
+    earlier declaration — while 12 paths were declared. The probe now emits its own
+    ``counts_line``, whose ``declared_paths_compared_by_content`` is derived from the
+    declared list at the run. This drives the probe offline in the exact state the
+    record describes — the same differing paths in the worktree and the same
+    uncommitted set, every other declared path equal — and requires the record's
+    declared, differing and uncommitted counts to be that line's values, so a
+    hand-written count cannot drift from the declaration again. The compared-path
+    total is tree-derived; it is one run's with the state line, which
+    ``check_publication_record`` reconstructs from the record's own fields.
+    """
+    probe = _load_publication_probe()
+    _, record = _retained_publication(tmp_path)
+    publication = record["publication"]
+    listed = publication["repaired_paths_differing_from_this_worktree"]
+    _drive_publication_probe(
+        probe, tmp_path, monkeypatch, worktree_content=REPAIRED_CONTENT,
+        uncommitted=listed,
+        published_same=[path for path in probe.REPAIRED_PATHS if path not in listed])
+    probe.check_publication()
+
+    printed = capsys.readouterr().out
+    emitted = dict(re.findall(
+        r"\b(declared_paths_compared_by_content|compared_paths_count|"
+        r"observed_differing_paths|observed_uncommitted_paths)=(\d+)", printed))
+    assert emitted["declared_paths_compared_by_content"] == str(len(probe.REPAIRED_PATHS))
+    assert emitted["declared_paths_compared_by_content"] == \
+        str(publication["repaired_paths_compared_by_content"])
+    assert emitted["observed_differing_paths"] == str(len(listed)) == \
+        str(publication["observed_differing_paths"])
+    assert emitted["observed_uncommitted_paths"] == str(publication["observed_uncommitted_paths"])

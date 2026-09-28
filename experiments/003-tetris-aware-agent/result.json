@@ -73,7 +73,7 @@
     "summary_matches_experiment_002_result_json": true
   },
   "clear_size_metric": {
-    "compatibility": "a record of a legacy version (1 or 2) that carries neither the per-episode field nor the summary section still verifies; a version 3 or 4 record must carry it, so deleting it from a current record is reported instead of verifying. A present section is compared with the same type-and-key rules as the mandatory ones, and in a legacy record presence is all-or-nothing across the complete suite — every episode and every agent summary in one record — so a record that stripped the histogram from one agent while another kept it, or that reports totals its episodes do not carry, is rejected rather than verified with a partial histogram. Records written by the pre-change writer for experiments 000, 001 and 002 verify end to end (see legacy_experiment_records).",
+    "compatibility": "a record of a legacy version (1 or 2) that carries neither the per-episode field nor the summary section still verifies; a version 3, 4 or 5 record must carry it, so deleting it from a current record is reported instead of verifying. A present section is compared with the same type-and-key rules as the mandatory ones, and in a legacy record presence is all-or-nothing across the complete suite — every episode and every agent summary in one record — so a record that stripped the histogram from one agent while another kept it, or that reports totals its episodes do not carry, is rejected rather than verified with a partial histogram. Records written by the pre-change writer for experiments 000, 001 and 002 verify end to end (see legacy_experiment_records).",
     "definitions": {
       "headline_tetris_line_rate": "4 * tetrises / total lines; zero total lines is a rate of 0.0",
       "safety_cap": "an episode stopped at the configured frame_limit is a configured safety stop, never a game over",
@@ -87,7 +87,7 @@
       "tetrises"
     ],
     "live_path": "live desktop play builds its own episode and suite record, so it tallies and records the same histogram before saving; without it a live game that cleared a line would save a record whose summary did not match its episode and would fail verification",
-    "place": "a top-level per-episode field beside pieces_placed, never a leaf inside result or result.event_counts, because verify_run compares a result object's keys with the replay's exactly; required at record versions 3 and 4, optional only at the legacy versions 1 and 2",
+    "place": "a top-level per-episode field beside pieces_placed, never a leaf inside result or result.event_counts, because verify_run compares a result object's keys with the replay's exactly; required at record versions 3, 4 and 5, optional only at the legacy versions 1 and 2",
     "source": "the engine's own per-step events.lines_cleared (1/2/3/4), the same event result.event_counts.lines_cleared sums, so the histogram adds up to result.lines",
     "summary": "each agent's summary carries the totals of its episodes' histograms"
   },
@@ -117,8 +117,8 @@
     ]
   },
   "determinism": {
-    "format_versions": "this round's record is format_version 4; every record of the earlier rounds is version 2 and still verifies as a legacy record",
-    "note": "fifteen records of the same configuration, from separate processes, are identical to the earlier rounds' cited record (ceb3fba6) across configuration, heuristic, episodes and summary — the comparison was executed against every record in runs/ this round, and every one is identical — so neither this repair nor the previous one moved a measured number. Fourteen of them are format_version 2 and still verify as legacy records; this round's record (83ce7937) is format_version 4, the version whose sections the verifier requires. Every record made after the final objective capture replays with verify from its recorded inputs (exit 0, only the engine working-tree warning).",
+    "format_versions": "the cited record is format_version 2; the seven version-4 records of the previous rounds and the fourteen version-2 records all still verify under their own version's gating, and the version this repair's writer emits is 5, which additionally requires the objective's source identity",
+    "note": "fifteen records of the same configuration, from separate processes, are identical to the earlier rounds' cited record (ceb3fba6) across configuration, heuristic, episodes and summary — the comparison was executed against every record in runs/ this round, and every one is identical — so neither this repair nor the previous one moved a measured number. Fourteen of them are format_version 2 and still verify as legacy records; one (83ce7937) is format_version 4, whose writer recorded every section it had except the objective's source identity, and it still verifies under version 4's gating. The version this repair's writer emits is 5: same sections, plus the identity. Every record in runs/ replays with verify from its recorded inputs (exit 0, only the engine working-tree warning), and the sweep of all 21 is recorded under runs_verified.",
     "record_paths": [
       "runs/20260928T021454222451Z-83ce7937/run.json",
       "runs/20260927T175224947881Z-fc07196a/run.json",
@@ -140,6 +140,12 @@
     "repeat_run_episodes_identical": true,
     "repeat_run_summary_identical": true,
     "runs_compared": 15,
+    "runs_verified": {
+      "command": "$PY -c \"from pathlib import Path; from block_stack_ai.runner import verify_run; [verify_run(p) for p in sorted(Path('runs').glob('*/run.json'))]\"",
+      "exit": 0,
+      "note": "each verify replays every episode from the record's own inputs (~135 s each); the versions covered are 2 (14 records) and 4 (7 records), so both legacy gates are exercised by retained records, and none of them carries an objective identity",
+      "records": 21
+    },
     "this_round_record": "runs/20260928T021454222451Z-83ce7937/run.json",
     "verify_exit_code": 0,
     "wall_clock_seconds": [
@@ -477,10 +483,10 @@
     }
   ],
   "fallgorithm_git": {
-    "commit": "fbe21e1345caf04970320b35689548c1efefd216",
+    "commit": "ed8830a15d05a70fbd1783e4a6faa26df78a1d05",
     "dirty": true,
     "kind": "working-tree",
-    "note": "this worktree's HEAD: the publication of the previous repair round (fbe21e1), which the service committed and pushed after that round's review. This round repairs two findings against it and holds the repair uncommitted; the published tree is therefore this round's pre-change tree, extracted with `git archive fbe21e1` into /tmp/exp003-reviewed."
+    "note": "this worktree's HEAD: the publication of the previous repair round (ed8830a1), which the service committed and pushed after that round's review — the branch ref and PR #11's head name it, so it is the pre-change tree this round's findings were measured on. This round repairs three findings against it and holds the repair uncommitted here; the published tree is extracted with `git archive ed8830a1` when a probe needs the pre-change side."
   },
   "heuristic": {
     "aggregate_height": -0.5,
@@ -498,24 +504,24 @@
         "exit": 0,
         "experiment": "000-connection",
         "format_version": 1,
-        "path": "/tmp/exp003-legacy-records/20260928T021849098714Z-74ae5488/run.json",
-        "shape": "a scripted episode: no clear_sizes, no pieces key, no objective",
+        "path": "/tmp/exp003-legacy-records/20260928T120435075426Z-95ad6ec6/run.json",
+        "shape": "a scripted episode: no clear_sizes and no objective; it does carry pieces_placed, because the base writer emits the placed-piece count at this version too",
         "value": "result.lines 0, frame_count 31, stopping_reason script_complete"
       },
       {
         "exit": 0,
         "experiment": "001-greedy-heuristic",
         "format_version": 2,
-        "path": "/tmp/exp003-legacy-records/20260928T021851270411Z-7cea1d5b/run.json",
-        "shape": "20 episodes, agents greedy and random, no clear_sizes, no objective",
+        "path": "/tmp/exp003-legacy-records/20260928T120447381167Z-fe4584d0/run.json",
+        "shape": "20 episodes, agents greedy and random, no clear_sizes, no objective; the episode keys include pieces_placed",
         "value": "summary lines: greedy mean 118.9 (001 published about 119 lines per game)"
       },
       {
         "exit": 0,
         "experiment": "002-path-aware-lookahead",
         "format_version": 2,
-        "path": "/tmp/exp003-legacy-records/20260928T022018218867Z-316006a2/run.json",
-        "shape": "20 episodes, agents greedy and lookahead, no clear_sizes, no objective",
+        "path": "/tmp/exp003-legacy-records/20260928T120612901936Z-f1824a59/run.json",
+        "shape": "20 episodes, agents greedy and lookahead, no clear_sizes, no objective; the episode keys include pieces_placed",
         "value": "summary lines: lookahead mean 912.8 (002 published 9128 lines over 10 games)"
       }
     ],
@@ -540,13 +546,26 @@
     }
   },
   "objective_record": {
-    "compatibility": "a legacy suite record (version 2) without the section still verifies, which is what keeps the runs of this experiment written before it existed valid; a version 4 Tetris suite must carry it, so deleting the section from a newly written record is reported — before this repair it verified with `verify_run` returning [], which is the reviewer's counterexample. A record whose configuration has no Tetris agent must not carry it, because no writer emits one.",
+    "compatibility": "a legacy suite record (version 2) without the section and a version-4 record without the identity both still verify, which is what keeps the runs of this experiment written by both writers valid; the current version's writer always emits both, so deleting either from a newly written record is reported. A record whose configuration has no Tetris agent must not carry the section, because no writer emits one.",
     "field": "objective",
+    "identity": {
+      "covers": "the declaring module and the modules its code calls — the frozen geometry and board model it imports and Experiment 002's reachable-set enumeration it reuses — discovered from the objective's own namespace rather than hand-listed, so a module that stops being used drops out of the identity by itself and a helper cannot change the objective's values unrecorded",
+      "digests": {
+        "block_stack_ai.heuristic": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
+        "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
+        "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
+        "block_stack_ai.tetris": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e"
+      },
+      "field": "objective.sources",
+      "gating": "required at version 5, the version this repair writes; optional at version 4 and 2, whose writers recorded no identity, and compared when present",
+      "value": "one sha256 per package module the objective's decisions are computed from, keyed by module name",
+      "why": "the weights are constants, so a formula change that leaves them alone changes every value the objective computes while the recorded weights still compare equal, and the replayed choices catch it only when the change happens to move one of them. The reviewer's counterexample — the clear term charging a premature clear at twice the declared rate — keeps every weight and is reported by this identity alone"
+    },
     "module": "block_stack_ai.tetris",
-    "place": "a top-level suite section beside the frozen heuristic mapping, never a leaf inside an episode or its result; required by a version 4 suite that uses the Tetris agent, optional only at the legacy version 2",
-    "source": "tetris.weights_record(): the declared weights, the well-depth cap and the tie-break rule",
-    "verification": "verify_run compares the recorded module name and weights with the current module's under the same exact type-and-key rules it applies to the heuristic mapping, so a suite that uses the Tetris agent cannot verify under a different objective merely because the change preserved its replayed choices; live play, the second path that writes suite records, records the same section for a live Tetris game; the current versions require the section, because absence alone cannot tell a legacy record from a current one whose section was deleted",
-    "why": "the frozen heuristic mapping is recorded for every suite because every placement agent scores through it, and the Tetris agent's choices come from a second, separately declared objective; before this section existed a suite record was tied to its objective only through the replayed choices, so a changed objective still verified whenever the change happened to preserve them"
+    "place": "a top-level suite section beside the frozen heuristic mapping, never a leaf inside an episode or its result; required by a suite that uses the Tetris agent at every version whose writer emits one (4 and 5), optional only at the legacy version 2",
+    "source": "tetris.weights_record(): the declared weights, the well-depth cap and the tie-break rule, plus the objective's source identity",
+    "verification": "verify_run compares the recorded module name, weights and source identity with the current module's under the same exact type-and-key rules it applies to the heuristic mapping, so a suite that uses the Tetris agent cannot verify under a different objective merely because the change preserved its replayed choices; live play, the second path that writes suite records, records the same section for a live Tetris game",
+    "why": "the frozen heuristic mapping is recorded for every suite because every placement agent scores through it, and the Tetris agent's choices come from a second, separately declared objective; before this section existed a suite record was tied to its objective only through the replayed choices, so a changed objective still verified whenever the change happened to preserve them, and before the identity existed a changed formula still verified whenever its weights were unchanged"
   },
   "predeclared_objective": {
     "capture_file": "experiments/003-tetris-aware-agent/probes/predeclared_objective.json",
@@ -575,72 +594,54 @@
   },
   "publication": {
     "branch": "rakazo/experiment-003-tetris-aware-agent",
-    "branch_head": "fbe21e1345caf04970320b35689548c1efefd216",
+    "branch_head": "ed8830a15d05a70fbd1783e4a6faa26df78a1d05",
+    "captured_at": "2026-09-28T12:40:33.329828+00:00",
+    "command": "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/exp003-publication-final.txt",
     "compared_paths": "every path either tree tracks, plus this worktree's untracked files, derived from Git: a declared list can omit a path the task changes, and the review found that hole twice (first this record's own result.json, then any tracked path outside the list); 46 paths in the published tree at this round's run",
     "compared_paths_count": 46,
-    "note": "publication is service-owned and gated on an exact-tree approval, so the branch ref and the PR head move together: the probe asserts that the two refs name one commit and that the commit descends from the recorded base, and it compares the repaired paths' content — per-file sha256 in the published clone beside this worktree's — instead of their presence, which cannot tell a published repair from an earlier publication that contains the same file names. When the contents differ it requires the difference to be exactly the repair this worktree holds uncommitted, prints the differing paths and reports the earlier-publication state instead of calling the repair published; a published tree differing from a clean worktree fails",
+    "note": "publication is service-owned and gated on an exact-tree approval, so the branch ref and the PR head move together: the probe asserts that the two refs name one commit and that the commit descends from the recorded base, and it compares the compared paths' content — per-file sha256 in the published clone beside this worktree's — instead of their presence. When the contents differ it requires the difference to be exactly the repair this worktree holds uncommitted, prints the differing paths and reports the earlier-publication state instead of calling the repair published; a published tree differing from a clean worktree fails. Every field above is read from the single run whose command and capture time are recorded here, and the run's own two emitted lines are quoted rather than paraphrased: `state` is its state line verbatim and `counts_line` is its counts line verbatim (declared_paths_compared_by_content / compared_paths_count / observed_differing_paths / observed_uncommitted_paths). `evidence.py publication-record` reconstructs the state line from the record's own commit, compared-path count and differing-path list and requires it to be `state`, requires the declared count to be the declared list's own length, and requires `counts_line` to be the probe's own counts line for the fields beside it, so the two lines, the counts and the commit fields have to be one run's",
     "observed_differing_paths": 9,
     "observed_uncommitted_paths": 9,
-    "observed_worktree_head": "fbe21e1345caf04970320b35689548c1efefd216",
-    "paste_self_reference": {
-      "capture_command": "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/capture-P12.txt",
-      "cause": "the pasted stdout block lives in notes.md, and that run is recorded in this file; both are compared paths, so writing either changes its digest and therefore its line in the next run's output. The cycle cannot be closed by writing: the last write always moves the line for the file it wrote.",
-      "diff_capture_to_rerun": [
-        "38c38",
-        "< #   | differs experiments/003-tetris-aware-agent/notes.md published sha256 a73a7a46efd4 this worktree sha256 f3c62dc06ecf",
-        "---",
-        "> #   | differs experiments/003-tetris-aware-agent/notes.md published sha256 a73a7a46efd4 this worktree sha256 4ad8220d3078"
-      ],
-      "observed": "the pasted block carries the digests of the two compared files this record writes, at the instant of the capture. The recorded diff is between that capture and the run that followed the paste: one line, the worktree digest of notes.md. Any later write to either file adds that file's line; the states the probe reports — the published commit and tree, the 9 differing paths of 46, the earlier-publication state line, the status rows and every count — are identical throughout.",
-      "rerun_command": "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/capture-P13.txt"
-    },
+    "observed_worktree_head": "ed8830a15d05a70fbd1783e4a6faa26df78a1d05",
     "probe": "experiments/003-tetris-aware-agent/probes/evidence.py publication",
-    "published_commit": "fbe21e1345caf04970320b35689548c1efefd216",
-    "published_tree": "011ed99989e6484a934ef35980fd4b3003c6041d",
+    "published_commit": "ed8830a15d05a70fbd1783e4a6faa26df78a1d05",
+    "published_tree": "a3b132358189a5fc931d7ef3253893f8ba463d45",
     "pull_request": 11,
-    "pull_request_head": "fbe21e1345caf04970320b35689548c1efefd216",
+    "pull_request_head": "ed8830a15d05a70fbd1783e4a6faa26df78a1d05",
     "pull_request_url": "https://github.com/HarmonChew/fallgorithm/pull/11",
-    "regressions": {
-      "deletion": "prechange_probe.py publication_content drives the probe file of the tree this repair replaces (fbe21e1) with a path tracked in the publication and deleted in the worktree: it raises TypeError: 'NoneType' object is not subscriptable and reports no deletion (exit 1). This tree's probe reports `deleted <path>: tracked in the published tree sha256 ..., absent from this worktree`, reports the earlier-publication state and completes (exit 0). The reviewer's other two counterexamples still hold: a differing path outside the declared list is reported, and a published tree differing from a clean worktree still fails outright.",
-      "pre_change": "prechange_probe.py publication_content drives a probe file offline with the reviewer's counterexample: exit 1 on the replaced publication's probe file (it certified the repair from presence) and exit 0 on this tree",
-      "review_finding": "PRRT_kwDOUm-m7M6mc2_t (content, not presence); an earlier round's finding (the record artifact was outside the compared set); an earlier round's finding (any tracked path outside the declared list could be omitted); this round's two findings (a record of the current version could lose the objective its writer always emits, and a tracked deletion aborted the publication report). Each is fixed and pinned by the regressions above.",
-      "unit": [
-        "test_publication_probe_reports_content_not_presence_when_the_refs_lag",
-        "test_publication_probe_detects_a_result_only_difference",
-        "test_publication_probe_detects_a_changed_path_outside_the_declared_list",
-        "test_publication_probe_reports_a_tracked_path_deleted_in_the_worktree",
-        "test_publication_probe_reports_a_path_added_since_the_publication",
-        "test_publication_probe_reports_a_path_present_in_neither_tree",
-        "test_publication_probe_reports_a_compared_path_that_is_a_directory",
-        "test_publication_probe_rejects_repaired_content_a_clean_worktree_lacks",
-        "test_publication_probe_certifies_a_published_repair_by_content"
-      ]
-    },
-    "repaired_paths": "the files this experiment adds or repairs: the runner's metric, the live path that records it, the agents module, the Tetris objective, this record and the notes, both probes and the two suites; compared per file by sha256, since presence cannot tell a published repair from an earlier publication containing the same names. This record is in the list: the review found it missing, so a state where every other compared path matched but the reported result was still the previous round's would have been certified as published",
-    "repaired_paths_compared_by_content": 10,
+    "repaired_paths": "the 12 files this experiment adds or repairs: the runner's metric and objective identity, the live path that records them, the agents module, the Tetris objective, this record and the notes, both probes, the experiments index and the two suites and the live suite (src/block_stack_ai/runner.py, src/block_stack_ai/live.py, src/block_stack_ai/agents.py, src/block_stack_ai/tetris.py, experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/result.json, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/README.md, tests/test_unit.py, tests/test_integration.py, tests/test_live.py); compared per file by sha256, since presence cannot tell a published repair from an earlier publication containing the same names. `repaired_paths_compared_by_content` is not transcribed: it is the `declared_paths_compared_by_content` value of the run's own counts line, cited verbatim in counts_line, and `publication-record` requires it to be this list's own length — the earlier record said 11 while experiments/README.md made the declaration 12. This record is in the list: the review found it missing, so a state where every other compared path matched but the reported result was still the previous round's would have been certified as published",
+    "repaired_paths_compared_by_content": 12,
     "repaired_paths_differing_from_this_worktree": [
       "experiments/003-tetris-aware-agent/notes.md",
-      "experiments/003-tetris-aware-agent/result.json",
       "experiments/003-tetris-aware-agent/probes/evidence.py",
       "experiments/003-tetris-aware-agent/probes/prechange_probe.py",
+      "experiments/003-tetris-aware-agent/result.json",
+      "experiments/README.md",
+      "src/block_stack_ai/runner.py",
+      "tests/test_integration.py",
+      "tests/test_live.py",
       "tests/test_unit.py"
     ],
-    "state": "open, branch ref and PR head at the previous publication cfab11e2; the refs do not name this worktree's content yet — 5 of the 46 compared paths differ — the probe reports that earlier-publication state rather than certifying it, and the service pushes the approved tree after the review",
-    "states": "each compared path's state is read once per side — a file with its sha256, a directory, or absent — and reported in one of the states a comparison has: identical, differing, deleted from this worktree while the publication tracks it, added here since the publication, present in neither tree, or not a file on one side (a directory at a compared path, which an untracked directory entry produces). No branch reads a digest its state does not have."
+    "state": "the refs name an earlier publication: ed8830a15d05a70fbd1783e4a6faa26df78a1d05; 9 of 46 compared paths differ from this worktree (experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/003-tetris-aware-agent/result.json, experiments/README.md, src/block_stack_ai/runner.py, tests/test_integration.py, tests/test_live.py, tests/test_unit.py), and this worktree holds the unpublished repair",
+    "states": "each compared path's state is read once per side — a file with its sha256, a directory, or absent — and reported in one of the states a comparison has: identical, differing, deleted from this worktree while the publication tracks it, added here since the publication, present in neither tree, or not a file on one side (a directory at a compared path, which an untracked directory entry produces). No branch reads a digest its state does not have.",
+    "counts_line": "declared_paths_compared_by_content=12 compared_paths_count=46 observed_differing_paths=9 observed_uncommitted_paths=9"
   },
   "record_format_versions": {
     "field": "format_version",
-    "piece_count": "the placed-piece count is gated by the same rule because deleting it from a version 4 suite left _summarize re-deriving a summary from episodes with no piece key and raising KeyError: 'pieces'; _summarize now omits the metric for a group that carries neither key",
-    "pre_change_measurement": "on the tree this repair replaces (fbe21e1), prechange_probe.py objective_required_when_versioned deletes the objective from a record that tree's own writer produced and verify_run returns [] (exit 1 with that value); prechange_probe.py suite_wide_histogram reports `the histogram stripped everywhere at the current version: accepted, warnings []` on the same tree",
-    "regression": "objective_required_when_versioned; the histogram and piece-count cases in test_unit.py",
-    "unchanged": "the weights, the agents and every recorded value are unchanged: a version 4 record carries exactly the sections the previous writer's records carried",
+    "identity": "the objective's source identity is newer than the objective section itself, so it is gated by the version separately: the version-4 writer recorded the objective without it and the version-2 writer recorded no objective at all, so both keep verifying, and an identity a record does carry is compared at every version",
+    "piece_count": "the placed-piece count is gated by the same rule because deleting it from a suite record left _summarize re-deriving a summary from episodes with no piece key and raising KeyError: 'pieces'; _summarize now omits the metric for a group that carries neither key",
+    "pre_change_measurement": "on the tree this repair replaces (ed8830a1), prechange_probe.py objective_identity changes the objective's clear term without touching a weight and the record verifies (exit 1 with that value); prechange_probe.py objective_required_when_versioned and suite_wide_histogram measure the version marker the previous round added on the tree that round replaced (fbe21e1)",
+    "regression": "objective_identity; objective_required_when_versioned; the histogram and piece-count cases in test_unit.py",
+    "reused": "the version numbers are reused, not a schema history: the same number was written by writers that emitted different sections, so a version says which sections the verifier must require and not which sections a record of that number happens to carry. The base commit's writer (d83a5bc, PR #9's merge) emitted the placed-piece count at version 1 for a scripted episode and at version 2 for a suite, which re-running it on experiments/000-connection, 001 and 002 reproduces below; the writer older still wrote the same numbers without that key, which is the shape the version-1 compatibility row pins. This experiment's own earlier rounds also wrote suites at version 2. A legacy version's sections may therefore be absent and are compared when present; the current version's must be present.",
+    "unchanged": "the weights, the agents and every recorded value are unchanged: the sections each writer emits, and the versions it emits them at, are the same as before this repair — only the objective's identity is added, and the version number the writer records moves from 4 to 5 so that the section's presence is gated",
     "versions": {
-      "1": "a scripted episode written before the placed-piece count, the clear-size histogram and the declared objective; each may be absent and is compared when present",
-      "2": "a suite written before the same sections; a present histogram must be complete across the record (every episode and every agent summary), and an objective in a suite without the Tetris agent is still rejected",
+      "1": "a scripted episode; every section added since — the placed-piece count, the clear-size histogram and the declared objective — may be absent and is compared when present",
+      "2": "a suite; the same, with a present histogram required to be complete across the record (every episode and every agent summary), and an objective in a suite without the Tetris agent still rejected",
       "3": "a scripted episode the current writer emits; it must carry pieces_placed and clear_sizes",
-      "4": "a suite the current writer emits; it must carry pieces_placed and clear_sizes on every episode, clear_sizes on every agent summary, and objective when its configuration uses the Tetris agent"
+      "4": "a suite the prior writer emitted; it must carry pieces_placed and clear_sizes on every episode, clear_sizes on every agent summary, and objective when its configuration uses the Tetris agent — every section that writer wrote, except the objective's source identity, which it never recorded",
+      "5": "a suite the current writer emits; it must carry all of the above, including the objective's source identity"
     },
-    "why": "the verifier used to infer 'legacy record' from an absent optional section, which is the same JSON as a section deleted after the record was written: deleting `objective`, `clear_sizes` or `pieces_placed` from a newly written record left it verifying under a schema weaker than the writer's. The version is now the marker that distinguishes the two cases."
+    "why": "the verifier used to infer 'legacy record' from an absent optional section, which is the same JSON as a section deleted after the record was written: deleting `objective`, `clear_sizes` or `pieces_placed` from a newly written record left it verifying under a schema weaker than the writer's. The version is the marker that distinguishes the two cases for the versions the current writer emits."
   },
   "repaired_tree_suite_wall_clock_seconds": 132.9,
   "run_record": "runs/20260927T171756139218Z-ceb3fba6/run.json (temporary ignored run output: runs/ is ignored at any depth; the distilled per-episode rows are copied into this file under episodes_by_agent_seed)",
@@ -739,9 +740,9 @@
     }
   },
   "tests": {
-    "fresh_run": "147 passed, 26 deselected (unit, 0.66 s) and 26 passed, 147 deselected (integration, 1.93 s), this round's repair in place; the base commit's own suite reports 110 passed, 21 deselected",
+    "fresh_run": "152 passed, 26 deselected (unit, 0.8 s) and 26 passed, 152 deselected (integration, 2.0 s), this round's repair in place; the base commit's own suite reports 110 passed, 21 deselected",
     "integration_passed": 26,
-    "unit_passed": 147
+    "unit_passed": 152
   },
   "tetris_agent": {
     "candidate_set": "the same reachable set Experiment 002's lookahead uses (pathaware._reachable), simulated from the engine's native spawn state with the same mask function the controller executes",
@@ -775,12 +776,22 @@
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py all   # every argument-free probe, including the evaluation",
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py remote-main",
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record   # the retained snapshot is one run's",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-published-result.json   # exit 1: the pre-change record mixed two runs",
+    "PYTHONPATH=/tmp/exp003-attempt8/src $PY /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/result.json   # exit 1: repaired_paths_compared_by_content is 11 but 12 repaired paths are declared",
+    "PYTHONPATH=/tmp/exp003-attempt8/src $PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/result.json   # exit 1: …is 11 but the probe's counts line declares 12 repaired paths compared by content",
+    "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-drift-state.json   # exit 1: state is not the line these fields reconstruct",
+    "PYTHONPATH=/tmp/exp003-attempt8/src $PY /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-drift-state.json   # exit 0: the pre-change check matched the state line by substring",
+    "git show ed8830a15d05a70fbd1783e4a6faa26df78a1d05:experiments/003-tetris-aware-agent/result.json > /tmp/exp003-published-result.json",
     "git archive d83a5bc54a76bb23cd38e4afbab8192b0e2a207f | tar -x -C /tmp/exp003-base",
     "git archive dc3c29c449c439ad8df415404d4df6d0eeb0087f | tar -x -C /tmp/exp003-before",
     "git archive fbe21e1345caf04970320b35689548c1efefd216 | tar -x -C /tmp/exp003-reviewed",
     "cp -r src /tmp/exp003-after/src",
     "PYTHONPATH=/tmp/exp003-{base,before,reviewed,after}/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>",
-    "PYTHONPATH=/tmp/exp003-reviewed/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content   # exit 1: this round's deletion counterexample on the replaced tree's own probe",
+    "PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py objective_identity   # exit 0",
+    "PYTHONPATH=/tmp/exp003-reviewed/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py objective_identity   # exit 1: the changed formula verified",
+    "PYTHONPATH=/tmp/exp003-base/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py objective_identity   # exit 1: the tree cannot run the suite",
+    "PYTHONPATH=/tmp/exp003-reviewed/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content   # exit 1: the previous round's finding on the replaced tree's own probe",
     "PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content $PWD/experiments/003-tetris-aware-agent/probes/evidence.py   # exit 0",
     "PYTHONPATH=/tmp/exp003-base/src $PY -c \"from pathlib import Path; from block_stack_ai.runner import run_and_save; run_and_save(Path('/tmp/exp003-base/experiments/000-connection/config.json'), Path('/tmp/exp003-legacy-records'))\"   # and 001, 002",
     "PYTHONPATH=$PWD/src $PY -c \"from pathlib import Path; from block_stack_ai.runner import verify_run; [verify_run(p) for p in Path('/tmp/exp003-legacy-records').glob('*/run.json')]\"   # exit 0 for all three",
@@ -795,7 +806,7 @@
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py evaluation",
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py report runs/<run>/run.json",
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py compare runs/<first>/run.json runs/<repeat>/run.json",
-    "$PY -m block_stack_ai.cli verify runs/<run>/run.json"
+    "$PY -m block_stack_ai.cli verify runs/<record>/run.json"
   ],
   "verification": "passed",
   "verification_warnings": [
