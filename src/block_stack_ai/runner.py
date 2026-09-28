@@ -1,15 +1,23 @@
 """Run bounded episodes and replay exactly the inputs that were executed.
 
-Two record formats share this module and both replay against the native engine.
-Version 1 is one scripted episode. The replay requires the recorded inputs and
-compares them alongside the recorded initial state hash and every ``result``
-field, and it compares a top-level piece count and clear-size histogram when the
-record carries them. Version 2 is a suite of placement-agent episodes over fixed
-seeds: the replay compares each episode's agent and seed, inputs, initial state
-hash, ``result`` fields, piece count and clear-size histogram, then the summary
-derived from them. Both verifiers compare a recorded value only after its type —
-and, for mappings, its keys — equals the replayed value's, so JSON booleans,
-which compare equal to ``0``/``1`` and ``0.0``, are rejected instead of
+Four record versions share this module and all replay against the native engine.
+Versions 1 (one scripted episode) and 2 (a suite of placement-agent episodes over
+fixed seeds) predate the placed-piece count, the clear-size histogram and the
+declared objective: the writer of those versions emitted none of the three, so
+the verifier accepts each one absent and compares it when present. Versions 3 (a
+scripted episode) and 4 (a suite) are written after them and must carry every
+section their writer emits — the placed-piece count, the clear-size histogram,
+and, for a suite that uses the Tetris agent, that agent's declared objective.
+
+The version is the marker that makes the two cases distinguishable, because
+absence alone cannot tell a record that predates a section from a current record
+whose section was deleted after it was written: both are the same JSON, and
+accepting the second means a record keeps verifying under a schema weaker than
+the one it was written with — no metric, and no way to tell. The replay requires
+the recorded inputs and compares them alongside the recorded initial state hash
+and every ``result`` field. Both verifiers compare a recorded value only after
+its type — and, for mappings, its keys — equals the replayed value's, so JSON
+booleans, which compare equal to ``0``/``1`` and ``0.0``, are rejected instead of
 verifying.
 
 The piece count is ``pieces_placed``: the number of pieces the engine actually
@@ -22,7 +30,9 @@ not locked and is not counted either, and the RNG/preview selection counter
 field existed carry the legacy ``pieces`` key instead, which held
 ``state.piece_count``; the replay compares it against that counter so those
 records keep verifying under their original semantics. A record that carries
-neither key is older still and keeps verifying.
+neither key is older still and keeps verifying at a legacy version; a version 3
+or 4 record must carry ``pieces_placed``, because that is the key its writer
+emits and its absence there is a deleted section rather than an older record.
 
 The clear-size histogram is ``clear_sizes``: per episode, how many locks cleared
 one, two, three and four rows, tallied from the engine's own per-step
@@ -30,15 +40,17 @@ one, two, three and four rows, tallied from the engine's own per-step
 sizes add up to that total). It is a top-level per-episode field beside
 ``pieces_placed``, never a leaf inside ``result``: ``_compare_fields`` requires
 a ``result`` object's keys to equal the replay's exactly, so a new key there
-would invalidate every record written before it. Like the piece count it is
-optional — a record that carries neither the field nor the entry in its summary
-is older and keeps verifying — and a present one is compared with the same
-type-and-key rules as the mandatory sections. Presence is all-or-nothing across
-the complete suite: every episode and every agent summary in one record carries
-the histogram, or a record older than the metric carries it nowhere. A per-agent
-rule would accept a record that stripped the histogram from one agent while
-another kept it, and such a record verifies while reporting a fraction of the
-lines it cleared.
+would invalidate every record written before it. Like the piece count a legacy
+record may omit it — a record that carries neither the field nor the entry in its
+summary is older and keeps verifying — and a present one is compared with the
+same type-and-key rules as the mandatory sections. In a version 3 or 4 record the
+histogram is required: a scripted episode carries it, and a suite carries it on
+every episode and every agent summary. Presence is all-or-nothing in a legacy
+suite too: every episode and every agent summary in one record carries the
+histogram, or a record older than the metric carries it nowhere. A per-agent rule
+would accept a record that stripped the histogram from one agent while another
+kept it, and such a record verifies while reporting a fraction of the lines it
+cleared.
 
 A suite that uses the Tetris agent records that agent's declared objective as
 ``objective``: the module that declares it and the mapping its
@@ -47,7 +59,8 @@ frozen heuristic mapping is written for every suite because every placement agen
 scores through it, and the Tetris agent's choices come from a second, separately
 declared objective instead; without the section a tetris suite verifies under
 whatever objective is current whenever the change happens to preserve its
-replayed choices. Like the histogram the section is optional — the runs of this
+replayed choices. A version 4 suite that uses the agent must carry the section,
+because its writer always emits it; a legacy suite may omit it — the runs of this
 experiment written before it existed carry it nowhere and keep verifying — and a
 present one is compared with the same type-and-key rules.
 """
@@ -70,8 +83,17 @@ from .engine import PROJECT_ROOT, create_game, engine_root, git_info
 from .heuristic import weights_record
 
 
-FORMAT_VERSION = 1  # one scripted episode
-SUITE_FORMAT_VERSION = 2  # a placement-agent suite over fixed seeds
+LEGACY_FORMAT_VERSION = 1  # a scripted episode written before the new sections
+FORMAT_VERSION = 3  # a scripted episode, which always records its sections
+LEGACY_SUITE_FORMAT_VERSION = 2  # a suite written before the new sections
+SUITE_FORMAT_VERSION = 4  # a suite, which always records them (and the Tetris objective)
+# The marker each verifier dispatches on: the record's own version, and whether a
+# record of that version must carry the sections its writer emitted. Inferring
+# "legacy" from an absent section instead would accept a current record whose
+# section was deleted, because a stripped record and a pre-section record are the
+# same JSON.
+_SCRIPTED_FORMAT_VERSIONS = {LEGACY_FORMAT_VERSION: False, FORMAT_VERSION: True}
+_SUITE_FORMAT_VERSIONS = {LEGACY_SUITE_FORMAT_VERSION: False, SUITE_FORMAT_VERSION: True}
 _EVENT_FIELDS = (
     "moved", "rotated", "locked", "spawned", "gravity_drop", "soft_drop",
     "game_over", "challenge_completed", "lines_cleared", "score_delta",
@@ -236,15 +258,22 @@ def _placed_pieces(event_counts: dict[str, int]) -> int:
     return event_counts["locked"] - event_counts["game_over"]
 
 
-def _compare_piece_count(record: dict[str, Any], field: str, replayed: int, where: str) -> str | None:
+def _compare_piece_count(record: dict[str, Any], field: str, replayed: int, where: str,
+                         *, required: bool = False) -> str | None:
     """A difference message for a recorded piece count, or raise on a bad type.
 
     ``where`` names the record location. JSON ``false``/``true`` compare equal to
     the integers ``0``/``1``, so the type is checked before the value; a record
-    that omits the field is older and is left alone.
+    that omits the field is older and is left alone, unless ``required`` says this
+    record's version always records it — then the absence is a difference, because
+    a version 3 or 4 writer emits the count and a current record without it had the
+    section deleted.
     """
     if field not in record:
-        return None
+        if not required:
+            return None
+        return (f"{field}{where}: absent, but a record of this format version always "
+                "carries the placed-piece count")
     value = record[field]
     if type(value) is not int:
         raise VerificationError(f"Recorded {field}{where} must be an integer, not {value!r}")
@@ -253,18 +282,20 @@ def _compare_piece_count(record: dict[str, Any], field: str, replayed: int, wher
     return None
 
 
-def _compare_optional_fields(record: dict[str, Any], field: str, replayed: Any,
-                             where: str) -> list[str]:
-    """Differences for an optional section, or none when the record omits it.
+def _compare_section(record: dict[str, Any], field: str, replayed: Any, where: str,
+                     *, required: bool = False) -> list[str]:
+    """Differences for a section, including its absence when the version requires it.
 
-    ``clear_sizes`` is recorded only by runs written after the clear-size metric
-    existed. A record that carries neither the per-episode field nor the summary
-    section is older and keeps verifying; a present section is compared with the
-    same type-and-key rules as the mandatory ones, so a wrong type, a missing key
-    or an extra one is still reported.
+    ``clear_sizes`` is written by every version 3 and 4 record and may be absent
+    only from a legacy one, which ``required`` distinguishes: presence alone cannot
+    tell a record that predates the section from a current record whose section was
+    deleted. A present section is compared with the same type-and-key rules as the
+    mandatory ones, so a wrong type, a missing key or an extra one is reported.
     """
     if field not in record:
-        return []
+        if not required:
+            return []
+        return [f"{where}: absent, but a record of this format version always carries it"]
     return _compare_fields(record[field], replayed, where)
 
 
@@ -389,15 +420,18 @@ def _summarize(episodes: list[dict[str, Any]]) -> dict[str, Any]:
         for episode in group:
             reason = episode["result"]["stopping_reason"]
             reasons[reason] = reasons.get(reason, 0) + 1
-        # New episodes carry ``pieces_placed``; older ones the legacy ``pieces``.
-        pieces = "pieces_placed" if "pieces_placed" in group[0] else "pieces"
-        summary[name] = {
+        # New episodes carry ``pieces_placed``; older ones the legacy ``pieces``. A
+        # group that carries neither predates both, so the summary reports no piece
+        # metric instead of raising: the verifier accepts that legacy shape and
+        # compares the summary it re-derives from those episodes.
+        pieces = "pieces_placed" if "pieces_placed" in group[0] else (
+            "pieces" if "pieces" in group[0] else None)
+        entry: dict[str, Any] = {
             "games": len(group),
             "stopping_reasons": reasons,
             "score": _metric([episode["result"]["score"] for episode in group]),
             "lines": _metric([episode["result"]["lines"] for episode in group]),
             "frames": _metric([episode["result"]["frame_count"] for episode in group]),
-            pieces: _metric([episode[pieces] for episode in group]),
             # The clear sizes add up to each episode's ``result.lines``; an
             # episode written before the histogram existed contributes nothing.
             _CLEAR_SIZES_FIELD: {
@@ -406,19 +440,23 @@ def _summarize(episodes: list[dict[str, Any]]) -> dict[str, Any]:
                 for field in _CLEAR_SIZE_FIELDS
             },
         }
+        if pieces is not None:
+            entry[pieces] = _metric([episode[pieces] for episode in group])
+        summary[name] = entry
     return summary
 
 
 def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
-                     episodes: list[dict[str, Any]]) -> list[str]:
+                     episodes: list[dict[str, Any]], required: bool) -> list[str]:
     """Compare a recorded per-agent summary with the replayed one.
 
     Every pre-existing section — the game count, the stopping reasons, the four
     metrics and the piece count — is compared exactly as ``_compare_fields``
     compared the whole summary before, with the same type and key rules. The
-    clear-size totals are newer, and a record written before the histogram
-    existed carries them neither in its episodes nor in its summary and still
-    verifies. Presence is all-or-nothing across the complete suite — every episode
+    clear-size totals are newer. A version 4 record must carry them on every agent
+    summary, because its writer always does; a legacy record may carry them
+    nowhere and still verifies, and one that carries them must carry them
+    everywhere. Presence is all-or-nothing across the complete suite — every episode
     and every agent summary in one record — because the totals are summed from the
     episodes: a record that stripped the histogram from one agent's episodes while
     another agent kept them would verify under a per-agent rule yet report only
@@ -436,8 +474,16 @@ def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
         if type(agent) is not dict:
             raise VerificationError(f"Recorded {where}.{name} must be dict, not {agent!r}")
         histogram_agents += int(_CLEAR_SIZES_FIELD in agent)
+    complete = (histogram_episodes, histogram_agents) == (len(episodes), len(recorded))
     differences = []
-    if (
+    if required and not complete:
+        differences.append(
+            f"{where}.{_CLEAR_SIZES_FIELD}: absent from "
+            f"{len(episodes) - histogram_episodes} of {len(episodes)} episodes and "
+            f"{len(recorded) - histogram_agents} of {len(recorded)} agent summaries, but a "
+            "record of this format version carries it on every one"
+        )
+    elif not required and (
         histogram_episodes not in (0, len(episodes))
         or histogram_agents not in (0, len(recorded))
         or bool(histogram_episodes) != bool(histogram_agents)
@@ -486,16 +532,20 @@ def _objective_section(config: SuiteConfig) -> dict[str, Any]:
     return {} if objective is None else {_OBJECTIVE_FIELD: objective}
 
 
-def _compare_objective(record: dict[str, Any], config: SuiteConfig) -> list[str]:
-    """Differences for the optional declared-objective section of a suite record.
+def _compare_objective(record: dict[str, Any], config: SuiteConfig,
+                       required: bool) -> list[str]:
+    """Differences for the declared-objective section of a suite record.
 
     A suite that uses the Tetris agent records the module and weights that chose
     its placements, so a record cannot keep verifying under a different objective
     merely because the changed weights happen to preserve the replayed choices.
-    The section is optional: the runs of this experiment written before it existed
-    carry no section and keep verifying, exactly as a record predating the
-    clear-size histogram does. A section in a record whose configuration has no
-    Tetris agent is a difference too, because no writer emits one.
+    The section is required at version 4, whose writer always emits it for such a
+    suite: a version-4 record that lacks it had the section deleted, and accepting
+    that would verify a record under whatever objective is current — exactly the
+    hole the section closes. A legacy suite (version 2, or the runs of this
+    experiment written before the section existed) carries no section and keeps
+    verifying. A section in a record whose configuration has no Tetris agent is a
+    difference too, because no writer emits one.
     """
     expected = _objective_record(config)
     if expected is None:
@@ -506,7 +556,12 @@ def _compare_objective(record: dict[str, Any], config: SuiteConfig) -> list[str]
             ]
         return []
     if _OBJECTIVE_FIELD not in record:
-        return []
+        if not required:
+            return []
+        return [
+            f"{_OBJECTIVE_FIELD}: absent, but a record of this format version declares the "
+            "objective of the Tetris agent whose placements it replayed"
+        ]
     return _compare_fields(record[_OBJECTIVE_FIELD], expected, _OBJECTIVE_FIELD)
 
 
@@ -580,7 +635,8 @@ def _record_sections(record: dict[str, Any], path: Path) -> tuple[Any, Any]:
         raise VerificationError(f"Malformed run record in {path}: {error}") from error
 
 
-def _verify_scripted(record: dict[str, Any], path: Path, game_factory: Callable[..., Any]) -> list[str]:
+def _verify_scripted(record: dict[str, Any], path: Path, sections_required: bool,
+                     game_factory: Callable[..., Any]) -> list[str]:
     recorded_engine, configuration = _record_sections(record, path)
     try:
         config = parse_config(configuration)
@@ -640,13 +696,16 @@ def _verify_scripted(record: dict[str, Any], path: Path, game_factory: Callable[
     # ``pieces_placed`` counts pieces written to the board; the legacy ``pieces``
     # key held the RNG/preview selection counter, which is always above it. Each
     # present key is replayed against its own value, so older records keep
-    # verifying.
+    # verifying, and a record of this version must carry the count its writer
+    # emits.
     for field, replayed in (("pieces_placed", actual_pieces_placed), ("pieces", actual_piece_count)):
-        difference = _compare_piece_count(record, field, replayed, "")
+        difference = _compare_piece_count(record, field, replayed, "",
+                                          required=sections_required and field == "pieces_placed")
         if difference:
             differences.append(difference)
-    differences.extend(_compare_optional_fields(
+    differences.extend(_compare_section(
         record, _CLEAR_SIZES_FIELD, clear_sizes, _CLEAR_SIZES_FIELD,
+        required=sections_required,
     ))
     differences.extend(_compare_fields(expected, actual, "result"))
     warnings = _engine_warnings(recorded_engine)
@@ -656,7 +715,8 @@ def _verify_scripted(record: dict[str, Any], path: Path, game_factory: Callable[
     return warnings
 
 
-def _verify_suite(record: dict[str, Any], path: Path, game_factory: Callable[..., Any]) -> list[str]:
+def _verify_suite(record: dict[str, Any], path: Path, sections_required: bool,
+                  game_factory: Callable[..., Any]) -> list[str]:
     recorded_engine, configuration = _record_sections(record, path)
     # ``weights_record()`` carries the writer's float weights and the tie-break
     # string, so the same type-and-key comparison the episodes and summary get
@@ -676,7 +736,7 @@ def _verify_suite(record: dict[str, Any], path: Path, game_factory: Callable[...
         raise VerificationError(f"Malformed run record in {path}: {error}") from error
     if not isinstance(config, SuiteConfig):
         raise VerificationError(f"Malformed run record in {path}: not a suite configuration")
-    objective_differences = _compare_objective(record, config)
+    objective_differences = _compare_objective(record, config, sections_required)
     if objective_differences:
         raise VerificationError(
             "Recorded objective differs from the current implementation:\n  "
@@ -734,19 +794,24 @@ def _verify_suite(record: dict[str, Any], path: Path, game_factory: Callable[...
             _compare_fields(episode.get("result"), actual["result"], f"episode {index} result")
         )
         for field, actual_value in (("pieces_placed", actual["pieces_placed"]), ("pieces", actual["piece_count"])):
-            difference = _compare_piece_count(episode, field, actual_value, f" in episode {index}")
+            difference = _compare_piece_count(
+                episode, field, actual_value, f" in episode {index}",
+                required=sections_required and field == "pieces_placed",
+            )
             if difference:
                 differences.append(difference)
-        differences.extend(_compare_optional_fields(
+        differences.extend(_compare_section(
             episode, _CLEAR_SIZES_FIELD, actual[_CLEAR_SIZES_FIELD],
-            f"episode {index} {_CLEAR_SIZES_FIELD}",
+            f"episode {index} {_CLEAR_SIZES_FIELD}", required=sections_required,
         ))
         if differences:
             raise VerificationError(
                 f"Replay mismatch in episode {index} ({name}, seed {seed}):\n  " + "\n  ".join(differences)
             )
         replayed.append(episode)
-    summary_differences = _compare_summary(summary, _summarize(replayed), "summary", replayed)
+    summary_differences = _compare_summary(
+        summary, _summarize(replayed), "summary", replayed, sections_required,
+    )
     if summary_differences:
         raise VerificationError(
             "Recorded summary does not match the replayed episodes:\n  "
@@ -766,8 +831,8 @@ def verify_run(path: Path, game_factory: Callable[..., Any] = create_game) -> li
     # ``true`` to the scripted verifier. The writer records only an ``int``.
     if type(version) is not int:
         raise VerificationError(f"Recorded format_version in {path} must be an integer, not {version!r}")
-    if version == FORMAT_VERSION:
-        return _verify_scripted(record, path, game_factory)
-    if version == SUITE_FORMAT_VERSION:
-        return _verify_suite(record, path, game_factory)
+    if version in _SCRIPTED_FORMAT_VERSIONS:
+        return _verify_scripted(record, path, _SCRIPTED_FORMAT_VERSIONS[version], game_factory)
+    if version in _SUITE_FORMAT_VERSIONS:
+        return _verify_suite(record, path, _SUITE_FORMAT_VERSIONS[version], game_factory)
     raise VerificationError(f"Unsupported run record format in {path}")

@@ -90,7 +90,14 @@ edits. A suite record also states the fixed heuristic weights it used, and, when
 it uses the Tetris agent, that agent's declared objective — the module that
 declares it and the weights it publishes — which `verify` compares as it compares
 the heuristic mapping, so a record cannot verify under a different objective
-merely because the change preserved its replayed choices. `verify` re-derives
+merely because the change preserved its replayed choices. A record's
+`format_version` says which sections its writer always recorded: versions 1 and 2
+are the older formats, whose sections may be absent, and versions 3 and 4 are the
+ones this writer emits, which must carry the placed-piece count, the clear-size
+histogram and — for a suite that uses the Tetris agent — the declared objective.
+That is why the version is compared rather than the absence: a section deleted
+from a current record would otherwise be indistinguishable from a record that
+predates it. `verify` re-derives
 every episode from the recorded agent name and seed, which
 must appear in the configured order: agent order, then seed order. Each episode
 and summary reports `pieces_placed`, the number of pieces the engine wrote to
@@ -99,10 +106,10 @@ play at a frame-limit stop and the topping-out lock that places nothing are not
 counted); records written before that field carry the legacy `pieces` key
 holding the preview counter and still verify under that meaning. Each episode
 and summary also reports `clear_sizes`, how many locks cleared one, two, three
-and four rows, tallied from the engine's own per-step clear result; the
-histogram is present on every episode and every agent summary of a record or on
-none of them, and records written before that field existed are an older format
-and still verify.
+and four rows, tallied from the engine's own per-step clear result; in a current
+record the histogram is present on every episode and every agent summary, and in
+a legacy one it is present on every one of them or on none, so a record written
+before that field existed is an older format and still verifies.
 
 Only gameplay masks 0–31 are used. A `0` frame releases held buttons. Rotation
 fires on a new press edge, so the connection script and the placement agents

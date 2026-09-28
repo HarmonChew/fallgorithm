@@ -20,6 +20,9 @@ from block_stack_ai.pathaware import (
 )
 from block_stack_ai.pieces import PIECES, cells, orientation_count
 from block_stack_ai.runner import (
+    LEGACY_SUITE_FORMAT_VERSION,
+    SUITE_FORMAT_VERSION,
+    FORMAT_VERSION,
     VerificationError,
     load_config,
     parse_config,
@@ -64,7 +67,7 @@ def test_same_seed_and_inputs_have_same_native_hash():
 def test_save_and_verify_real_run(tmp_path: Path):
     path = run_and_save(CONFIG, tmp_path / "runs")
     record = json.loads(path.read_text(encoding="utf-8"))
-    assert record["format_version"] == 1
+    assert record["format_version"] == FORMAT_VERSION
     assert record["inputs"]
     assert record["result"]["frame_count"] == len(record["inputs"])
     verify_run(path)
@@ -295,7 +298,7 @@ def test_suite_save_and_verify_real_run(tmp_path: Path):
 
     path = run_and_save(config_path, tmp_path / "runs")
     record = json.loads(path.read_text(encoding="utf-8"))
-    assert record["format_version"] == 2
+    assert record["format_version"] == SUITE_FORMAT_VERSION
     assert sorted(record["summary"]) == ["greedy", "random"]
     assert len(record["episodes"]) == 4
     for summary in record["summary"].values():
@@ -609,7 +612,7 @@ def test_suite_record_with_the_lookahead_agent_runs_and_verifies(tmp_path: Path)
     )
     path = run_and_save(config_path, tmp_path / "runs")
     record = json.loads(path.read_text(encoding="utf-8"))
-    assert record["format_version"] == 2
+    assert record["format_version"] == SUITE_FORMAT_VERSION
     assert sorted(record["summary"]) == ["lookahead"]
     assert len(record["episodes"]) == 1
     assert record["episodes"][0]["result"]["stopping_reason"] in {"game_over", "frame_limit"}
@@ -662,7 +665,7 @@ def test_suite_record_with_the_tetris_agent_runs_and_verifies(tmp_path: Path):
     )
     path = run_and_save(config_path, tmp_path / "runs")
     record = json.loads(path.read_text(encoding="utf-8"))
-    assert record["format_version"] == 2
+    assert record["format_version"] == SUITE_FORMAT_VERSION
     assert sorted(record["summary"]) == ["tetris"]
     assert len(record["episodes"]) == 1
     episode = record["episodes"][0]
@@ -680,9 +683,11 @@ def test_suite_record_with_the_tetris_agent_declares_its_objective(tmp_path: Pat
     """A real tetris suite records the objective that chose its placements.
 
     The record names the module that declares the objective and the weights it
-    publishes, and the replay compares them. Stripping the section leaves exactly
-    the record the runs of this experiment written before it existed have, which
-    must keep verifying: the section is optional, never a mandatory new section.
+    publishes, and the replay compares them. The section is required at the
+    version this writer emits, because the writer always records it for a suite
+    that uses the agent: deleting it makes the record verify under whatever
+    objective is current, so it is reported. The same JSON under the legacy
+    version, which never emitted the section, still verifies.
     """
     raw = json.loads(TETRIS_CONFIG.read_text(encoding="utf-8"))
     config_path = tmp_path / "config.json"
@@ -692,12 +697,20 @@ def test_suite_record_with_the_tetris_agent_declares_its_objective(tmp_path: Pat
     )
     path = run_and_save(config_path, tmp_path / "runs")
     record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["format_version"] == SUITE_FORMAT_VERSION
     assert record["objective"] == {
         "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
     }
     verify_run(path)
 
-    legacy = json.loads(json.dumps(record))
-    del legacy["objective"]
+    stripped = json.loads(json.dumps(record))
+    del stripped["objective"]
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    with pytest.raises(VerificationError, match=r"objective: absent, but a record of this "
+                                                r"format version declares the objective"):
+        verify_run(path)
+
+    legacy = json.loads(json.dumps(stripped))
+    legacy["format_version"] = LEGACY_SUITE_FORMAT_VERSION
     path.write_text(json.dumps(legacy), encoding="utf-8")
     verify_run(path)

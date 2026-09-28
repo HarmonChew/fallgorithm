@@ -1,7 +1,7 @@
 """Pre-change probes: each new 003 regression's contract, run on a pre-change tree.
 
 Run this file with a pre-change tree's ``src`` on ``PYTHONPATH`` — the recorded
-base commit, or the tree of the earlier publication this repair replaces:
+base commit, or the tree of an earlier publication this repair replaces:
 
     sandbox=/tmp/exp003-base
     mkdir -p $sandbox && git archive d83a5bc54a76bb23cd38e4afbab8192b0e2a207f | tar -x -C $sandbox
@@ -10,6 +10,15 @@ base commit, or the tree of the earlier publication this repair replaces:
     before=/tmp/exp003-before
     mkdir -p $before && git archive dc3c29c449c439ad8df415404d4df6d0eeb0087f | tar -x -C $before
     PYTHONPATH=$before/src python experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
+
+    reviewed=/tmp/exp003-reviewed
+    mkdir -p $reviewed && git archive fbe21e1 | tar -x -C $reviewed
+    PYTHONPATH=$reviewed/src python experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
+
+The third tree is the version this repair replaces — the tree the findings were
+measured against — and it carries both defects: its ``format_version`` does not
+say which sections its writer always emitted, and its publication probe reads a
+per-path digest a state need not have.
 
 Copying this tree's ``src`` into an equally plain directory shows the same ids
 satisfied after the change:
@@ -196,10 +205,11 @@ def r1_clear_sizes_field():
 
 def r2_clear_sizes_summary():
     """The new per-agent summary totals, against base ``_summarize``."""
+    histogram = {"singles": 1, "doubles": 1, "triples": 1, "tetrises": 1}
     episodes = [
-        {"agent": "greedy", "seed": 1, "pieces_placed": 5,
+        {"agent": "greedy", "seed": 1, "pieces_placed": 5, "clear_sizes": dict(histogram),
          "result": {"score": 0, "lines": 10, "frame_count": 5, "stopping_reason": "frame_limit"}},
-        {"agent": "greedy", "seed": 2, "pieces_placed": 5,
+        {"agent": "greedy", "seed": 2, "pieces_placed": 5, "clear_sizes": dict(histogram),
          "result": {"score": 0, "lines": 10, "frame_count": 5, "stopping_reason": "frame_limit"}},
     ]
     summary = runner._summarize(episodes)
@@ -641,7 +651,17 @@ def r13_suite_wide_histogram():
         episode.pop("clear_sizes", None)
     for summary in legacy["summary"].values():
         summary.pop("clear_sizes", None)
-    verdict("the histogram stripped everywhere (a legacy record)", legacy, False)
+    # Stripping the histogram everywhere from a record of the current version
+    # deletes a section its writer always emits, and must be reported; the same
+    # JSON at the legacy version — the one whose writer recorded no histogram —
+    # must verify. A pre-change tree has no such version, so it leaves its own
+    # version in place and the stripped record is only its compatibility case.
+    current = json.loads(json.dumps(legacy))
+    verdict("the histogram stripped everywhere at the current version", current, True)
+    legacy["format_version"] = getattr(
+        runner, "LEGACY_SUITE_FORMAT_VERSION", legacy["format_version"]
+    )
+    verdict("the histogram stripped everywhere at the legacy version", legacy, False)
 
     assert not violations, "; ".join(violations)
 
@@ -776,6 +796,12 @@ def r15_publication_content():
                     module.check_publication()
             except AssertionError as error:
                 return str(error), captured.getvalue()
+            except TypeError as error:
+                # A pre-change probe's defect raised while reporting a state it
+                # cannot describe — reading a digest that side does not have. It is
+                # returned as that case's value so the rest of the row still runs
+                # and the row reports the defect instead of aborting on it.
+                return f"TypeError: {error}", captured.getvalue()
         return None, captured.getvalue()
 
     declared = tuple(paths)
@@ -836,7 +862,76 @@ def r15_publication_content():
     if f"differs {outside}" not in output:
         violations.append(f"the path-outside-the-declared-list case did not name {outside}")
 
+    # A tracked deletion: the publication holds every compared path, this worktree
+    # has deleted one of them, so that path has a published digest and none here.
+    # A report that reads the missing digest raises instead of describing the
+    # tree; the deletion must be named and the report completed.
+    deleted = declared[0]
+    error, output = drive(worktree_contents={p: published_content for p in declared
+                                             if p != deleted},
+                          published_contents={p: published_content for p in declared},
+                          uncommitted=(deleted,), head=earlier_commit)
+    print(f"# {earlier_commit[:7]} published, {deleted} deleted in the worktree: exit "
+          f"{'1' if error else '0'}{f' ({error})' if error else ''}")
+    if error is not None:
+        violations.append(f"the tracked-deletion case failed: {error}")
+    if f"deleted {deleted}" not in output:
+        violations.append(f"the tracked-deletion case did not report the tracked deletion of "
+                          f"{deleted}")
+
     assert not violations, "; ".join(violations)
+
+
+def r16_objective_required_when_versioned():
+    """A current record must carry the objective its own writer always emits.
+
+    The reviewer's counterexample, reproduced: the experiment's suite is written
+    by the tree's own writer and the declared-objective section is then deleted
+    without touching ``format_version``. A verifier that reads "legacy" from the
+    absent section accepts the stripped record and reports nothing, so a record of
+    the current version can lose the section that ties it to the objective which
+    chose its placements. The tree must report the absence instead, and the same
+    JSON declared at the legacy version — a record predating the section — must
+    still verify. A tree that cannot run the suite at all reports that, rather than
+    aborting on an import.
+    """
+    path, factory = _run_experiment_suite("objective_required_when_versioned")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    print(f"# record format_version: {record.get('format_version')}")
+    print(f"# record top-level keys: {sorted(record)}")
+    if "objective" not in record:
+        raise AssertionError(
+            "the tree writes no declared-objective section for a suite that uses the Tetris "
+            f"agent, so there is nothing for the version to require: record keys are "
+            f"{sorted(record)}"
+        )
+    stripped = json.loads(json.dumps(record))
+    del stripped["objective"]
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    try:
+        warnings = runner.verify_run(path, factory)
+    except runner.VerificationError as error:
+        print(f"# the same record with the section deleted is reported: {error}")
+    else:
+        raise AssertionError(
+            "the tree accepted a record of its own version with the declared objective "
+            f"deleted, so the record verifies under whatever objective is current: "
+            f"verify_run returned {warnings}"
+        )
+
+    legacy = json.loads(json.dumps(stripped))
+    legacy["format_version"] = getattr(
+        runner, "LEGACY_SUITE_FORMAT_VERSION", legacy["format_version"]
+    )
+    path.write_text(json.dumps(legacy), encoding="utf-8")
+    try:
+        warnings = runner.verify_run(path, factory)
+    except runner.VerificationError as error:
+        raise AssertionError(
+            f"the tree rejected a legacy record that predates the section, which must keep "
+            f"verifying: {error}"
+        ) from error
+    print(f"# the same JSON at the legacy version still verifies: warnings {warnings}")
 
 
 PROBES = {
@@ -855,6 +950,7 @@ PROBES = {
     "suite_wide_histogram": r13_suite_wide_histogram,
     "live_objective_section": r14_live_objective_section,
     "publication_content": r15_publication_content,
+    "objective_required_when_versioned": r16_objective_required_when_versioned,
 }
 
 

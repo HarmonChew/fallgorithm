@@ -84,11 +84,36 @@ STATE_EARLIER_PREFIX = "the refs name an earlier publication"
 
 
 def _file_sha256(path: Path) -> str | None:
-    """A file's sha256, or ``None`` when the file is absent."""
+    """A file's sha256, or ``None`` when the path is not a regular file there."""
     try:
         return hashlib.sha256(path.read_bytes()).hexdigest()
-    except FileNotFoundError:
+    except (FileNotFoundError, IsADirectoryError):
         return None
+
+
+def _path_state(path: Path) -> tuple[str, str | None]:
+    """One compared path's state: ``("file", sha256)``, ``("directory", None)`` or ``("absent", None)``.
+
+    The probe compares file contents, and a compared path need not be a file: an
+    untracked directory is a single ``git status`` entry, and a tracked path can
+    have become a directory here. Reading one raises ``IsADirectoryError``, and
+    reporting it as absent would say a path that is present is missing, so the
+    state is read once, here, instead of being inferred from a hash that a state
+    does not have.
+    """
+    try:
+        return "file", hashlib.sha256(path.read_bytes()).hexdigest()
+    except FileNotFoundError:
+        return "absent", None
+    except IsADirectoryError:
+        return "directory", None
+
+
+def _describe(state: str, digest: str | None) -> str:
+    """How one side of a comparison reads in the report."""
+    if state == "file":
+        return f"a file sha256 {digest[:12]}"
+    return f"a {state}" if state == "directory" else state
 
 
 def repaired_path_content(published_root: Path, worktree_root: Path):
@@ -249,7 +274,12 @@ def check_publication():
     from the reviewed one in exactly that file would be certified as the repair.
     Presence cannot tell a published repair from an earlier publication that
     happens to contain the same file names, and existence of a declared list
-    cannot tell it from a publication that omits a changed file.
+    cannot tell it from a publication that omits a changed file. Each compared
+    path is reported in one of the states a comparison has — identical, differing,
+    deleted from this worktree while the publication tracks it, added here since
+    the publication, present in neither tree, or not a file on one side (a
+    directory at a compared path) — so a path that exists on one side only, or is
+    not a file at all, is described instead of aborting the report.
 
     When the contents differ, the refs name an earlier publication: the probe
     requires the difference to be exactly the repair this worktree still holds
@@ -322,26 +352,42 @@ def check_publication():
 
     compared = repaired_path_content(PUBLICATION_CLONE, PROJECT_ROOT)
     absent = [path for path, published_digest, _ in compared if published_digest is None]
-    digests = {
-        path: (_file_sha256(PUBLICATION_CLONE / path), _file_sha256(PROJECT_ROOT / path))
+    states = {
+        path: (_path_state(PUBLICATION_CLONE / path), _path_state(PROJECT_ROOT / path))
         for path in compared_paths(PUBLICATION_CLONE, PROJECT_ROOT, output)
     }
     declared = {path for path in REPAIRED_PATHS}
-    differing = [path for path, (published_digest, worktree_digest) in digests.items()
-                 if published_digest != worktree_digest]
-    for path in sorted(digests):
-        published_digest, worktree_digest = digests[path]
-        if path not in declared and published_digest == worktree_digest:
-            continue
-        if published_digest is None:
-            print(f"#   | MISSING {path}")
+    # Every path is reported in one of the states a comparison has, from the one
+    # pair of states read once: identical files, differing files, present only in
+    # the published tree (deleted here), present only here (added since the
+    # publication), present in neither, or not a file on one side (a directory at a
+    # compared path — an untracked directory is one `git status` entry). Reading a
+    # digest that a state does not have — a tracked deletion has no worktree digest
+    # — would abort the report instead of describing the tree.
+    differing = [path for path, (published, worktree) in states.items() if published != worktree]
+    for path in sorted(states):
+        (published_state, published_digest), (worktree_state, worktree_digest) = states[path]
+        outside = "" if path in declared else " (outside the declared repaired paths)"
+        if published_state == "absent" and worktree_state == "absent":
+            print(f"#   | absent {path}{outside}: present in neither tree")
+        elif published_state == "directory" or worktree_state == "directory":
+            print(f"#   | not a file {path}{outside}: published "
+                  f"{_describe(published_state, published_digest)}, this worktree "
+                  f"{_describe(worktree_state, worktree_digest)}")
+        elif published_state == "absent":
+            print(f"#   | added {path}{outside}: absent from the published tree, present in "
+                  f"this worktree sha256 {worktree_digest[:12]}")
+        elif worktree_state == "absent":
+            print(f"#   | deleted {path}{outside}: tracked in the published tree sha256 "
+                  f"{published_digest[:12]}, absent from this worktree")
         elif published_digest == worktree_digest:
+            if path not in declared:
+                continue
             print(f"#   | same {path} sha256 {worktree_digest[:12]}")
         else:
-            outside = "" if path in declared else " (outside the declared repaired paths)"
             print(f"#   | differs {path}{outside} published sha256 {published_digest[:12]} "
                   f"this worktree sha256 {worktree_digest[:12]}")
-    print(f"#   | compared {len(digests)} paths: every path either tree tracks, plus this "
+    print(f"#   | compared {len(states)} paths: every path either tree tracks, plus this "
           f"worktree's untracked files")
     assert not absent, f"the published tree lacks the repaired files: {absent}"
 
@@ -363,20 +409,20 @@ def check_publication():
             f"difference is not this task's unpublished repair"
         )
         print(f"# {STATE_EARLIER_PREFIX}: {published}; {len(differing)} of "
-              f"{len(digests)} compared paths differ from this worktree "
+              f"{len(states)} compared paths differ from this worktree "
               f"({', '.join(differing)}), and this worktree holds the unpublished repair")
     else:
-        print(f"# {STATE_EQUAL_PREFIX} for all {len(digests)} compared paths: {published}")
+        print(f"# {STATE_EQUAL_PREFIX} for all {len(states)} compared paths: {published}")
 
     print(f"# the branch {TASK_BRANCH_REF} and the PR head {TASK_PR_REF} are {published}")
     print(f"# that commit descends from the recorded base {BASE_COMMIT}, so it is this task's own")
     if differing:
         print(f"# commit; its tree carries the last publication's content for the "
-              f"{len(digests)} compared paths, {len(differing)} of which differ from this")
+              f"{len(states)} compared paths, {len(differing)} of which differ from this")
         print(f"# worktree's, so the repair reviewed here is not in it")
     else:
         print(f"# commit, and its tree carries this worktree's content for all "
-              f"{len(digests)} compared paths")
+              f"{len(states)} compared paths")
     print(f"# this worktree's HEAD is {head}, "
           f"{'the published commit' if head == published else 'a commit the refs do not name yet'}, "
           f"with {len(uncommitted)} uncommitted change(s)")

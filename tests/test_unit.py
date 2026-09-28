@@ -335,19 +335,37 @@ def test_suite_record_formats_verify_under_their_own_piece_semantics(tmp_path, m
     record = json.loads(path.read_text(encoding="utf-8"))
     # New records carry the placed-piece count, one below the preview counter,
     # in every episode and in the summary, and no legacy key.
+    assert record["format_version"] == runner.SUITE_FORMAT_VERSION
     assert [episode["pieces_placed"] for episode in record["episodes"]] == [5, 5, 5, 5]
     assert all("pieces" not in episode for episode in record["episodes"])
     assert record["summary"]["greedy"]["pieces_placed"]["mean"] == 5.0
     assert verify_run(path, lambda **_: SuiteGame()) == []
 
+    # Deleting the count leaves a record of the current version without a section
+    # its writer always emitted. That is not the legacy shape: the version says
+    # the key is written, so its absence is reported rather than silently
+    # comparing nothing.
+    stripped = json.loads(json.dumps(record))
+    for episode in stripped["episodes"]:
+        del episode["pieces_placed"]
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"pieces_placed in episode 0: absent, but a record of this format version "
+              r"always carries the placed-piece count",
+    ):
+        verify_run(path, lambda **_: SuiteGame())
+
     # The older format recorded the preview counter under ``pieces``, one above
-    # the placed count, in the episodes and the summary. It still verifies.
+    # the placed count, in the episodes and the summary. The legacy version never
+    # emitted ``pieces_placed``, so that shape still verifies.
     legacy_episodes = [
         {"pieces": episode["pieces_placed"] + 1,
          **{key: value for key, value in episode.items() if key != "pieces_placed"}}
         for episode in record["episodes"]
     ]
-    legacy = {**record, "episodes": legacy_episodes, "summary": runner._summarize(legacy_episodes)}
+    legacy = {**record, "format_version": runner.LEGACY_SUITE_FORMAT_VERSION,
+              "episodes": legacy_episodes, "summary": runner._summarize(legacy_episodes)}
     assert legacy["summary"]["greedy"]["pieces"]["mean"] == 6.0
     path.write_text(json.dumps(legacy), encoding="utf-8")
     assert verify_run(path, lambda **_: SuiteGame()) == []
@@ -475,6 +493,7 @@ def test_scripted_verification_compares_a_recorded_placed_piece_count(tmp_path, 
     record = json.loads(path.read_text(encoding="utf-8"))
     # The writer records the locked count beside the result it replays; the frame
     # count is 4, the spawned count 5 and the preview counter 6.
+    assert record["format_version"] == runner.FORMAT_VERSION
     assert (record["pieces_placed"], record["result"]["frame_count"]) == (4, 4)
     assert "pieces" not in record
     assert verify_run(path, factory) == []
@@ -489,10 +508,22 @@ def test_scripted_verification_compares_a_recorded_placed_piece_count(tmp_path, 
     rejected(None, "Recorded pieces_placed must be an integer, not None")
     rejected(True, "Recorded pieces_placed must be an integer, not True")
 
-    # A record that carries the legacy key is an older record: it recorded the
-    # preview counter under ``pieces`` and still verifies under that semantics.
-    legacy = {key: value for key, value in record.items() if key != "pieces_placed"}
-    legacy["pieces"] = 6
+    # Deleting the count leaves a record of the current version without the
+    # section its writer always emits, which is reported rather than accepted as
+    # an older shape: the version, not the absence, decides that.
+    stripped = {key: value for key, value in record.items() if key != "pieces_placed"}
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"pieces_placed: absent, but a record of this format version always carries "
+              r"the placed-piece count",
+    ):
+        verify_run(path, factory)
+
+    # A record of a legacy version that carries the legacy key is an older
+    # record: it recorded the preview counter under ``pieces`` and still verifies
+    # under that semantics.
+    legacy = {**stripped, "format_version": runner.LEGACY_FORMAT_VERSION, "pieces": 6}
     path.write_text(json.dumps(legacy), encoding="utf-8")
     assert verify_run(path, factory) == []
     legacy["pieces"] = 4  # the locked count must not pass the legacy comparison
@@ -500,7 +531,7 @@ def test_scripted_verification_compares_a_recorded_placed_piece_count(tmp_path, 
     with pytest.raises(VerificationError, match="pieces: recorded 4, replayed 6"):
         verify_run(path, factory)
 
-    # A record that carries neither key is older still and keeps verifying.
+    # A legacy record that carries neither key is older still and keeps verifying.
     oldest = {key: value for key, value in legacy.items() if key != "pieces"}
     path.write_text(json.dumps(oldest), encoding="utf-8")
     assert verify_run(path, factory) == []
@@ -758,12 +789,12 @@ def test_verify_run_requires_the_written_integer_format_version(tmp_path, monkey
     """``verify_run`` dispatched on plain equality, which JSON coercion reaches.
 
     JSON ``true`` compares equal to the integer 1 and ``2.0`` to 2, while the
-    writer records only the integers 1 and 2. A suite record whose
+    writer records the integers 1, 2, 3 and 4. A suite record whose
     ``format_version`` was edited from 2 to ``2.0`` therefore still routed to the
     suite verifier and verified (exit 0 on the retained record before the
     change), and an edited ``true`` (or ``1.0``) routed a v1 record to the
     scripted verifier, which verified it just the same. ``false``, ``null`` and
-    ``"2"`` matched neither version and were already rejected as unsupported.
+    ``"2"`` matched no version and were already rejected as unsupported.
     Every non-integer is now reported as one, and both genuine records still
     verify as the positive control.
     """
@@ -785,9 +816,9 @@ def test_verify_run_requires_the_written_integer_format_version(tmp_path, monkey
     config_path.write_text(json.dumps(SUITE), encoding="utf-8")
     suite_path = run_and_save(config_path, tmp_path / "runs", suite_factory)
     suite_record = json.loads(suite_path.read_text(encoding="utf-8"))
-    assert suite_record["format_version"] == 2  # the writer's own type
+    assert suite_record["format_version"] == 4  # the writer's own type
     assert verify_run(suite_path, suite_factory) == []
-    for version in (2.0, 1.0, True, False, None, "2"):
+    for version in (4.0, 2.0, 1.0, True, False, None, "2"):
         rejected(suite_path, suite_record, suite_factory, version)
 
     scripted_factory = lambda **_: FakeGame()
@@ -795,9 +826,9 @@ def test_verify_run_requires_the_written_integer_format_version(tmp_path, monkey
     config_path.write_text(json.dumps(BASE), encoding="utf-8")
     scripted_path = run_and_save(config_path, tmp_path / "runs", scripted_factory)
     scripted_record = json.loads(scripted_path.read_text(encoding="utf-8"))
-    assert scripted_record["format_version"] == 1
+    assert scripted_record["format_version"] == 3
     assert verify_run(scripted_path, scripted_factory) == []
-    for version in (1.0, True, 2.0, False, None, "2"):
+    for version in (3.0, 1.0, True, 2.0, False, None, "2"):
         rejected(scripted_path, scripted_record, scripted_factory, version)
 
 
@@ -967,19 +998,37 @@ def test_suite_summary_totals_the_clear_sizes_per_agent(tmp_path, monkeypatch):
 
 
 def test_records_written_before_the_clear_size_metric_still_verify(tmp_path, monkeypatch):
-    """A record without the histogram is older and keeps verifying under its meaning.
+    """A record that predates the histogram is declared by its version and verifies.
 
     Both formats are covered: the suite record loses the per-episode field and
     the summary section, the scripted record loses the top-level field, and both
-    still verify because the section is optional and is not compared when absent.
+    still verify at the legacy version, whose writer emitted the histogram nowhere.
+    The same records at the current version are reported instead: the version is
+    the marker that tells an older record from a section deleted after the fact, so
+    an absent section never has to stand for both.
     """
     suite_path, suite_factory, suite_record = _clear_suite(tmp_path, monkeypatch)
-    for episode in suite_record["episodes"]:
+    legacy = json.loads(json.dumps(suite_record))
+    legacy["format_version"] = runner.LEGACY_SUITE_FORMAT_VERSION
+    for episode in legacy["episodes"]:
         episode.pop("clear_sizes")
-    for summary in suite_record["summary"].values():
+    for summary in legacy["summary"].values():
         summary.pop("clear_sizes")
-    suite_path.write_text(json.dumps(suite_record), encoding="utf-8")
+    suite_path.write_text(json.dumps(legacy), encoding="utf-8")
     assert verify_run(suite_path, suite_factory) == []
+
+    current = json.loads(json.dumps(suite_record))
+    for episode in current["episodes"]:
+        episode.pop("clear_sizes")
+    for summary in current["summary"].values():
+        summary.pop("clear_sizes")
+    suite_path.write_text(json.dumps(current), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"episode 0 clear_sizes: absent, but a record of this format version always "
+              r"carries it",
+    ):
+        verify_run(suite_path, suite_factory)
 
     monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
     monkeypatch.setattr(
@@ -990,9 +1039,20 @@ def test_records_written_before_the_clear_size_metric_still_verify(tmp_path, mon
     factory = lambda **_: ClearGame([1, 2, 4, 0, 3])
     scripted_path = run_and_save(config_path, tmp_path / "runs", factory)
     scripted_record = json.loads(scripted_path.read_text(encoding="utf-8"))
-    scripted_record.pop("clear_sizes")
-    scripted_path.write_text(json.dumps(scripted_record), encoding="utf-8")
+    scripted_legacy = {key: value for key, value in scripted_record.items()
+                       if key != "clear_sizes"}
+    scripted_legacy["format_version"] = runner.LEGACY_FORMAT_VERSION
+    scripted_path.write_text(json.dumps(scripted_legacy), encoding="utf-8")
     assert verify_run(scripted_path, factory) == []
+
+    scripted_stripped = {key: value for key, value in scripted_record.items()
+                         if key != "clear_sizes"}
+    scripted_path.write_text(json.dumps(scripted_stripped), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"clear_sizes: absent, but a record of this format version always carries it",
+    ):
+        verify_run(scripted_path, factory)
 
 
 def test_verification_compares_a_present_clear_size_histogram(tmp_path, monkeypatch):
@@ -1041,18 +1101,27 @@ def test_verification_compares_a_present_clear_size_histogram(tmp_path, monkeypa
 def test_verification_rejects_a_summary_that_omits_the_histogram_its_episodes_record(
     tmp_path, monkeypatch
 ):
-    """A summary's totals are required once any episode records the histogram.
+    """A summary's totals are required at the current version, and all-or-nothing before it.
 
     The totals are summed from the episodes, so dropping only the summary
     section would verify yet leave ``report``'s reader with no per-agent totals
-    for an agent whose episodes carry them. The rule is suite-wide, so a record
-    that carries the histogram for every episode but not for every agent is
-    rejected. Legacy records, which carry the histogram nowhere, keep verifying
-    (``records_written_before...``).
+    for an agent whose episodes carry them. At the current version the missing
+    section is reported as such; a record that says it predates the histogram is
+    judged by the suite-wide rule instead, which rejects the partial presence: the
+    histogram is recorded on every episode and every agent summary, or nowhere.
     """
     path, factory, record = _clear_suite(tmp_path, monkeypatch)
     assert verify_run(path, factory) == []
     del record["summary"]["random"]["clear_sizes"]
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"summary\.clear_sizes: absent from 0 of 4 episodes and 1 of 2 agent "
+              r"summaries, but a record of this format version carries it on every one",
+    ):
+        verify_run(path, factory)
+
+    record["format_version"] = runner.LEGACY_SUITE_FORMAT_VERSION
     path.write_text(json.dumps(record), encoding="utf-8")
     with pytest.raises(
         VerificationError,
@@ -1068,11 +1137,22 @@ def test_verification_rejects_a_partially_histogramned_agent(tmp_path, monkeypat
 
     A record with one random episode carrying the histogram and one not, while
     the other agent's episodes and summary keep theirs, would otherwise verify
-    with a histogram that covers only part of the suite's lines.
+    with a histogram that covers only part of the suite's lines. At the current
+    version the stripped episode is reported by the required-section rule; the
+    same record declared legacy is reported by the suite-wide rule.
     """
     path, factory, record = _clear_suite(tmp_path, monkeypatch)
     del record["episodes"][0]["clear_sizes"]
     del record["summary"]["random"]["clear_sizes"]
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"episode 0 clear_sizes: absent, but a record of this format version always "
+              r"carries it",
+    ):
+        verify_run(path, factory)
+
+    record["format_version"] = runner.LEGACY_SUITE_FORMAT_VERSION
     path.write_text(json.dumps(record), encoding="utf-8")
     with pytest.raises(
         VerificationError,
@@ -1089,7 +1169,8 @@ def test_verification_rejects_a_suite_wide_partial_histogram(tmp_path, monkeypat
     The totals are summed from the episodes, so a record that stripped the
     histogram from one agent's episodes and summary would verify under a
     per-agent rule yet report only the other agent's clear sizes. The same record
-    with the histogram stripped everywhere is a legacy record and still verifies.
+    with the histogram stripped everywhere is a legacy record — at the legacy
+    version, which never recorded it — and still verifies.
     """
     path, factory, record = _clear_suite(tmp_path, monkeypatch)
     assert verify_run(path, factory) == []
@@ -1099,6 +1180,15 @@ def test_verification_rejects_a_suite_wide_partial_histogram(tmp_path, monkeypat
         if episode["agent"] == "random":
             del episode["clear_sizes"]
     del stripped["summary"]["random"]["clear_sizes"]
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"episode 0 clear_sizes: absent, but a record of this format version always "
+              r"carries it",
+    ):
+        verify_run(path, factory)
+
+    stripped["format_version"] = runner.LEGACY_SUITE_FORMAT_VERSION
     path.write_text(json.dumps(stripped), encoding="utf-8")
     with pytest.raises(
         VerificationError,
@@ -1207,14 +1297,37 @@ def test_suite_records_the_objective_of_the_tetris_agent(tmp_path, monkeypatch):
     The frozen heuristic mapping is recorded for every suite, because every
     placement agent scores through it; the Tetris agent's choices come from a
     second objective, so its suite records that objective too, naming the module
-    that declares it. A suite without the agent declares none, and a record that
-    predates the section — the runs of this experiment written before it existed —
-    keeps verifying while it is absent.
+    that declares it. A suite without the agent declares none. The record's
+    version is what decides whether the section may be absent: the current
+    version's writer always emits it for this suite, so deleting it is reported,
+    while the same JSON at the legacy version — a record that predates the
+    section — keeps verifying.
     """
     path, factory, record = _objective_suite(tmp_path, monkeypatch)
+    assert record["format_version"] == runner.SUITE_FORMAT_VERSION
     assert record["objective"] == {
         "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
     }
+    assert verify_run(path, factory) == []
+
+    # Deleting the section without touching the version must be reported: an
+    # absent optional section cannot stand for both a record that predates it and
+    # a current record whose section was removed.
+    stripped = json.loads(json.dumps(record))
+    del stripped["objective"]
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"objective: absent, but a record of this format version declares the "
+              r"objective of the Tetris agent whose placements it replayed",
+    ):
+        verify_run(path, factory)
+
+    # The same JSON declared legacy is a record predating the section, and keeps
+    # verifying, which is the compatibility side of the same rule.
+    legacy = json.loads(json.dumps(stripped))
+    legacy["format_version"] = runner.LEGACY_SUITE_FORMAT_VERSION
+    path.write_text(json.dumps(legacy), encoding="utf-8")
     assert verify_run(path, factory) == []
 
     greedy_path, greedy_factory, greedy_record = _objective_suite(
@@ -1222,11 +1335,6 @@ def test_suite_records_the_objective_of_the_tetris_agent(tmp_path, monkeypatch):
     )
     assert "objective" not in greedy_record
     assert verify_run(greedy_path, greedy_factory) == []
-
-    legacy = json.loads(json.dumps(record))
-    del legacy["objective"]
-    path.write_text(json.dumps(legacy), encoding="utf-8")
-    assert verify_run(path, factory) == []
 
 
 def test_verification_rejects_a_tampered_objective(tmp_path, monkeypatch):
@@ -1310,7 +1418,9 @@ def _load_publication_probe():
 
 def _drive_publication_probe(probe, tmp_path, monkeypatch, *, worktree_content,
                              uncommitted, worktree_head=OLDER_WORKTREE_HEAD,
-                             published_same=(), outside_paths=()):
+                             published_same=(), outside_paths=(), worktree_deleted=(),
+                             worktree_added=(), tracked_missing=(),
+                             untracked_directories=()):
     """Run ``check_publication`` against real content with the Git plumbing stubbed.
 
     The published clone and the worktree are real directories whose paths hold
@@ -1320,13 +1430,21 @@ def _drive_publication_probe(probe, tmp_path, monkeypatch, *, worktree_content,
     worktree's own; every other declared path holds ``PUBLISHED_CONTENT``.
     ``outside_paths`` are tracked in both trees but outside the probe's declared
     list, with the worktree holding ``REPAIRED_CONTENT`` and the publication
-    ``PUBLISHED_CONTENT``. The clone directory must not exist beforehand, because
+    ``PUBLISHED_CONTENT``. ``worktree_deleted`` names declared paths that stay
+    tracked but are deleted from the worktree, so they exist only in the
+    publication. ``worktree_added`` names paths that exist only in the worktree,
+    reported as untracked by ``git status``, ``tracked_missing`` names paths both
+    trees list as tracked but neither actually holds, and ``untracked_directories``
+    names directories that exist only in the worktree, which Git reports as one
+    untracked entry each. The clone directory must not exist beforehand, because
     the probe clears it before cloning.
     """
     published_root = tmp_path / "publication"
     worktree_root = tmp_path / "worktree"
-    tracked = list(probe.REPAIRED_PATHS) + list(outside_paths)
+    tracked = list(probe.REPAIRED_PATHS) + list(outside_paths) + list(tracked_missing)
     for path in probe.REPAIRED_PATHS:
+        if path in worktree_deleted:
+            continue
         target = worktree_root / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(worktree_content, encoding="utf-8")
@@ -1334,6 +1452,12 @@ def _drive_publication_probe(probe, tmp_path, monkeypatch, *, worktree_content,
         target = worktree_root / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(REPAIRED_CONTENT, encoding="utf-8")
+    for path in worktree_added:
+        target = worktree_root / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(REPAIRED_CONTENT, encoding="utf-8")
+    for path in untracked_directories:
+        (worktree_root / path).mkdir(parents=True, exist_ok=True)
 
     def fake_git(cwd, *arguments):
         command = " ".join(arguments)
@@ -1365,8 +1489,13 @@ def _drive_publication_probe(probe, tmp_path, monkeypatch, *, worktree_content,
                 return 0, worktree_head
             if command == "status --porcelain":
                 # As the probe's own _git would: the captured output is stripped,
-                # so the first entry loses its leading status column.
-                return 0, "\n".join(f" M {path}" for path in uncommitted).strip()
+                # so the first entry loses its leading status column. Untracked
+                # paths are reported the way Git reports them.
+                entries = [f" M {path}" for path in uncommitted
+                           if path not in worktree_added]
+                entries += [f"?? {path}" for path in worktree_added]
+                entries += [f"?? {path}" for path in untracked_directories]
+                return 0, "\n".join(entries).strip()
         raise AssertionError(f"unexpected git command: {command}")
 
     monkeypatch.setattr(probe, "PUBLICATION_CLONE", published_root)
@@ -1454,6 +1583,108 @@ def test_publication_probe_detects_a_changed_path_outside_the_declared_list(
     assert STATE_EQUAL_PREFIX not in printed
     assert f"differs {outside} (outside the declared repaired paths)" in printed
     assert f"1 of {len(probe.REPAIRED_PATHS) + 1} compared paths differ" in printed
+
+
+def test_publication_probe_reports_a_tracked_path_deleted_in_the_worktree(
+    tmp_path, monkeypatch, capsys
+):
+    """A tracked deletion is a reported state, not a crash.
+
+    The reviewer's counterexample: the publication tracks a path this worktree has
+    deleted, so the path has a published digest and none here. The earlier probe
+    sliced the absent digest and raised ``TypeError`` instead of reporting
+    anything, so a worktree that deleted one compared path could not complete the
+    publication report at all. The probe must name the deletion, report the
+    earlier-publication state, and finish without an exception.
+    """
+    probe = _load_publication_probe()
+    deleted = probe.REPAIRED_PATHS[0]
+    _drive_publication_probe(
+        probe, tmp_path, monkeypatch, worktree_content=REPAIRED_CONTENT,
+        uncommitted=[deleted], worktree_deleted=[deleted],
+        published_same=[path for path in probe.REPAIRED_PATHS if path != deleted])
+    probe.check_publication()
+
+    printed = capsys.readouterr().out
+    assert STATE_EARLIER_PREFIX in printed
+    assert STATE_EQUAL_PREFIX not in printed
+    assert f"deleted {deleted}:" in printed
+    assert f"deleted {deleted}: tracked in the published tree sha256" in printed
+    assert f"1 of {len(probe.REPAIRED_PATHS)} compared paths differ" in printed
+
+
+def test_publication_probe_reports_a_path_added_since_the_publication(
+    tmp_path, monkeypatch, capsys
+):
+    """A path that exists only in this worktree is reported as that state.
+
+    The counterpart of the tracked deletion: a file this worktree added and has not
+    committed is untracked here and absent from the publication, so it has no
+    published digest and a worktree digest. The replaced probe printed such a path
+    as a bare `MISSING` row, without the state the comparison is in; this probe must
+    name the added state, report the earlier-publication state (the publication does
+    not carry the file) and finish.
+    """
+    probe = _load_publication_probe()
+    added = "experiments/003-tetris-aware-agent/probes/new-probe.py"
+    _drive_publication_probe(
+        probe, tmp_path, monkeypatch, worktree_content=PUBLISHED_CONTENT,
+        uncommitted=[added], worktree_added=[added],
+        published_same=probe.REPAIRED_PATHS)
+    probe.check_publication()
+
+    printed = capsys.readouterr().out
+    assert STATE_EARLIER_PREFIX in printed
+    assert (f"added {added} (outside the declared repaired paths): absent from the published "
+            "tree, present in this worktree sha256") in printed
+    assert f"1 of {len(probe.REPAIRED_PATHS) + 1} compared paths differ" in printed
+
+
+def test_publication_probe_reports_a_compared_path_that_is_a_directory(
+    tmp_path, monkeypatch, capsys
+):
+    """A compared path that is a directory is described, not read as a file.
+
+    An untracked directory is one `git status` entry, so it reaches the comparison
+    as a path with no published digest and no digest here either — reading it would
+    raise `IsADirectoryError` — while the directory itself is present. The report
+    must say so, keep the earlier-publication state, and finish without an
+    exception.
+    """
+    probe = _load_publication_probe()
+    directory = "experiments/003-tetris-aware-agent/probes/new-directory/"
+    _drive_publication_probe(
+        probe, tmp_path, monkeypatch, worktree_content=PUBLISHED_CONTENT,
+        uncommitted=[], published_same=probe.REPAIRED_PATHS,
+        untracked_directories=[directory])
+    probe.check_publication()
+
+    printed = capsys.readouterr().out
+    assert STATE_EARLIER_PREFIX in printed
+    assert (f"not a file {directory} (outside the declared repaired paths): published absent, "
+            "this worktree a directory") in printed
+    assert f"1 of {len(probe.REPAIRED_PATHS) + 1} compared paths differ" in printed
+
+
+def test_publication_probe_reports_a_path_present_in_neither_tree(tmp_path, monkeypatch, capsys):
+    """A compared path with no digest on either side is described, not sliced.
+
+    The state with neither a published nor a worktree digest: a path Git lists as
+    tracked in both trees whose file has gone from both. No earlier comparison could
+    reach it — it read presence or a list — and reading either digest there would
+    raise. The report must describe it and still certify an otherwise equal tree.
+    """
+    probe = _load_publication_probe()
+    missing = "experiments/003-tetris-aware-agent/probes/vanished.py"
+    _drive_publication_probe(
+        probe, tmp_path, monkeypatch, worktree_content=PUBLISHED_CONTENT,
+        uncommitted=[], published_same=probe.REPAIRED_PATHS, tracked_missing=[missing])
+    probe.check_publication()
+
+    printed = capsys.readouterr().out
+    assert STATE_EQUAL_PREFIX in printed
+    assert (f"absent {missing} (outside the declared repaired paths): present in neither tree"
+            ) in printed
 
 
 def test_publication_probe_rejects_repaired_content_a_clean_worktree_lacks(
