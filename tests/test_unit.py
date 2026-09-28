@@ -381,6 +381,73 @@ def test_suite_record_formats_verify_under_their_own_piece_semantics(tmp_path, m
         verify_run(path, lambda **_: SuiteGame())
 
 
+def test_verification_rejects_a_mixed_piece_count_schema(tmp_path, monkeypatch):
+    """The summary reports the piece key the record's own episodes carry.
+
+    The reviewer's counterexample: ``pieces_placed`` is stripped from each
+    agent's first episode and from that agent's summary, while every later
+    episode keeps its count. The summary used to pick its metric from the first
+    episode of each group, so it re-derived a summary with no piece metric,
+    matched the stripped record, and verified a mixed schema no writer emits —
+    at the legacy version, where the count is not required. The key is now read
+    from every episode, so that record is reported there too; a record that
+    carries the count nowhere still verifies as the older shape, and at the
+    current version the same strips are reported by the version rule.
+    """
+    path, factory, record = _clear_suite(tmp_path, monkeypatch)
+    assert verify_run(path, factory) == []
+    assert record["summary"]["random"]["pieces_placed"]["mean"] == 5.0
+    stripped = json.loads(json.dumps(record))
+    first_of_agent = {}
+    for episode in stripped["episodes"]:
+        first_of_agent.setdefault(episode["agent"], episode)
+    for episode in stripped["episodes"]:
+        if first_of_agent[episode["agent"]] is episode:
+            del episode["pieces_placed"]
+    for summary in stripped["summary"].values():
+        del summary["pieces_placed"]
+    # Two of the four episodes were stripped, one per agent: read the count from
+    # every episode and the record is not the shape any writer emitted.
+    mixed_schema = (r"piece count must be recorded on every episode of a record or on none: "
+                    r"2 of 4 episodes carry pieces_placed, 0 carry pieces")
+
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"pieces_placed in episode 0: absent, but a record of this format version "
+              r"always carries the placed-piece count",
+    ):
+        verify_run(path, factory)
+
+    legacy = json.loads(json.dumps(stripped))
+    legacy["format_version"] = runner.LEGACY_SUITE_FORMAT_VERSION
+    path.write_text(json.dumps(legacy), encoding="utf-8")
+    with pytest.raises(VerificationError, match=mixed_schema):
+        verify_run(path, factory)
+
+    # A record that carries the count nowhere is older still and verifies, with
+    # no piece metric in its summary — the legacy shape the rule must keep.
+    older = json.loads(json.dumps(stripped))
+    older["format_version"] = runner.LEGACY_SUITE_FORMAT_VERSION
+    for episode in older["episodes"]:
+        episode.pop("pieces_placed", None)
+    path.write_text(json.dumps(older), encoding="utf-8")
+    assert verify_run(path, factory) == []
+    assert all("pieces_placed" not in summary for summary in older["summary"].values())
+
+    # And at the current version a summary that lost the count its episodes all
+    # carry is reported as a deleted section, not silently re-derived.
+    summary_only = json.loads(json.dumps(record))
+    del summary_only["summary"]["random"]["pieces_placed"]
+    path.write_text(json.dumps(summary_only), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"summary\.pieces_placed: absent from 0 of 4 episodes and 1 of 2 agent "
+              r"summaries, but a record of this format version carries it on every one",
+    ):
+        verify_run(path, factory)
+
+
 def test_suite_verification_rejects_a_boolean_piece_count(tmp_path, monkeypatch):
     """JSON ``false`` equals the integer 0, so a present count must be an int.
 
@@ -1542,14 +1609,19 @@ STATE_EQUAL_PREFIX = "published content equals this worktree"
 STATE_EARLIER_PREFIX = "the refs name an earlier publication"
 
 
-def _load_publication_probe():
-    """The 003 publication probe, loaded from its own file in the experiment."""
+def _load_evidence_probe(name="exp003_evidence_probe"):
+    """The 003 probe file, loaded from the experiment so its checks can be driven."""
     path = (engine.PROJECT_ROOT / "experiments" / "003-tetris-aware-agent" / "probes"
             / "evidence.py")
-    spec = importlib.util.spec_from_file_location("exp003_publication_probe", path)
+    spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _load_publication_probe():
+    """The 003 publication probe, loaded from its own file in the experiment."""
+    return _load_evidence_probe("exp003_publication_probe")
 
 
 def _drive_publication_probe(probe, tmp_path, monkeypatch, *, worktree_content,
@@ -1899,14 +1971,18 @@ MIXED_STATE = (
 )
 
 
+def _retained_record_copy(tmp_path):
+    """The retained result.json, as a writable copy, with its parsed content."""
+    retained = (engine.PROJECT_ROOT / "experiments" / "003-tetris-aware-agent"
+                / "result.json")
+    path = tmp_path / "result.json"
+    path.write_text(retained.read_text(encoding="utf-8"), encoding="utf-8")
+    return path, json.loads(path.read_text(encoding="utf-8"))
+
+
 def _retained_publication(tmp_path):
     """The retained record's publication object, as a writable copy."""
-    record_path = (engine.PROJECT_ROOT / "experiments" / "003-tetris-aware-agent"
-                   / "result.json")
-    record = json.loads(record_path.read_text(encoding="utf-8"))
-    copy = tmp_path / "result.json"
-    copy.write_text(json.dumps(record), encoding="utf-8")
-    return copy, record
+    return _retained_record_copy(tmp_path)
 
 
 def test_retained_publication_snapshot_describes_one_measured_run(tmp_path):
@@ -1977,8 +2053,8 @@ def test_retained_publication_snapshot_describes_one_measured_run(tmp_path):
     rejected(drifted_state_count, r"state is not the line these fields reconstruct")
     rejected(stale_commit, r"branch_head is .* but published_commit is 'c{40}'")
     rejected(unlisted_difference,
-             r"observed_differing_paths is \d+ but repaired_paths_differing_from_this_worktree "
-             r"lists \d+")
+             r"observed_differing_paths is \d+ but the captured run records \d+ differing "
+             r"paths")
     rejected(stale_declared_count,
              r"repaired_paths_compared_by_content is \d+ but the probe's counts line declares "
              r"\d+ repaired paths compared by content")
@@ -2007,13 +2083,23 @@ def test_retained_publication_snapshot_cites_the_counts_the_probe_emits(
     _, record = _retained_publication(tmp_path)
     publication = record["publication"]
     listed = publication["repaired_paths_differing_from_this_worktree"]
+    # A path that differs and is not one of the declared repaired paths: the
+    # record's list holds the probe's predeclaration capture as well.
+    outside = [path for path in listed if path not in probe.REPAIRED_PATHS]
     _drive_publication_probe(
         probe, tmp_path, monkeypatch, worktree_content=REPAIRED_CONTENT,
-        uncommitted=listed,
+        uncommitted=listed, outside_paths=outside,
         published_same=[path for path in probe.REPAIRED_PATHS if path not in listed])
     probe.check_publication()
 
     printed = capsys.readouterr().out
+    emitted_capture = json.loads(
+        next(line for line in printed.splitlines() if "publication_capture=" in line)
+        .split("publication_capture=", 1)[1])
+    assert emitted_capture["declared_paths"] == list(probe.REPAIRED_PATHS)
+    assert [entry["path"] for entry in emitted_capture["compared_paths"] if entry["differs"]] \
+        == listed
+    assert sorted(emitted_capture["uncommitted_paths"]) == sorted(listed)
     emitted = dict(re.findall(
         r"\b(declared_paths_compared_by_content|compared_paths_count|"
         r"observed_differing_paths|observed_uncommitted_paths)=(\d+)", printed))
@@ -2023,3 +2109,272 @@ def test_retained_publication_snapshot_cites_the_counts_the_probe_emits(
     assert emitted["observed_differing_paths"] == str(len(listed)) == \
         str(publication["observed_differing_paths"])
     assert emitted["observed_uncommitted_paths"] == str(publication["observed_uncommitted_paths"])
+
+
+def _rejected_tamper(path, record, check, tamper, message):
+    """Write the tampered copy of a retained record and require the check to report it."""
+    path.write_text(json.dumps(tamper(json.loads(json.dumps(record)))), encoding="utf-8")
+    with pytest.raises(AssertionError, match=message):
+        check(path)
+
+
+def test_base_commit_record_rejects_a_snapshot_that_mixes_runs(tmp_path):
+    """The base-refresh snapshot is one run's captured commands, field by field.
+
+    The reviewed counterexample: the retained object's ``worktree_head`` field
+    named one commit while its captured ``rev-parse HEAD`` output named another,
+    and its prose named a third, so no run produced the object. Every named field
+    must be the output of the captured command whose role produced it, the state
+    line must be the one those fields reconstruct, and every commit id in the
+    object — in the prose as much as in the output — must be one the run observed.
+    """
+    probe = _load_evidence_probe("exp003_base_commit_probe")
+    path, record = _retained_record_copy(tmp_path)
+    probe.check_base_commit_record(path)
+
+    def rejected(tamper, message):
+        _rejected_tamper(path, record, probe.check_base_commit_record, tamper, message)
+
+    def drifted_field(tampered):
+        base = tampered["base_commit"]
+        base["worktree_head"] = base["commit"]
+        return tampered
+
+    def drifted_capture(tampered):
+        # The capture regenerated with the field: the quoted line follows the
+        # edited capture, and the field still is not what that command printed.
+        base = tampered["base_commit"]
+        entry = next(entry for entry in base["capture"]["commands"]
+                     if entry["role"] == "this worktree's HEAD")
+        entry["output"] = base["commit"]
+        base["base_capture_line"] = probe.base_capture_line(base["capture"])
+        return tampered
+
+    def drifted_prose(tampered):
+        tampered["base_commit"]["note"] += (
+            " reviewed at fbe21e1345caf04970320b35689548c1efefd216.")
+        return tampered
+
+    def drifted_state(tampered):
+        tampered["base_commit"]["state"] = probe.base_state_line({
+            **{field: tampered["base_commit"][field] for field in probe.BASE_COMMIT_FIELDS},
+            "worktree_head": "0" * 40,
+        })
+        return tampered
+
+    def drifted_ancestry(tampered):
+        tampered["base_commit"]["base_is_ancestor_of_remote_main"] = False
+        return tampered
+
+    drifted = (r"base_commit\.worktree_head is .* but the captured command for .this "
+               r"worktree's HEAD. printed")
+    rejected(drifted_field, drifted)
+    rejected(drifted_capture, drifted)
+    rejected(drifted_prose,
+             r"names the commit fbe21e13\w*, which the captured run does not record")
+    rejected(drifted_state, r"state is not the line these fields reconstruct")
+    rejected(drifted_ancestry,
+             r"base_commit\.base_is_ancestor_of_remote_main is False but the captured run "
+             r"recorded True")
+
+
+def _drive_remote_main_probe(probe, tmp_path, monkeypatch, *, remote_tip, remote_tree,
+                             base_tree, worktree_head, base_on_remote, base_on_head=True):
+    """Run ``check_remote_main`` with the Git plumbing stubbed for one state.
+
+    ``base_on_remote`` says whether the observed remote main tip contains the
+    recorded base, which is the ancestry the probe has to assert and the value a
+    pre-change probe instead compared with a fixed tip.
+    """
+    clone = tmp_path / "remote-main"
+    base = probe.BASE_COMMIT
+
+    def fake_git(cwd, *arguments):
+        command = " ".join(arguments)
+        where = Path(cwd)
+        if command.startswith("ls-remote"):
+            return 0, f"{remote_tip}\t{probe.REMOTE_MAIN_REF}"
+        if command.startswith("clone "):
+            return 0, ""
+        if where == clone:
+            if command == "rev-parse HEAD":
+                return 0, remote_tip
+            if command == "rev-parse HEAD^{tree}":
+                return 0, remote_tree
+            if command.startswith("merge-base --is-ancestor"):
+                return (0 if base_on_remote else 1), ""
+        elif command == f"rev-parse {base}":
+            return 0, base
+        elif command == f"rev-parse {base}^{{tree}}":
+            return 0, base_tree
+        elif command == "rev-parse HEAD":
+            return 0, worktree_head
+        elif command.startswith("merge-base --is-ancestor"):
+            return (0 if base_on_head else 1), ""
+        raise AssertionError(f"unexpected git command: {command} (in {where})")
+
+    monkeypatch.setattr(probe, "REMOTE_MAIN_CLONE", clone)
+    monkeypatch.setattr(probe, "_git", fake_git)
+
+
+def test_remote_main_check_holds_when_main_has_moved_on(tmp_path, monkeypatch, capsys):
+    """The base check is durable: main may have moved past the recorded base.
+
+    The reviewer's finding: the probe required the observed remote main tip to
+    equal a fixed commit, so the evidence file necessarily failed once any later
+    commit reached main — this experiment's own merge included. It must instead
+    assert that the observed tip contains the recorded base and report both tips
+    beside each other, and still fail when the base is not on main at all.
+    """
+    probe = _load_evidence_probe("exp003_remote_main_probe")
+    ahead = "b" * 40
+    _drive_remote_main_probe(
+        probe, tmp_path, monkeypatch, remote_tip=ahead, remote_tree="c" * 40,
+        base_tree="d" * 40, worktree_head="e" * 40, base_on_remote=True)
+    probe.check_remote_main()
+    printed = capsys.readouterr().out
+    assert f"remote main has since moved to {ahead}, which contains it" in printed
+    assert f"this worktree's HEAD is {'e' * 40}, which descends from it" in printed
+    capture = json.loads(
+        next(line for line in printed.splitlines() if "base_capture=" in line)
+        .split("base_capture=", 1)[1])
+    assert capture["remote_main_tip"] == ahead
+    assert capture["commit"] == probe.BASE_COMMIT
+    assert capture["base_is_ancestor_of_remote_main"] is True
+
+    # The tip still equals the base: then its tree must be the base's tree.
+    _drive_remote_main_probe(
+        probe, tmp_path, monkeypatch, remote_tip=probe.BASE_COMMIT,
+        remote_tree="c" * 40, base_tree="d" * 40, worktree_head="e" * 40,
+        base_on_remote=True)
+    with pytest.raises(AssertionError, match=r"tree"):
+        probe.check_remote_main()
+
+    # One commit with the base's tree is the state the branch was cut from.
+    _drive_remote_main_probe(
+        probe, tmp_path, monkeypatch, remote_tip=probe.BASE_COMMIT,
+        remote_tree="d" * 40, base_tree="d" * 40, worktree_head="e" * 40,
+        base_on_remote=True)
+    probe.check_remote_main()
+    assert "the observed remote main tip is that base" in capsys.readouterr().out
+
+    # A remote main that does not contain the recorded base is still reported.
+    _drive_remote_main_probe(
+        probe, tmp_path, monkeypatch, remote_tip=ahead, remote_tree="c" * 40,
+        base_tree="d" * 40, worktree_head="e" * 40, base_on_remote=False)
+    with pytest.raises(AssertionError, match=r"does not contain the recorded base"):
+        probe.check_remote_main()
+
+    # And a worktree HEAD that does not descend from the base is reported.
+    _drive_remote_main_probe(
+        probe, tmp_path, monkeypatch, remote_tip=ahead, remote_tree="c" * 40,
+        base_tree="d" * 40, worktree_head="e" * 40, base_on_remote=True,
+        base_on_head=False)
+    with pytest.raises(AssertionError, match=r"does not descend from the base"):
+        probe.check_remote_main()
+
+
+def test_publication_record_counts_come_from_the_captured_run(tmp_path):
+    """The publication record's counts are lengths of its captured run's lists.
+
+    The reviewer's finding: every count was checked against another value the
+    same helpers derived, so mutating ``compared_paths_count`` and regenerating
+    the state and counts lines with the shipped helpers still verified. The record
+    now stores the run's captured state — one outcome per compared path and the
+    uncommitted paths — and each count is that capture's own list length, so a
+    regenerated count without a matching captured list is reported.
+    """
+    probe = _load_publication_probe()
+    path, record = _retained_record_copy(tmp_path)
+    probe.check_publication_record(path)
+
+    def rejected(tamper, message):
+        _rejected_tamper(path, record, probe.check_publication_record, tamper, message)
+
+    def regenerated_count(tampered):
+        publication = tampered["publication"]
+        publication["compared_paths_count"] -= 1
+        listed = publication["repaired_paths_differing_from_this_worktree"]
+        publication["state"] = probe.state_line(
+            publication["published_commit"], publication["compared_paths_count"], listed)
+        publication["counts_line"] = probe.counts_line(
+            publication["compared_paths_count"], publication["observed_differing_paths"],
+            publication["observed_uncommitted_paths"])
+        return tampered
+
+    def regenerated_differing_list(tampered):
+        publication = tampered["publication"]
+        publication["repaired_paths_differing_from_this_worktree"] = []
+        publication["observed_differing_paths"] = 0
+        publication["observed_uncommitted_paths"] = 0
+        publication["state"] = probe.state_line(publication["published_commit"],
+                                               publication["compared_paths_count"], [])
+        publication["counts_line"] = probe.counts_line(
+            publication["compared_paths_count"], 0, 0)
+        return tampered
+
+    def drifted_capture(tampered):
+        capture = tampered["publication"]["capture"]
+        capture["uncommitted_paths"] = capture["uncommitted_paths"][1:]
+        tampered["publication"]["publication_capture_line"] = \
+            probe.publication_capture_line(capture)
+        return tampered
+
+    rejected(regenerated_count,
+             r"compared_paths_count is \d+ but the captured run compared \d+ paths")
+    rejected(regenerated_differing_list,
+             r"repaired_paths_differing_from_this_worktree is \[\] but the captured run "
+             r"records these paths differing")
+    rejected(drifted_capture,
+             r"observed_uncommitted_paths is \d+ but the captured run records \d+ "
+             r"uncommitted paths")
+
+
+def test_predeclaration_covers_every_module_of_the_objective_identity(tmp_path, monkeypatch):
+    """The captured objective covers the helpers its decisions run through.
+
+    The reviewer's counterexample: the capture recorded only the declaring
+    module's digest while the recorded objective identity covers ``tetris.py``
+    plus the modules its code calls, so a change to a helper after the capture
+    still passed ``check-predeclaration`` even though it moves every value the
+    objective computes. This captures the objective with the probe's own
+    ``predeclare`` and then changes each covered module in turn — through a
+    mutated copy of its file, so nothing in this worktree is touched — and
+    requires the check to reject each one, with the declaring module's digest
+    still equal when a helper is the one that changed.
+    """
+    probe = _load_evidence_probe("exp003_predeclaration_probe")
+    capture = tmp_path / "predeclared_objective.json"
+    monkeypatch.setattr(probe, "PREDECLARATION", capture)
+    probe.predeclare()
+    captured = json.loads(capture.read_text(encoding="utf-8"))
+    record_path = tmp_path / "run.json"
+    record_path.write_text(
+        json.dumps({"created_at": "2099-01-01T00:00:00+00:00"}), encoding="utf-8")
+    probe.check_predeclaration(record_path)
+
+    # The capture covers the identity's whole set, not one module.
+    assert set(captured["sources"]) == set(runner._objective_sources())
+    assert len(captured["sources"]) > 1
+    for name in sorted(captured["sources"]):
+        module = sys.modules[name]
+        mutated = tmp_path / f"{name}.py"
+        mutated.write_bytes(Path(module.__file__).read_bytes() + b"\n# a helper changed\n")
+        with monkeypatch.context() as patch:
+            patch.setattr(module, "__file__", str(mutated))
+            with pytest.raises(AssertionError, match="changed after the predeclaration"):
+                probe.check_predeclaration(record_path)
+            # A helper's change moves every value the objective computes while the
+            # module that declares it is untouched: the digest-only capture this
+            # replaces reported nothing here.
+            if name != "block_stack_ai.tetris":
+                assert probe._module_digest() == captured["module_sha256"]
+
+    # A capture of the pre-change shape — the declaring module's digest alone —
+    # is refused by the capture path and cannot support the check either.
+    capture.write_text(json.dumps({key: value for key, value in captured.items()
+                                   if key != "sources"}), encoding="utf-8")
+    with pytest.raises(AssertionError, match="covers only the declaring module"):
+        probe.predeclare()
+    with pytest.raises(AssertionError, match="records only the declaring module"):
+        probe.check_predeclaration(record_path)

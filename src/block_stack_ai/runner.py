@@ -39,7 +39,11 @@ field existed carry the legacy ``pieces`` key instead, which held
 records keep verifying under their original semantics. A record that carries
 neither key is older still and keeps verifying at a legacy version; a version 3,
 4 or 5 record must carry ``pieces_placed``, because that is the key its writer
-emits and its absence there is a deleted section rather than an older record.
+emits and its absence there is a deleted section rather than an older record. The
+per-agent summary reports the key the record as a whole carries, read from every
+episode: one writer emits one shape for a whole record, so a record whose first
+episode lost the key while the later ones kept it is reported instead of being
+summarised without the metric its own episodes carry.
 
 The clear-size histogram is ``clear_sizes``: per episode, how many locks cleared
 one, two, three and four rows, tallied from the engine's own per-step
@@ -131,6 +135,14 @@ _EVENT_FIELDS = (
 # lock, which the binding reports in the step's ``lines_cleared`` event.
 _CLEAR_SIZE_FIELDS = ("singles", "doubles", "triples", "tetrises")
 _CLEAR_SIZES_FIELD = "clear_sizes"
+# The piece count in the two forms a record can carry: the placed-piece count
+# every current writer emits, and the legacy ``pieces`` key, which held the
+# engine's RNG/preview selection counter. Which one a record carries is a
+# property of its writer, so it is read from the record rather than guessed from
+# one episode.
+_PIECES_PLACED_FIELD = "pieces_placed"
+_LEGACY_PIECES_FIELD = "pieces"
+_PIECE_FIELDS = (_PIECES_PLACED_FIELD, _LEGACY_PIECES_FIELD)
 # The declared objective of the one agent that does not score through the frozen
 # heuristic mapping. The section names the module that declares it, so the
 # mapping cannot be read as the heuristic's own.
@@ -450,22 +462,54 @@ def _metric(values: list[int]) -> dict[str, float | int]:
     }
 
 
+def _piece_metric_field(episodes: list[dict[str, Any]]) -> str | None:
+    """Which piece count a record's episodes carry, read from all of them.
+
+    A writer emits one piece-count key for a whole record, so the metric the
+    summary reports is a property of the record and not of one episode. Reading
+    it from the first episode of each group accepted a mixed record — the first
+    episode of every group stripped while the later ones kept the count — and
+    reported a summary with no piece metric at all, hiding counts the record
+    itself carries. The key must therefore be one every episode in the record
+    carries: the current ``pieces_placed``, the legacy ``pieces``, or neither in
+    a record older than both.
+    """
+    if not episodes:
+        # No episode carries anything, so there is no metric to report. No writer
+        # emits an empty suite (a config needs an agent and a seed), so this is
+        # the empty case rather than a record shape.
+        return None
+    for field in _PIECE_FIELDS:
+        if all(field in episode for episode in episodes):
+            return field
+    carried = sum(1 for episode in episodes
+                  for field in _PIECE_FIELDS if field in episode)
+    if carried:
+        raise VerificationError(
+            "The piece count must be recorded on every episode of a record or on none: "
+            f"{sum(1 for episode in episodes if _PIECES_PLACED_FIELD in episode)} of "
+            f"{len(episodes)} episodes carry {_PIECES_PLACED_FIELD}, "
+            f"{sum(1 for episode in episodes if _LEGACY_PIECES_FIELD in episode)} carry "
+            f"{_LEGACY_PIECES_FIELD}, and no key covers every episode"
+        )
+    return None
+
+
 def _summarize(episodes: list[dict[str, Any]]) -> dict[str, Any]:
     grouped: dict[str, list[dict[str, Any]]] = {}
     for episode in episodes:
         grouped.setdefault(episode["agent"], []).append(episode)
+    # ``pieces_placed`` is the current key and ``pieces`` the legacy one; a record
+    # that carries neither predates both, so its summary reports no piece metric
+    # instead of raising, and a record whose episodes disagree on the key is not a
+    # shape any writer emits and is reported rather than summarised.
+    pieces_field = _piece_metric_field(episodes)
     summary = {}
     for name, group in grouped.items():
         reasons: dict[str, int] = {}
         for episode in group:
             reason = episode["result"]["stopping_reason"]
             reasons[reason] = reasons.get(reason, 0) + 1
-        # New episodes carry ``pieces_placed``; older ones the legacy ``pieces``. A
-        # group that carries neither predates both, so the summary reports no piece
-        # metric instead of raising: the verifier accepts that legacy shape and
-        # compares the summary it re-derives from those episodes.
-        pieces = "pieces_placed" if "pieces_placed" in group[0] else (
-            "pieces" if "pieces" in group[0] else None)
         entry: dict[str, Any] = {
             "games": len(group),
             "stopping_reasons": reasons,
@@ -480,8 +524,8 @@ def _summarize(episodes: list[dict[str, Any]]) -> dict[str, Any]:
                 for field in _CLEAR_SIZE_FIELDS
             },
         }
-        if pieces is not None:
-            entry[pieces] = _metric([episode[pieces] for episode in group])
+        if pieces_field is not None:
+            entry[pieces_field] = _metric([episode[pieces_field] for episode in group])
         summary[name] = entry
     return summary
 
@@ -491,16 +535,20 @@ def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
     """Compare a recorded per-agent summary with the replayed one.
 
     Every pre-existing section — the game count, the stopping reasons, the four
-    metrics and the piece count — is compared exactly as ``_compare_fields``
-    compared the whole summary before, with the same type and key rules. The
-    clear-size totals are newer. A version 3, 4 or 5 record must carry them on
-    every agent summary, because its writer always does; a legacy record may carry
-    them nowhere and still verifies, and one that carries them must carry them
-    everywhere. Presence is all-or-nothing across the complete suite — every episode
-    and every agent summary in one record — because the totals are summed from the
-    episodes: a record that stripped the histogram from one agent's episodes while
-    another agent kept them would verify under a per-agent rule yet report only
-    part of the lines it cleared.
+    metrics and the legacy ``pieces`` count — is compared exactly as
+    ``_compare_fields`` compared the whole summary before, with the same type and
+    key rules. Two per-agent sections are newer and have their own presence rule:
+    the clear-size totals and the placed-piece count. A version 3, 4 or 5 record
+    must carry both on every agent summary, because its writer always does; a
+    legacy record may carry either nowhere and still verifies, and one that
+    carries it must carry it everywhere. Presence is all-or-nothing across the
+    complete suite — every episode and every agent summary in one record — because
+    one writer emits one shape for the whole record: a record that stripped a
+    section from one agent's episodes while another agent kept it would verify
+    under a per-agent rule while reporting only part of the suite. The rule is
+    read from the record's own version and its episodes, never from a single
+    episode, so a record whose first episode lacks a section the later ones carry
+    is reported instead of being summarised without it.
     """
     if type(recorded) is not dict:
         raise VerificationError(f"Recorded {where} must be dict, not {recorded!r}")
@@ -508,47 +556,57 @@ def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
         raise VerificationError(
             f"Recorded {where} keys {sorted(recorded)} do not match {sorted(replayed)}"
         )
-    histogram_episodes = sum(1 for episode in episodes if _CLEAR_SIZES_FIELD in episode)
-    histogram_agents = 0
-    for name, agent in recorded.items():
-        if type(agent) is not dict:
-            raise VerificationError(f"Recorded {where}.{name} must be dict, not {agent!r}")
-        histogram_agents += int(_CLEAR_SIZES_FIELD in agent)
-    complete = (histogram_episodes, histogram_agents) == (len(episodes), len(recorded))
+    sections = (
+        (_CLEAR_SIZES_FIELD, "clear-size histogram"),
+        (_PIECES_PLACED_FIELD, "placed-piece count"),
+    )
+    presence = {}
+    for field, _ in sections:
+        in_episodes = sum(1 for episode in episodes if field in episode)
+        in_agents = 0
+        for name, agent in recorded.items():
+            if type(agent) is not dict:
+                raise VerificationError(f"Recorded {where}.{name} must be dict, not {agent!r}")
+            in_agents += int(field in agent)
+        presence[field] = (in_episodes, in_agents)
     differences = []
-    if required and not complete:
-        differences.append(
-            f"{where}.{_CLEAR_SIZES_FIELD}: absent from "
-            f"{len(episodes) - histogram_episodes} of {len(episodes)} episodes and "
-            f"{len(recorded) - histogram_agents} of {len(recorded)} agent summaries, but a "
-            "record of this format version carries it on every one"
-        )
-    elif not required and (
-        histogram_episodes not in (0, len(episodes))
-        or histogram_agents not in (0, len(recorded))
-        or bool(histogram_episodes) != bool(histogram_agents)
-    ):
-        differences.append(
-            f"{where}.{_CLEAR_SIZES_FIELD}: the clear-size histogram must be recorded on "
-            f"every episode and every agent summary, or on none: {histogram_episodes} of "
-            f"{len(episodes)} episodes and {histogram_agents} of {len(recorded)} agent "
-            "summaries carry it"
-        )
+    for field, noun in sections:
+        in_episodes, in_agents = presence[field]
+        complete = (in_episodes, in_agents) == (len(episodes), len(recorded))
+        if required and not complete:
+            differences.append(
+                f"{where}.{field}: absent from "
+                f"{len(episodes) - in_episodes} of {len(episodes)} episodes and "
+                f"{len(recorded) - in_agents} of {len(recorded)} agent summaries, but a "
+                "record of this format version carries it on every one"
+            )
+        elif not required and (
+            in_episodes not in (0, len(episodes))
+            or in_agents not in (0, len(recorded))
+            or bool(in_episodes) != bool(in_agents)
+        ):
+            differences.append(
+                f"{where}.{field}: the {noun} must be recorded on every episode and every "
+                f"agent summary, or on none: {in_episodes} of {len(episodes)} episodes and "
+                f"{in_agents} of {len(recorded)} agent summaries carry it"
+            )
+    own_rule = {field for field, _ in sections}
     for name, replayed_agent in replayed.items():
         recorded_agent = recorded[name]
         recorded_base = {key: value for key, value in recorded_agent.items()
-                         if key != _CLEAR_SIZES_FIELD}
+                         if key not in own_rule}
         replayed_base = {key: value for key, value in replayed_agent.items()
-                         if key != _CLEAR_SIZES_FIELD}
+                         if key not in own_rule}
         differences.extend(_compare_fields(recorded_base, replayed_base, f"{where}.{name}"))
-        # The suite-wide rule above has already rejected a record where only some
-        # agents or episodes carry the totals; an agent that carries them is
-        # compared key-for-key.
-        if _CLEAR_SIZES_FIELD in recorded_agent:
-            differences.extend(_compare_fields(
-                recorded_agent[_CLEAR_SIZES_FIELD], replayed_agent[_CLEAR_SIZES_FIELD],
-                f"{where}.{name}.{_CLEAR_SIZES_FIELD}",
-            ))
+        # The suite-wide rules above have already rejected a record where only some
+        # agents or episodes carry a section; an agent that carries one is compared
+        # key-for-key.
+        for field in own_rule:
+            if field in recorded_agent:
+                differences.extend(_compare_fields(
+                    recorded_agent[field], replayed_agent[field],
+                    f"{where}.{name}.{field}",
+                ))
     return differences
 
 
@@ -789,9 +847,12 @@ def _verify_scripted(record: dict[str, Any], path: Path, sections_required: bool
     # present key is replayed against its own value, so older records keep
     # verifying, and a record of this version must carry the count its writer
     # emits.
-    for field, replayed in (("pieces_placed", actual_pieces_placed), ("pieces", actual_piece_count)):
-        difference = _compare_piece_count(record, field, replayed, "",
-                                          required=sections_required and field == "pieces_placed")
+    for field, replayed in ((_PIECES_PLACED_FIELD, actual_pieces_placed),
+                            (_LEGACY_PIECES_FIELD, actual_piece_count)):
+        difference = _compare_piece_count(
+            record, field, replayed, "",
+            required=sections_required and field == _PIECES_PLACED_FIELD,
+        )
         if difference:
             differences.append(difference)
     differences.extend(_compare_section(
@@ -885,10 +946,11 @@ def _verify_suite(record: dict[str, Any], path: Path, sections_required: bool,
         differences.extend(
             _compare_fields(episode.get("result"), actual["result"], f"episode {index} result")
         )
-        for field, actual_value in (("pieces_placed", actual["pieces_placed"]), ("pieces", actual["piece_count"])):
+        for field, actual_value in ((_PIECES_PLACED_FIELD, actual[_PIECES_PLACED_FIELD]),
+                                    (_LEGACY_PIECES_FIELD, actual["piece_count"])):
             difference = _compare_piece_count(
                 episode, field, actual_value, f" in episode {index}",
-                required=sections_required and field == "pieces_placed",
+                required=sections_required and field == _PIECES_PLACED_FIELD,
             )
             if difference:
                 differences.append(difference)

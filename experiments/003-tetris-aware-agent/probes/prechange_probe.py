@@ -45,6 +45,15 @@ compares the repaired paths' content or only their presence. Pass a probe file a
 the second argument when the tree under test carries only ``src``:
 
     PYTHONPATH=$after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_content $PWD/experiments/003-tetris-aware-agent/probes/evidence.py
+
+The later rounds added four more ids of that shape — ``predeclaration_identity``,
+``remote_main_durability``, ``publication_count_capture`` and
+``base_commit_record`` — plus ``piece_summary_schema``, whose subject is the
+runner. Each names the artifact it needs; a tree that carries no such artifact
+predates the experiment and reports ``no subject on this tree`` instead of
+aborting with an ``ImportError``, and is never counted as a failure-before. A row
+whose contract is genuinely new capability is a **pin** (exit 0) and says so,
+with its substitute evidence named.
 """
 
 from __future__ import annotations
@@ -1010,6 +1019,332 @@ def r17_objective_identity():
     print(f"# the unchanged objective verifies again: warnings {runner.verify_run(path, factory)}")
 
 
+class SubjectAbsent(Exception):
+    """The tree under test carries no artifact a row's subject names.
+
+    Raised instead of letting a missing file abort as an ``ImportError``: the row
+    reports what it could not find, and it is never counted as a failure-before.
+    """
+
+
+def _target_probe():
+    """The probe file under test: this tree's, or the path given as a second argument.
+
+    A tree older than the experiment carries no such file at all (Experiment 003
+    did not exist at the recorded base commit), which is reported rather than
+    raised as an import error.
+    """
+    target = PUBLICATION_PROBE_OVERRIDE or DEFAULT_PUBLICATION_PROBE
+    if not target.exists():
+        raise SubjectAbsent(
+            f"{target} does not exist: the tree under test predates Experiment 003, so this "
+            "row has no subject there"
+        )
+    print(f"# target probe file: {target}")
+    spec = importlib.util.spec_from_file_location("exp003_target_probe", target)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return Path(target), module
+
+
+def _target_record(target: Path) -> tuple[Path, dict]:
+    """The retained record that belongs to the tree the target probe file came from."""
+    path = (target.resolve().parents[3] / "experiments" / "003-tetris-aware-agent"
+            / "result.json")
+    return path, json.loads(path.read_text(encoding="utf-8"))
+
+
+# One episode per agent and seed, so a group's first episode can be stripped
+# without emptying the group: the mixed shape this round's finding names.
+PIECES_SUITE = {**HISTOGRAM_SUITE, "seeds": [1, 2]}
+
+
+def r18_piece_summary_schema():
+    """The summary's piece count is read from the record's schema, not one episode.
+
+    The reviewer's counterexample, reproduced against the tree's own writer: the
+    first episode of every agent loses its piece count, the summaries lose the
+    metric, the later episodes keep their counts, and the record is declared at
+    the legacy version, whose writer may omit the count. A verifier that selects
+    the summary's metric from the first episode of each group re-derives a summary
+    with no piece metric, matches the stripped record and reports nothing — a
+    mixed schema no writer emits. This tree reads the key from every episode and
+    reports it. A tree whose writer records no piece count at all is reported
+    instead of being counted as a failure.
+    """
+    path, factory = _suite_record(PIECES_SUITE)
+    record = json.loads(path.read_text(encoding="utf-8"))
+    fields = [field for field in ("pieces_placed", "pieces")
+              if all(field in episode for episode in record["episodes"])]
+    if not fields:
+        raise AssertionError(
+            "the tree's writer records no piece count on every episode, so this record "
+            "cannot be stripped into the mixed shape the finding names"
+        )
+    field = fields[0]
+    stripped = json.loads(json.dumps(record))
+    first_of_agent = {}
+    for episode in stripped["episodes"]:
+        first_of_agent.setdefault(episode["agent"], episode)
+    for episode in stripped["episodes"]:
+        if first_of_agent[episode["agent"]] is episode:
+            del episode[field]
+    for summary in stripped["summary"].values():
+        summary.pop(field, None)
+    stripped["format_version"] = getattr(
+        runner, "LEGACY_SUITE_FORMAT_VERSION", stripped["format_version"])
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    print(f"# the writer's piece key: {field}; the record is declared at "
+          f"format_version {stripped['format_version']}")
+    print(f"# episodes carrying {field}: "
+          f"{sum(1 for episode in stripped['episodes'] if field in episode)} of "
+          f"{len(stripped['episodes'])}")
+    try:
+        warnings = runner.verify_run(path, factory)
+    except runner.VerificationError as error:
+        print(f"# the mixed record is reported: {error}")
+        return
+    except KeyError as error:
+        raise AssertionError(
+            f"the tree cannot summarise the record at all: verify_run raised KeyError({error}) "
+            "because the summary's piece key is selected from the group's first episode, which "
+            "no longer carries it, while the later episodes carry a different one"
+        ) from error
+    raise AssertionError(
+        f"the tree accepted a record whose first episode of each agent carries no {field} "
+        f"while the later episodes keep it, and whose summaries report no piece metric at "
+        f"all: verify_run returned {warnings}"
+    )
+
+
+def r19_predeclaration_identity():
+    """The captured objective covers every module its decisions are computed from.
+
+    The reviewer's counterexample: the capture records only the declaring module's
+    digest while the recorded objective identity covers that module plus the
+    helpers its code calls, so a post-capture change to a helper still passes
+    ``check-predeclaration`` although it moves every value the objective computes.
+    This captures the objective with the target probe's own ``predeclare``, then
+    changes a **helper** module — through a mutated copy of its file, so nothing
+    under test is touched — and requires the check to report it. A tree whose
+    check hashes only the declaring module accepts the changed tree.
+    """
+    target, module = _target_probe()
+    if not hasattr(module, "check_predeclaration"):
+        raise SubjectAbsent(
+            f"{target} has no check_predeclaration: this row's subject is the declared "
+            "objective's capture, and that tree does not capture one"
+        )
+    with tempfile.TemporaryDirectory(prefix="exp003-predeclaration-") as directory:
+        scratch = Path(directory)
+        capture = scratch / "predeclared_objective.probe.json"
+        module.PREDECLARATION = capture
+        module.predeclare()
+        # The cited record has to postdate the capture; a helper's change is what
+        # this row measures, not the ordering, so a fresh record stands in for it.
+        cited = scratch / "probe-record.json"
+        cited.write_text(json.dumps({"created_at": "2099-01-01T00:00:00+00:00"}),
+                         encoding="utf-8")
+        module.check_predeclaration(cited)
+        print("# the unchanged tree passes the check")
+        captured_module_digest = json.loads(capture.read_text())["module_sha256"]
+        identity = getattr(runner, "_objective_sources", None)
+        names = sorted(identity()) if identity is not None else ["block_stack_ai.heuristic"]
+        helper = next((name for name in names
+                       if name != "block_stack_ai.tetris"
+                       and getattr(sys.modules.get(name), "__file__", None)), None)
+        if helper is None:
+            raise AssertionError(
+                "no module other than the declaring one is available to change, so this row "
+                "cannot measure a missed helper change"
+            )
+        print(f"# the objective identity covers: {names}" if identity is not None else
+              "# the tree publishes no objective identity, so the helper below is the "
+              "geometry and board model every placement term runs through")
+        mutated = scratch / f"{helper.rsplit('.', 1)[-1]}.py"
+        mutated.write_bytes(Path(sys.modules[helper].__file__).read_bytes() + b"\n# changed\n")
+        sys.modules[helper].__file__ = str(mutated)
+        print(f"# changed helper: {helper} ({mutated})")
+        print(f"# the declaring module is untouched: "
+              f"{module._module_digest() == captured_module_digest}")
+        try:
+            module.check_predeclaration(cited)
+        except AssertionError as error:
+            print(f"# the helper's change is reported: {error}")
+            return
+        raise AssertionError(
+            f"the tree accepted a change to {helper} after the capture: the capture covers "
+            "only the declaring module, so a helper's change moves every value the objective "
+            "computes while check-predeclaration reports nothing"
+        )
+
+
+def r20_remote_main_durability():
+    """The base check survives main moving past the recorded base.
+
+    The reviewer's finding: the probe compared the observed remote main tip with a
+    fixed commit, so the evidence file necessarily failed once any later commit
+    reached main — this experiment's own merge included. This drives the target
+    probe's ``check_remote_main`` with the Git plumbing stubbed to an observed main
+    that is ahead of the base but contains it, which the fixed-tip comparison
+    rejects and the ancestry check accepts. A remote main that does not contain
+    the base must still be reported.
+    """
+    target, module = _target_probe()
+    if not hasattr(module, "check_remote_main"):
+        raise SubjectAbsent(
+            f"{target} has no check_remote_main: this row's subject is the base-refresh "
+            "probe, and that tree carries none"
+        )
+    scratch = Path(tempfile.mkdtemp(prefix="exp003-remote-main-"))
+    clone = scratch / "remote-main"
+    base = module.BASE_COMMIT
+    ahead, tree, head = "b" * 40, "c" * 40, "e" * 40
+    print(f"# recorded base: {base}; observed remote main tip: {ahead} (ahead of it)")
+
+    def drive(base_on_remote):
+        def fake_git(cwd, *arguments):
+            command = " ".join(arguments)
+            where = Path(cwd)
+            if command.startswith("ls-remote"):
+                return 0, f"{ahead}\t{module.REMOTE_MAIN_REF}"
+            if command.startswith("clone "):
+                return 0, ""
+            if where == clone:
+                if command == "rev-parse HEAD":
+                    return 0, ahead
+                if command == "rev-parse HEAD^{tree}":
+                    return 0, tree
+                if command.startswith("merge-base --is-ancestor"):
+                    return (0 if base_on_remote else 1), ""
+            elif command == f"rev-parse {base}":
+                return 0, base
+            elif command == f"rev-parse {base}^{{tree}}":
+                return 0, tree
+            elif command == "rev-parse HEAD":
+                return 0, head
+            elif command.startswith("merge-base --is-ancestor"):
+                return 0, ""
+            raise AssertionError(f"unexpected git command: {command} (in {where})")
+
+        module.REMOTE_MAIN_CLONE = clone
+        module._git = fake_git
+
+    drive(True)
+    try:
+        module.check_remote_main()
+    except AssertionError as error:
+        raise AssertionError(
+            f"the tree rejected an observed remote main that contains the recorded base: "
+            f"{error}"
+        ) from error
+    print("# the remote main ahead of the base is accepted and both tips are reported")
+
+    drive(False)
+    try:
+        module.check_remote_main()
+    except AssertionError as error:
+        print(f"# a remote main that does not contain the base is reported: {error}")
+        return
+    raise AssertionError(
+        "the tree accepted an observed remote main that does not contain the recorded base"
+    )
+
+
+def r21_publication_count_capture():
+    """The publication record's counts are lengths of a captured run's own lists.
+
+    The reviewer's finding: every count was checked against another value the same
+    helpers derived, so mutating ``compared_paths_count`` and regenerating the
+    state and counts lines with the shipped helpers still verified. This takes the
+    tree's own retained record — which its own check accepts — changes that count
+    and regenerates the derived lines with the tree's own ``state_line`` and
+    ``counts_line``, and requires the record to be reported. A tree whose check has
+    no captured run to compare the count against accepts it.
+    """
+    target, module = _target_probe()
+    record_path, record = _target_record(target)
+    if not hasattr(module, "check_publication_record"):
+        raise SubjectAbsent(
+            f"{target} has no check_publication_record: this row's subject is the captured "
+            "run that check reads, and that tree records no publication snapshot"
+        )
+    module.check_publication_record(record_path)
+    print("# the retained record passes the check")
+    publication = record["publication"]
+    publication["compared_paths_count"] = publication["compared_paths_count"] - 1
+    listed = publication["repaired_paths_differing_from_this_worktree"]
+    publication["state"] = module.state_line(
+        publication["published_commit"], publication["compared_paths_count"], listed)
+    publication["counts_line"] = module.counts_line(
+        publication["compared_paths_count"], publication["observed_differing_paths"],
+        publication["observed_uncommitted_paths"])
+    tampered = Path(tempfile.mkdtemp(prefix="exp003-publication-")) / "result.json"
+    tampered.write_text(json.dumps(record), encoding="utf-8")
+    print(f"# compared_paths_count changed to {publication['compared_paths_count']} and the "
+          f"state and counts lines regenerated with the tree's own helpers")
+    try:
+        module.check_publication_record(tampered)
+    except AssertionError as error:
+        print(f"# the regenerated counts are reported: {error}")
+        return
+    raise AssertionError(
+        "the tree accepted a publication record whose count was regenerated without a "
+        "matching captured run, so the count is checked against another derived value"
+    )
+
+
+def r22_base_commit_record():
+    """The retained base-refresh snapshot is one run's captured commands and values.
+
+    This check is **new capability**, so a pre-change tree has no counterpart
+    method to fail: the row is a pin, not a failure-before. What the pre-change
+    tree can show is the artifact the check is about — its retained
+    ``base_commit`` object's own disagreement between the captured command output
+    and the field beside it — which this row prints. When the tree does have the
+    check, this row drives it instead: the retained record must pass, and a copy
+    whose field disagrees with the captured output must be reported.
+    """
+    target, module = _target_probe()
+    record_path, record = _target_record(target)
+    base = record["base_commit"]
+    if not hasattr(module, "check_base_commit_record"):
+        commands = base.get("remote_main_refresh", {}).get("commands", [])
+        captured = [entry.get("stdout", entry.get("output", "")) for entry in commands]
+        head_outputs = [entry.get("stdout", entry.get("output", ""))
+                        for entry in commands if "rev-parse HEAD" in entry.get("command", "")]
+        print("# the tree has no base-commit check: the contract is new capability, so this "
+              "row is a pin rather than a failure-before")
+        print(f"# its retained base_commit.worktree_head is {base.get('worktree_head')!r}")
+        print(f"# its captured `rev-parse HEAD` outputs are {head_outputs}")
+        if base.get("worktree_head") not in head_outputs:
+            print("# the retained object names one commit in its field and another in its "
+                  "captured output: no single run produced it, which is the artifact this "
+                  "row's check is about")
+        else:
+            print("# the retained object's field is the commit its captured output names, so "
+                  "this tree has no mixed snapshot to show")
+        print("# the substitute evidence for this row is executed in this worktree: "
+              "evidence.py base-commit-record rejects the pre-change record and a copy whose "
+              "field disagrees with its captured output (see notes.md)")
+        return
+    module.check_base_commit_record(record_path)
+    print("# the retained snapshot passes the check")
+    tampered = json.loads(json.dumps(record))
+    tampered["base_commit"]["worktree_head"] = tampered["base_commit"]["commit"]
+    path = Path(tempfile.mkdtemp(prefix="exp003-base-")) / "result.json"
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    try:
+        module.check_base_commit_record(path)
+    except AssertionError as error:
+        print(f"# a field that disagrees with its captured output is reported: {error}")
+        return
+    raise AssertionError(
+        "the tree accepted a base_commit object whose worktree_head field disagrees with the "
+        "captured command output it came from"
+    )
+
+
 PROBES = {
     "clear_sizes_field": r1_clear_sizes_field,
     "clear_sizes_summary": r2_clear_sizes_summary,
@@ -1028,15 +1363,28 @@ PROBES = {
     "publication_content": r15_publication_content,
     "objective_required_when_versioned": r16_objective_required_when_versioned,
     "objective_identity": r17_objective_identity,
+    "piece_summary_schema": r18_piece_summary_schema,
+    "predeclaration_identity": r19_predeclaration_identity,
+    "remote_main_durability": r20_remote_main_durability,
+    "publication_count_capture": r21_publication_count_capture,
+    "base_commit_record": r22_base_commit_record,
 }
+# The ids whose subject is a probe file rather than the tree's ``src``: they
+# accept the path of the probe file to drive, for a tree that carries only
+# ``src`` (the ``after`` run) or for a pre-change tree whose own probe file should
+# be driven (``publication_content``, ``remote_main_durability``).
+PROBE_FILE_IDS = (
+    "publication_content", "predeclaration_identity", "remote_main_durability",
+    "publication_count_capture", "base_commit_record",
+)
 
 
 def main() -> int:
     _guard()
     if (len(sys.argv) not in (2, 3) or sys.argv[1] not in PROBES
-            or (len(sys.argv) == 3 and sys.argv[1] != "publication_content")):
+            or (len(sys.argv) == 3 and sys.argv[1] not in PROBE_FILE_IDS)):
         print(f"usage: {sys.argv[0]} {{{','.join(PROBES)}}} [probe-file]  "
-              "(the probe file is only for publication_content)", file=sys.stderr)
+              f"(the probe file is only for {', '.join(PROBE_FILE_IDS)})", file=sys.stderr)
         return 2
     global PUBLICATION_PROBE_OVERRIDE
     if len(sys.argv) == 3:
@@ -1045,6 +1393,9 @@ def main() -> int:
     print(f"# probe: {name}")
     try:
         PROBES[name]()
+    except SubjectAbsent as error:
+        print(f"# no subject on this tree: {error}")
+        return 0
     except AssertionError as error:
         print(f"AssertionError: {error}")
         return 1
