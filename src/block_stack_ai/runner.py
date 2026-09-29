@@ -113,6 +113,7 @@ from .agents import (
 )
 from .engine import PROJECT_ROOT, create_game, engine_root, git_info
 from .heuristic import weights_record
+from .sourceidentity import loaded_source_digest
 
 
 LEGACY_FORMAT_VERSION = 1  # a scripted episode written before the new sections
@@ -688,7 +689,39 @@ def _choice_walk_seeds() -> list[ModuleType]:
     return [tetris, sys.modules[create_agent.__module__]]
 
 
-def _objective_sources(shape: str = _IDENTITY_CHOICE) -> dict[str, str]:
+def _module_source_digest(module: ModuleType, *, loaded: bool) -> str:
+    """One module's source digest, as the loaded code or as the tree now.
+
+    ``loaded=True`` is the writer's view: the digest the interpreter's own loader
+    fixed when it read the module's source (``sourceidentity``), so an edit that
+    lands afterwards cannot be recorded as the code that chose the inputs. It is
+    never a fresh read of the file, which is the defect this closes: ``__file__``
+    is only a path, so reading it later can describe source that never ran.
+
+    ``loaded=False`` is the verifier's view: the file on the tree now, which is
+    what a record is compared against. The two agree exactly while the tree still
+    holds the code that was loaded, which is the normal case; they differ exactly
+    when a covered file moved on, and that difference is what verification
+    reports.
+
+    A module the recorder never saw loaded has no loaded bytes to name, and this
+    raises rather than reading its file: a writer that substituted the file would
+    be making the very claim this view exists to stop making.
+    """
+    if loaded:
+        digest = loaded_source_digest(module.__name__)
+        if digest is None:
+            raise VerificationError(
+                f"No loaded source identity was recorded for {module.__name__}: it did not "
+                "load through the package's own recorder, so the bytes that ran are not "
+                "available and a record cannot honestly name them"
+            )
+        return digest
+    return hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest()
+
+
+def _objective_sources(shape: str = _IDENTITY_CHOICE, *,
+                       loaded: bool = False) -> dict[str, str]:
     """sha256 of the source of every package module the objective's choices run.
 
     The objective's decisions are computed from the module that declares it, the
@@ -709,11 +742,10 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE) -> dict[str, str]:
     therefore misses the wrapper: a record of that version is compared against
     that shape, because it is the identity its writer recorded.
 
-    This reads the files **now**, which is what a verifier wants: it compares a
-    record against the tree that is on disk. A writer must instead record
-    ``_LOADED_OBJECTIVE_SOURCES``, the same identity as it stood when these
-    modules were imported, because a run executes the loaded code rather than
-    whatever is on disk when the record is written.
+    ``loaded`` selects which of the two views above each digest is: the writer's
+    loaded identity, or the verifier's tree. One function serves both so the
+    closure cannot drift between the two — both enumerate the same modules — and
+    only the bytes each digest is taken over differ.
     """
     pending = [tetris] if shape == _IDENTITY_OUTWARD else _choice_walk_seeds()
     sources: dict[str, str] = {}
@@ -721,9 +753,17 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE) -> dict[str, str]:
         module = pending.pop()
         if module.__name__ in sources:
             continue
-        sources[module.__name__] = hashlib.sha256(
-            Path(module.__file__).read_bytes()).hexdigest()
-        for value in vars(module).values():
+        sources[module.__name__] = _module_source_digest(module, loaded=loaded)
+        for name, value in vars(module).items():
+            # The interpreter sets its own scaffolding on every module object under
+            # dunder names — ``__loader__``, ``__spec__``, ``__builtins__`` and the
+            # rest. Those are bookkeeping rather than names the module's own code
+            # binds, and an object's ``__module__`` would otherwise name the module
+            # that defines its class: the loader of a covered module is itself such
+            # an object, so following it would put the loader's own module into the
+            # identity of every module it loaded.
+            if name.startswith("__") and name.endswith("__"):
+                continue
             origin = getattr(value, "__module__", None)
             if isinstance(origin, str) and origin.startswith(_PACKAGE_PREFIX):
                 pending.append(sys.modules[origin])
@@ -735,8 +775,11 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE) -> dict[str, str]:
 # later read: an edit that lands after the import but before the record is written
 # was never loaded, so a later read would name source the run did not run (the
 # interactive menu imports the modules, waits for a selection, and only then
-# starts a game).
-_LOADED_OBJECTIVE_SOURCES = _objective_sources()
+# starts a game). The digest comes from the loader that read the source, not from
+# ``module.__file__`` read at this moment: a file edited between the module's own
+# import and this line is still executed as it was loaded, and only the loaded
+# bytes can describe it.
+_LOADED_OBJECTIVE_SOURCES = _objective_sources(loaded=True)
 
 
 def _objective_record(config: SuiteConfig, *, loaded: bool = False,

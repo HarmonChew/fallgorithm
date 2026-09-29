@@ -92,7 +92,14 @@ declares it, the weights it publishes and the source identity of every module
 its decisions run through, the agent wrapper that hands it the state included —
 which `verify` compares as it compares
 the heuristic mapping, so a record cannot verify under a different objective
-merely because the change preserved its replayed choices. A record's
+merely because the change preserved its replayed choices. That identity is the
+source the run loaded: the package's own loader reads each module's source once,
+digests it, and executes the code compiled from those same bytes — so neither a
+later read of `module.__file__` nor a valid-but-stale `__pycache__` entry beside
+an edited file can make a record name code that did not run. An edit that lands
+after a module is imported is therefore reported by `verify` rather than
+certified, because the file its identity names no longer holds the bytes that
+were loaded. A record's
 `format_version` says which sections its writer always recorded: versions 1 and 2
 are the older formats, whose sections may be absent; version 3 is the current
 scripted format, version 4 is the prior suite format, whose writer recorded the
@@ -233,7 +240,10 @@ that the histogram is present on every episode and every agent summary or on
 none), the Tetris objective's
 recorded section and its comparison on replay, the identity of every module that
 produces its choices (the agent wrapper that hands it the state, beside the
-objective and its helpers), its
+objective and its helpers) and the loaded code that identity names (a record
+written by a process that imported the objective's modules, had one of their
+files edited and only then imported the writer still carries the loaded bytes,
+and `verify` reports it once the file has moved on), its
 clear, well and board terms and the new agent's choices on constructed boards,
 without the native engine. The second
 requires the completed setup and tests native state reads, logical frame counts,

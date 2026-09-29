@@ -72,6 +72,9 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
+import shutil
+import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -1857,6 +1860,203 @@ def r29_summary_histogram_derivation():
               "contract already held there")
 
 
+# The counterexample program the 003 tree carries beside this file. It is a
+# program rather than a function because the defect is in an ordering: the
+# objective's modules are imported, one of their files is edited, and only then is
+# the writer imported. That ordering exists only in a fresh process, and the
+# process must load the tree under test's own package, so the row spawns it with
+# ``PYTHONPATH`` pointing at a copy of that package.
+COUNTEREXAMPLE_PROGRAM = Path(__file__).resolve().parent / "loaded_identity_program.py"
+
+
+def _run_counterexample(mode: str, root: Path) -> dict:
+    """Run the counterexample program against a fresh copy of this tree's package.
+
+    ``mode`` is ``clean`` (the control: nothing is edited) or ``edit`` (the
+    counterexample). Each mode gets its own copy of the package and its own
+    working directory, so the edit cannot reach the control's run and neither can
+    reach the tree under test.
+    """
+    package = Path(block_stack_ai.__file__).resolve().parent
+    source_root = root / f"{mode}-src"
+    shutil.copytree(package, source_root / package.name,
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    run_root = root / mode
+    run_root.mkdir(parents=True)
+    completed = subprocess.run(
+        [sys.executable, str(COUNTEREXAMPLE_PROGRAM), mode, str(run_root)],
+        cwd=run_root, capture_output=True, text=True,
+        env={**os.environ, "PYTHONPATH": str(source_root)},
+    )
+    if completed.returncode != 0:
+        raise AssertionError(
+            f"the counterexample program could not run against this tree "
+            f"(exit {completed.returncode}): {completed.stderr.strip()}"
+        )
+    return json.loads(completed.stdout)
+
+
+def r30_loaded_identity():
+    """A record's identity is the code the loader read, not the file read later.
+
+    The reviewer's finding: ``_objective_sources`` took each covered module's
+    digest by reading ``module.__file__``, and the writer bound its snapshot when
+    ``runner`` was imported. A path is not code — a process that imports the
+    objective's modules, has one of their files edited, and only then imports the
+    writer recorded the edited bytes while ``sys.modules`` still executed the
+    loaded ones, and verification read the same edited file, so the record was
+    certified under an implementation that did not choose its inputs. This runs
+    the counterexample program against a copy of the tree under test's package:
+    the file is edited between the modules' import and the writer's, and the
+    contract is that the writer records the loaded bytes, the verifier's view
+    follows the file, and the mismatch is *reported* rather than certified. The
+    ``clean`` run is the control: with the file untouched all five values agree
+    and the record verifies, so the report in the ``edit`` run is the edit.
+    """
+    if "tetris" not in AGENT_NAMES or not hasattr(runner, "_LOADED_OBJECTIVE_SOURCES"):
+        raise SubjectAbsent(
+            "this tree has no Tetris agent, so it records no objective identity whose "
+            "loaded-vs-tree value could be measured"
+        )
+    with tempfile.TemporaryDirectory(prefix="exp003-loaded-identity-") as directory:
+        root = Path(directory)
+        clean = _run_counterexample("clean", root)
+        print(f"# clean run, no edit: loaded {clean['loaded'][:16]}, tree {clean['tree'][:16]}, "
+              f"record {clean['record'][:16]}, verified {clean['outcome']['verified']}")
+        assert clean["outcome"]["verified"] is True, (
+            "a record written from an unchanged tree must verify: this tree reports "
+            f"{clean['outcome'].get('error')}"
+        )
+        assert clean["loaded"] == clean["before"] == clean["on_disk"] == clean["record"], (
+            "with the file untouched the loaded identity, the file and the recorded identity "
+            f"must be one digest: loaded {clean['loaded']}, file {clean['on_disk']}, "
+            f"recorded {clean['record']}"
+        )
+        assert clean["tree"] == clean["on_disk"], (
+            "the verifier's view of the tree must be the file on the tree: tree "
+            f"{clean['tree']}, file {clean['on_disk']}"
+        )
+        edited = _run_counterexample("edit", root)
+        print(f"# edit run: file before {edited['before'][:16]}, file after {edited['on_disk'][:16]}, "
+              f"loaded {edited['loaded'][:16]}, tree {edited['tree'][:16]}, "
+              f"record {edited['record'][:16]}, verified {edited['outcome']['verified']}")
+        assert edited["before"] != edited["on_disk"], (
+            "the counterexample's edit did not change the covered file, so the run measured "
+            "nothing"
+        )
+        assert edited["loaded"] == edited["record"] == edited["before"], (
+            "the writer recorded the file as it stands after the edit rather than the code the "
+            "interpreter loaded: loaded identity "
+            f"{edited['loaded']} vs file before the edit {edited['before']} and after "
+            f"{edited['on_disk']}, recorded {edited['record']}"
+        )
+        assert edited["tree"] == edited["on_disk"], (
+            "the verifier's view of the tree must follow the edited file: tree "
+            f"{edited['tree']}, file {edited['on_disk']}"
+        )
+        if edited["outcome"]["verified"]:
+            raise AssertionError(
+                "the tree certified a record whose recorded identity is the code that was "
+                "loaded while the file it names on the tree holds different bytes: the "
+                "record's implementation did not choose its inputs, and the provenance must "
+                "be reported instead"
+            )
+        if "block_stack_ai.tetris" not in str(edited["outcome"].get("error")):
+            raise AssertionError(
+                "the tree rejected the record, but not for the covered module the edit moved: "
+                f"{edited['outcome'].get('error')}"
+            )
+        print("# the recorded identity is the loaded code; the edit is reported, not certified")
+
+
+# The stale-cache program the 003 tree carries beside this file, and the same-length
+# edit the row makes: one character changes, so the file's size is unchanged and a
+# compiled cache built from the old text stays valid to Python's timestamp check.
+STALE_CACHE_PROGRAM = Path(__file__).resolve().parent / "stale_cache_program.py"
+STALE_CACHE_FROM = "WELL_DEPTH_CAP = 4"
+STALE_CACHE_TO = "WELL_DEPTH_CAP = 5"
+
+
+def _stale_cache_tree(root: Path) -> Path:
+    """A compiled copy of this tree's package whose covered module was edited in place.
+
+    ``compileall`` writes the cache the interpreter's own loader would use; the
+    edit keeps the file's size and restores its mtime, so Python's timestamp
+    validation still accepts that cache while the source beside it has changed.
+    """
+    package = Path(block_stack_ai.__file__).resolve().parent
+    source_root = root / "src"
+    shutil.copytree(package, source_root / package.name,
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    compiled = subprocess.run(
+        [sys.executable, "-m", "compileall", "-q", str(source_root / package.name)],
+        capture_output=True, text=True)
+    if compiled.returncode != 0:
+        raise AssertionError(f"compileall failed on this tree: {compiled.stderr.strip()}")
+    source = source_root / package.name / "tetris.py"
+    before = source.stat()
+    text = source.read_text(encoding="utf-8")
+    edited = text.replace(STALE_CACHE_FROM, STALE_CACHE_TO)
+    if edited == text or len(edited) != len(text):
+        raise AssertionError(
+            f"the tree's tetris.py does not carry '{STALE_CACHE_FROM}', or the edit is not "
+            f"the same length: {source}")
+    source.write_text(edited, encoding="utf-8")
+    os.utime(source, (before.st_atime, before.st_mtime))
+    after = source.stat()
+    if (after.st_size, int(after.st_mtime)) != (before.st_size, int(before.st_mtime)):
+        raise AssertionError("the edit changed the file's size or mtime, so the cache is dead")
+    return source_root
+
+
+def r31_stale_cache():
+    """The recorded identity is the code that ran, not source beside a bytecode cache.
+
+    The reviewer's finding: the recorder digested one read of each covered module's
+    source while delegating execution to the loader that read it, and that loader
+    may execute a ``__pycache__`` entry instead. Python accepts such an entry while
+    the source it was built from still matches by integer-second mtime and size, so
+    a same-length edit inside that second leaves a cache that is executed while a
+    separate read of the file returns the edited text: the record names source the
+    process did not run, and verification — which reads the same file — certifies
+    it. This compiles a copy of the tree under test, edits ``tetris.py`` to the same
+    size with its mtime restored, and requires the constant the loaded code
+    declares, the constant the file declares and the recorded digest to be one and
+    the same source.
+    """
+    if "tetris" not in AGENT_NAMES or not hasattr(runner, "_LOADED_OBJECTIVE_SOURCES"):
+        raise SubjectAbsent(
+            "this tree has no Tetris agent, so it records no objective identity whose "
+            "loaded-vs-tree value could be measured")
+    with tempfile.TemporaryDirectory(prefix="exp003-stale-cache-") as directory:
+        root = Path(directory)
+        source_root = _stale_cache_tree(root)
+        completed = subprocess.run(
+            [sys.executable, str(STALE_CACHE_PROGRAM)], cwd=root, capture_output=True,
+            text=True, env={**os.environ, "PYTHONPATH": str(source_root)})
+        if completed.returncode != 0:
+            raise AssertionError(
+                f"the stale-cache program could not run against this tree "
+                f"(exit {completed.returncode}): {completed.stderr.strip()}")
+        measured = json.loads(completed.stdout)
+        print(f"# stale cache: the loaded code declares {measured['executed']}, the file "
+              f"declares {measured['source']}, the writer recorded "
+              f"{measured['recorded'][:16]}, the file is {measured['file'][:16]}")
+        assert measured["source"] == 5, measured
+        if measured["executed"] != measured["source"]:
+            raise AssertionError(
+                "the identity names source the interpreter did not run: the loaded code "
+                f"declares {measured['executed']} while the file declares "
+                f"{measured['source']}, and the recorded digest is the file's own "
+                f"({measured['recorded'][:16]}), so a verifier reading that file certifies "
+                "a record that does not name what ran")
+        if not measured["agrees"] or measured["recorded"] != measured["file"]:
+            raise AssertionError(
+                "the recorded identity is not the source that ran: recorded "
+                f"{measured['recorded']}, file {measured['file']}")
+        print("# the code that ran, the file on the tree and the recorded identity are one source")
+
+
 PROBES = {
     "clear_sizes_field": r1_clear_sizes_field,
     "clear_sizes_summary": r2_clear_sizes_summary,
@@ -1887,6 +2087,8 @@ PROBES = {
     "predeclaration_weights": r27_predeclaration_weights,
     "objective_wrapper_identity": r28_objective_wrapper_identity,
     "summary_histogram_derivation": r29_summary_histogram_derivation,
+    "loaded_identity": r30_loaded_identity,
+    "stale_cache": r31_stale_cache,
 }
 # The ids whose subject is a probe file rather than the tree's ``src``: they
 # accept the path of the probe file to drive, for a tree that carries only

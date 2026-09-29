@@ -4,8 +4,11 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 import importlib.util
+import os
 from pathlib import Path
 import re
+import shutil
+import subprocess
 import sys
 from types import SimpleNamespace
 
@@ -1499,6 +1502,159 @@ def test_the_objective_identity_is_the_source_of_the_modules_it_runs(tmp_path, m
     assert sources["block_stack_ai.tetris"] == hashlib.sha256(
         Path(tetris_module.__file__).read_bytes()).hexdigest()
     assert verify_run(path, factory) == []
+
+
+def test_the_writer_records_the_loaded_code_not_a_later_edit(tmp_path, monkeypatch):
+    """The writer's identity is fixed when the module loads, not read from its path.
+
+    ``module.__file__`` is only a path: the bytes there at some later moment can
+    be source the process never ran. The writer's identity is therefore taken from
+    the loader that read the module's source, so an edit that lands afterwards
+    cannot be recorded as the code that chose the inputs. Pointing a covered
+    module at a mutated copy — the shape an edited tree has, without rewriting
+    this checkout's source — separates the two views: the loaded identity ignores
+    the copy, and the verifier's view of the tree follows it. That the two agree
+    while the file is unchanged is what keeps every retained record verifying.
+    """
+    loaded = runner._objective_sources(loaded=True)
+    assert loaded == runner._objective_sources()
+    assert loaded["block_stack_ai.tetris"] == hashlib.sha256(
+        Path(tetris_module.__file__).read_bytes()).hexdigest()
+
+    mutated = tmp_path / "tetris.py"
+    mutated.write_bytes(
+        Path(tetris_module.__file__).read_bytes() + b"\n# edited after the load\n"
+    )
+    monkeypatch.setattr(tetris_module, "__file__", str(mutated))
+    assert runner._objective_sources(loaded=True) == loaded
+    assert runner._objective_sources() == {
+        **loaded, "block_stack_ai.tetris": hashlib.sha256(mutated.read_bytes()).hexdigest(),
+    }
+
+
+# The reviewer's counterexample, the load order that separates a record's identity
+# from the file on the tree, lives in the experiment as a program rather than
+# inline here: the ordering only exists in a fresh process against a copy of the
+# tree, so the test, ``evidence.py loaded-identity`` and ``prechange_probe.py
+# loaded_identity`` all run the same file and each asserts the contract on its
+# JSON. A process that already imported this tree's modules cannot replay the
+# ordering, which is why the program is spawned rather than imported.
+COUNTEREXAMPLE_PROGRAM = (
+    engine.PROJECT_ROOT / "experiments" / "003-tetris-aware-agent" / "probes"
+    / "loaded_identity_program.py"
+)
+# The same defect through the interpreter's own bytecode cache: the program reports
+# the constant the loaded code declares, the constant the file declares and the
+# digest the writer recorded, and the helper below puts a tree in the state where
+# the first two can differ.
+STALE_CACHE_PROGRAM = (
+    engine.PROJECT_ROOT / "experiments" / "003-tetris-aware-agent" / "probes"
+    / "stale_cache_program.py"
+)
+
+
+
+def _run_counterexample(root, *, edit):
+    """Run the counterexample program against its own copy of this package."""
+    package = Path(sys.modules["block_stack_ai"].__file__).resolve().parent
+    source_root = root / "src"
+    source_root.mkdir(parents=True)
+    shutil.copytree(package, source_root / package.name,
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    completed = subprocess.run(
+        [sys.executable, str(COUNTEREXAMPLE_PROGRAM),
+         "edit" if edit else "clean", str(root)],
+        cwd=root, capture_output=True, text=True,
+        env={**os.environ, "PYTHONPATH": str(source_root)},
+    )
+    assert completed.returncode == 0, completed.stderr
+    measured = json.loads(completed.stdout)
+    assert measured["package"] == str(source_root / package.name / "__init__.py")
+    return measured
+
+
+def test_an_edit_after_the_load_is_reported_rather_than_certified(tmp_path):
+    """The reviewer's counterexample: a record must not name code that did not run.
+
+    A process that imports the objective's modules, has one of their files edited,
+    and only then imports the writer records the edited bytes if the identity is
+    read from the path at that moment — while ``sys.modules`` still executes the
+    loaded code — and a later verification reads the edited file too, so it
+    certifies provenance that never held. The opposite ordering is the control:
+    with the file untouched the writer's identity, the verifier's view of the tree
+    and the recorded identity all agree and the record verifies, so the report
+    below is the edit and nothing else.
+    """
+    clean = _run_counterexample(tmp_path / "clean", edit=False)
+    assert clean["outcome"]["verified"] is True
+    assert clean["loaded"] == clean["before"] == clean["on_disk"]
+    assert clean["record"] == clean["tree"] == clean["before"]
+
+    edited = _run_counterexample(tmp_path / "edited", edit=True)
+    assert edited["before"] != edited["on_disk"]
+    assert edited["loaded"] == edited["record"] == edited["before"]
+    assert edited["tree"] == edited["on_disk"]
+    assert edited["outcome"]["verified"] is False
+    assert "objective.sources.block_stack_ai.tetris" in edited["outcome"]["error"]
+
+
+def _stale_cache_tree(root):
+    """A copy of this package with a compiled cache and an edited covered module.
+
+    The copy is compiled first, so a ``__pycache__`` entry exists; then
+    ``tetris.py`` is edited to the same size and its mtime restored, which is what
+    keeps Python's timestamp validation accepting that entry while the source
+    beside it has changed. That is the state in which a loader that digests one
+    read and executes another names code that did not run.
+    """
+    package = Path(sys.modules["block_stack_ai"].__file__).resolve().parent
+    source_root = root / "src"
+    shutil.copytree(package, source_root / package.name,
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    compiled = subprocess.run(
+        [sys.executable, "-m", "compileall", "-q", str(source_root / package.name)],
+        capture_output=True, text=True)
+    assert compiled.returncode == 0, compiled.stderr
+    source = source_root / package.name / "tetris.py"
+    before = source.stat()
+    text = source.read_text(encoding="utf-8")
+    edited = text.replace("WELL_DEPTH_CAP = 4", "WELL_DEPTH_CAP = 5")
+    assert edited != text and len(edited.encode()) == len(text.encode())
+    source.write_text(edited, encoding="utf-8")
+    os.utime(source, (before.st_atime, before.st_mtime))
+    after = source.stat()
+    assert (after.st_size, int(after.st_mtime)) == (before.st_size, int(before.st_mtime))
+    return source_root
+
+
+def test_the_identity_names_the_code_that_runs_beside_a_stale_cache(tmp_path):
+    """The identity is the code that ran, not source beside a bytecode cache.
+
+    The reviewer's counterexample: the recorder digested one read of each covered
+    module's source while execution was delegated to the loader that read it, and
+    that loader may execute a ``__pycache__`` entry instead — Python accepts one
+    while the source it was built from still matches by integer-second mtime and
+    size, so a same-length edit inside that second leaves the cache to be executed
+    while a separate read returns the edited text. The record then names source the
+    process did not run, and verification reads the same file and certifies it.
+    Here the compiled cache is stale in exactly that way: the executed constant,
+    the constant the file declares and the recorded digest must all be the same
+    source.
+    """
+    source_root = _stale_cache_tree(tmp_path)
+    completed = subprocess.run(
+        [sys.executable, str(STALE_CACHE_PROGRAM)], cwd=tmp_path,
+        capture_output=True, text=True,
+        env={**os.environ, "PYTHONPATH": str(source_root)},
+    )
+    assert completed.returncode == 0, completed.stderr
+    measured = json.loads(completed.stdout)
+    assert measured["source"] == 5, measured
+    assert measured["executed"] == measured["source"], (
+        "the identity names source the interpreter did not run: the loaded code "
+        f"declares {measured['executed']} while the file declares {measured['source']}"
+    )
+    assert measured["recorded"] == measured["file"] and measured["agrees"] is True
 
 
 def test_verification_rejects_a_wrapper_change_that_keeps_the_recorded_choices(

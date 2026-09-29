@@ -63,8 +63,13 @@ TASK_PR_REF = "refs/pull/11/head"
 PUBLICATION_CLONE = Path(tempfile.gettempdir()) / "exp003-publication"
 # The files this experiment adds or repairs. They must exist in the published
 # tree and are reported row by row with their digests; they are not the whole
-# comparison, because a declared list can omit a file this task changes.
+# comparison, because a declared list can omit a file this task changes. A file
+# this task *adds* cannot be declared until a publication carries it — the
+# absence of a declared path from the published tree is reported as a failure,
+# not as an addition — so this round's three new files are compared like every
+# other untracked path, under ``added ... (outside the declared repaired paths)``.
 REPAIRED_PATHS = (
+    "src/block_stack_ai/__init__.py",
     "src/block_stack_ai/runner.py",
     "src/block_stack_ai/live.py",
     "src/block_stack_ai/agents.py",
