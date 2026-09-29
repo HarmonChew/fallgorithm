@@ -1232,15 +1232,19 @@ def _module_digest() -> str:
 
 
 def _objective_module_digests() -> dict[str, str]:
-    """sha256 of every package module the objective's decisions are computed from.
+    """sha256 of every package module the objective's choices are computed from.
 
-    The set is the objective's own import closure, discovered from its namespace
-    by the runner, which is exactly the set the record's ``objective.sources``
-    identity enumerates. It is not hand-listed here: a declaration that covered
-    only the declaring module would leave the same hole the identity closes one
-    level deeper — a helper's change moves every value the objective computes
-    while ``tetris.py`` itself is untouched — and a set that can drift from the
-    identity would cover modules the record does not.
+    The set is the modules the objective's code runs, discovered by the runner
+    from the code itself — the objective's own namespace, and the module that
+    defines the agent factory, which is where the wrapper that hands the objective
+    its state and executes the placement it returns is reached from. It is exactly
+    the set the record's ``objective.sources`` identity enumerates. It is not
+    hand-listed here: a declaration that covered only the declaring module would
+    leave the same hole the identity closes one level deeper — a helper's change
+    moves every value the objective computes while ``tetris.py`` itself is
+    untouched — a walk outward from the objective alone cannot reach the wrapper
+    at all, because the wrapper imports the objective, and a set that can drift
+    from the identity would cover modules the record does not.
     """
     return _objective_sources()
 
@@ -1276,15 +1280,17 @@ def predeclare():
     their digests and the capture time, so the ordering against a run record is
     checkable afterwards by ``check-predeclaration``.
 
-    The capture also records **every module the objective's decisions are
+    The capture also records **every module the objective's choices are
     computed from** — the same set the run record's ``objective.sources``
-    identity enumerates. Those modules are part of the declaration in the sense
-    that matters: the objective's values come from its helpers as much as from
+    identity enumerates, the agent wrapper that hands the objective its state
+    included. Those modules are part of the declaration in the sense that
+    matters: the objective's values come from its helpers as much as from
     the module that declares it, so a helper's change moves every value the
-    objective computes while ``tetris.py`` is untouched, and a capture covering
-    only the declaring module would report nothing. The declaring module's own
-    digest must be the identity's entry for it, so the two digests in the capture
-    describe one objective rather than two.
+    objective computes while ``tetris.py`` is untouched, and a wrapper's change
+    moves the state under the formula while ``tetris.py`` is untouched too; a
+    capture covering only the declaring module would report nothing. The
+    declaring module's own digest must be the identity's entry for it, so the two
+    digests in the capture describe one objective rather than two.
 
     An existing capture is never overwritten: rewriting it would move the capture
     time past records that already cite it. It is re-printed instead, and a module
@@ -1376,12 +1382,14 @@ def check_predeclaration(path: Path):
     Every claim is mechanical. The capture time is at or before the record's own
     ``created_at``, so the declaration predates the measurement. Each digest still
     equals the captured one: the declaring module's and the documented rationale's,
-    and the identity of every module the objective's decisions are computed from —
+    and the identity of every module the objective's choices are computed from —
     the same identity the record's ``objective.sources`` carries, which is the
     value the measurement itself wrote and which this check now requires rather
-    than skips. Covering the helpers is what makes a post-capture change to any of
-    them reportable: hashing only the declaring module leaves a helper's change
-    invisible even though it moves every value the objective computes.
+    than skips. Covering those modules is what makes a post-capture change to any
+    of them reportable: hashing only the declaring module leaves a helper's change
+    invisible even though it moves every value the objective computes, and a walk
+    that stops at the objective's own namespace leaves the wrapper's change
+    invisible too, even though it moves the state the formula is applied to.
     """
     captured = json.loads(PREDECLARATION.read_text(encoding="utf-8"))
     record = json.loads(path.read_text(encoding="utf-8"))

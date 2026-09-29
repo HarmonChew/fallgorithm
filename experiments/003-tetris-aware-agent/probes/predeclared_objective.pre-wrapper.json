@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-09-29T00:33:29.514691+00:00",
+  "captured_at": "2026-09-28T15:30:20.689842+00:00",
   "module": "src/block_stack_ai/tetris.py",
   "module_sha256": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e",
   "note": "the declared objective \u2014 the module, the modules its decisions are computed from, and the documented weights table and rationale \u2014 captured from the unmodified tree before the evaluation run; no weight is revised against evaluation outcomes",
@@ -17,7 +17,6 @@
     "well_depth_cap": 4
   },
   "sources": {
-    "block_stack_ai.agents": "2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329",
     "block_stack_ai.heuristic": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
     "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
     "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",

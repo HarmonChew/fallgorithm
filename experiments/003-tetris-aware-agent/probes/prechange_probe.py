@@ -15,10 +15,17 @@ base commit, or the tree of an earlier publication this repair replaces:
     mkdir -p $reviewed && git archive fbe21e1 | tar -x -C $reviewed
     PYTHONPATH=$reviewed/src python experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
 
-The third tree is the version this repair replaces — the tree the findings were
-measured against — and it carries both defects: its ``format_version`` does not
-say which sections its writer always emitted, and its publication probe reads a
-per-path digest a state need not have.
+The third tree is the version the earlier repair replaced — the tree those
+findings were measured against — and it carries both of that round's defects: its
+``format_version`` does not say which sections its writer always emitted, and its
+publication probe reads a per-path digest a state need not have.
+
+The tree the current repair replaces is the last publication, whose identity
+stops at the modules the objective's own imports reach:
+
+    replaced=/tmp/exp003-replaced
+    mkdir -p $replaced && git archive 63e432fff79d075fa9149ea7936751abfc42c546 | tar -x -C $replaced
+    PYTHONPATH=$replaced/src python experiments/003-tetris-aware-agent/probes/prechange_probe.py <id>
 
 Copying this tree's ``src`` into an equally plain directory shows the same ids
 satisfied after the change:
@@ -48,10 +55,11 @@ the second argument when the tree under test carries only ``src``:
 
 The later rounds added these ids of that shape — ``predeclaration_identity``,
 ``remote_main_durability``, ``publication_count_capture``, ``base_commit_record``,
-``publication_record_derivation``, ``base_worktree_ancestry`` and
-``predeclaration_record_identity`` — plus ``piece_summary_schema``, whose subject
-is the runner, and ``live_objective_snapshot``, whose subject is the tree's
-``live`` module. Each names the artifact it needs; a tree that carries no such
+``publication_record_derivation``, ``base_worktree_ancestry``,
+``predeclaration_record_identity``, ``predeclaration_weights`` and
+``objective_wrapper_identity`` — plus ``piece_summary_schema`` and
+``summary_histogram_derivation``, whose subject is the runner, and
+``live_objective_snapshot``, whose subject is the tree's ``live`` module. Each names the artifact it needs; a tree that carries no such
 artifact predates the experiment and reports ``no subject on this tree`` instead
 of aborting with an ``ImportError``, and is never counted as a failure-before. A
 row whose contract is genuinely new capability is a **pin** (exit 0) and says so,
@@ -1707,6 +1715,148 @@ def r27_predeclaration_weights():
     )
 
 
+def r28_objective_wrapper_identity():
+    """The recorded identity covers the agent wrapper that drives the objective.
+
+    The reviewer's finding: the identity was walked outward from the module that
+    declares the objective, and the wrapper that hands the objective every state
+    parameter it reads and executes the placement it returns imports that module,
+    so the dependency runs the other way and no such walk can reach it. A wrapper
+    change — a state parameter altered, or the objective bypassed — then left the
+    recorded identity and the replayed choices both unchanged, so a record whose
+    placements no longer came from the recorded objective was certified. This runs
+    the experiment's suite with the tree's own writer, changes
+    ``block_stack_ai.agents`` through a mutated copy of its file — the loaded code
+    the replay runs is untouched, so the recorded seeds keep exactly the actions
+    they recorded — and requires the record to be reported. A tree whose identity
+    stops at the objective's own imports accepts it and reports nothing.
+    """
+    path, factory = _run_experiment_suite("objective_wrapper_identity")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    objective = record.get("objective")
+    if objective is None:
+        raise AssertionError(
+            "the tree writes no declared-objective section for a suite that uses the Tetris "
+            f"agent, so no identity could be recorded: record keys are {sorted(record)}"
+        )
+    identity = objective.get("sources")
+    if identity is None:
+        raise AssertionError(
+            "the tree records no objective source identity, so the wrapper's coverage cannot "
+            f"be measured: the objective section's keys are {sorted(objective)}"
+        )
+    print(f"# record format_version: {record.get('format_version')}")
+    print(f"# recorded identity: {identity}")
+    wrapper = "block_stack_ai.agents"
+    print(f"# the identity covers the agent wrapper {wrapper}: {wrapper in identity}")
+    wrapper_module = sys.modules[wrapper]
+    original_file = wrapper_module.__file__
+    original = Path(original_file).read_text(encoding="utf-8")
+    call = ("        return tetris_choice(\n"
+            "            grid,\n"
+            "            state.current_piece,\n"
+            "            state.next_piece,\n")
+    cases = (
+        ("a state parameter changed",
+         (call + "            level=state.level,\n",
+          call + "            level=state.level + 1,\n")),
+        # The wrapper still imports the objective and no longer calls it, so the
+        # placements come from the frozen lookahead value instead.
+        ("the objective bypassed",
+         (call, "        return lookahead_choice(\n"
+                "            grid,\n"
+                "            state.current_piece,\n"
+                "            state.next_piece,\n")),
+    )
+    print(f"# the record verifies before the wrapper changes: {runner.verify_run(path, factory)}")
+    certified = []
+    try:
+        for label, (before, after) in cases:
+            changed = original.replace(before, after)
+            if changed == original:
+                raise AssertionError(
+                    f"the tree's wrapper does not contain the tetris choice this probe "
+                    f"changes for '{label}': {wrapper_module.__file__}"
+                )
+            mutated = Path(tempfile.mkdtemp(prefix="exp003-wrapper-")) / "agents.py"
+            mutated.write_text(changed, encoding="utf-8")
+            # Only the file the identity hashes is pointed at the copy; the module
+            # the replay runs stays the loaded one, so the recorded seeds keep the
+            # actions they recorded and the identity is the only thing that moved.
+            wrapper_module.__file__ = str(mutated)
+            print(f"# changed wrapper ({label}): {mutated}; the loaded code is untouched, so "
+                  f"the replayed inputs are the recorded ones")
+            try:
+                warnings = runner.verify_run(path, factory)
+            except runner.VerificationError as error:
+                print(f"# the wrapper change ({label}) is reported: {error}")
+                if wrapper not in str(error):
+                    raise AssertionError(
+                        "the tree rejected the record, but not for the wrapper's identity: "
+                        f"{error}"
+                    ) from error
+            else:
+                print(f"# the wrapper change ({label}) is certified: verify_run returned "
+                      f"{warnings}")
+                certified.append(label)
+    finally:
+        wrapper_module.__file__ = original_file
+    if certified:
+        raise AssertionError(
+            f"the tree certified a record whose wrapper changed ({', '.join(certified)}) while "
+            "its recorded seeds kept exactly their recorded actions, so the record verifies "
+            f"under code that did not produce it: its recorded identity covers "
+            f"{sorted(identity)}, which does not include the agent wrapper {wrapper} that "
+            "supplies every state parameter the objective reads and executes the placement it "
+            "returns"
+        )
+    print(f"# the unchanged wrapper verifies again: {runner.verify_run(path, factory)}")
+
+
+def r29_summary_histogram_derivation():
+    """A summary re-derives only the sections the record's episodes carry.
+
+    Experiment 002's own replay probe compares the summary it re-derives from a
+    legacy record's episodes with the recorded summary, so a re-derived summary
+    that adds a histogram the episodes never recorded — all-zero totals for clear
+    sizes no run measured — rejects a record that experiment still publishes,
+    while ``verify_run`` accepts it because the verifier excludes that section
+    from the compared base and reports the absence with its own presence rule.
+    This writes a suite record, strips the histogram from every episode and every
+    summary (the shape the base commit's writer emitted) and requires the
+    re-derived summary to equal the recorded one. A tree whose ``_summarize``
+    always adds the section reports the mismatch.
+    """
+    path, _ = _suite_record(HISTOGRAM_SUITE)
+    record = json.loads(path.read_text(encoding="utf-8"))
+    carried = all("clear_sizes" in episode for episode in record["episodes"])
+    legacy = json.loads(json.dumps(record))
+    for episode in legacy["episodes"]:
+        episode.pop("clear_sizes", None)
+    for summary in legacy["summary"].values():
+        summary.pop("clear_sizes", None)
+    print(f"# the tree's own episodes carry clear_sizes: {carried}")
+    print(f"# the legacy shape: {len(legacy['episodes'])} episodes and "
+          f"{len(legacy['summary'])} summaries, none carrying clear_sizes")
+    replayed = runner._summarize(legacy["episodes"])
+    print(f"# re-derived summary: {replayed}")
+    print(f"# recorded summary  : {legacy['summary']}")
+    if replayed != legacy["summary"]:
+        added = sorted((name, sorted(set(entry) - set(legacy["summary"][name])))
+                       for name, entry in replayed.items()
+                       if set(entry) != set(legacy["summary"][name]))
+        raise AssertionError(
+            "the tree's summary adds a section the record's episodes never carried, so "
+            "Experiment 002's own replay probe — which compares the summary it "
+            f"re-derives with the recorded one — rejects a record 002 still publishes: "
+            f"{added}"
+        )
+    print("# the re-derived summary equals the recorded one")
+    if not carried:
+        print("# a tree that records no histogram at all writes this shape anyway, so the "
+              "contract already held there")
+
+
 PROBES = {
     "clear_sizes_field": r1_clear_sizes_field,
     "clear_sizes_summary": r2_clear_sizes_summary,
@@ -1735,6 +1885,8 @@ PROBES = {
     "live_objective_snapshot": r25_live_objective_snapshot,
     "predeclaration_record_identity": r26_predeclaration_record_identity,
     "predeclaration_weights": r27_predeclaration_weights,
+    "objective_wrapper_identity": r28_objective_wrapper_identity,
+    "summary_histogram_derivation": r29_summary_histogram_derivation,
 }
 # The ids whose subject is a probe file rather than the tree's ``src``: they
 # accept the path of the probe file to drive, for a tree that carries only

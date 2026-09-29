@@ -88,15 +88,19 @@ repositories. A dirty or no-commit run is labeled a working-tree run; a matching
 hash verifies this replay, while the Git commit alone cannot restore uncommitted
 edits. A suite record also states the fixed heuristic weights it used, and, when
 it uses the Tetris agent, that agent's declared objective — the module that
-declares it, the weights it publishes and the source identity of the modules its
-decisions are computed from — which `verify` compares as it compares
+declares it, the weights it publishes and the source identity of every module
+its decisions run through, the agent wrapper that hands it the state included —
+which `verify` compares as it compares
 the heuristic mapping, so a record cannot verify under a different objective
 merely because the change preserved its replayed choices. A record's
 `format_version` says which sections its writer always recorded: versions 1 and 2
 are the older formats, whose sections may be absent; version 3 is the current
 scripted format, version 4 is the prior suite format, whose writer recorded the
-declared objective without the source identity its successor adds, and version 5
-is the current suite format, which records that identity too. A version 3, 4 or 5
+declared objective without the source identity its successor adds, version 5 is
+the suite format whose identity stopped at the modules the objective's own code
+reaches and therefore missed the wrapper that drives it, and version 6 is the
+current suite format, which records that identity with the wrapper. A version 3,
+4, 5 or 6
 record must carry the placed-piece count, the clear-size histogram and — for a
 suite that uses the Tetris agent — the declared objective.
 That is why the version is compared rather than the absence: a section deleted
@@ -112,7 +116,9 @@ holding the preview counter and still verify under that meaning. Each episode
 and summary also reports `clear_sizes`, how many locks cleared one, two, three
 and four rows, tallied from the engine's own per-step clear result; in a current
 record the histogram is present on every episode and every agent summary, and in
-a legacy one it is present on every one of them or on none, so a record written
+a legacy one it is present on every one of them or on none — the summary's totals
+are derived from the episodes, so a legacy record's summary re-derives without a
+section its episodes never recorded — so a record written
 before that field existed is an older format and still verifies.
 
 Only gameplay masks 0–31 are used. A `0` frame releases held buttons. Rotation
@@ -225,7 +231,9 @@ per-step clear result tallied per episode and per agent, with the optional-field
 replay compatibility that keeps older records verifying and the suite-wide rule
 that the histogram is present on every episode and every agent summary or on
 none), the Tetris objective's
-recorded section and its comparison on replay,
+recorded section and its comparison on replay, the identity of every module that
+produces its choices (the agent wrapper that hands it the state, beside the
+objective and its helpers), its
 clear, well and board terms and the new agent's choices on constructed boards,
 without the native engine. The second
 requires the completed setup and tests native state reads, logical frame counts,

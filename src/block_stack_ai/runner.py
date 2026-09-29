@@ -1,16 +1,18 @@
 """Run bounded episodes and replay exactly the inputs that were executed.
 
-Five record versions share this module and all replay against the native engine.
+Six record versions share this module and all replay against the native engine.
 Versions 1 (one scripted episode) and 2 (a suite of placement-agent episodes over
 fixed seeds) are the older formats of each shape: the verifier accepts the
 placed-piece count, the clear-size histogram and the declared objective absent
 there and compares each one when present. Versions 3 (a
-scripted episode), 4 and 5 (suites) are written after them and must carry every
+scripted episode), 4, 5 and 6 (suites) are written after them and must carry every
 section their writer emits — the placed-piece count, the clear-size histogram,
 and, for a suite that uses the Tetris agent, that agent's declared objective.
 Version 4's writer recorded that objective without the source identity its
-successor adds, so version 4 records require everything except the identity and
-version 5 records require it too. The numbers are reused rather than a schema
+successor adds, so version 4 records require everything except the identity;
+version 5's writer recorded the identity as the modules the objective's own code
+reaches, which cannot include the agent wrapper that drives it, and version 6
+records the wrapper beside them. The numbers are reused rather than a schema
 history — the base commit's writer emitted the placed-piece count at versions 1
 and 2, and an earlier writer wrote the same numbers without it — so a version
 says which sections the verifier must require: a legacy version's may be absent
@@ -38,7 +40,7 @@ field existed carry the legacy ``pieces`` key instead, which held
 ``state.piece_count``; the replay compares it against that counter so those
 records keep verifying under their original semantics. A record that carries
 neither key is older still and keeps verifying at a legacy version; a version 3,
-4 or 5 record must carry ``pieces_placed``, because that is the key its writer
+4, 5 or 6 record must carry ``pieces_placed``, because that is the key its writer
 emits and its absence there is a deleted section rather than an older record. The
 per-agent summary reports the key the record as a whole carries, read from every
 episode: one writer emits one shape for a whole record, so a record whose first
@@ -54,14 +56,18 @@ a ``result`` object's keys to equal the replay's exactly, so a new key there
 would invalidate every record written before it. Like the piece count a legacy
 record may omit it — a record that carries neither the field nor the entry in its
 summary is older and keeps verifying — and a present one is compared with the
-same type-and-key rules as the mandatory sections. In a version 3, 4 or 5 record
-the histogram is required: a scripted episode carries it, and a suite carries it
-on every episode and every agent summary. Presence is all-or-nothing in a legacy
-suite too: every episode and every agent summary in one record carries the
-histogram, or a record older than the metric carries it nowhere. A per-agent rule
-would accept a record that stripped the histogram from one agent while another
-kept it, and such a record verifies while reporting a fraction of the lines it
-cleared.
+same type-and-key rules as the mandatory sections. In a version 3, 4, 5 or 6
+record the histogram is required: a scripted episode carries it, and a suite
+carries it on every episode and every agent summary. Presence is all-or-nothing
+in a legacy suite too: every episode and every agent summary in one record
+carries the histogram, or a record older than the metric carries it nowhere. A
+per-agent rule would accept a record that stripped the histogram from one agent
+while another kept it, and such a record verifies while reporting a fraction of
+the lines it cleared. The per-agent totals are derived from the episodes rather
+than assumed: ``_summarize`` reports the section exactly when the episodes it
+summarises carry it, so a legacy record's summary re-derives without it and
+matches the summary that record already carries, which Experiment 002's own
+replay probe compares directly.
 
 A suite that uses the Tetris agent records that agent's declared objective as
 ``objective``: the module that declares it, the mapping its ``weights_record()``
@@ -75,11 +81,17 @@ replayed choices. The identity closes the case the weights cannot: they are
 constants, so a formula change that leaves them alone changes every value the
 objective computes while the weights still compare equal, and the recorded
 choices only catch it when the change happens to move one of them. A version 5
-suite that uses the agent must carry the identity, because its writer always
+or 6 suite that uses the agent must carry the identity, because its writer always
 emits it; the version 4 writer emitted the objective without it and the
 version 2 writer emitted no objective at all, so those records keep verifying —
 the runs of this experiment written by both writers do — and a present identity
-is compared with the same type-and-key rules in every case.
+is compared with the same type-and-key rules in every case. The identity names
+every module whose code produces a choice, the agent wrapper that hands the
+objective its state included: the wrapper imports the objective rather than the
+other way round, so an identity walked outward from the objective alone could not
+reach it, and a wrapper change that kept the replayed choices was certified. A
+version 5 record is compared against that older shape, which is the identity its
+writer recorded.
 """
 
 from __future__ import annotations
@@ -91,6 +103,7 @@ import json
 from pathlib import Path
 from statistics import fmean, median
 import sys
+from types import ModuleType
 from typing import Any, Callable
 from uuid import uuid4
 
@@ -109,7 +122,22 @@ LEGACY_SUITE_FORMAT_VERSION = 2  # a suite written before the new sections
 # its writer recorded the objective's module and weights, which do not identify
 # the objective's formula. Superseded by SUITE_FORMAT_VERSION.
 PRIOR_SUITE_FORMAT_VERSION = 4
-SUITE_FORMAT_VERSION = 5  # a suite, which always records the sections and the identity
+# A suite written while the identity was walked outward from the module that
+# declares the objective. The agent wrapper that drives the objective imports it,
+# so that walk cannot reach the wrapper — the dependency runs the other way — and
+# a wrapper change that preserved the replayed choices was certified. Superseded
+# by SUITE_FORMAT_VERSION.
+OUTWARD_IDENTITY_SUITE_FORMAT_VERSION = 5
+SUITE_FORMAT_VERSION = 6  # a suite, which always records the sections and the identity
+# The two shapes the objective's source identity has been written in, named for
+# the walk that produces it. ``_IDENTITY_OUTWARD`` is the modules the module that
+# declares the objective reaches: itself, and the package modules its own code
+# calls. ``_IDENTITY_CHOICE`` adds the agent wrapper that produces the choices —
+# the class whose ``_choose`` hands the objective its state and the factory that
+# selects it — because the wrapper imports the objective, so no walk outward from
+# the objective can reach it.
+_IDENTITY_OUTWARD = "outward"
+_IDENTITY_CHOICE = "choice"
 # What each suite version's own writer always emitted, as ``(sections,
 # identity)``: the placed-piece count, the clear-size histogram and the declared
 # objective, then the objective's source identity inside that objective. Inferring
@@ -119,11 +147,15 @@ SUITE_FORMAT_VERSION = 5  # a suite, which always records the sections and the i
 # its records carry the objective, so its verifier still requires it — and gates
 # only the identity, which its writer never recorded. The identity is the newer
 # of the two: a version whose writer emitted the sections therefore also requires
-# the ones that preceded it.
+# the ones that preceded it. The identity's second element names which modules
+# that version's identity covered, or ``None`` for a version whose writer emitted
+# none — an identity such a record carries anyway is an edit, and is compared
+# against the current shape, because no writer ever emitted another one there.
 _SUITE_FORMAT_VERSIONS = {
-    LEGACY_SUITE_FORMAT_VERSION: (False, False),
-    PRIOR_SUITE_FORMAT_VERSION: (True, False),
-    SUITE_FORMAT_VERSION: (True, True),
+    LEGACY_SUITE_FORMAT_VERSION: (False, None),
+    PRIOR_SUITE_FORMAT_VERSION: (True, None),
+    OUTWARD_IDENTITY_SUITE_FORMAT_VERSION: (True, _IDENTITY_OUTWARD),
+    SUITE_FORMAT_VERSION: (True, _IDENTITY_CHOICE),
 }
 _SCRIPTED_FORMAT_VERSIONS = {LEGACY_FORMAT_VERSION: False, FORMAT_VERSION: True}
 _EVENT_FIELDS = (
@@ -495,6 +527,23 @@ def _piece_metric_field(episodes: list[dict[str, Any]]) -> str | None:
     return None
 
 
+def _clear_sizes_carried(episodes: list[dict[str, Any]]) -> bool:
+    """Whether the episodes being summarized carry the clear-size histogram.
+
+    A record written before the metric existed carries it neither per episode nor
+    in the summary, and its summary must stay that way: the totals are a claim
+    about clear sizes, so reporting zeros for episodes that recorded none would
+    state a measurement no run made — and Experiment 002's own replay probe
+    compares the summary it re-derives with the recorded one, so a synthesized
+    section would reject records that experiment still publishes. Presence is
+    all-or-nothing across a record, which ``_compare_summary`` enforces with its
+    own message, so this reads "any episode carries it" rather than raising a
+    second shape check here: a record that carries the histogram on only some
+    episodes is reported there instead.
+    """
+    return any(_CLEAR_SIZES_FIELD in episode for episode in episodes)
+
+
 def _summarize(episodes: list[dict[str, Any]]) -> dict[str, Any]:
     grouped: dict[str, list[dict[str, Any]]] = {}
     for episode in episodes:
@@ -502,8 +551,11 @@ def _summarize(episodes: list[dict[str, Any]]) -> dict[str, Any]:
     # ``pieces_placed`` is the current key and ``pieces`` the legacy one; a record
     # that carries neither predates both, so its summary reports no piece metric
     # instead of raising, and a record whose episodes disagree on the key is not a
-    # shape any writer emits and is reported rather than summarised.
+    # shape any writer emits and is reported rather than summarised. The
+    # clear-size totals are read the same way from the episodes, so a summary
+    # reports exactly the sections the record it summarises carries.
     pieces_field = _piece_metric_field(episodes)
+    clear_sizes = _clear_sizes_carried(episodes)
     summary = {}
     for name, group in grouped.items():
         reasons: dict[str, int] = {}
@@ -516,14 +568,17 @@ def _summarize(episodes: list[dict[str, Any]]) -> dict[str, Any]:
             "score": _metric([episode["result"]["score"] for episode in group]),
             "lines": _metric([episode["result"]["lines"] for episode in group]),
             "frames": _metric([episode["result"]["frame_count"] for episode in group]),
-            # The clear sizes add up to each episode's ``result.lines``; an
-            # episode written before the histogram existed contributes nothing.
-            _CLEAR_SIZES_FIELD: {
-                field: sum(episode.get(_CLEAR_SIZES_FIELD, {}).get(field, 0)
-                           for episode in group)
-                for field in _CLEAR_SIZE_FIELDS
-            },
         }
+        if clear_sizes:
+            # The clear sizes add up to each episode's ``result.lines``. An episode
+            # that does not carry the histogram contributes nothing: that partial
+            # shape is not one any writer emits, and ``_compare_summary``'s
+            # suite-wide presence rule reports it rather than this summation.
+            entry[_CLEAR_SIZES_FIELD] = {
+                field: sum(episode[_CLEAR_SIZES_FIELD][field]
+                           for episode in group if _CLEAR_SIZES_FIELD in episode)
+                for field in _CLEAR_SIZE_FIELDS
+            }
         if pieces_field is not None:
             entry[pieces_field] = _metric([episode[pieces_field] for episode in group])
         summary[name] = entry
@@ -548,7 +603,10 @@ def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
     under a per-agent rule while reporting only part of the suite. The rule is
     read from the record's own version and its episodes, never from a single
     episode, so a record whose first episode lacks a section the later ones carry
-    is reported instead of being summarised without it.
+    is reported instead of being summarised without it. The replayed summary is
+    ``_summarize``'s own output, which carries each of those sections exactly when
+    the record's episodes do, so a legacy record whose episodes never recorded
+    the histogram is compared with a summary that has none either.
     """
     if type(recorded) is not dict:
         raise VerificationError(f"Recorded {where} must be dict, not {recorded!r}")
@@ -599,10 +657,13 @@ def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
                          if key not in own_rule}
         differences.extend(_compare_fields(recorded_base, replayed_base, f"{where}.{name}"))
         # The suite-wide rules above have already rejected a record where only some
-        # agents or episodes carry a section; an agent that carries one is compared
-        # key-for-key.
+        # agents or episodes carry a section; an agent that carries one on both
+        # sides is compared key-for-key. The replayed summary carries the section
+        # exactly when the record's episodes do, so an agent whose section survived
+        # only in the record has already been reported by those rules rather than
+        # compared against a section the replay does not have.
         for field in own_rule:
-            if field in recorded_agent:
+            if field in recorded_agent and field in replayed_agent:
                 differences.extend(_compare_fields(
                     recorded_agent[field], replayed_agent[field],
                     f"{where}.{name}.{field}",
@@ -610,17 +671,43 @@ def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
     return differences
 
 
-def _objective_sources() -> dict[str, str]:
-    """sha256 of the source of every package module the objective runs.
+def _choice_walk_seeds() -> list[ModuleType]:
+    """The package modules a choice's code starts from: the objective and its driver.
 
-    The objective's decisions are computed from the module that declares it and
-    the package modules its code calls: the frozen geometry and board model it
-    imports, and Experiment 002's reachable-set enumeration it reuses. Hashing
-    only the declaring module would leave the same hole one level deeper — a
-    helper's change alters every value the objective computes while the declaring
-    module's own text is unchanged — so the closure is walked from the objective's
-    own namespace instead of being hand-listed, and a module that stops being used
-    drops out of it by itself.
+    The module that declares the objective is only half of the code a placement
+    choice runs through. The agent wrapper hands the objective every state
+    parameter it reads and executes the placement it returns, and it imports the
+    objective rather than the other way round, so a walk outward from the
+    objective can never reach it. It is found from the code instead of
+    hand-listed: the factory the runner builds agents with is what selects the
+    wrapper, so the walk starts from the module that defines that factory, and
+    the class the factory returns is reached from there like any other name that
+    module's code holds. A wrapper moved to another module is followed there, and
+    a module that stops producing choices drops out of the walk by itself.
+    """
+    return [tetris, sys.modules[create_agent.__module__]]
+
+
+def _objective_sources(shape: str = _IDENTITY_CHOICE) -> dict[str, str]:
+    """sha256 of the source of every package module the objective's choices run.
+
+    The objective's decisions are computed from the module that declares it, the
+    package modules its code calls — the frozen geometry and board model it
+    imports, and Experiment 002's reachable-set enumeration it reuses — and the
+    agent wrapper that drives it: the class whose ``_choose`` supplies the state
+    (the board, the current and preview pieces, the level, the ruleset and the
+    mode) and the factory that selects that class. Hashing only the declaring
+    module would leave the same hole one level deeper — a helper's change alters
+    every value the objective computes while the declaring module's own text is
+    unchanged — so the closure is walked from the objective's own namespace and
+    from the wrapper's, instead of being hand-listed, and a module that stops
+    being used drops out of it by itself.
+
+    ``shape`` names which of those walks a caller means. ``_IDENTITY_CHOICE`` is
+    the current one, above. ``_IDENTITY_OUTWARD`` is the shape the version-5
+    writer emitted, which stops at what the objective's own namespace reaches and
+    therefore misses the wrapper: a record of that version is compared against
+    that shape, because it is the identity its writer recorded.
 
     This reads the files **now**, which is what a verifier wants: it compares a
     record against the tree that is on disk. A writer must instead record
@@ -628,8 +715,8 @@ def _objective_sources() -> dict[str, str]:
     modules were imported, because a run executes the loaded code rather than
     whatever is on disk when the record is written.
     """
+    pending = [tetris] if shape == _IDENTITY_OUTWARD else _choice_walk_seeds()
     sources: dict[str, str] = {}
-    pending = [tetris]
     while pending:
         module = pending.pop()
         if module.__name__ in sources:
@@ -652,7 +739,8 @@ def _objective_sources() -> dict[str, str]:
 _LOADED_OBJECTIVE_SOURCES = _objective_sources()
 
 
-def _objective_record(config: SuiteConfig, *, loaded: bool = False) -> dict[str, Any] | None:
+def _objective_record(config: SuiteConfig, *, loaded: bool = False,
+                      shape: str = _IDENTITY_CHOICE) -> dict[str, Any] | None:
     """The declared objective a suite record must carry, or ``None`` without the agent.
 
     The ``heuristic`` mapping is written for every suite because every placement
@@ -663,14 +751,17 @@ def _objective_record(config: SuiteConfig, *, loaded: bool = False) -> dict[str,
     from. A suite without the agent has no such objective to record. A writer
     passes ``loaded=True`` so the identity is the code the interpreter loaded; the
     verifier leaves it ``False`` so the identity is compared against the files on
-    the tree now.
+    the tree now, and passes the ``shape`` the record's own version's writer
+    emitted, because a version-5 record's identity stops at what the objective's
+    own namespace reaches.
     """
     if TETRIS_AGENT not in config.agents:
         return None
     return {
         "module": tetris.__name__,
         "weights": tetris.weights_record(),
-        _OBJECTIVE_SOURCES_FIELD: _LOADED_OBJECTIVE_SOURCES if loaded else _objective_sources(),
+        _OBJECTIVE_SOURCES_FIELD: (_LOADED_OBJECTIVE_SOURCES if loaded
+                                   else _objective_sources(shape)),
     }
 
 
@@ -681,7 +772,7 @@ def _objective_section(config: SuiteConfig, *, loaded: bool = False) -> dict[str
 
 
 def _compare_objective(record: dict[str, Any], config: SuiteConfig,
-                       required: bool, identity_required: bool) -> list[str]:
+                       required: bool, identity_shape: str | None) -> list[str]:
     """Differences for the declared-objective section of a suite record.
 
     A suite that uses the Tetris agent records the module, the weights and the
@@ -699,8 +790,15 @@ def _compare_objective(record: dict[str, Any], config: SuiteConfig,
     both keep verifying, and a present identity is compared in every case. A
     section in a record whose configuration has no Tetris agent is a difference
     too, because no writer emits one.
+
+    ``identity_shape`` is the shape the record's own version's writer emitted, as
+    the version table gives it: the modules the objective's own code reaches, or
+    those plus the agent wrapper that drives it. A version whose writer emitted no
+    identity at all gives ``None``, and the record is compared against the current
+    shape, because an identity such a record carries is an edit and no writer ever
+    emitted another shape under that version.
     """
-    expected = _objective_record(config)
+    expected = _objective_record(config, shape=identity_shape or _IDENTITY_CHOICE)
     if expected is None:
         if _OBJECTIVE_FIELD in record:
             return [
@@ -727,7 +825,8 @@ def _compare_objective(record: dict[str, Any], config: SuiteConfig,
     )
     differences.extend(_compare_section(
         recorded, _OBJECTIVE_SOURCES_FIELD, expected[_OBJECTIVE_SOURCES_FIELD],
-        f"{_OBJECTIVE_FIELD}.{_OBJECTIVE_SOURCES_FIELD}", required=identity_required,
+        f"{_OBJECTIVE_FIELD}.{_OBJECTIVE_SOURCES_FIELD}",
+        required=identity_shape is not None,
     ))
     return differences
 
@@ -886,7 +985,7 @@ def _verify_scripted(record: dict[str, Any], path: Path, sections_required: bool
 
 
 def _verify_suite(record: dict[str, Any], path: Path, sections_required: bool,
-                  identity_required: bool, game_factory: Callable[..., Any]) -> list[str]:
+                  identity_shape: str | None, game_factory: Callable[..., Any]) -> list[str]:
     recorded_engine, configuration = _record_sections(record, path)
     # ``weights_record()`` carries the writer's float weights and the tie-break
     # string, so the same type-and-key comparison the episodes and summary get
@@ -907,7 +1006,7 @@ def _verify_suite(record: dict[str, Any], path: Path, sections_required: bool,
     if not isinstance(config, SuiteConfig):
         raise VerificationError(f"Malformed run record in {path}: not a suite configuration")
     objective_differences = _compare_objective(record, config, sections_required,
-                                               identity_required)
+                                               identity_shape)
     if objective_differences:
         raise VerificationError(
             "Recorded objective differs from the current implementation:\n  "
@@ -1006,6 +1105,6 @@ def verify_run(path: Path, game_factory: Callable[..., Any] = create_game) -> li
     if version in _SCRIPTED_FORMAT_VERSIONS:
         return _verify_scripted(record, path, _SCRIPTED_FORMAT_VERSIONS[version], game_factory)
     if version in _SUITE_FORMAT_VERSIONS:
-        sections_required, identity_required = _SUITE_FORMAT_VERSIONS[version]
-        return _verify_suite(record, path, sections_required, identity_required, game_factory)
+        sections_required, identity_shape = _SUITE_FORMAT_VERSIONS[version]
+        return _verify_suite(record, path, sections_required, identity_shape, game_factory)
     raise VerificationError(f"Unsupported run record format in {path}")

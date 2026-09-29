@@ -18,13 +18,16 @@ publication snapshot, and the version numbers' reuse), `01c47550` (the declared
 objective's identity as captured coverage, the summary's piece count read from
 the whole record, the publication snapshot's counts checked against a captured
 path list, the base refresh's durability once main moves on, and the retained
-base snapshot drawn from one run), and **this round**, reviewed against the
-published head `a14fe1843` (the publication snapshot's per-path fields validated
-one at a time rather than derived from the recorded evidence, the objective
-capture's helper digests transcribed from the run after the fact under an earlier
-`captured_at`, the retained base snapshot's worktree-ancestry command not
-required, the README's format-version prose naming the wrong current versions,
-and the live session reading the objective's sources at END instead of BEGIN). A
+base snapshot drawn from one run), `a14fe1843` (the publication snapshot's
+per-path fields validated one at a time rather than derived from the recorded
+evidence, the objective capture's helper digests transcribed from the run after
+the fact under an earlier `captured_at`, the retained base snapshot's
+worktree-ancestry command not required, the README's format-version prose naming
+the wrong current versions, and the live session reading the objective's sources
+at END instead of BEGIN), and **this round**, reviewed against the published head
+`63e432f` (the recorded objective identity walked outward from the module that
+declares the objective alone, which cannot reach the agent wrapper that drives
+it, so a wrapper change that kept the replayed choices was certified). A
 passage written in an earlier round that says "this round" means
 the round it was written in; the passages this round adds say so, and item 1
 lists the tree each round's probes were run against.
@@ -171,7 +174,7 @@ counterexample, the tree it was measured on, and the value that tree returned.
   — and the **record's own `format_version` says which of the two cases it is**:
   the legacy versions 1 and 2 are the records allowed to omit it
   (the `legacy_record_verifies` probe builds one at the base commit and verifies
-  it), while versions 3, 4 and 5, which the writers of this experiment emit,
+  it), while versions 3, 4, 5 and 6, which the writers of this experiment emit,
   always record it,
   so its absence there is a deleted section and is reported. Presence is
   all-or-nothing across a version-2 suite too: every episode and every agent
@@ -214,14 +217,18 @@ counterexample, the tree it was measured on, and the value that tree returned.
   thing that can: an absent section and a section deleted after the fact are the
   same JSON. The legacy versions 1 and 2 may omit
   `pieces_placed`, `clear_sizes` and `objective`; version 3 (a scripted episode),
-  version 4 (the `fbe21e1` round's suite) and version 5 (this round's suite) are
+  version 4 (the `fbe21e1` round's suite), version 5 (the `ed8830a1` round's
+  suite, whose identity stops at the modules the objective's own imports reach)
+  and version 6 (this round's suite) are
   what the writers of this experiment emit and must carry every section they
   wrote — the placed-piece
   count and the histogram in both shapes, the histogram on every episode and
   every agent summary of a suite, and the declared objective of a suite that uses
   the Tetris agent. Version 4 must carry everything its writer wrote except the
   objective's source identity, which it never recorded; version 5 must carry that
-  too, so the identity is gated by its own flag rather than by the section's.
+  too, under the shape its own writer walked, and version 6 under the shape that
+  also covers the agent wrapper that drives the objective, so the identity is
+  gated by its own flag rather than by the section's.
   **The numbers are reused, not a schema history.** The base commit's writer
   emitted `pieces_placed` at version 1 and at version 2 — item 4 re-runs it on
   experiments 000, 001 and 002 and prints the records — and an earlier writer
@@ -271,7 +278,17 @@ counterexample, the tree it was measured on, and the value that tree returned.
   those records keep verifying, and an identity a record does carry is compared
   at every version. The reviewer's counterexample — the clear term charging a
   premature clear at twice the declared rate, every weight unchanged — is
-  reported by the identity alone (`objective_identity` in item 1).
+  reported by the identity alone (`objective_identity` in item 1). A later round
+  extends both the set and the version, and this record's current state is that
+  one: the identity also covers `block_stack_ai.agents` — the class whose
+  `_choose` hands the objective every state parameter it reads and executes the
+  placement it returns, and the factory that selects it — because the wrapper
+  imports the objective rather than the other way round, so no walk outward from
+  the objective can reach it, and the writer's version becomes **6** (a
+  version-5 record is compared against the older shape, which is the identity its
+  writer recorded). A wrapper change that alters a state parameter or bypasses
+  the objective is therefore reported even when the replayed seeds keep exactly
+  their recorded actions (`objective_wrapper_identity` in item 1).
 * **One measured publication snapshot (this round).** The retained
   `publication` object had been assembled from two runs: its `state` still
   described `cfab11e2` and 5 differing paths while `published_commit`,
@@ -362,14 +379,17 @@ it nowhere and keep verifying.
 **When the objective was declared.** The declaration is captured mechanically,
 so the ordering the criterion requires is checkable rather than asserted:
 `evidence.py predeclare` wrote `probes/predeclared_objective.json` with
-`captured_at` `2026-09-28T15:30:20.689842+00:00`, the digest of
+`captured_at` `2026-09-29T00:33:29.514691+00:00` (the current capture; each round
+that changed the identity's module set re-made it, and this round's superseded
+capture is kept as `predeclared_objective.pre-wrapper.json`), the digest of
 `src/block_stack_ai/tetris.py` (`sha256:3d32c1c3…`), the digest of this notes
 file's declared-objective section — the weights table and its rationale above,
 delimited by the `predeclared-objective` markers, and nothing else, so the
 provenance note below the end marker is outside the digest (`sha256:b676a981…`)
-— and the identity of every module the objective's decisions are computed from.
-This round's 10-seed evaluation was run **after** that capture; the cited record's
-own `created_at` is `2026-09-28T15:30:24.688298+00:00`. `evidence.py
+— and the identity of every module the objective's choices are computed from,
+the agent wrapper that drives it included.
+The 10-seed evaluation was run **after** that capture; the cited record's
+own `created_at` is `2026-09-29T00:33:38.130704+00:00`. `evidence.py
 check-predeclaration <record>` re-checks every claim mechanically, printing the
 capture time, the record's `created_at`, the module and notes-section digests as
 they stand, and the record's own `objective.sources` identity, which it now
@@ -380,18 +400,21 @@ a record citing it, and it refuses to add the identity to an older capture: a
 module or section that no longer matches is reported as a changed objective
 instead of being silently re-captured, and the superseded transcription is kept
 beside the capture as `predeclared_objective.pre-transcription.json`. Neither
-this round nor the previous one changed `src/block_stack_ai/tetris.py` or touched
-the marked section, so both digests stand as the earlier capture recorded them,
-and the re-capture writes the same digests with a new, genuine capture time.
+this round nor any repair round changed `src/block_stack_ai/tetris.py` or touched
+the marked section, so both digests stand exactly as the first capture recorded
+them, and every re-capture writes the same two digests with a new, genuine capture
+time — the module set beside them is what a round changes.
 
 **The capture covers the whole declared objective, not just its declaring
 module.** The capture recorded the digest of the module that declares the
 objective while the run record's `objective.sources` identity covers every module
-the objective's decisions are computed from — `block_stack_ai.tetris` plus
-`block_stack_ai.heuristic`, `block_stack_ai.pathaware` and
-`block_stack_ai.pieces` — so a post-capture change to a **helper** moved every
-value the objective computes and still passed `check-predeclaration`, which is
-the hole the `01c47550` round closed. That round added the four digests to
+the objective's choices are computed from — `block_stack_ai.tetris` plus
+`block_stack_ai.heuristic`, `block_stack_ai.pathaware`, `block_stack_ai.pieces`
+and, since `63e432f`, `block_stack_ai.agents`, the wrapper that supplies the
+objective's state — so a post-capture change to a **helper** moved every value
+the objective computes and still passed `check-predeclaration`, which is the hole
+the `01c47550` round closed; a post-capture change to the **wrapper** is the
+`63e432f` round's finding, and this round's capture covers it too. That round added the four digests to
 [`probes/predeclared_objective.json`](probes/predeclared_objective.json) by
 copying them out of the evaluation record's own identity and left the earlier
 `captured_at` beside them, with a `sources_note` recording that provenance;
@@ -486,9 +509,16 @@ and `evidence.py all` runs; the runs of the earlier repair rounds measured
 spread is the machine's and
 not the repair's. Each `evaluation` invocation also
 replayed all 20 episodes from their recorded inputs with `verify`, so one
-invocation takes about 280 s — the run plus its replay. This round's cited record
-is `runs/20260928T153237203272Z-57406741/run.json` and the repeat is
-`runs/20260928T152709932202Z-f82efe29/run.json`. This round's other measured cost
+invocation takes about 280 s — the run plus its replay. That round's cited record
+is `runs/20260928T153237203272Z-57406741/run.json` and its repeat is
+`runs/20260928T152709932202Z-f82efe29/run.json`. The current capture's two runs,
+both made after it, took **131.3 s** and **131.1 s**, and the `evidence.py all`
+run that re-measures the whole path on the frozen tree took **132.3 s**; the
+current cited record is `runs/20260929T003549254811Z-0d37fb01/run.json` and its
+repeat is `runs/20260929T004011462607Z-587cbe29/run.json`, with the `all` run's
+record at `runs/20260929T005732426184Z-544bb268/run.json`. The evaluation profile
+is unchanged: the identity this round widens is read once at import and hashed
+from files, so it adds no measurable work to a run. This round's other measured cost
 is the base refresh: the full clone of the remote takes about 1.6 s for the whole
 probe, the same order as the shallow clone it replaced, so making ancestry
 checkable did not change the probe's class of runtime. The suite's summary is
@@ -501,17 +531,23 @@ and the runner change — which reads the summary's piece key from every episode
 instead of the group's first one — selects the same key it did before for a
 well-formed record. Every record the earlier rounds left in `runs/` is identical
 to them as well, which is the persistence of every published figure under each
-repair. The retained records are fourteen at version 2, seven at version 4 and
-thirteen at version 5 (this round's seven fresh records — the baseline run, the
-evaluation after the capture, and five `evidence.py all` runs — add seven
-version-5 records to the six the earlier rounds left); ten of
+repair. The retained records at the `a14fe1843` freeze were fourteen at version 2, seven
+at version 4 and thirteen at version 5 (that round's seven fresh records — the
+baseline run, the evaluation after the capture, and five `evidence.py all` runs —
+added seven version-5 records to the six the earlier rounds left); ten of
 the version-2 records carry no `objective` section at
 all, four carry it (written after it was added) and all fourteen carry the
 histogram, while the version-4 records carry the objective without the source
 identity and the version-5 records carry it too. All of them still verify (item
 4), so every legacy gate the verifier has is exercised by a retained record, and
 none of the earlier rounds' records carries the identity its version does not
-require.
+require. This round adds six version-6 records — the two evaluation runs
+made after the enlarged capture and the four `evidence.py all` runs, the last two
+on the frozen tree after the review's second finding was repaired — so 37 records
+were present at the first sweep's freeze and 39 at the second's, and the later
+runs' own `evaluation` probes verified their records (40 in `runs/` at the end of
+the round), while the version-5 records are compared against the older identity
+shape and the version-6 records require the wrapper as well.
 
 ## This round's repairs (reviewed against `a14fe1843`)
 
@@ -642,6 +678,163 @@ On this tree the same four rows exit 0, and the two integration regressions pass
 the full commands and exit statuses are in the "this round's rows" block of the
 validation evidence below.
 
+## This round's repairs (reviewed against `63e432f`)
+
+One finding, and one shape: the identity that ties a record to the objective that
+chose its placements was the closure reachable **outward** from the module that
+declares that objective. The dependency between the objective and the agent that
+drives it runs both ways. `block_stack_ai.agents` imports the objective, hands it
+every state parameter it reads — the board, the current and preview pieces, the
+level, the lines, the start level, the first-delay countdown, the ruleset and the
+mode — and executes the placement it returns; it also holds the factory that
+selects that class. No walk outward from the objective's own namespace can reach
+it, so a wrapper change that altered a state parameter or bypassed the objective
+left the recorded identity **and** the replayed seeds both unchanged, and a record
+whose placements no longer came from the recorded objective was certified. The
+identity is now walked from the code in both directions — the objective's own
+namespace and the module that defines the agent factory, from which the class the
+factory returns is reached like any other name — the writer's version moves to
+**6**, and a version-5 record is compared against the older shape, which is the
+identity its writer recorded and the shape the retained version-5 records carry.
+Nothing the agent computes changed: `TETRIS_WEIGHTS`, the placement behaviour and
+the objective's formula are byte-identical, so this is evidence coverage only, and
+the ten even-seed figures are re-measured unchanged below. The capture covers the
+enlarged set as well, and the evaluation was re-run after the new capture.
+
+| Finding | Counterexample | Pre-change value on `63e432f` | Regression |
+| --- | --- | --- | --- |
+| The recorded identity could not reach the agent wrapper that drives the objective, so a wrapper change that preserved the replayed choices was certified. | The experiment's suite is written with the tree's own writer; `block_stack_ai.agents` is then pointed at a copy of its own source whose Tetris wrapper hands the objective `level=state.level + 1`, and again at one whose wrapper bypasses the objective for the frozen lookahead choice. The module the replay runs is left loaded, so the recorded seeds keep exactly the actions they recorded. | `exit 1`: `the tree certified a record whose wrapper changed (a state parameter changed, the objective bypassed) while its recorded seeds kept exactly their recorded actions, so the record verifies under code that did not produce it: its recorded identity covers ['block_stack_ai.heuristic', 'block_stack_ai.pathaware', 'block_stack_ai.pieces', 'block_stack_ai.tetris'], which does not include the agent wrapper block_stack_ai.agents …` (`prechange_probe.py objective_wrapper_identity`) | `test_verification_rejects_a_wrapper_change_that_keeps_the_recorded_choices`, `test_the_version_5_identity_stops_before_the_wrapper`, and the extended `test_the_objective_identity_is_the_source_of_the_modules_it_runs` |
+| The per-agent summary added a clear-size section to a record whose episodes never recorded one, so a legacy record re-summarized to all-zero totals no run measured — and Experiment 002's own replay probe, which compares the summary it re-derives with the recorded one, rejected a record that experiment still publishes. | A suite record's histogram is stripped from every episode and every summary (the shape the base commit's writer emitted) and the record's episodes are re-summarized through the tree's own `_summarize`, which is the comparison 002's probe makes. | `exit 1`: `the tree's summary adds a section the record's episodes never carried, so Experiment 002's own replay probe … rejects a record 002 still publishes: [('greedy', ['clear_sizes']), ('lookahead', ['clear_sizes'])]` (`prechange_probe.py summary_histogram_derivation`); 002's own probe on a base-writer 002 record prints `replayed summary equals the recorded summary: False` | `test_a_summary_reports_exactly_the_sections_its_episodes_carry`; `prechange_probe.py summary_histogram_derivation` |
+
+The same shape was audited where the identity is computed, because a second
+definition lagging a level behind would have reopened the hole: the runner's
+`_objective_sources(shape)` is the one function that walks either shape, and
+`_objective_record`/`_compare_objective` select the shape from the record's own
+version, so the writer and the verifier agree module for module;
+`_LOADED_OBJECTIVE_SOURCES`, which every writer records, is the current shape
+computed once at import; `live.py`'s session snapshot goes through
+`_objective_section(..., loaded=True)`, the same function the headless writer
+uses, so a live Tetris record carries the identical closure; and the
+predeclaration capture calls the runner's function rather than keeping a set of
+its own (`_objective_module_digests`), so the capture, the record and the check
+enumerate one closure. The version table is the other half: `_SUITE_FORMAT_VERSIONS`
+maps each version to the shape its writer emitted, so the retained version-5
+records are compared with the older walk instead of failing, and only the current
+version requires the wrapper.
+
+**The second finding, from the review of that repair.** Widening the identity
+touched nothing an agent computes, but the round's own check of the frozen
+experiment surfaced a compatibility defect in the summary the previous rounds
+grew: `_summarize` added the clear-size totals unconditionally, so re-deriving
+the summary of a legacy record — episodes that never recorded a histogram —
+produced an all-zero section. `verify_run` did not report it, because it excludes
+that section from the base it compares and lets its presence rule report the
+absence, but **Experiment 002's own replay probe** compares the summary it
+re-derives from a record's episodes with the recorded summary directly
+(`experiments/002-path-aware-lookahead/probes/evidence.py`), so the synthesized
+section rejected a record Experiment 002 still publishes. The version gate could
+not see it either: the defect is in a derivation, not in a recorded section. The
+totals are now read from the episodes, exactly as the placed-piece key already
+was: `_summarize` reports the section when the episodes it summarizes carry it
+and omits it otherwise, so a legacy record re-derives the summary it already
+carries. The per-agent comparison of a section the record carries but the replay
+cannot derive is now guarded rather than indexed, so that shape — the histogram
+stripped from every episode while a summary kept it — is reported as the missing
+per-episode field (and, at a legacy version, as the partial presence the
+suite-wide rule rejects) instead of raising `KeyError`. No recorded value moves:
+a fresh record's episodes all carry the histogram, so its summary is unchanged,
+which the re-measured 10-seed figures below confirm.
+
+```text
+########## probe: objective_wrapper_identity   (PYTHONPATH=/tmp/exp003-replaced/src, 63e432f)
+# tree under test: /tmp/exp003-replaced/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: objective_wrapper_identity
+# record format_version: 5
+# recorded identity: {'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
+# the identity covers the agent wrapper block_stack_ai.agents: False
+# the record verifies before the wrapper changes: []
+# changed wrapper (a state parameter changed): /tmp/exp003-wrapper-2f8c9s0_/agents.py; the loaded code is untouched, so the replayed inputs are the recorded ones
+# the wrapper change (a state parameter changed) is certified: verify_run returned []
+# changed wrapper (the objective bypassed): /tmp/exp003-wrapper-uxicvq0q/agents.py; the loaded code is untouched, so the replayed inputs are the recorded ones
+# the wrapper change (the objective bypassed) is certified: verify_run returned []
+AssertionError: the tree certified a record whose wrapper changed (a state parameter changed, the objective bypassed) while its recorded seeds kept exactly their recorded actions, so the record verifies under code that did not produce it: its recorded identity covers ['block_stack_ai.heuristic', 'block_stack_ai.pathaware', 'block_stack_ai.pieces', 'block_stack_ai.tetris'], which does not include the agent wrapper block_stack_ai.agents that supplies every state parameter the objective reads and executes the placement it returns
+exit=1
+
+########## probe: objective_wrapper_identity   (PYTHONPATH=/tmp/exp003-after/src, this tree)
+# tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: objective_wrapper_identity
+# record format_version: 6
+# recorded identity: {'block_stack_ai.agents': '2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329', 'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
+# the identity covers the agent wrapper block_stack_ai.agents: True
+# the record verifies before the wrapper changes: []
+# changed wrapper (a state parameter changed): /tmp/exp003-wrapper-h6k7u0cb/agents.py; the loaded code is untouched, so the replayed inputs are the recorded ones
+# the wrapper change (a state parameter changed) is reported: Recorded objective differs from the current implementation:
+  objective.sources.block_stack_ai.agents: recorded '2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329', replayed '354b4a7c4e668d1807931339ee812818d34442f2c7534e5cf51fe52f0fe5098e'
+# changed wrapper (the objective bypassed): /tmp/exp003-wrapper-icz9wiwl/agents.py; the loaded code is untouched, so the replayed inputs are the recorded ones
+# the wrapper change (the objective bypassed) is reported: Recorded objective differs from the current implementation:
+  objective.sources.block_stack_ai.agents: recorded '2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329', replayed 'a20a5a991bc16b726e2b6d641f5e802c9896c086c09e88bb554655e2f617204c'
+# the unchanged wrapper verifies again: []
+result: the tree under test satisfies this probe
+exit=0
+```
+
+
+The second finding's counterexample, and the consumer it broke. The row builds the
+legacy shape itself; Experiment 002's own probe is the consumer that failed, run
+here on a 002 record written by the base commit's writer (the record this round
+regenerated for the compatibility evidence below), before and after the repair:
+
+```text
+########## probe: summary_histogram_derivation   (PYTHONPATH=/tmp/exp003-replaced/src, 63e432f)
+# tree under test: /tmp/exp003-replaced/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: summary_histogram_derivation
+# the tree's own episodes carry clear_sizes: True
+# the legacy shape: 2 episodes and 2 summaries, none carrying clear_sizes
+# re-derived summary: {'greedy': {'games': 1, 'stopping_reasons': {'frame_limit': 1}, 'score': {'mean': 0.0, 'median': 0, 'min': 0, 'max': 0}, 'lines': {'mean': 3.0, 'median': 3, 'min': 3, 'max': 3}, 'frames': {'mean': 2.0, 'median': 2, 'min': 2, 'max': 2}, 'clear_sizes': {'singles': 0, 'doubles': 0, 'triples': 0, 'tetrises': 0}, 'pieces_placed': {'mean': 2.0, 'median': 2, 'min': 2, 'max': 2}}, 'lookahead': {'games': 1, 'stopping_reasons': {'frame_limit': 1}, 'score': {'mean': 0.0, 'median': 0, 'min': 0, 'max': 0}, 'lines': {'mean': 3.0, 'median': 3, 'min': 3, 'max': 3}, 'frames': {'mean': 2.0, 'median': 2, 'min': 2, 'max': 2}, 'clear_sizes': {'singles': 0, 'doubles': 0, 'triples': 0, 'tetrises': 0}, 'pieces_placed': {'mean': 2.0, 'median': 2, 'min': 2, 'max': 2}}}
+# recorded summary  : {'greedy': {'frames': {'max': 2, 'mean': 2.0, 'median': 2, 'min': 2}, 'games': 1, 'lines': {'max': 3, 'mean': 3.0, 'median': 3, 'min': 3}, 'pieces_placed': {'max': 2, 'mean': 2.0, 'median': 2, 'min': 2}, 'score': {'max': 0, 'mean': 0.0, 'median': 0, 'min': 0}, 'stopping_reasons': {'frame_limit': 1}}, 'lookahead': {'frames': {'max': 2, 'mean': 2.0, 'median': 2, 'min': 2}, 'games': 1, 'lines': {'max': 3, 'mean': 3.0, 'median': 3, 'min': 3}, 'pieces_placed': {'max': 2, 'mean': 2.0, 'median': 2, 'min': 2}, 'score': {'max': 0, 'mean': 0.0, 'median': 0, 'min': 0}, 'stopping_reasons': {'frame_limit': 1}}}
+AssertionError: the tree's summary adds a section the record's episodes never carried, so Experiment 002's own replay probe — which compares the summary it re-derives with the recorded one — rejects a record 002 still publishes: [('greedy', ['clear_sizes']), ('lookahead', ['clear_sizes'])]
+exit=1
+
+########## probe: summary_histogram_derivation   (PYTHONPATH=/tmp/exp003-base/src, the base commit)
+# tree under test: /tmp/exp003-base/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: absent; runner declares the objective section: False
+# probe: summary_histogram_derivation
+# the tree's own episodes carry clear_sizes: False
+# the legacy shape: 2 episodes and 2 summaries, none carrying clear_sizes
+# re-derived summary: {'greedy': {'games': 1, 'stopping_reasons': {'frame_limit': 1}, 'score': {'mean': 0.0, 'median': 0, 'min': 0, 'max': 0}, 'lines': {'mean': 3.0, 'median': 3, 'min': 3, 'max': 3}, 'frames': {'mean': 2.0, 'median': 2, 'min': 2, 'max': 2}, 'pieces_placed': {'mean': 2.0, 'median': 2, 'min': 2, 'max': 2}}, 'lookahead': {'games': 1, 'stopping_reasons': {'frame_limit': 1}, 'score': {'mean': 0.0, 'median': 0, 'min': 0, 'max': 0}, 'lines': {'mean': 3.0, 'median': 3, 'min': 3, 'max': 3}, 'frames': {'mean': 2.0, 'median': 2, 'min': 2, 'max': 2}, 'pieces_placed': {'mean': 2.0, 'median': 2, 'min': 2, 'max': 2}}}
+# recorded summary  : {'greedy': {'frames': {'max': 2, 'mean': 2.0, 'median': 2, 'min': 2}, 'games': 1, 'lines': {'max': 3, 'mean': 3.0, 'median': 3, 'min': 3}, 'pieces_placed': {'max': 2, 'mean': 2.0, 'median': 2, 'min': 2}, 'score': {'max': 0, 'mean': 0.0, 'median': 0, 'min': 0}, 'stopping_reasons': {'frame_limit': 1}}, 'lookahead': {'frames': {'max': 2, 'mean': 2.0, 'median': 2, 'min': 2}, 'games': 1, 'lines': {'max': 3, 'mean': 3.0, 'median': 3, 'min': 3}, 'pieces_placed': {'max': 2, 'mean': 2.0, 'median': 2, 'min': 2}, 'score': {'max': 0, 'mean': 0.0, 'median': 0, 'min': 0}, 'stopping_reasons': {'frame_limit': 1}}}
+# the re-derived summary equals the recorded one
+# a tree that records no histogram at all writes this shape anyway, so the contract already held there
+result: the tree under test satisfies this probe
+exit=0
+
+########## probe: summary_histogram_derivation   (PYTHONPATH=/tmp/exp003-after/src, this tree)
+# tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: summary_histogram_derivation
+# the tree's own episodes carry clear_sizes: True
+# the legacy shape: 2 episodes and 2 summaries, none carrying clear_sizes
+# re-derived summary: {'greedy': {'games': 1, 'stopping_reasons': {'frame_limit': 1}, 'score': {'mean': 0.0, 'median': 0, 'min': 0, 'max': 0}, 'lines': {'mean': 3.0, 'median': 3, 'min': 3, 'max': 3}, 'frames': {'mean': 2.0, 'median': 2, 'min': 2, 'max': 2}, 'pieces_placed': {'mean': 2.0, 'median': 2, 'min': 2, 'max': 2}}, 'lookahead': {'games': 1, 'stopping_reasons': {'frame_limit': 1}, 'score': {'mean': 0.0, 'median': 0, 'min': 0, 'max': 0}, 'lines': {'mean': 3.0, 'median': 3, 'min': 3, 'max': 3}, 'frames': {'mean': 2.0, 'median': 2, 'min': 2, 'max': 2}, 'pieces_placed': {'mean': 2.0, 'median': 2, 'min': 2, 'max': 2}}}
+# recorded summary  : {'greedy': {'frames': {'max': 2, 'mean': 2.0, 'median': 2, 'min': 2}, 'games': 1, 'lines': {'max': 3, 'mean': 3.0, 'median': 3, 'min': 3}, 'pieces_placed': {'max': 2, 'mean': 2.0, 'median': 2, 'min': 2}, 'score': {'max': 0, 'mean': 0.0, 'median': 0, 'min': 0}, 'stopping_reasons': {'frame_limit': 1}}, 'lookahead': {'frames': {'max': 2, 'mean': 2.0, 'median': 2, 'min': 2}, 'games': 1, 'lines': {'max': 3, 'mean': 3.0, 'median': 3, 'min': 3}, 'pieces_placed': {'max': 2, 'mean': 2.0, 'median': 2, 'min': 2}, 'score': {'max': 0, 'mean': 0.0, 'median': 0, 'min': 0}, 'stopping_reasons': {'frame_limit': 1}}}
+# the re-derived summary equals the recorded one
+result: the tree under test satisfies this probe
+exit=0
+
+$ PYTHONPATH=/tmp/exp003-replaced/src $PY experiments/002-path-aware-lookahead/probes/evidence.py replay /tmp/exp003-legacy-records7/20260929T011614138019Z-53aed4af/run.json   # on the tree this repair replaces
+# lookahead: locks 23153, landed exactly 23144, divergences 0 (column 0, orientation 0, row 0), fallback locks 9, predicted clears 9128, engine clears 9128, game overs 9, level mismatches 0
+replayed summary equals the recorded summary: False
+replayed inputs equal the recorded inputs for all 20 episodes
+
+$ PYTHONPATH=$PWD/src $PY experiments/002-path-aware-lookahead/probes/evidence.py replay /tmp/exp003-legacy-records7/20260929T011614138019Z-53aed4af/run.json   # this tree
+# lookahead: locks 23153, landed exactly 23144, divergences 0 (column 0, orientation 0, row 0), fallback locks 9, predicted clears 9128, engine clears 9128, game overs 9, level mismatches 0
+replayed summary equals the recorded summary: True
+replayed inputs equal the recorded inputs for all 20 episodes
+exit=0
+```
+
 ## Validation evidence
 
 Every command below was executed in this working tree with the registered
@@ -743,6 +936,25 @@ $PY experiments/003-tetris-aware-agent/probes/evidence.py predeclare   # re-capt
 $PY experiments/003-tetris-aware-agent/probes/evidence.py evaluation   # 20 episodes, 132.7 s, record runs/20260928T153237203272Z-57406741/run.json
 $PY experiments/003-tetris-aware-agent/probes/evidence.py check-predeclaration runs/20260928T153237203272Z-57406741/run.json   # exit 0; the record's own identity equals the capture
 $PY experiments/003-tetris-aware-agent/probes/evidence.py compare runs/20260928T153237203272Z-57406741/run.json runs/20260928T152709932202Z-f82efe29/run.json   # exit 0: identical configuration, heuristic, episodes and summary
+# this round's rows: the wrapper-identity row on the tree this repair replaces, on the tree that predates the identity, and after the change
+mkdir -p /tmp/exp003-replaced && git archive 63e432fff79d075fa9149ea7936751abfc42c546 | tar -x -C /tmp/exp003-replaced
+rm -rf /tmp/exp003-after && mkdir -p /tmp/exp003-after && cp -r src /tmp/exp003-after/src
+PYTHONPATH=/tmp/exp003-replaced/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py objective_wrapper_identity   # exit 1: a wrapper change certified on the tree this repair replaces
+PYTHONPATH=/tmp/exp003-base/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py objective_wrapper_identity   # exit 1: the base cannot run the experiment's suite at all
+PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py objective_wrapper_identity   # exit 0: both wrapper changes are reported
+PYTHONPATH=/tmp/exp003-replaced/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py summary_histogram_derivation   # exit 1: a legacy summary re-derives with an all-zero histogram
+PYTHONPATH=/tmp/exp003-base/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py summary_histogram_derivation   # exit 0: the base records no histogram, so the contract already holds
+PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py summary_histogram_derivation   # exit 0: the legacy summary re-derives unchanged
+PYTHONPATH=$PWD/src $PY experiments/002-path-aware-lookahead/probes/evidence.py replay /tmp/exp003-legacy-records7/20260929T011614138019Z-53aed4af/run.json   # exit 0: 002's own probe reports the replayed summary equals the recorded one
+mv experiments/003-tetris-aware-agent/probes/predeclared_objective.json experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-wrapper.json
+$PY experiments/003-tetris-aware-agent/probes/evidence.py predeclare   # the enlarged identity, captured from the unchanged tree before the evaluation
+$PY experiments/003-tetris-aware-agent/probes/evidence.py evaluation   # 20 episodes, 131.3 s, record runs/20260929T003549254811Z-0d37fb01/run.json
+$PY experiments/003-tetris-aware-agent/probes/evidence.py check-predeclaration runs/20260929T003549254811Z-0d37fb01/run.json   # exit 0; the record's own identity equals the capture
+$PY experiments/003-tetris-aware-agent/probes/evidence.py compare runs/20260929T003549254811Z-0d37fb01/run.json runs/20260929T004011462607Z-587cbe29/run.json   # exit 0: identical configuration, heuristic, episodes and summary
+$PY experiments/003-tetris-aware-agent/probes/evidence.py all   # exit 0; its evaluation took 132.3 s and re-measured the same figures
+$PY /tmp/exp003-sweep7.py   # every retained record replays from its own inputs: 37 records, exit 0 (per-record logs in /tmp/exp003-sweep7, temporary)
+$PY -m pytest -q -p no:cacheprovider -m 'not integration'     # this round: 162 passed, 27 deselected
+$PY -m pytest -q -p no:cacheprovider -m integration           # this round: 27 passed, 162 deselected
 PYTHONPATH=$PWD/src $PY -c "from pathlib import Path; from block_stack_ai.runner import verify_run; [verify_run(p) for p in sorted(Path('runs').glob('*/run.json'))]"   # every retained record still verifies
 ```
 
@@ -1065,6 +1277,22 @@ rows.
 | the `README.md` version prose (finding 4) | — | — | Documentation-only row, with no pre-change code contract to violate: `a14fe1843`'s README says versions 3 and 4 are the ones this writer emits while its own `runner.py` defines `FORMAT_VERSION = 3`, `PRIOR_SUITE_FORMAT_VERSION = 4` and `SUITE_FORMAT_VERSION = 5`. Executed substitute: the corrected README names version 3 the current scripted format, version 4 the prior suite format and version 5 the current suite format, matching those constants, and the analogous shorthand in `notes.md` is corrected. No test is added or weakened. |
 | `test_live_tetris_session_snapshots_the_objective_at_begin` (integration) | `live_objective_snapshot` | 1 | The reviewer's counterexamples, measured on `a14fe1843`'s `src`: a covered module's file is changed after the first BEGIN and the session is driven through two games (the second a live restart), and the first saved record's `block_stack_ai.tetris` digest is `184466ec…` — the mutated file — against the loaded implementation's `3d32c1c3…`, so the record names post-edit code as the code that chose the inputs. This tree reads the identity once when the session is built and persists it for both records, which carry the loaded implementation's digest. |
 
+**Round 7's rows** (pre-change tree `63e432f`, the last publication, archived at
+`/tmp/exp003-replaced`; the id also runs with this tree's `src` as
+`/tmp/exp003-after`). Each row's full stdout is pasted in "This round's repairs"
+above. The recorded base commit `d83a5bc` predates Experiment 003 and the
+intermediate publications `dc3c29c` and `fbe21e1` predate the objective's
+identity, so `objective_wrapper_identity` reports the value it measured there (the
+suite cannot be run at all, or the identity covers the objective's own imports
+without the wrapper) instead of aborting on an import.
+
+| New test | Baseline probe | Exit | Pre-change behaviour it pins |
+| --- | --- | --- | --- |
+| `test_verification_rejects_a_wrapper_change_that_keeps_the_recorded_choices` | `objective_wrapper_identity` | 1 | The reviewer's counterexample, executed on `63e432f`: the suite is written by that tree's own writer (version 5, identity `['block_stack_ai.heuristic', 'block_stack_ai.pathaware', 'block_stack_ai.pieces', 'block_stack_ai.tetris']`), two copies of `agents.py` change the wrapper — one hands the objective `level=state.level + 1`, one bypasses the objective for the frozen lookahead choice — with the loaded module untouched so the recorded seeds keep their recorded actions, and `verify_run` returns `[]` for both: the record is certified under code that did not produce it. This tree reports `objective.sources.block_stack_ai.agents: recorded '2b24e1b2…', replayed '354b4a7c…'` and `… 'a20a5a99…'`. |
+| `test_the_version_5_identity_stops_before_the_wrapper` | `objective_wrapper_identity` | 1 | The same pre-change state from the other side: at `63e432f` no writer has ever recorded the wrapper's digest, so the record that version 6's writer emits — the same five modules — cannot be measured there, and the row reports the shape `63e432f` does record (`the identity covers the agent wrapper block_stack_ai.agents: False`). On this tree a version-5 record carrying the older four digests verifies, the same record carrying the wrapper's digest is reported as a key no writer of that version emitted, and the current record with the wrapper key deleted is reported too. |
+| `test_the_objective_identity_is_the_source_of_the_modules_it_runs` (extended) | `objective_wrapper_identity` | 1 | The identity's module set gained `block_stack_ai.agents`, so the extended test asserts five modules where it asserted four. The pre-change value is the same executed certification above; the four other digests are unchanged by this round, which is why the version-5 records still verify against the older shape. |
+| `test_a_summary_reports_exactly_the_sections_its_episodes_carry` | `summary_histogram_derivation` | 1 | The reviewer's second finding, executed on `63e432f`: a suite record's histogram is stripped from every episode and every summary and re-summarized, and the tree adds `clear_sizes` with all-zero totals to both agents — so re-deriving a legacy record's summary disagrees with the recorded one. The base commit predates the metric and writes this shape anyway, so the row reports `the tree's own episodes carry clear_sizes: False` and exits 0 there: the contract already held. This tree re-derives the recorded summary unchanged (`exit 0`), and 002's own probe replays a base-writer 002 record to `replayed summary equals the recorded summary: True`. |
+
 The replaced presence-only probe, re-run in the `fbe21e1` round on that round's
 worktree as item 1's table describes (its file written into `probes/` as
 `.publication-before.py`, run, removed): it reads the refs, lists each repaired
@@ -1171,10 +1399,11 @@ content was reviewed:
   present", while the writer that emits it records it unconditionally, so a
   section deleted from a current record was indistinguishable from a record that
   predates it and verified silently. One repair covers all three: the record's
-  `format_version` now says which sections its writer emitted (1/2 legacy; 3, 4
-  and 5 are what the writers of this experiment emit, version 5 being the current
-  suite format), the current versions require them, and the legacy versions keep the
-  presence rule. The audit enumerated the optional top-level sections of both
+  `format_version` now says which sections its writer emitted (1/2 legacy; 3, 4,
+  5 and 6 are what the writers of this experiment emit, version 5 being the suite
+  format whose identity stops at the objective's own imports and version 6 the
+  current one, which covers the wrapper too), the current versions require them,
+  and the legacy versions keep the presence rule. The audit enumerated the optional top-level sections of both
   record shapes — the scripted episode's `pieces_placed` and `clear_sizes`, the
   suite's per-episode and per-summary `clear_sizes`, `pieces_placed` and
   `objective` — and confirmed the remaining top-level sections are not optional:
@@ -1215,7 +1444,9 @@ class one level deeper, so the analogous checks were audited in the same patch:
   **content** comparison, not a presence one: `objective.sources` is the sha256 of
   the source of every module the objective's code runs, compared key for key, and
   the modules are discovered by walking the objective's own namespace so no
-  hand-kept list can fall behind it. The audit asked what else in the record is
+  hand-kept list can fall behind it — a later round extends that walk from the
+  module that defines the agent factory, because the wrapper imports the
+  objective and the objective's own namespace can never reach it. The audit asked what else in the record is
   identified by a constant rather than by content: the `heuristic` mapping is
   compared value for value (already), the episodes are replayed and compared
   field by field, and `versions` (the Git metadata) stays advisory on purpose,
@@ -2432,7 +2663,13 @@ $ $PY experiments/003-tetris-aware-agent/probes/evidence.py check-predeclaration
 # the declared objective is the measured one and predates the record
 exit=0
 ```
-This round's runs above print four identity modules: the capture and the cited record's own `objective.sources` carry the same four digests, and the check requires them to equal the modules on the tree as well (item 6a executes the counterexample a helper change used to slip through).
+That round's runs above print four identity modules: its capture and its cited
+record's own `objective.sources` carry the same four digests, and the check
+requires them to equal the modules on the tree as well (its item 6a executed the
+counterexample a helper change used to slip through). The current capture prints
+five — `block_stack_ai.agents` is the module this round added — and the same
+equality holds across the capture, the cited record and the tree, which the
+"Round 7 rows, executed" block below prints.
 
 
 The capture is written to [`probes/predeclared_objective.json`](probes/predeclared_objective.json),
@@ -2816,6 +3053,269 @@ exactly the way the reviewed object did, and all three disagreements are
 reported before the check refuses it.
 
 
+**Round 7 rows, executed.** The pre-change value is the failure message the
+replaced code returned because it certified the counterexample. The commands and
+their complete stdout follow; every probe prints the tree it imported and that
+tree's shape before its own values, and the temporary paths the runs print are
+unique per invocation:
+
+```text
+$ PYTHONPATH=/tmp/exp003-replaced/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py objective_wrapper_identity
+# tree under test: /tmp/exp003-replaced/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: objective_wrapper_identity
+# record format_version: 5
+# recorded identity: {'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
+# the identity covers the agent wrapper block_stack_ai.agents: False
+# the record verifies before the wrapper changes: []
+# changed wrapper (a state parameter changed): /tmp/exp003-wrapper-kb6qnvwc/agents.py; the loaded code is untouched, so the replayed inputs are the recorded ones
+# the wrapper change (a state parameter changed) is certified: verify_run returned []
+# changed wrapper (the objective bypassed): /tmp/exp003-wrapper-0b_ytcqq/agents.py; the loaded code is untouched, so the replayed inputs are the recorded ones
+# the wrapper change (the objective bypassed) is certified: verify_run returned []
+AssertionError: the tree certified a record whose wrapper changed (a state parameter changed, the objective bypassed) while its recorded seeds kept exactly their recorded actions, so the record verifies under code that did not produce it: its recorded identity covers ['block_stack_ai.heuristic', 'block_stack_ai.pathaware', 'block_stack_ai.pieces', 'block_stack_ai.tetris'], which does not include the agent wrapper block_stack_ai.agents that supplies every state parameter the objective reads and executes the placement it returns
+exit=1
+
+$ PYTHONPATH=/tmp/exp003-base/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py objective_wrapper_identity
+# tree under test: /tmp/exp003-base/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: absent; runner declares the objective section: False
+# probe: objective_wrapper_identity
+AssertionError: objective_wrapper_identity: the tree cannot run the experiment's suite at all: run_and_save raised ValueError('agents must be chosen from random, greedy, lookahead')
+exit=1
+
+$ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py objective_wrapper_identity
+# tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
+# block_stack_ai/tetris.py: present; runner declares the objective section: True
+# probe: objective_wrapper_identity
+# record format_version: 6
+# recorded identity: {'block_stack_ai.agents': '2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329', 'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
+# the identity covers the agent wrapper block_stack_ai.agents: True
+# the record verifies before the wrapper changes: []
+# changed wrapper (a state parameter changed): /tmp/exp003-wrapper-tr06gfbk/agents.py; the loaded code is untouched, so the replayed inputs are the recorded ones
+# the wrapper change (a state parameter changed) is reported: Recorded objective differs from the current implementation:
+  objective.sources.block_stack_ai.agents: recorded '2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329', replayed '354b4a7c4e668d1807931339ee812818d34442f2c7534e5cf51fe52f0fe5098e'
+# changed wrapper (the objective bypassed): /tmp/exp003-wrapper-vxh0of95/agents.py; the loaded code is untouched, so the replayed inputs are the recorded ones
+# the wrapper change (the objective bypassed) is reported: Recorded objective differs from the current implementation:
+  objective.sources.block_stack_ai.agents: recorded '2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329', replayed 'a20a5a991bc16b726e2b6d641f5e802c9896c086c09e88bb554655e2f617204c'
+# the unchanged wrapper verifies again: []
+result: the tree under test satisfies this probe
+exit=0
+```
+
+The capture that covers the enlarged identity, re-made from the unchanged tree
+before the evaluation, and the check that ties the cited record's own identity to
+it:
+
+```text
+$ $PY experiments/003-tetris-aware-agent/probes/evidence.py predeclare
+# existing predeclaration kept: captured_at 2026-09-29T00:33:29.514691+00:00
+# module sha256 3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e
+# notes section sha256 b676a981d184f5bcf53909d4f9201db5e7e05df411e624f32fa2a377d1df6e9b
+# objective identity: 5 modules, {'block_stack_ai.agents': '2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329', 'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
+# objective: {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}
+exit=0
+
+$ $PY experiments/003-tetris-aware-agent/probes/evidence.py check-predeclaration runs/20260929T003549254811Z-0d37fb01/run.json
+# predeclaration captured_at: 2026-09-29T00:33:29.514691+00:00 (module sha256 3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e, notes section sha256 b676a981d184f5bcf53909d4f9201db5e7e05df411e624f32fa2a377d1df6e9b, 5 identity modules)
+# evaluation record created_at: 2026-09-29T00:33:38.130704+00:00
+# current module sha256: 3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e
+# current notes section sha256: b676a981d184f5bcf53909d4f9201db5e7e05df411e624f32fa2a377d1df6e9b
+# current objective identity: {'block_stack_ai.agents': '2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329', 'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
+# declared objective: {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}
+# published objective: {'tetrises': 8.0, 'premature_clear': -1.0, 'holes': -1.0, 'aggregate_height': -0.5, 'bumpiness': -0.5, 'max_height': -1.0, 'well_depth': 1.0, 'well_depth_cap': 4, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending'}
+# the cited record's own objective identity: {'block_stack_ai.agents': '2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329', 'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
+# the cited record's own objective weights: {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}
+# the declared objective is the measured one and predates the record
+exit=0
+```
+
+The evaluation made after that capture, its repeat from a separate process, and
+the equality between them:
+
+```text
+$ $PY experiments/003-tetris-aware-agent/probes/evidence.py evaluation
+########## probe: evaluation
+# configuration: {'game': {'ruleset': 'classic_ntsc_extended', 'mode': 'endless', 'start_level': 18, 'height': 0}, 'frame_limit': 200000, 'seeds': [2, 4, 6, 8, 10, 12, 14, 16, 18, 20], 'agents': ['lookahead', 'tetris']}
+# episodes: 20, wall clock seconds: 131.3
+# record: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/runs/20260929T003549254811Z-0d37fb01/run.json
+# verify warnings: ['The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.']
+# lookahead: games 10, stopping_reasons {'frame_limit': 1, 'game_over': 9}, clear_sizes {'doubles': 918, 'singles': 7179, 'tetrises': 2, 'triples': 35}
+# tetris: games 10, stopping_reasons {'game_over': 10}, clear_sizes {'doubles': 476, 'singles': 2278, 'tetrises': 10, 'triples': 75}
+failures: 0
+exit=0
+
+$ $PY experiments/003-tetris-aware-agent/probes/evidence.py evaluation   # the repeat, a separate process
+########## probe: evaluation
+# configuration: {'game': {'ruleset': 'classic_ntsc_extended', 'mode': 'endless', 'start_level': 18, 'height': 0}, 'frame_limit': 200000, 'seeds': [2, 4, 6, 8, 10, 12, 14, 16, 18, 20], 'agents': ['lookahead', 'tetris']}
+# episodes: 20, wall clock seconds: 131.1
+# record: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/runs/20260929T004011462607Z-587cbe29/run.json
+# verify warnings: ['The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.']
+# lookahead: games 10, stopping_reasons {'frame_limit': 1, 'game_over': 9}, clear_sizes {'doubles': 918, 'singles': 7179, 'tetrises': 2, 'triples': 35}
+# tetris: games 10, stopping_reasons {'game_over': 10}, clear_sizes {'doubles': 476, 'singles': 2278, 'tetrises': 10, 'triples': 75}
+failures: 0
+exit=0
+
+$ $PY experiments/003-tetris-aware-agent/probes/evidence.py compare runs/20260929T003549254811Z-0d37fb01/run.json runs/20260929T004011462607Z-587cbe29/run.json
+# identical configuration, heuristic, episodes and summary: runs/20260929T003549254811Z-0d37fb01/run.json == runs/20260929T004011462607Z-587cbe29/run.json
+exit=0
+```
+
+The registered suites on the frozen tree, and the publication probe with the
+retained snapshot it produced:
+
+```text
+$ $PY -m pytest -q -p no:cacheprovider -m 'not integration'
+........................................................................ [ 44%]
+........................................................................ [ 88%]
+..................                                                       [100%]
+162 passed, 27 deselected in 0.93s
+exit=0
+
+$ $PY -m pytest -q -p no:cacheprovider -m integration
+...........................                                              [100%]
+27 passed, 162 deselected in 2.06s
+exit=0
+
+$ $PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/exp003-pub7-final.txt
+########## probe: publication
+# the task branch and the PR head over HTTPS
+#   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorithm.git refs/heads/rakazo/experiment-003-tetris-aware-agent refs/pull/11/head
+#   exit 0
+#   | 63e432fff79d075fa9149ea7936751abfc42c546	refs/heads/rakazo/experiment-003-tetris-aware-agent
+#   | 63e432fff79d075fa9149ea7936751abfc42c546	refs/pull/11/head
+# writable clone of the published branch
+#   $ git clone --quiet --branch rakazo/experiment-003-tetris-aware-agent https://github.com/HarmonChew/fallgorithm.git /tmp/exp003-publication
+#   exit 0
+# the published task commit from the clone
+#   $ git -C /tmp/exp003-publication rev-parse HEAD
+#   exit 0
+#   | 63e432fff79d075fa9149ea7936751abfc42c546
+# the published tree from the clone
+#   $ git -C /tmp/exp003-publication rev-parse HEAD^{tree}
+#   exit 0
+#   | 69faa602644a657089caae9e14186070cd1caf14
+# the published commit descends from the recorded base
+#   $ git -C /tmp/exp003-publication merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
+#   exit 0
+# this worktree's HEAD
+#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
+#   exit 0
+#   | 63e432fff79d075fa9149ea7936751abfc42c546
+# changes not committed in this worktree
+#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent status --porcelain
+#   exit 0
+#   | M README.md
+#   |  M experiments/003-tetris-aware-agent/notes.md
+#   |  M experiments/003-tetris-aware-agent/probes/evidence.py
+#   |  M experiments/003-tetris-aware-agent/probes/prechange_probe.py
+#   |  M experiments/003-tetris-aware-agent/probes/predeclared_objective.json
+#   |  M experiments/003-tetris-aware-agent/result.json
+#   |  M experiments/README.md
+#   |  M src/block_stack_ai/runner.py
+#   |  M tests/test_unit.py
+#   | ?? experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-wrapper.json
+#   | differs README.md (outside the declared repaired paths) published sha256 7a4216b51c7b this worktree sha256 5fbaec2e7cea
+#   | differs experiments/003-tetris-aware-agent/notes.md published sha256 c458b97e91e5 this worktree sha256 6f029982c315
+#   | differs experiments/003-tetris-aware-agent/probes/evidence.py published sha256 6458bbd4bf15 this worktree sha256 d494f8ecd083
+#   | differs experiments/003-tetris-aware-agent/probes/prechange_probe.py published sha256 941e13e34fc6 this worktree sha256 2f720988548e
+#   | differs experiments/003-tetris-aware-agent/probes/predeclared_objective.json (outside the declared repaired paths) published sha256 8577dd1dd841 this worktree sha256 fab72d814c0d
+#   | added experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-wrapper.json (outside the declared repaired paths): absent from the published tree, present in this worktree sha256 8577dd1dd841
+#   | differs experiments/003-tetris-aware-agent/result.json published sha256 ed377c0362f3 this worktree sha256 d55713fdd669
+#   | differs experiments/README.md published sha256 deba3725b6aa this worktree sha256 1d7aa5e282fd
+#   | same src/block_stack_ai/agents.py sha256 2b24e1b25e2c
+#   | same src/block_stack_ai/live.py sha256 a5a17818e652
+#   | differs src/block_stack_ai/runner.py published sha256 4f1f543e40b0 this worktree sha256 72d9d8f20a3e
+#   | same src/block_stack_ai/tetris.py sha256 3d32c1c3c1f3
+#   | same tests/test_integration.py sha256 babb55c786d6
+#   | same tests/test_live.py sha256 22ff466e5bc7
+#   | differs tests/test_unit.py published sha256 c19cfaadf40c this worktree sha256 5342f81652bc
+#   | compared 48 paths: every path either tree tracks, plus this worktree's untracked files
+# the refs name an earlier publication: 63e432fff79d075fa9149ea7936751abfc42c546; 10 of 48 compared paths differ from this worktree (README.md, experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/003-tetris-aware-agent/probes/predeclared_objective.json, experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-wrapper.json, experiments/003-tetris-aware-agent/result.json, experiments/README.md, src/block_stack_ai/runner.py, tests/test_unit.py), and this worktree holds the unpublished repair
+#   | declared_paths_compared_by_content=12 compared_paths_count=48 observed_differing_paths=10 observed_uncommitted_paths=10
+# publication_capture={"branch_head": "63e432fff79d075fa9149ea7936751abfc42c546", "branch_ref": "refs/heads/rakazo/experiment-003-tetris-aware-agent", "compared_paths": [{"differs": false, "outcome": "same", "path": ".github/workflows/ci.yml", "published": "file", "published_sha256": "4185e28c0bbcc4495c3717ef784d1141c282d70a35cacb4c633ad3d367c6c90a", "worktree": "file", "worktree_sha256": "4185e28c0bbcc4495c3717ef784d1141c282d70a35cacb4c633ad3d367c6c90a"}, {"differs": false, "outcome": "same", "path": ".gitignore", "published": "file", "published_sha256": "6c6c612e42315a24d2be9b7ddbf6d425e175199a9d86d80ab60be7eba1626cbb", "worktree": "file", "worktree_sha256": "6c6c612e42315a24d2be9b7ddbf6d425e175199a9d86d80ab60be7eba1626cbb"}, {"differs": false, "outcome": "same", "path": "AGENTS.md", "published": "file", "published_sha256": "8edae270262292f8f6b863f2a36e40a53abed41a2e4ff0c68dc6c17f4e779c8d", "worktree": "file", "worktree_sha256": "8edae270262292f8f6b863f2a36e40a53abed41a2e4ff0c68dc6c17f4e779c8d"}, {"differs": true, "outcome": "differs", "path": "README.md", "published": "file", "published_sha256": "7a4216b51c7b71df0ac61009126b51029ce5349d287096a70221f5971bbb6733", "worktree": "file", "worktree_sha256": "5fbaec2e7cea54013f5448cb76294f511faf32eab8ad08ba59b4abfb714e17f2"}, {"differs": false, "outcome": "same", "path": "experiments/000-connection/config.json", "published": "file", "published_sha256": "6126a1d5092727ebed8688e368301a95f1ee5e0b4287dfecd260f2f88ac3c974", "worktree": "file", "worktree_sha256": "6126a1d5092727ebed8688e368301a95f1ee5e0b4287dfecd260f2f88ac3c974"}, {"differs": false, "outcome": "same", "path": "experiments/000-connection/notes.md", "published": "file", "published_sha256": "fc1d7aef384ec725225c1a57b81a6c2d0e403e47174c8c64ce70fde248fba4fa", "worktree": "file", "worktree_sha256": "fc1d7aef384ec725225c1a57b81a6c2d0e403e47174c8c64ce70fde248fba4fa"}, {"differs": false, "outcome": "same", "path": "experiments/000-connection/result.json", "published": "file", "published_sha256": "36ad6f1e200cd5a34c7fad492d260db30ab85e0731d2a8c4015f86adde62fd1d", "worktree": "file", "worktree_sha256": "36ad6f1e200cd5a34c7fad492d260db30ab85e0731d2a8c4015f86adde62fd1d"}, {"differs": false, "outcome": "same", "path": "experiments/001-greedy-heuristic/config.json", "published": "file", "published_sha256": "303f66d00af0376ad6c22bcec7bc2a218503277500cfc71aea8a56a98ca91ea9", "worktree": "file", "worktree_sha256": "303f66d00af0376ad6c22bcec7bc2a218503277500cfc71aea8a56a98ca91ea9"}, {"differs": false, "outcome": "same", "path": "experiments/001-greedy-heuristic/notes.md", "published": "file", "published_sha256": "1c2b838a60afe9b8843bce322f9df92bd3765f6d5042bb7b2c0474fe85fb9a18", "worktree": "file", "worktree_sha256": "1c2b838a60afe9b8843bce322f9df92bd3765f6d5042bb7b2c0474fe85fb9a18"}, {"differs": false, "outcome": "same", "path": "experiments/001-greedy-heuristic/result.json", "published": "file", "published_sha256": "11da7b4b689508430fd28872282c29de355e9c57b3ed9d43156edc42d58b8df0", "worktree": "file", "worktree_sha256": "11da7b4b689508430fd28872282c29de355e9c57b3ed9d43156edc42d58b8df0"}, {"differs": false, "outcome": "same", "path": "experiments/002-path-aware-lookahead/config.json", "published": "file", "published_sha256": "fa6de6c7d081374a19423295d6781c368b64e78537888251ca9db2606e9dade6", "worktree": "file", "worktree_sha256": "fa6de6c7d081374a19423295d6781c368b64e78537888251ca9db2606e9dade6"}, {"differs": false, "outcome": "same", "path": "experiments/002-path-aware-lookahead/notes.md", "published": "file", "published_sha256": "bb1cfa2e8859ef8ef77afd9ea8d614c90a0bc808b2f14363464601c8274aa504", "worktree": "file", "worktree_sha256": "bb1cfa2e8859ef8ef77afd9ea8d614c90a0bc808b2f14363464601c8274aa504"}, {"differs": false, "outcome": "same", "path": "experiments/002-path-aware-lookahead/probes/evidence.py", "published": "file", "published_sha256": "b298d5debce549cced63d5d487916c634f79d5faa1954afe4ab7ba3cde90c8a5", "worktree": "file", "worktree_sha256": "b298d5debce549cced63d5d487916c634f79d5faa1954afe4ab7ba3cde90c8a5"}, {"differs": false, "outcome": "same", "path": "experiments/002-path-aware-lookahead/probes/prechange_probe.py", "published": "file", "published_sha256": "8337b7c6614035e217c12e26c479cc04660488b87d46e6d93e307290983539b8", "worktree": "file", "worktree_sha256": "8337b7c6614035e217c12e26c479cc04660488b87d46e6d93e307290983539b8"}, {"differs": false, "outcome": "same", "path": "experiments/002-path-aware-lookahead/result.json", "published": "file", "published_sha256": "c48715c3d67b7357380e7db717de25d90056067a3a50ac15420521a22d14cfca", "worktree": "file", "worktree_sha256": "c48715c3d67b7357380e7db717de25d90056067a3a50ac15420521a22d14cfca"}, {"differs": false, "outcome": "same", "path": "experiments/003-tetris-aware-agent/config.json", "published": "file", "published_sha256": "a9b20935a6892bbc6cf8e4ab433ef38573d66c0fda45108ee74853e347a3d7b0", "worktree": "file", "worktree_sha256": "a9b20935a6892bbc6cf8e4ab433ef38573d66c0fda45108ee74853e347a3d7b0"}, {"differs": true, "outcome": "differs", "path": "experiments/003-tetris-aware-agent/notes.md", "published": "file", "published_sha256": "c458b97e91e587f4c014a2bc7fd5d1a9b0c12ecaa46c8515505fba6d6832b8b2", "worktree": "file", "worktree_sha256": "6f029982c31519da9fe871efc920be05137e18f7ba3b0a73fe83ebb3888f22c5"}, {"differs": true, "outcome": "differs", "path": "experiments/003-tetris-aware-agent/probes/evidence.py", "published": "file", "published_sha256": "6458bbd4bf15ec80c8cb19f08db0d9ed54f85261d146308944419e1ef44953b7", "worktree": "file", "worktree_sha256": "d494f8ecd08353b24f60b83326d6bf9ca923f7e229a0385bd4ee5fe8721daf33"}, {"differs": true, "outcome": "differs", "path": "experiments/003-tetris-aware-agent/probes/prechange_probe.py", "published": "file", "published_sha256": "941e13e34fc627eb8fcedd1113617f28b113427010fa761270f27de45ee6e217", "worktree": "file", "worktree_sha256": "2f720988548ea861ee49ee96dfa5f610fd494b5cb2af8e3f11978ebbe9f49d27"}, {"differs": false, "outcome": "same", "path": "experiments/003-tetris-aware-agent/probes/predeclared_objective.earlier.json", "published": "file", "published_sha256": "e15fe4269cd9be7a5aca33434324d3488f3b16e5679d275bfef4f8b66adbd647", "worktree": "file", "worktree_sha256": "e15fe4269cd9be7a5aca33434324d3488f3b16e5679d275bfef4f8b66adbd647"}, {"differs": true, "outcome": "differs", "path": "experiments/003-tetris-aware-agent/probes/predeclared_objective.json", "published": "file", "published_sha256": "8577dd1dd841b0dd56a0e913567d19d59395cb399ea54f6961ea24d7ea457fe8", "worktree": "file", "worktree_sha256": "fab72d814c0d7ddf8d91a46d73ecd66fd36d8e1512015308de257f8fc83b4798"}, {"differs": false, "outcome": "same", "path": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-repair.json", "published": "file", "published_sha256": "d88c749e14dc240e94928ca65573a604e5865fdc54ea2bd0fbe71b84dcd57a6d", "worktree": "file", "worktree_sha256": "d88c749e14dc240e94928ca65573a604e5865fdc54ea2bd0fbe71b84dcd57a6d"}, {"differs": false, "outcome": "same", "path": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-replay-note.json", "published": "file", "published_sha256": "479abee7bb6c35ed33d0532452ecb8573f4e478dd229566d94f804e1c2a24a87", "worktree": "file", "worktree_sha256": "479abee7bb6c35ed33d0532452ecb8573f4e478dd229566d94f804e1c2a24a87"}, {"differs": false, "outcome": "same", "path": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-transcription.json", "published": "file", "published_sha256": "33b7ecaa41df2c313a684f0aa6264ba7ebe56dff6a56704991e6f6df13328544", "worktree": "file", "worktree_sha256": "33b7ecaa41df2c313a684f0aa6264ba7ebe56dff6a56704991e6f6df13328544"}, {"differs": true, "outcome": "added", "path": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-wrapper.json", "published": "absent", "published_sha256": null, "worktree": "file", "worktree_sha256": "8577dd1dd841b0dd56a0e913567d19d59395cb399ea54f6961ea24d7ea457fe8"}, {"differs": true, "outcome": "differs", "path": "experiments/003-tetris-aware-agent/result.json", "published": "file", "published_sha256": "ed377c0362f37982b0e4ada446259f99f306035a2102a09f937a24463f654ab9", "worktree": "file", "worktree_sha256": "d55713fdd669336e0f9c7b1d80621e673ff915cbec63a2cc39d90c904f2835e7"}, {"differs": true, "outcome": "differs", "path": "experiments/README.md", "published": "file", "published_sha256": "deba3725b6aaa681c8cbade942994359ae170e0231c91c7a1aaff70678ce0abe", "worktree": "file", "worktree_sha256": "1d7aa5e282fde870cb88a59ab91ff2c537c3f1bcab1621022af30c9ae24ef366"}, {"differs": false, "outcome": "same", "path": "pyproject.toml", "published": "file", "published_sha256": "eb12de5b47a2a880c497460eec778a4927fc6d9789c6cb07732c9229e160d75d", "worktree": "file", "worktree_sha256": "eb12de5b47a2a880c497460eec778a4927fc6d9789c6cb07732c9229e160d75d"}, {"differs": false, "outcome": "same", "path": "scripts/setup_engine.py", "published": "file", "published_sha256": "640f3cdd2de7f5cd46a55bf42274f11d05b2676761a5805f4106317febc20f5d", "worktree": "file", "worktree_sha256": "640f3cdd2de7f5cd46a55bf42274f11d05b2676761a5805f4106317febc20f5d"}, {"differs": false, "outcome": "same", "path": "src/block_stack_ai/__init__.py", "published": "file", "published_sha256": "81ffd3a679d0ca136e729372efa76864131f5c4564090b128ae2581aa7e1294f", "worktree": "file", "worktree_sha256": "81ffd3a679d0ca136e729372efa76864131f5c4564090b128ae2581aa7e1294f"}, {"differs": false, "outcome": "same", "path": "src/block_stack_ai/agents.py", "published": "file", "published_sha256": "2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329", "worktree": "file", "worktree_sha256": "2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329"}, {"differs": false, "outcome": "same", "path": "src/block_stack_ai/cli.py", "published": "file", "published_sha256": "c9a6a9785404842b65933cb106825d7740f867b26031a31960f4c405970e2c91", "worktree": "file", "worktree_sha256": "c9a6a9785404842b65933cb106825d7740f867b26031a31960f4c405970e2c91"}, {"differs": false, "outcome": "same", "path": "src/block_stack_ai/engine.py", "published": "file", "published_sha256": "6c6ababa0e527053892a5a77fecf58e7c5079473f6c0c51647c38c6fab0ac60b", "worktree": "file", "worktree_sha256": "6c6ababa0e527053892a5a77fecf58e7c5079473f6c0c51647c38c6fab0ac60b"}, {"differs": false, "outcome": "same", "path": "src/block_stack_ai/heuristic.py", "published": "file", "published_sha256": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea", "worktree": "file", "worktree_sha256": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea"}, {"differs": false, "outcome": "same", "path": "src/block_stack_ai/live.py", "published": "file", "published_sha256": "a5a17818e65267c7141cef5a596874c11ec904e39dd786cb2a489c1b38429d6d", "worktree": "file", "worktree_sha256": "a5a17818e65267c7141cef5a596874c11ec904e39dd786cb2a489c1b38429d6d"}, {"differs": false, "outcome": "same", "path": "src/block_stack_ai/menu.py", "published": "file", "published_sha256": "9f073abb8164189f42b36b05097f82b48e759ad8ca76173c8ad7735d1e1fcb31", "worktree": "file", "worktree_sha256": "9f073abb8164189f42b36b05097f82b48e759ad8ca76173c8ad7735d1e1fcb31"}, {"differs": false, "outcome": "same", "path": "src/block_stack_ai/pathaware.py", "published": "file", "published_sha256": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884", "worktree": "file", "worktree_sha256": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884"}, {"differs": false, "outcome": "same", "path": "src/block_stack_ai/pieces.py", "published": "file", "published_sha256": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad", "worktree": "file", "worktree_sha256": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad"}, {"differs": false, "outcome": "same", "path": "src/block_stack_ai/replay.py", "published": "file", "published_sha256": "04517705cc803eb4a9b68170a15e73bcef0d0ab329220949070eae576fef89ce", "worktree": "file", "worktree_sha256": "04517705cc803eb4a9b68170a15e73bcef0d0ab329220949070eae576fef89ce"}, {"differs": true, "outcome": "differs", "path": "src/block_stack_ai/runner.py", "published": "file", "published_sha256": "4f1f543e40b0d386e77d6e7738701daa12b17552aad652af1d9847ee49ca12ea", "worktree": "file", "worktree_sha256": "72d9d8f20a3e64ba27285140ec16002b50db30f418791b5bb3cfd97e4bf59410"}, {"differs": false, "outcome": "same", "path": "src/block_stack_ai/tetris.py", "published": "file", "published_sha256": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e", "worktree": "file", "worktree_sha256": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e"}, {"differs": false, "outcome": "same", "path": "tests/test_cli.py", "published": "file", "published_sha256": "decce003f597e195c8e5f2935206ab8ae8caf1ff7dfb95e02af94e7f1fa57074", "worktree": "file", "worktree_sha256": "decce003f597e195c8e5f2935206ab8ae8caf1ff7dfb95e02af94e7f1fa57074"}, {"differs": false, "outcome": "same", "path": "tests/test_heuristic.py", "published": "file", "published_sha256": "3cb42cd057111998e3e26cb6d6b8ebaf9875ea2cb4de18728873b0df88dc6c01", "worktree": "file", "worktree_sha256": "3cb42cd057111998e3e26cb6d6b8ebaf9875ea2cb4de18728873b0df88dc6c01"}, {"differs": false, "outcome": "same", "path": "tests/test_integration.py", "published": "file", "published_sha256": "babb55c786d6b4f9e6ea3267d3877f1101cf5496f51e9e435556cce01a3a1650", "worktree": "file", "worktree_sha256": "babb55c786d6b4f9e6ea3267d3877f1101cf5496f51e9e435556cce01a3a1650"}, {"differs": false, "outcome": "same", "path": "tests/test_live.py", "published": "file", "published_sha256": "22ff466e5bc7fcd5ac2075bae5fa05c7c3ff508c84dcbe0d2035581b77c51793", "worktree": "file", "worktree_sha256": "22ff466e5bc7fcd5ac2075bae5fa05c7c3ff508c84dcbe0d2035581b77c51793"}, {"differs": false, "outcome": "same", "path": "tests/test_pathaware.py", "published": "file", "published_sha256": "3a46c844b47cbc7df862ec8757186fc2f890aa43c280546a34fa3ea45720dc0a", "worktree": "file", "worktree_sha256": "3a46c844b47cbc7df862ec8757186fc2f890aa43c280546a34fa3ea45720dc0a"}, {"differs": false, "outcome": "same", "path": "tests/test_tetris.py", "published": "file", "published_sha256": "5e693910540af4c2117a5073b6c6d66af6088d823b819185427a16f9d0c97eaa", "worktree": "file", "worktree_sha256": "5e693910540af4c2117a5073b6c6d66af6088d823b819185427a16f9d0c97eaa"}, {"differs": true, "outcome": "differs", "path": "tests/test_unit.py", "published": "file", "published_sha256": "c19cfaadf40cda48e7f9f9cb73e3adf19f1f44827945c51c674d240f8eee002f", "worktree": "file", "worktree_sha256": "5342f81652bc9211d0be3cb7d4684c635e70745e5f32b758b1553ad59a9917e8"}], "declared_paths": ["src/block_stack_ai/runner.py", "src/block_stack_ai/live.py", "src/block_stack_ai/agents.py", "src/block_stack_ai/tetris.py", "experiments/003-tetris-aware-agent/notes.md", "experiments/003-tetris-aware-agent/result.json", "experiments/003-tetris-aware-agent/probes/evidence.py", "experiments/003-tetris-aware-agent/probes/prechange_probe.py", "experiments/README.md", "tests/test_unit.py", "tests/test_integration.py", "tests/test_live.py"], "published_commit": "63e432fff79d075fa9149ea7936751abfc42c546", "published_tree": "69faa602644a657089caae9e14186070cd1caf14", "pull_request_head": "63e432fff79d075fa9149ea7936751abfc42c546", "pull_request_ref": "refs/pull/11/head", "uncommitted_paths": ["README.md", "experiments/003-tetris-aware-agent/notes.md", "experiments/003-tetris-aware-agent/probes/evidence.py", "experiments/003-tetris-aware-agent/probes/prechange_probe.py", "experiments/003-tetris-aware-agent/probes/predeclared_objective.json", "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-wrapper.json", "experiments/003-tetris-aware-agent/result.json", "experiments/README.md", "src/block_stack_ai/runner.py", "tests/test_unit.py"], "worktree_head": "63e432fff79d075fa9149ea7936751abfc42c546"}
+# the branch refs/heads/rakazo/experiment-003-tetris-aware-agent and the PR head refs/pull/11/head are 63e432fff79d075fa9149ea7936751abfc42c546
+# that commit descends from the recorded base d83a5bc54a76bb23cd38e4afbab8192b0e2a207f, so it is this task's own
+# commit; its tree carries the last publication's content for the 48 compared paths, 10 of which differ from this
+# worktree's, so the repair reviewed here is not in it
+# this worktree's HEAD is 63e432fff79d075fa9149ea7936751abfc42c546, the published commit, with 10 uncommitted change(s)
+# the reviewed tree is this worktree; the service owns commits and publication, so
+# approval precedes publication and the refs above name the last published tree
+failures: 0
+exit=0
+
+$ $PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record
+########## probe: publication-record
+# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: publication snapshot
+#   captured_at: '2026-09-29T01:59:08.970103+00:00'
+#   command: "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/exp003-pub7-final.txt   # this round's run, after the enlarged capture and the re-measured evaluation"
+#   published 63e432fff79d075fa9149ea7936751abfc42c546, tree 69faa602644a657089caae9e14186070cd1caf14
+#   10 of 48 compared paths differ from this worktree
+#   captured run: 48 compared paths, 10 uncommitted
+# every field of the snapshot is consistent with that one run
+failures: 0
+exit=0
+
+Records written by the pre-change writer for experiments 000, 001 and 002, then
+verified by this tree's `verify_run` — the compatibility the version gate keeps
+for records that predate the identity and the current version:
+
+```text
+$ PYTHONPATH=/tmp/exp003-base/src $PY -c "from pathlib import Path; from block_stack_ai.runner import run_and_save; run_and_save(Path('/tmp/exp003-base/experiments/000-connection/config.json'), Path('/tmp/exp003-legacy-records7'))"   # and 001, 002
+/tmp/exp003-legacy-records7/20260929T011445428873Z-ccf9f118/run.json
+/tmp/exp003-legacy-records7/20260929T011447690207Z-9673a527/run.json
+/tmp/exp003-legacy-records7/20260929T011614138019Z-53aed4af/run.json
+
+$ PYTHONPATH=$PWD/src $PY -c "from pathlib import Path; from block_stack_ai.runner import verify_run; [verify_run(p) for p in sorted(Path('/tmp/exp003-legacy-records7').glob('*/run.json'))]"
+# 000-connection: format_version 1, keys ['configuration', 'created_at', 'format_version', 'initial_state_hash', 'inputs', 'pieces_placed', 'result', 'versions'], no objective and no histogram
+# 001-greedy-heuristic: format_version 2, keys ['configuration', 'created_at', 'episodes', 'format_version', 'heuristic', 'summary', 'versions'], summary lines mean {'greedy': 118.9, 'random': 0.0}
+# 002-path-aware-lookahead: format_version 2, the same keys, summary lines mean {'greedy': 118.9, 'lookahead': 912.8}
+# each verify_run returned only ['The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.']
+exit=0
+```
+
+The last run of the whole argument-free path, on the frozen tree, and the sweep
+of every retained record:
+
+```text
+$ $PY experiments/003-tetris-aware-agent/probes/evidence.py all
+# every probe above, and this run's evaluation: 20 episodes, 133.9 s, record runs/20260929T011159715723Z-710f6747/run.json
+failures: 0
+exit=0
+
+$ $PY experiments/003-tetris-aware-agent/probes/evidence.py all   # the same path again, on the frozen tree after every edit above
+# every probe above, and this run's evaluation: 20 episodes, 133.0 s, record runs/20260929T012411838736Z-3ab920bd/run.json
+failures: 0
+exit=0
+
+$ $PY /tmp/exp003-sweep7.py   # every record in runs/ after the second finding's repair
+records: 39
+nonzero exits: []
+exit 0: 39
+exit=0
+
+$ $PY experiments/003-tetris-aware-agent/probes/evidence.py all   # the same path again, on the frozen tree after the second finding's repair and every edit above
+# every probe above, and this run's evaluation: 20 episodes, 131.5 s, record runs/20260929T015532395614Z-5c96651e/run.json
+failures: 0
+exit=0
+
+$ $PY experiments/003-tetris-aware-agent/probes/evidence.py compare runs/20260929T003549254811Z-0d37fb01/run.json runs/20260929T015532395614Z-5c96651e/run.json   # the cited record against the run made after the second finding's repair
+# identical configuration, heuristic, episodes and summary: runs/20260929T003549254811Z-0d37fb01/run.json == runs/20260929T015532395614Z-5c96651e/run.json
+exit=0
+
+$ $PY /tmp/exp003-sweep7.py   # every record in runs/ through `python -m block_stack_ai.cli verify`, twelve at a time
+records: 37
+nonzero exits: []
+exit 0: 37
+exit=0
+
+$ PYTHONPATH=$PWD/src $PY experiments/002-path-aware-lookahead/probes/evidence.py replay /tmp/exp003-legacy-records7/20260929T011614138019Z-53aed4af/run.json   # 002's own probe on a legacy 002 record
+# greedy: locks 3357, landed exactly 3328, divergences 29 (column 29, orientation 9, row 27), fallback locks 0, predicted clears 1208, engine clears 1189, game overs 10, level mismatches 0
+# lookahead: locks 23153, landed exactly 23144, divergences 0 (column 0, orientation 0, row 0), fallback locks 9, predicted clears 9128, engine clears 9128, game overs 9, level mismatches 0
+# replayed summary equals the recorded summary: True
+# replayed inputs equal the recorded inputs for all 20 episodes
+exit=0
+```
+
+
 ## Failures and limitations
 
 * **Survival trades against Tetris rate.** The new agent's absolute lines,
@@ -2834,12 +3334,12 @@ reported before the check refuses it.
 * **One agent pair, ten seeds.** The comparison is the brief's fixed set; no
   significance claim is made beyond the measured episodes.
 * **What verification does not prove.** A record is now tied to its objective's
-  weights *and* to the source of the modules its decisions run, but that identity
+  weights *and* to the source of every module its choices run, but that identity
   is a digest of source text, not of behaviour: a comment-only edit to any of
-  those four modules invalidates a version-5 record even though nothing the agent
-  computes changed — and, since this round, the declared objective's capture
-  covers the same four modules, so the same comment-only edit also fails
-  `check-predeclaration`. That is the conservative direction — the check can
+  those five modules invalidates a version-6 record even though nothing the agent
+  computes changed — the four the older shape covers invalidate a version-5
+  record as well — and the declared objective's capture covers the same five
+  modules, so the same comment-only edit also fails `check-predeclaration`. That is the conservative direction — the check can
   reject an unchanged objective, never accept a changed one — and it is
   deliberate, because the alternative (a behavioural fingerprint over a fixed
   board battery) accepts
@@ -2898,7 +3398,8 @@ reproduces every field 002 published for `lookahead`, adding only the new
 This repair round strengthens verification without moving a measured number: the
 record's own `format_version` now says which sections its writer always emitted,
 so the placed-piece count, the clear-size histogram and the declared Tetris
-objective are required at the current versions (3, 4 and 5) and only a legacy
+objective are required at the current versions (3, 4 and 5 there, and 6 since the
+round that widened the identity) and only a legacy
 record
 (1 and 2) may omit them — the shape that used to be inferred from the absence
 itself, which made a current record with a deleted section indistinguishable from
@@ -2911,7 +3412,8 @@ by the pre-change writer; the histogram, line totals and rates above are unchang
 reproduced by a fresh run whose record compares identical to the earlier
 rounds' across configuration, heuristic, episodes and summary.
 
-This round closes the same class one level deeper, in three places. A record now
+This repair round before it closed the same class one level deeper, in three
+places. A record now
 names the **source** of the objective's modules as well as its weights, so a
 formula change that leaves every weight alone no longer verifies (the published
 head accepted exactly that); the identity is gated by its own version flag, so the
@@ -2961,8 +3463,9 @@ it, instead of helper digests transcribed after the run under an earlier
 happen at all. The retained base snapshot must now carry the captured
 worktree-ancestry command with exit 0, which is the claim its state line makes.
 The README's version prose names version 3 the current scripted format, version 4
-the prior suite format and version 5 the current suite format, matching the
-runner's constants. And every writer records the objective's source identity as it
+the prior suite format, version 5 the suite format whose identity stopped at the
+modules the objective's own imports reach and version 6 the current one, matching
+the runner's constants. And every writer records the objective's source identity as it
 was when the interpreter loaded those modules — the code a run actually executes,
 restarts and an edit between import and start included — so a record cannot name
 source the run never ran. No weight, agent, placement or measured figure changed:
@@ -2971,3 +3474,17 @@ evaluation was re-run after the capture and reproduces 9128 lines at a 0.0876424
 Tetris line rate for `lookahead` and 3495 lines at 1.1444921% for `tetris`, the
 same numbers the earlier rounds published, and every retained record in `runs/`
 still replays from its own inputs.
+
+This round closes one more hole in that class. The identity that ties a record to
+its objective stopped at the modules the objective's own imports reach, and the
+agent wrapper that drives it imports the objective rather than the other way
+round, so a wrapper change — a state parameter altered, the objective bypassed —
+left the identity and the replayed seeds both unchanged and was certified. The
+identity now walks in both directions from the code — the objective's namespace
+and the module that defines the agent factory — so the wrapper's source is
+recorded beside the objective's, the writer's version moves to 6, and a version-5
+record is compared against the older shape its own writer emitted, which keeps
+every retained record verifying. No weight, agent, placement or measured figure
+changed: `TETRIS_WEIGHTS`, the placement behaviour and the formula are
+byte-identical, the ten even-seed figures were re-measured after the new capture
+and are the same, and every record in `runs/` replays from its own inputs.

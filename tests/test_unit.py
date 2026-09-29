@@ -12,7 +12,7 @@ from types import SimpleNamespace
 import pytest
 
 from block_stack_ai.agents import ScriptedAgent, parse_script
-from block_stack_ai import engine, runner, tetris as tetris_module
+from block_stack_ai import agents as agents_module, engine, runner, tetris as tetris_module
 from block_stack_ai.runner import (
     RunConfig,
     SuiteConfig,
@@ -1125,6 +1125,65 @@ def test_records_written_before_the_clear_size_metric_still_verify(tmp_path, mon
         verify_run(scripted_path, factory)
 
 
+def test_a_summary_reports_exactly_the_sections_its_episodes_carry(tmp_path, monkeypatch):
+    """A legacy record's summary re-derives without the histogram it never recorded.
+
+    The per-agent totals are summed from the episodes, so a record whose episodes
+    carry no histogram must re-derive a summary that carries none either.
+    Experiment 002's own replay probe compares the summary it re-derives from a
+    record's episodes with the **recorded** summary, so a synthesized all-zero
+    section — totals for clear sizes no episode recorded — rejects a legacy record
+    that experiment still publishes and that `verify` accepts, because the
+    verifier excludes the section from the base it compares and lets its own
+    presence rule report the absence. Both directions are pinned here: the
+    comparison 002 makes, and this tree's acceptance of the same record.
+    """
+    path, factory, record = _clear_suite(tmp_path, monkeypatch)
+    assert runner._summarize(record["episodes"]) == record["summary"]
+
+    legacy = json.loads(json.dumps(record))
+    legacy["format_version"] = runner.LEGACY_SUITE_FORMAT_VERSION
+    for episode in legacy["episodes"]:
+        episode.pop("clear_sizes")
+    for summary in legacy["summary"].values():
+        summary.pop("clear_sizes")
+    for name, summary in legacy["summary"].items():
+        assert "clear_sizes" not in summary, name
+    # The claim Experiment 002's probe makes, and the reason a synthesized
+    # section cannot stand: the episodes' own clear sizes were never recorded, so
+    # the totals it would report are a measurement no run made.
+    assert runner._summarize(legacy["episodes"]) == legacy["summary"]
+    path.write_text(json.dumps(legacy), encoding="utf-8")
+    assert verify_run(path, factory) == []
+
+    # The converse shape, which no writer emits: the section survives in the
+    # summary while every episode lost it. It is reported as that missing
+    # per-episode field, not compared against a section the replay cannot derive.
+    summary_only = json.loads(json.dumps(record))
+    for episode in summary_only["episodes"]:
+        episode.pop("clear_sizes")
+    path.write_text(json.dumps(summary_only), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"episode 0 clear_sizes: absent, but a record of this format version always "
+              r"carries it",
+    ):
+        verify_run(path, factory)
+
+    # Declared legacy, the same record is a partial presence: the summary kept a
+    # section no episode carries, which the suite-wide rule reports rather than
+    # the per-agent comparison indexing a section the replay cannot derive.
+    summary_only["format_version"] = runner.LEGACY_SUITE_FORMAT_VERSION
+    path.write_text(json.dumps(summary_only), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"summary\.clear_sizes: the clear-size histogram must be recorded on every "
+              r"episode and every agent summary, or on none: 0 of 4 episodes and 2 of 2 "
+              r"agent summaries carry it",
+    ):
+        verify_run(path, factory)
+
+
 def test_verification_compares_a_present_clear_size_histogram(tmp_path, monkeypatch):
     """A present histogram is compared with the writer's type and key rules.
 
@@ -1417,9 +1476,13 @@ def test_the_objective_identity_is_the_source_of_the_modules_it_runs(tmp_path, m
     deeper — the frozen geometry, the board model and Experiment 002's
     reachable-set enumeration all decide the objective's values — so the recorded
     identity is the sha256 of each of those modules' own source, discovered from
-    the objective's namespace. Each recorded digest is checked against the file
-    the interpreter loaded, so the mapping is the source it claims to be rather
-    than a constant the writer and verifier could agree on while both were wrong.
+    the objective's namespace. The agent wrapper belongs to that set too and is
+    not reachable from the objective's namespace at all: it imports the objective
+    rather than the other way round, and it is the code that hands the objective
+    every state parameter it reads and executes the placement it returns. Each
+    recorded digest is checked against the file the interpreter loaded, so the
+    mapping is the source it claims to be rather than a constant the writer and
+    verifier could agree on while both were wrong.
     """
     path, factory, record = _objective_suite(tmp_path, monkeypatch)
     sources = record["objective"]["sources"]
@@ -1428,6 +1491,7 @@ def test_the_objective_identity_is_the_source_of_the_modules_it_runs(tmp_path, m
         "block_stack_ai.heuristic",
         "block_stack_ai.pathaware",
         "block_stack_ai.pieces",
+        "block_stack_ai.agents",
     }
     for name, digest in sources.items():
         assert digest == hashlib.sha256(
@@ -1435,6 +1499,106 @@ def test_the_objective_identity_is_the_source_of_the_modules_it_runs(tmp_path, m
     assert sources["block_stack_ai.tetris"] == hashlib.sha256(
         Path(tetris_module.__file__).read_bytes()).hexdigest()
     assert verify_run(path, factory) == []
+
+
+def test_verification_rejects_a_wrapper_change_that_keeps_the_recorded_choices(
+    tmp_path, monkeypatch
+):
+    """The identity covers the wrapper that drives the objective, not only the objective.
+
+    The wrapper imports the objective, so a walk outward from the objective can
+    never reach it. The reviewer's finding: changing the wrapper — a state
+    parameter it hands the objective, or bypassing the objective altogether —
+    then leaves the recorded identity and the replayed choices both unchanged, so
+    a record whose placements no longer came from the recorded objective is
+    certified. Each changed wrapper here is a copy of the module's own source
+    pointed at through ``__file__``, so the replay still runs the loaded code and
+    the recorded seeds keep exactly the actions they recorded; the identity is
+    the only thing that can report the change.
+    """
+    path, factory, record = _objective_suite(tmp_path, monkeypatch)
+    assert verify_run(path, factory) == []
+    source = Path(agents_module.__file__).read_text(encoding="utf-8")
+    # The wrapper hands the objective the state it reads; this copy hands it a
+    # different level, from which the same reachable set is scored differently.
+    handed = source.replace(
+        "        return tetris_choice(\n"
+        "            grid,\n"
+        "            state.current_piece,\n"
+        "            state.next_piece,\n"
+        "            level=state.level,\n",
+        "        return tetris_choice(\n"
+        "            grid,\n"
+        "            state.current_piece,\n"
+        "            state.next_piece,\n"
+        "            level=state.level + 1,\n",
+    )
+    # The other shape of the same finding: the wrapper still imports the objective
+    # and no longer calls it, so the placements come from 002's frozen value.
+    bypassed = source.replace(
+        "        return tetris_choice(\n", "        return lookahead_choice(\n")
+    assert handed != source and bypassed != source
+    for index, (label, changed) in enumerate(
+        (("a state parameter changed", handed), ("the objective bypassed", bypassed))
+    ):
+        copied = tmp_path / f"agents-{index}.py"
+        copied.write_text(changed, encoding="utf-8")
+        with monkeypatch.context() as patch:
+            patch.setattr(agents_module, "__file__", str(copied))
+            with pytest.raises(
+                VerificationError,
+                match=r"objective\.sources\.block_stack_ai\.agents: recorded "
+                      rf"'{record['objective']['sources']['block_stack_ai.agents']}', "
+                      r"replayed '[0-9a-f]{64}'",
+            ):
+                verify_run(path, factory)
+    # The module's own file leaves the same record verifying: the identity rejects
+    # the changed wrapper and nothing else.
+    assert verify_run(path, factory) == []
+
+
+def test_the_version_5_identity_stops_before_the_wrapper(tmp_path, monkeypatch):
+    """A retained version-5 record is compared against the identity it recorded.
+
+    The version-5 writer walked outward from the module that declares the
+    objective, which cannot reach the wrapper that drives it, so that version's
+    records are compared with that shape — a record carrying the wrapper's digest
+    under that version is a section no writer emitted, and is reported. The
+    current writer records the wrapper, so the record it emits is the same shape
+    plus that module, and deleting the module from it is reported too.
+    """
+    path, factory, record = _objective_suite(tmp_path, monkeypatch)
+    outward = runner._objective_sources(runner._IDENTITY_OUTWARD)
+    assert set(outward) == set(record["objective"]["sources"]) - {"block_stack_ai.agents"}
+
+    prior = json.loads(json.dumps(record))
+    prior["format_version"] = runner.OUTWARD_IDENTITY_SUITE_FORMAT_VERSION
+    prior["objective"]["sources"] = outward
+    path.write_text(json.dumps(prior), encoding="utf-8")
+    assert verify_run(path, factory) == []
+
+    # The version-5 writer recorded no wrapper digest, so one is an extra key that
+    # no run of that version produced.
+    mixed = json.loads(json.dumps(prior))
+    mixed["objective"]["sources"]["block_stack_ai.agents"] = (
+        record["objective"]["sources"]["block_stack_ai.agents"])
+    path.write_text(json.dumps(mixed), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"Recorded objective\.sources keys \['block_stack_ai\.agents',",
+    ):
+        verify_run(path, factory)
+
+    # At the current version the wrapper belongs to the identity, so dropping it
+    # is a deleted key rather than an accepted legacy shape.
+    stripped = json.loads(json.dumps(record))
+    del stripped["objective"]["sources"]["block_stack_ai.agents"]
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    with pytest.raises(
+        VerificationError,
+        match=r"do not match \['block_stack_ai\.agents',",
+    ):
+        verify_run(path, factory)
 
 
 def test_objective_identity_is_required_at_the_current_version_and_optional_before(
