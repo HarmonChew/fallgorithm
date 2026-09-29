@@ -770,16 +770,94 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE, *,
     return {name: sources[name] for name in sorted(sources)}
 
 
-# The objective's source identity as it stood when the objective's modules were
-# imported — the code a run actually executes. Every writer records this, not a
-# later read: an edit that lands after the import but before the record is written
-# was never loaded, so a later read would name source the run did not run (the
-# interactive menu imports the modules, waits for a selection, and only then
-# starts a game). The digest comes from the loader that read the source, not from
-# ``module.__file__`` read at this moment: a file edited between the module's own
-# import and this line is still executed as it was loaded, and only the loaded
-# bytes can describe it.
-_LOADED_OBJECTIVE_SOURCES = _objective_sources(loaded=True)
+def _stale_loaded_references(sources: dict[str, str]) -> list[str]:
+    """Cross-module references a partial reload left pointing at replaced code.
+
+    A module that imports a name from another module binds the *object*, not the
+    module: ``from .tetris import tetris_choice`` puts that function in the
+    importing module's namespace, and ``from .agents import create_agent`` puts the
+    factory that selects the agent class in the writer's own. Reloading only the
+    module the object was defined in replaces that module's binding and updates the
+    loader's digest for it, while every importer keeps the old object — so the code
+    that would compute the next choice, or select the agent that computes it, is the
+    old function, and an identity naming the reloaded module's source would
+    describe an implementation nothing ran. Reloading the importers as well is what
+    makes the closure consistent again, because they re-read the names from the
+    modules as they now stand.
+
+    Every loaded module of this package is scanned, not only the closure's own
+    modules: the modules that *drive* a run hold the factory and the objective by
+    value — ``runner`` and ``live`` import ``create_agent`` — so a reload of the
+    module that defines them leaves those callers on the previous objects, and no
+    walk of the closure alone can see it. A reference whose origin is not part of
+    the identity is not reported: only the code the recorded identity claims to
+    describe has to be the code that runs.
+
+    Returns the references that no longer appear anywhere in the namespace of the
+    module they were defined in, as ``module.attribute (defined in module)``.
+    """
+    stale = []
+    for name in sorted(sys.modules):
+        if not name.startswith(_PACKAGE_PREFIX):
+            continue
+        holding = sys.modules[name]
+        if not isinstance(holding, ModuleType):
+            continue
+        for attribute, value in vars(holding).items():
+            if attribute.startswith("__") and attribute.endswith("__"):
+                continue
+            origin = getattr(value, "__module__", None)
+            if not isinstance(origin, str) or origin not in sources or origin == name:
+                continue
+            if not any(value is bound for bound in vars(sys.modules[origin]).values()):
+                stale.append(f"{name}.{attribute} (defined in {origin})")
+    return stale
+
+
+def _loaded_objective_sources(shape: str = _IDENTITY_CHOICE) -> dict[str, str]:
+    """The loaded identity of the objective's closure, read at this moment.
+
+    Every writer records this, and it is read when the run or live session is
+    constructed — the moment the implementation that will compute the choices is
+    fixed — rather than bound once at import. The value comes from the loader that
+    read each module's source (``sourceidentity``), not from ``module.__file__``
+    read here, and that record is revised by exactly one event: a load. So a
+    module this process *reloaded* before the run was built is recorded as the
+    code that will choose the placements, which is the only honest value for a
+    long-lived process that reloads an objective — a menu, a REPL, a test that
+    reloads a module after editing it. A plain file edit is not that event: it
+    never revises the loader's record, so the module imported before the edit and
+    still executing is still what is recorded (the interactive menu imports the
+    modules, waits for a selection, and only then starts a game), and a file
+    edited between a module's own import and this line is still executed as it was
+    loaded. Binding the value once at import got the reload case wrong in the
+    other direction: the reloaded module drove every later choice while the record
+    kept naming the code the process no longer ran.
+
+    A *partial* reload is neither of those cases, and is refused rather than
+    recorded: reloading one module of the closure updates its digest while the
+    modules that imported its objects keep the objects they bound, so the code
+    that would run and the module the identity would name are two different
+    implementations (``_stale_loaded_references``). No single digest describes
+    both, so the writer raises instead of stamping a record with the reloaded
+    source of code nothing ran; a caller that wants the reloaded implementation
+    reloads the modules that import it too, and then the closure is consistent
+    again.
+    """
+    sources = _objective_sources(shape, loaded=True)
+    stale = _stale_loaded_references(sources)
+    if stale:
+        raise VerificationError(
+            "The loaded modules a choice runs through are inconsistent: "
+            + ", ".join(stale)
+            + " no longer appear in the namespace of the module that defined them, because "
+            "that module was reloaded while the module holding the reference was not. The "
+            "recorded identity has to name the code that computes the choices, and one "
+            "digest cannot describe both the reloaded module and the object the running "
+            "code still calls; reload the modules that import it as well, or start a fresh "
+            "process"
+        )
+    return sources
 
 
 def _objective_record(config: SuiteConfig, *, loaded: bool = False,
@@ -792,18 +870,19 @@ def _objective_record(config: SuiteConfig, *, loaded: bool = False,
     too: the module that declares it, the weights its ``weights_record()``
     publishes, and the source identity of the modules its decisions are computed
     from. A suite without the agent has no such objective to record. A writer
-    passes ``loaded=True`` so the identity is the code the interpreter loaded; the
-    verifier leaves it ``False`` so the identity is compared against the files on
-    the tree now, and passes the ``shape`` the record's own version's writer
-    emitted, because a version-5 record's identity stops at what the objective's
-    own namespace reaches.
+    passes ``loaded=True`` so the identity is the code the interpreter loaded as
+    of the moment the record is built — the run's own construction — through
+    ``_loaded_objective_sources``; the verifier leaves it ``False`` so the
+    identity is compared against the files on the tree now, and passes the
+    ``shape`` the record's own version's writer emitted, because a version-5
+    record's identity stops at what the objective's own namespace reaches.
     """
     if TETRIS_AGENT not in config.agents:
         return None
     return {
         "module": tetris.__name__,
         "weights": tetris.weights_record(),
-        _OBJECTIVE_SOURCES_FIELD: (_LOADED_OBJECTIVE_SOURCES if loaded
+        _OBJECTIVE_SOURCES_FIELD: (_loaded_objective_sources(shape) if loaded
                                    else _objective_sources(shape)),
     }
 
@@ -894,7 +973,10 @@ def run_and_save(
         record["heuristic"] = weights_record()
         # A suite that uses the Tetris agent declares its objective beside the
         # frozen heuristic mapping, so the record names the weights that chose
-        # its placements and the source identity the interpreter loaded.
+        # its placements and the source identity the interpreter had loaded when
+        # this run was built — read here, before the first choice, and re-read at
+        # nothing later: a covered module the process reloads after this point
+        # cannot have chosen the inputs already recorded.
         record.update(_objective_section(config, loaded=True))
         episodes = run_suite(config, game_factory)
         record["episodes"] = episodes

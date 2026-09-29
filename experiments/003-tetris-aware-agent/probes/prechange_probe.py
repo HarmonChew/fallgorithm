@@ -64,6 +64,19 @@ artifact predates the experiment and reports ``no subject on this tree`` instead
 of aborting with an ``ImportError``, and is never counted as a failure-before. A
 row whose contract is genuinely new capability is a **pin** (exit 0) and says so,
 with its substitute evidence named.
+
+This round's five rows are of the same shape and each names a claim that was only
+ever compared with a copy of itself: ``publication_tree_derivation`` (the
+commit/tree pairing must come from the repository's own objects),
+``publication_paths_prose`` (the comparison-set sentence must come from the
+captured per-path states), ``predeclaration_created_at`` (the retained order
+sentence must come from the block's own two timestamps), ``format_version_prose``
+(the version sentence must come from the writer's version table) and
+``loaded_identity_reload`` (a module the process reloaded must be recorded as the
+code that computes the choices, not as the identity bound at import). The first
+four drive the tree's own ``evidence.py``; ``loaded_identity_reload`` runs
+``loaded_identity_program.py`` in its ``reload`` mode against a copy of the tree's
+package, like ``loaded_identity`` and ``stale_cache``.
 """
 
 from __future__ import annotations
@@ -73,6 +86,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -1896,6 +1910,21 @@ def _run_counterexample(mode: str, root: Path) -> dict:
     return json.loads(completed.stdout)
 
 
+def _reads_loaded_identity() -> bool:
+    """Whether this tree carries a writer's view of the loaded identity.
+
+    Two shapes of it have existed: the import-time snapshot
+    (``_LOADED_OBJECTIVE_SOURCES``) the earlier rounds bound, and the reader this
+    round's repair calls when a run is built (``_loaded_objective_sources``,
+    which reads the loader's record at that moment). The rows that measure the
+    loaded-vs-tree values ask for either, so removing the snapshot cannot silence
+    them: a row that reported "no subject" here would exit 0 without running its
+    counterexample.
+    """
+    return (hasattr(runner, "_LOADED_OBJECTIVE_SOURCES")
+            or hasattr(runner, "_loaded_objective_sources"))
+
+
 def r30_loaded_identity():
     """A record's identity is the code the loader read, not the file read later.
 
@@ -1913,7 +1942,7 @@ def r30_loaded_identity():
     ``clean`` run is the control: with the file untouched all five values agree
     and the record verifies, so the report in the ``edit`` run is the edit.
     """
-    if "tetris" not in AGENT_NAMES or not hasattr(runner, "_LOADED_OBJECTIVE_SOURCES"):
+    if "tetris" not in AGENT_NAMES or not _reads_loaded_identity():
         raise SubjectAbsent(
             "this tree has no Tetris agent, so it records no objective identity whose "
             "loaded-vs-tree value could be measured"
@@ -2024,7 +2053,7 @@ def r31_stale_cache():
     declares, the constant the file declares and the recorded digest to be one and
     the same source.
     """
-    if "tetris" not in AGENT_NAMES or not hasattr(runner, "_LOADED_OBJECTIVE_SOURCES"):
+    if "tetris" not in AGENT_NAMES or not _reads_loaded_identity():
         raise SubjectAbsent(
             "this tree has no Tetris agent, so it records no objective identity whose "
             "loaded-vs-tree value could be measured")
@@ -2055,6 +2084,487 @@ def r31_stale_cache():
                 "the recorded identity is not the source that ran: recorded "
                 f"{measured['recorded']}, file {measured['file']}")
         print("# the code that ran, the file on the tree and the recorded identity are one source")
+
+
+# The instant-shaped tokens a retained sentence may quote: the same shape the
+# probe's own derivation restricts a record block to.
+TIMESTAMP_SHAPE = re.compile(
+    r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|\+00:00)")
+
+
+def _accepts(module, path: Path, check: str) -> tuple[bool, str]:
+    """Whether the tree's ``check`` accepts a record, and the message if it does not."""
+    try:
+        getattr(module, check)(path)
+    except AssertionError as error:
+        return False, str(error)
+    return True, ""
+
+
+def r32_publication_tree_derivation():
+    """The published commit/tree pairing is derived from the repository's objects.
+
+    The reviewer's finding: ``check_publication_record`` validated the recorded
+    ``published_tree`` only against the copy of it inside the capture, so setting
+    both to ``000…`` and regenerating the capture line with the shipped helper
+    certified — as one run — a commit/tree pairing no publication probe could have
+    observed, because the captured commit's immutable tree is not that value. The
+    tree's own retained record is taken here, its Git reader is stubbed so the
+    repository answers the tree of the commit the record names, and the zeroed
+    pairing is required to be reported. A tree whose check compares the field with
+    its own copy accepts it.
+    """
+    target, module = _target_probe()
+    if not hasattr(module, "check_publication_record"):
+        raise SubjectAbsent(
+            f"{target} has no check_publication_record: this row's subject is the retained "
+            "publication snapshot, and that tree records none"
+        )
+    record_path, record = _target_record(target)
+    publication = record["publication"]
+    published = publication["published_commit"]
+    # The tree the repository itself gives that commit, read here rather than taken
+    # from the record; the Git reader is then stubbed to answer with it, so the
+    # check can be driven offline while the answer is still the repository's own.
+    status, output = module._git(module.PROJECT_ROOT, "rev-parse", f"{published}^{{tree}}")
+    tree = (output.splitlines()[-1] if status == 0 and output.splitlines()
+            else publication["capture"]["published_tree"])
+
+    def fake_git(cwd, *arguments):
+        command = " ".join(arguments)
+        if command == f"rev-parse {published}^{{tree}}":
+            return 0, tree
+        if command == "rev-parse HEAD":
+            return 0, published
+        raise AssertionError(f"unexpected git command: {command} (in {cwd})")
+
+    module._git = fake_git
+    module.check_publication_record(record_path)
+    print(f"# the retained record passes the check; the repository resolves {published}^{{tree}} "
+          f"to {tree}")
+    scratch = Path(tempfile.mkdtemp(prefix="exp003-publication-tree-"))
+    tampered = json.loads(json.dumps(record))
+    zeros = "0" * 40
+    tampered["publication"]["published_tree"] = zeros
+    tampered["publication"]["capture"]["published_tree"] = zeros
+    tampered["publication"]["publication_capture_line"] = \
+        module.publication_capture_line(tampered["publication"]["capture"])
+    path = scratch / "result.json"
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    print(f"# both copies of published_tree changed to {zeros} and the capture line "
+          f"regenerated with the tree's own helper")
+    accepted, message = _accepts(module, path, "check_publication_record")
+    if accepted:
+        raise AssertionError(
+            "the tree accepted a publication record whose published_tree and its capture "
+            "copy are both 000…, a commit/tree pairing no publication probe could have "
+            "observed — the captured commit's immutable tree is the real one — because the "
+            "field is checked only against its own copy"
+        )
+    print(f"# the zeroed pairing is reported: {message}")
+
+
+def _stale_timestamp(block: dict) -> str | None:
+    """A timestamp the block quotes that is neither of the two it carries."""
+    quoted = {block.get("captured_at"), block.get("cited_record_created_at")}
+    for _, text in _block_strings(block):
+        for token in TIMESTAMP_SHAPE.findall(text):
+            if token not in quoted:
+                return token
+    return None
+
+
+def _block_strings(value, where="predeclared_objective"):
+    if isinstance(value, str):
+        yield where, value
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            yield from _block_strings(item, f"{where}.{key}")
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            yield from _block_strings(item, f"{where}[{index}]")
+
+
+def r33_predeclaration_created_at():
+    """The retained order sentence is derived from the cited record's timestamp.
+
+    The reviewer's finding: the predeclaration block carries the cited record's
+    ``created_at`` in ``cited_record_created_at`` while the sentence beside it
+    still quoted an earlier evaluation's timestamp of the same round, so the block
+    described two measurements. This takes the tree's own retained record, requires
+    its check to report a sentence rewritten to quote a different instant, and — on
+    a tree whose checks read none of this — prints the disagreement the tree's own
+    record carries: it is the counterexample, executed on that tree.
+    """
+    target, module = _target_probe()
+    record_path, record = _target_record(target)
+    block = record["predeclared_objective"]
+    stale = _stale_timestamp(block)
+    print(f"# the retained block's cited_record_created_at is "
+          f"{block.get('cited_record_created_at')!r}")
+    if not hasattr(module, "check_predeclaration_record"):
+        accepted, _ = _accepts(module, record_path, "check_publication_record")
+        print(f"# the tree has no check_predeclaration_record; its publication check "
+              f"accepts the record: {accepted}")
+        print(f"# the sentence beside it quotes {stale!r}")
+        raise AssertionError(
+            "the tree accepts a predeclared_objective block whose capture_order quotes "
+            f"{stale!r} while the cited record's own created_at beside it is "
+            f"{block.get('cited_record_created_at')!r}: nothing in that tree reads the "
+            "sentence, so the block may describe two measurements"
+        )
+    module.check_predeclaration_record(record_path)
+    print("# the retained block passes the check")
+    scratch = Path(tempfile.mkdtemp(prefix="exp003-predeclaration-created-at-"))
+    path = scratch / "result.json"
+    rejected: list[str] = []
+    for label, mutate in (
+        ("the sentence rewritten to quote a different instant",
+         lambda tampered: tampered["predeclared_objective"].__setitem__(
+             "capture_order", TIMESTAMP_SHAPE.sub(
+                 "2001-01-01T00:00:00.000000+00:00",
+                 tampered["predeclared_objective"]["capture_order"]))),
+        ("the cited timestamp changed beside its own sentence",
+         lambda tampered: tampered["predeclared_objective"].__setitem__(
+             "cited_record_created_at", "2001-01-01T00:00:00.000000+00:00")),
+    ):
+        tampered = json.loads(json.dumps(record))
+        mutate(tampered)
+        path.write_text(json.dumps(tampered), encoding="utf-8")
+        accepted, message = _accepts(module, path, "check_predeclaration_record")
+        if accepted:
+            raise AssertionError(
+                f"the tree accepted the retained block with {label}, so the sentence and "
+                "the value beside it are not required to be one measurement"
+            )
+        print(f"# {label} is reported: {message}")
+        rejected.append(label)
+    assert rejected
+
+
+def r34_publication_paths_prose():
+    """The comparison-set prose is derived from the captured run's per-path states.
+
+    The reviewer's finding: the record's prose claimed a number of paths in the
+    published tree that the captured run's own per-path evidence contradicts — 46
+    against the 48 entries whose published state is a file — because the sentence
+    was a hand-maintained literal beside the capture. This takes the tree's own
+    retained record, requires its check to report a prose count the capture does
+    not support, and requires the capture stripped of a published file to be
+    reported too. A tree whose check never reads the sentence accepts both.
+    """
+    target, module = _target_probe()
+    if not hasattr(module, "check_publication_record"):
+        raise SubjectAbsent(
+            f"{target} has no check_publication_record: this row's subject is the retained "
+            "publication snapshot, and that tree records none"
+        )
+    record_path, record = _target_record(target)
+    capture = record["publication"]["capture"]
+    published_files = sum(1 for entry in capture["compared_paths"]
+                          if entry["published"] == "file")
+    print(f"# the retained capture: {len(capture['compared_paths'])} compared paths, "
+          f"{published_files} of them files in the published tree")
+    print(f"# the retained prose: {record['publication']['compared_paths']!r}")
+    scratch = Path(tempfile.mkdtemp(prefix="exp003-publication-prose-"))
+    path = scratch / "result.json"
+
+    def prose_without_the_capture(tampered):
+        # The sentence an earlier round left behind, kept beside the capture: it
+        # claims a count the captured per-path entries do not support.
+        tampered["publication"]["compared_paths"] = (
+            record["publication"]["compared_paths"].replace(
+                f"{published_files} of the {len(capture['compared_paths'])} compared paths",
+                f"{published_files - 2} of the {len(capture['compared_paths'])} compared paths"))
+
+    def capture_without_a_file(tampered):
+        # The other direction: the capture loses a published file and its own
+        # per-entry decisions are recomputed to match, so the only thing left
+        # disagreeing is the sentence the record retains.
+        entries = tampered["publication"]["capture"]["compared_paths"]
+        for entry in entries:
+            if entry["published"] == "file" and entry["worktree"] == "file" \
+                    and entry["differs"]:
+                entry["published"] = "absent"
+                entry["published_sha256"] = None
+                entry["outcome"], entry["differs"] = module.path_decision(
+                    entry["published"], entry["published_sha256"],
+                    entry["worktree"], entry["worktree_sha256"])
+                break
+        tampered["publication"]["publication_capture_line"] = \
+            module.publication_capture_line(tampered["publication"]["capture"])
+
+    accepted_before = _accepts(module, record_path, "check_publication_record")[0]
+    print(f"# the tree's own check accepts its retained record: {accepted_before}")
+    if not hasattr(module, "compared_paths_prose"):
+        raise AssertionError(
+            "the tree's publication check reads no derivation of the comparison-set prose, "
+            f"so a sentence claiming {published_files - 2} paths where the captured run "
+            f"records {published_files} is certified"
+        )
+    module.check_publication_record(record_path)
+    for label, mutate in (("the prose count the capture does not support",
+                           prose_without_the_capture),
+                          ("the capture stripped of a published file", capture_without_a_file)):
+        tampered = json.loads(json.dumps(record))
+        mutate(tampered)
+        path.write_text(json.dumps(tampered), encoding="utf-8")
+        accepted, message = _accepts(module, path, "check_publication_record")
+        if accepted:
+            raise AssertionError(
+                f"the tree accepted {label}, so the retained sentence and the captured "
+                "per-path evidence are not required to be one run's"
+            )
+        print(f"# {label} is reported: {message}")
+
+
+def r35_format_version_prose():
+    """The version prose is derived from the writer's own version table.
+
+    The reviewer's finding: the retained summary still named version 5 as the
+    current suite format while ``runner.SUITE_FORMAT_VERSION`` is 6 and the version
+    map beside it already described 5 as the earlier outward-only identity,
+    because the sentence was a second, hand-maintained copy of the constants. This
+    takes the tree's own retained record, requires its check to report a sentence
+    that names an outdated table, and — on a tree whose checks read none of this —
+    prints the sentence against the constants that tree's own writer declares.
+    """
+    target, module = _target_probe()
+    record_path, record = _target_record(target)
+    prose = record.get("record_format_versions", {})
+    sentence = prose.get("this_round", "")
+    print(f"# the retained version prose: {sentence!r}")
+    print(f"# the tree's writer declares: FORMAT_VERSION "
+          f"{getattr(runner, 'FORMAT_VERSION', None)}, PRIOR_SUITE_FORMAT_VERSION "
+          f"{getattr(runner, 'PRIOR_SUITE_FORMAT_VERSION', None)}, "
+          f"OUTWARD_IDENTITY_SUITE_FORMAT_VERSION "
+          f"{getattr(runner, 'OUTWARD_IDENTITY_SUITE_FORMAT_VERSION', None)}, "
+          f"SUITE_FORMAT_VERSION {getattr(runner, 'SUITE_FORMAT_VERSION', None)}")
+    if not hasattr(module, "check_predeclaration_record"):
+        accepted, _ = _accepts(module, record_path, "check_publication_record")
+        print(f"# the tree has no check that reads this sentence; its publication check "
+              f"accepts the record: {accepted}")
+        current = getattr(runner, "SUITE_FORMAT_VERSION", None)
+        if current is not None and f"{current} current suite" not in sentence:
+            raise AssertionError(
+                f"the tree's retained version prose does not state that version {current} is "
+                f"the current suite format while its own writer emits it: {sentence!r}"
+            )
+        raise AssertionError(
+            "the tree reads no derivation of this sentence, so it may describe a version "
+            "table its writer does not have"
+        )
+    module.check_predeclaration_record(record_path)
+    print("# the retained record passes the check")
+    scratch = Path(tempfile.mkdtemp(prefix="exp003-version-prose-"))
+    path = scratch / "result.json"
+    current = getattr(runner, "SUITE_FORMAT_VERSION", None)
+    stale = sentence.replace(
+        f"{current} current suite", "5 current suite")
+    if stale == sentence:
+        raise AssertionError(
+            "the retained sentence does not state the current suite format through the "
+            f"constant, so this row cannot rewrite it: {sentence!r}"
+        )
+    tampered = json.loads(json.dumps(record))
+    tampered["record_format_versions"]["this_round"] = stale
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    print(f"# the sentence rewritten to name version 5 as the current suite: {stale!r}")
+    accepted, message = _accepts(module, path, "check_predeclaration_record")
+    if accepted:
+        raise AssertionError(
+            "the tree accepted a retained summary that names version 5 as the current suite "
+            f"format while its writer emits version {current}"
+        )
+    print(f"# the outdated sentence is reported: {message}")
+
+
+def r36_loaded_identity_reload():
+    """A coherent reload is recorded as the code that computes the choices.
+
+    The control for the two refusals below, and the positive half of the review's
+    finding: a long-lived process reloads the wrapper whose code computes the
+    choices, and must record the reloaded digests rather than an identity bound
+    when the writer was imported. The program's ``reload`` mode reloads the
+    wrapper *and* the writer — the writer holds the agent factory by value, so
+    reloading the wrapper alone is a mixed closure and is the case
+    ``loaded_closure_consistency`` measures — and the contract here is that the
+    recorded identity is the loader's current digest for each reloaded module and
+    that verification passes, because the reloaded code is what chose the recorded
+    inputs. This row passes on the tree this round replaces as well: a writer that
+    re-reads its identity at import records the reloaded digests there too, so the
+    row is a control rather than a failure-before, and the failure-before for the
+    reload family is ``loaded_closure_consistency``.
+    """
+    if "tetris" not in AGENT_NAMES or not (
+        hasattr(runner, "_LOADED_OBJECTIVE_SOURCES")
+        or hasattr(runner, "_loaded_objective_sources")
+    ):
+        raise SubjectAbsent(
+            "this tree has no Tetris agent, so it records no objective identity whose "
+            "reload behaviour could be measured"
+        )
+    with tempfile.TemporaryDirectory(prefix="exp003-loaded-reload-") as directory:
+        measured = _run_counterexample("reload", Path(directory))
+        print(f"# reload run: the module is {measured['subject']}, the file before the edit "
+              f"{measured['before'][:16]}, after {measured['on_disk'][:16]}, the loader's "
+              f"record {measured['loader'][:16]}, what the writer records "
+              f"{measured['record'][:16]}, verified {measured['outcome']['verified']}")
+        assert measured["before"] != measured["on_disk"], (
+            "the counterexample's edit did not change the covered file, so the run measured "
+            "nothing"
+        )
+        assert measured["loader"] == measured["on_disk"], (
+            "the reload did not update the loader's record of the module it re-read: loader "
+            f"{measured['loader']}, file {measured['on_disk']}"
+        )
+        if measured["record"] != measured["loader"]:
+            raise AssertionError(
+                "the writer recorded the identity bound when it was imported rather than the "
+                f"reloaded module's own: the loader's record is {measured['loader']} (the "
+                f"code that computes the choices after the reload) while the run records "
+                f"{measured['record']} — the bytes from before the reload, which drove no "
+                "choice of this run"
+            )
+        assert measured["outcome"]["verified"] is True, (
+            "the reloaded module's own code chose the recorded inputs and the tree holds it, "
+            f"so the record must verify: {measured['outcome'].get('error')}"
+        )
+        print("# the recorded identity is the reloaded module's; the reload is recorded, "
+              "not a stale import-time snapshot")
+
+
+def r37_base_commit_trees():
+    """The base snapshot's commits' trees come from the repository's own objects.
+
+    The same class as ``publication_tree_derivation``, one block over: the base
+    snapshot's ``git_tree_id`` and ``remote_main_tree`` were validated against
+    copies of themselves — the captured ``rev-parse`` output is inside the same
+    object — so rewriting the field, its capture copy and the command output
+    together certified a commit/tree pairing no run observed. This takes the tree's
+    own retained record, rewrites each pairing in every copy with the state line
+    regenerated by the tree's own helper, and requires it to be reported. A tree
+    whose check compares the field with its own copies accepts both.
+    """
+    target, module = _target_probe()
+    if not hasattr(module, "check_base_commit_record"):
+        raise SubjectAbsent(
+            f"{target} has no check_base_commit_record: this row's subject is the retained "
+            "base-refresh snapshot, and that tree records none"
+        )
+    record_path, record = _target_record(target)
+    module.check_base_commit_record(record_path)
+    print("# the retained snapshot passes the check")
+    scratch = Path(tempfile.mkdtemp(prefix="exp003-base-trees-"))
+    path = scratch / "result.json"
+    zeros = "0" * 40
+    # The observed tip is this checkout's own HEAD, read from the worktree the row
+    # runs in: a commit this repository holds, so the tip's tree can be resolved
+    # from outside the snapshot.
+    repo_root = Path(__file__).resolve().parents[3]
+    head = module._git(repo_root, "rev-parse", "HEAD")[1].strip()
+
+    def rewrite(tampered, trees, tip=None):
+        """Set the named tree fields in every copy, and regenerate the derived lines."""
+        base = tampered["base_commit"]
+        for field, value in trees.items():
+            base[field] = value
+            base["capture"][field] = value
+        if tip is not None:
+            base["remote_main_tip"] = tip
+            base["capture"]["remote_main_tip"] = tip
+            for entry in base["capture"]["commands"]:
+                if entry["role"] == "refreshed remote main commit from the clone":
+                    entry["output"] = tip
+        for entry in base["capture"]["commands"]:
+            for role, field in module.BASE_COMMIT_ROLES:
+                if entry["role"] == role and field in trees:
+                    entry["output"] = trees[field]
+        base["base_capture_line"] = module.base_capture_line(base["capture"])
+        base["state"] = module.base_state_line(
+            {name: base[name] for name in module.BASE_COMMIT_FIELDS})
+
+    for label, mutate in (
+        ("git_tree_id and remote_main_tree, their capture copies and the captured "
+         "rev-parse outputs all set to 000…",
+         lambda tampered: rewrite(tampered, {"git_tree_id": zeros,
+                                             "remote_main_tree": zeros})),
+        ("remote_main_tree likewise, with the observed tip moved to a commit this "
+         "checkout holds",
+         lambda tampered: rewrite(tampered, {"remote_main_tree": zeros}, tip=head)),
+    ):
+        tampered = json.loads(json.dumps(record))
+        mutate(tampered)
+        path.write_text(json.dumps(tampered), encoding="utf-8")
+        accepted, message = _accepts(module, path, "check_base_commit_record")
+        if accepted:
+            raise AssertionError(
+                f"the tree accepted the retained base snapshot with {label}, a commit/tree "
+                "pairing no run observed, because the field is checked only against copies "
+                "of itself"
+            )
+        print(f"# {label} is reported: {message}")
+
+
+
+def r38_loaded_closure_consistency():
+    """A partial reload is refused, not stamped with the reloaded identity.
+
+    The reviewer's counterexample, one step past ``loaded_identity_reload``, in
+    both directions a partial reload can take. Reloading only the objective module
+    updates the loader's digest for it, while the wrapper that drives the objective
+    keeps the callable it imported by value; reloading only the wrapper updates
+    *its* digest, while the writer that selects the agent keeps the factory it
+    imported by value (``runner.create_agent``, and beside it the script parser and
+    the agent classes). In either direction the code that would compute a choice
+    and the module an identity would name are two implementations, and no single
+    digest describes both. The counterexample program's ``mixed`` and
+    ``mixed-caller`` modes run those orderings in a fresh process and report what
+    the writer did; this row requires a refusal that names a stale reference, and
+    reports the record the tree wrote instead where there is no refusal. A tree
+    that stamps the reloaded module's digest on a run whose choices come from the
+    old object fails.
+    """
+    if "tetris" not in AGENT_NAMES or not _reads_loaded_identity():
+        raise SubjectAbsent(
+            "this tree has no Tetris agent, so it records no objective identity whose "
+            "closure consistency could be measured"
+        )
+    accepted: list[str] = []
+    with tempfile.TemporaryDirectory(prefix="exp003-loaded-closure-") as directory:
+        for mode, reference in (("mixed", "block_stack_ai.agents.tetris_choice"),
+                                ("mixed-caller", "block_stack_ai.runner.create_agent")):
+            measured = _run_counterexample(mode, Path(directory) / mode)
+            print(f"# {mode}: the module is {measured['subject']}, the file before the edit "
+                  f"{measured['before'][:16]}, after {measured['on_disk'][:16]}, the loader's "
+                  f"record {measured['loader'][:16]}, what the writer did "
+                  f"(refused={measured['refused']}, recorded "
+                  f"{(measured['record'] or 'nothing')[:16]})")
+            assert measured["before"] != measured["on_disk"], (
+                "the counterexample's edit did not change the covered file, so the run "
+                "measured nothing"
+            )
+            assert measured["loader"] == measured["on_disk"], (
+                "the reload did not update the loader's record of the module it re-read: "
+                f"loader {measured['loader']}, file {measured['on_disk']}"
+            )
+            if not measured["refused"]:
+                accepted.append(
+                    f"{mode}: the writer stamped a record for a mixed loaded closure instead "
+                    f"of refusing it (the loader's record for {measured['subject']} is "
+                    f"{measured['loader']}, while the code that would compute a choice is the "
+                    f"object the caller imported by value, and the run was recorded as "
+                    f"{measured['record']})")
+                continue
+            assert reference in (measured["refusal"] or ""), (
+                f"the writer refused the {mode} run but did not name {reference}: "
+                f"{measured['refusal']}"
+            )
+            assert measured["record"] is None, measured
+            print(f"# {mode} is refused, and the refusal names {reference}: "
+                  f"{(measured['refusal'] or '')[:110]}…")
+    if accepted:
+        raise AssertionError("; ".join(accepted))
 
 
 PROBES = {
@@ -2089,6 +2599,13 @@ PROBES = {
     "summary_histogram_derivation": r29_summary_histogram_derivation,
     "loaded_identity": r30_loaded_identity,
     "stale_cache": r31_stale_cache,
+    "publication_tree_derivation": r32_publication_tree_derivation,
+    "predeclaration_created_at": r33_predeclaration_created_at,
+    "publication_paths_prose": r34_publication_paths_prose,
+    "format_version_prose": r35_format_version_prose,
+    "loaded_identity_reload": r36_loaded_identity_reload,
+    "base_commit_trees": r37_base_commit_trees,
+    "loaded_closure_consistency": r38_loaded_closure_consistency,
 }
 # The ids whose subject is a probe file rather than the tree's ``src``: they
 # accept the path of the probe file to drive, for a tree that carries only
@@ -2098,6 +2615,8 @@ PROBE_FILE_IDS = (
     "publication_content", "predeclaration_identity", "remote_main_durability",
     "publication_count_capture", "base_commit_record", "publication_record_derivation",
     "base_worktree_ancestry", "predeclaration_record_identity", "predeclaration_weights",
+    "publication_tree_derivation", "predeclaration_created_at", "publication_paths_prose",
+    "format_version_prose", "base_commit_trees",
 )
 
 

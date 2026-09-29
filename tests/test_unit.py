@@ -1554,7 +1554,7 @@ STALE_CACHE_PROGRAM = (
 
 
 
-def _run_counterexample(root, *, edit):
+def _run_counterexample(root, *, edit=False, mode=None):
     """Run the counterexample program against its own copy of this package."""
     package = Path(sys.modules["block_stack_ai"].__file__).resolve().parent
     source_root = root / "src"
@@ -1563,7 +1563,7 @@ def _run_counterexample(root, *, edit):
                     ignore=shutil.ignore_patterns("__pycache__"))
     completed = subprocess.run(
         [sys.executable, str(COUNTEREXAMPLE_PROGRAM),
-         "edit" if edit else "clean", str(root)],
+         mode or ("edit" if edit else "clean"), str(root)],
         cwd=root, capture_output=True, text=True,
         env={**os.environ, "PYTHONPATH": str(source_root)},
     )
@@ -2917,3 +2917,275 @@ def test_predeclaration_covers_every_module_of_the_objective_identity(tmp_path, 
         probe.predeclare()
     with pytest.raises(AssertionError, match="records only the declaring module"):
         probe.check_predeclaration(record_path)
+
+
+def test_the_writer_records_a_reloaded_modules_identity(tmp_path):
+    """A reloaded module's identity is the one the writer records, not its import-time copy.
+
+    The reviewer's finding: the writer copied an identity bound when ``runner``
+    was imported, so a long-lived process that reloads a covered module — the
+    ordinary way such a process changes the code it runs — updated the loader's
+    record while every record written afterwards kept naming the bytes from before
+    the reload. The reloaded module's code is what computes the later choices, so
+    the record named an implementation that produced nothing. The counterexample
+    program's ``reload`` mode runs the ordering in a fresh process: the modules are
+    imported, the writer is imported, the file is edited, the module is reloaded,
+    and only then is a run built and verified. What the writer records must be the
+    loader's current digest — and, because the reloaded code is what chose the
+    recorded inputs and the tree holds it, verification must pass rather than
+    report.
+    """
+    measured = _run_counterexample(tmp_path / "reload", mode="reload")
+    assert measured["subject"] == "block_stack_ai.agents", measured
+    assert measured["before"] != measured["on_disk"], measured
+    assert measured["loader"] == measured["on_disk"], measured
+    assert measured["record"] == measured["loader"], (
+        "the writer recorded the identity bound when it was imported rather than the "
+        f"reloaded module's own: loader {measured['loader']}, recorded "
+        f"{measured['record']}"
+    )
+    assert measured["loaded"] == measured["loader"], measured
+    assert measured["outcome"]["verified"] is True, measured["outcome"]
+
+
+def test_publication_record_derives_the_tree_from_the_repository(tmp_path):
+    """The commit/tree pairing comes from the repository, not from its own copy.
+
+    The reviewer's finding: ``check_publication_record`` validated the recorded
+    ``published_tree`` only against the same value inside the capture, so setting
+    both to ``000…`` and regenerating the capture line with the shipped helper
+    certified a pairing no publication probe could have observed — the captured
+    commit's immutable tree is not that value. The retained record passes, and the
+    zeroed pairing, and a commit this repository cannot resolve, are reported.
+    """
+    probe = _load_evidence_probe("exp003_publication_tree_probe")
+    path, record = _retained_record_copy(tmp_path)
+    probe.check_publication_record(path)
+    published = record["publication"]["published_commit"]
+    resolved, _ = probe._resolved_commit_tree(published)
+    assert resolved == record["publication"]["published_tree"], (
+        "the retained record's published_tree is not what this repository resolves "
+        f"{published}^{{tree}} to: {resolved}")
+
+    zeros = "0" * 40
+    tampered = json.loads(json.dumps(record))
+    tampered["publication"]["published_tree"] = zeros
+    tampered["publication"]["capture"]["published_tree"] = zeros
+    tampered["publication"]["publication_capture_line"] = \
+        probe.publication_capture_line(tampered["publication"]["capture"])
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    with pytest.raises(AssertionError, match=r"resolves .* to '[0-9a-f]{40}'"):
+        probe.check_publication_record(path)
+
+    # A commit this repository does not hold cannot back the pairing at all, so it
+    # is reported instead of being compared with its own copy.
+    tampered = json.loads(json.dumps(record))
+    unknown = "d" * 40
+    tampered["publication"]["published_commit"] = unknown
+    tampered["publication"]["branch_head"] = unknown
+    tampered["publication"]["pull_request_head"] = unknown
+    tampered["publication"]["capture"]["published_commit"] = unknown
+    tampered["publication"]["capture"]["branch_head"] = unknown
+    tampered["publication"]["capture"]["pull_request_head"] = unknown
+    tampered["publication"]["publication_capture_line"] = \
+        probe.publication_capture_line(tampered["publication"]["capture"])
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    with pytest.raises(AssertionError, match=r"does not resolve to a tree in this repository"):
+        probe.check_publication_record(path)
+
+
+def test_publication_record_derives_the_compared_paths_prose(tmp_path):
+    """The comparison-set prose is derived from the captured per-path evidence.
+
+    The reviewer's finding: the record's prose claimed 46 paths in the published
+    tree while the capture beside it held 48 entries whose published state is a
+    file, because the sentence was a hand-maintained literal. The retained record
+    passes, a prose count the capture does not support is reported, and so is a
+    capture whose entries were changed under the sentence.
+    """
+    probe = _load_evidence_probe("exp003_publication_prose_probe")
+    path, record = _retained_record_copy(tmp_path)
+    probe.check_publication_record(path)
+    capture = record["publication"]["capture"]
+    published_files = probe.publication_file_count(capture)
+    assert record["publication"]["compared_paths"] == probe.compared_paths_prose(
+        len(capture["compared_paths"]), published_files)
+
+    wrong = record["publication"]["compared_paths"].replace(
+        f"{published_files} of the {len(capture['compared_paths'])} compared paths",
+        f"{published_files - 2} of the {len(capture['compared_paths'])} compared paths")
+    assert wrong != record["publication"]["compared_paths"], record["publication"]["compared_paths"]
+    tampered = json.loads(json.dumps(record))
+    tampered["publication"]["compared_paths"] = wrong
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    with pytest.raises(AssertionError, match=r"compared_paths is .*not the sentence"):
+        probe.check_publication_record(path)
+
+    # The other direction: the capture loses a published file and its own
+    # per-entry decisions are recomputed to match, so the only thing left
+    # disagreeing is the sentence the record retains.
+    tampered = json.loads(json.dumps(record))
+    entries = tampered["publication"]["capture"]["compared_paths"]
+    stripped = next(entry for entry in entries
+                    if entry["published"] == "file" and entry["worktree"] == "file"
+                    and entry["differs"])
+    stripped["published"] = "absent"
+    stripped["published_sha256"] = None
+    stripped["outcome"], stripped["differs"] = probe.path_decision(
+        stripped["published"], stripped["published_sha256"],
+        stripped["worktree"], stripped["worktree_sha256"])
+    tampered["publication"]["publication_capture_line"] = \
+        probe.publication_capture_line(tampered["publication"]["capture"])
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    with pytest.raises(AssertionError, match=r"compared_paths is .*not the sentence"):
+        probe.check_publication_record(path)
+
+
+def test_predeclaration_record_derives_the_cited_timestamp(tmp_path):
+    """The order sentence is the one the block's own timestamps reconstruct.
+
+    The reviewer's finding: the block carries the cited record's ``created_at`` in
+    ``cited_record_created_at`` while the sentence beside it still quoted an
+    earlier evaluation's timestamp of the same round, so the block described two
+    measurements. The retained record passes; a sentence rewritten to quote a
+    different instant is reported, and so is that field changed without its own
+    sentence.
+    """
+    probe = _load_evidence_probe("exp003_predeclaration_record_probe")
+    path, record = _retained_record_copy(tmp_path)
+    probe.check_predeclaration_record(path)
+    block = record["predeclared_objective"]
+    assert block["capture_order"] == probe.predeclaration_order_line(
+        block["captured_at"], block["cited_record_created_at"],
+        probe.predeclaration_superseded(block))
+
+    stale = json.loads(json.dumps(record))
+    stale["predeclared_objective"]["capture_order"] = re.sub(
+        r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:\+00:00)",
+        "2001-01-01T00:00:00.000000+00:00",
+        stale["predeclared_objective"]["capture_order"])
+    path.write_text(json.dumps(stale), encoding="utf-8")
+    with pytest.raises(AssertionError, match=r"capture_order is not the line"):
+        probe.check_predeclaration_record(path)
+
+    # The value the sentence is derived from is itself part of the block, so it is
+    # read from the cited record when this checkout retains it: changing it beside
+    # an unchanged sentence is reported too. ``runs/`` is ignored output, so the
+    # comparison is made where that evidence is present.
+    if (probe.PROJECT_ROOT / block["cited_record"]).is_file():
+        moved = json.loads(json.dumps(record))
+        moved["predeclared_objective"]["cited_record_created_at"] = (
+            "2001-01-01T00:00:00.000000+00:00")
+        path.write_text(json.dumps(moved), encoding="utf-8")
+        with pytest.raises(AssertionError,
+                           match=r"cited_record_created_at is .* but the cited record"):
+            probe.check_predeclaration_record(path)
+
+
+def test_record_derives_the_format_version_prose(tmp_path):
+    """The retained version prose is the line the writer's own table generates.
+
+    The reviewer's finding: the summary still named version 5 as the current suite
+    format while ``runner.SUITE_FORMAT_VERSION`` is 6 and the version map beside it
+    already described 5 as the earlier outward-only identity. The retained
+    sentence is the generated one, and a sentence naming an outdated table is
+    reported.
+    """
+    probe = _load_evidence_probe("exp003_version_prose_probe")
+    path, record = _retained_record_copy(tmp_path)
+    probe.check_predeclaration_record(path)
+    sentence = record["record_format_versions"]["this_round"]
+    assert sentence.endswith(probe.format_versions_line()), sentence
+    assert f"{runner.SUITE_FORMAT_VERSION} current suite" in sentence
+    assert f"{runner.OUTWARD_IDENTITY_SUITE_FORMAT_VERSION} outward-identity suite" in sentence
+
+    stale = json.loads(json.dumps(record))
+    stale["record_format_versions"]["this_round"] = sentence.replace(
+        f"{runner.SUITE_FORMAT_VERSION} current suite",
+        f"{runner.OUTWARD_IDENTITY_SUITE_FORMAT_VERSION} current suite")
+    path.write_text(json.dumps(stale), encoding="utf-8")
+    with pytest.raises(AssertionError,
+                       match=r"this_round does not end with the version prose"):
+        probe.check_predeclaration_record(path)
+
+
+def test_base_commit_record_derives_the_trees_from_the_repository(tmp_path):
+    """The base snapshot's commit/tree pairings come from the repository too.
+
+    The same class as the publication snapshot's pairing, one block over: the
+    base snapshot's ``git_tree_id`` and ``remote_main_tree`` were validated against
+    copies of themselves — the captured ``rev-parse`` output is inside the same
+    object — so rewriting the field, its capture copy, the captured command output
+    and the state line together certified a pairing no run observed. The retained
+    snapshot passes, and both co-forged pairings are reported.
+    """
+    probe = _load_evidence_probe("exp003_base_trees_probe")
+    path, record = _retained_record_copy(tmp_path)
+    probe.check_base_commit_record(path)
+    base = record["base_commit"]
+    resolved, _ = probe._resolved_commit_tree(base["commit"])
+    assert resolved == base["git_tree_id"], (resolved, base["git_tree_id"])
+
+    def rewrite(tampered, trees, tip=None):
+        target = tampered["base_commit"]
+        for field, value in trees.items():
+            target[field] = value
+            target["capture"][field] = value
+        if tip is not None:
+            target["remote_main_tip"] = tip
+            target["capture"]["remote_main_tip"] = tip
+            for entry in target["capture"]["commands"]:
+                if entry["role"] == "refreshed remote main commit from the clone":
+                    entry["output"] = tip
+        for entry in target["capture"]["commands"]:
+            for role, field in probe.BASE_COMMIT_ROLES:
+                if entry["role"] == role and field in trees:
+                    entry["output"] = trees[field]
+        target["base_capture_line"] = probe.base_capture_line(target["capture"])
+        target["state"] = probe.base_state_line(
+            {name: target[name] for name in probe.BASE_COMMIT_FIELDS})
+
+    zeros = "0" * 40
+    for label, trees, tip in (
+        ("both trees zeroed in every copy",
+         {"git_tree_id": zeros, "remote_main_tree": zeros}, None),
+        ("the tip's tree zeroed with the observed tip moved to this checkout's HEAD",
+         {"remote_main_tree": zeros}, subprocess.run(
+             ["git", "rev-parse", "HEAD"], cwd=engine.PROJECT_ROOT, text=True,
+             capture_output=True, check=True).stdout.strip()),
+    ):
+        tampered = json.loads(json.dumps(record))
+        rewrite(tampered, trees, tip=tip)
+        path.write_text(json.dumps(tampered), encoding="utf-8")
+        with pytest.raises(AssertionError,
+                           match=r"this repository resolves .* to '[0-9a-f]{40}'"):
+            probe.check_base_commit_record(path)
+
+
+def test_the_writer_refuses_a_mixed_loaded_closure(tmp_path):
+    """A partial reload is refused, not stamped with the reloaded module's identity.
+
+    The review follow-up to the reload repair, in both directions a partial reload
+    can take. Reloading only the objective module updates the loader's digest for
+    it while the wrapper keeps the callable it imported by value; reloading only
+    the wrapper updates its digest while the writer keeps the factory it imported
+    by value (``runner.create_agent``, with the script parser and the agent classes
+    beside it). In either direction the code that would compute a choice and the
+    module an identity would name are two implementations, and the counterexample
+    program's ``mixed`` and ``mixed-caller`` modes run those orderings in a fresh
+    process. Each must be refused, with the stale reference named and no record
+    written — a run stamped with the reloaded module's digest would describe code
+    that produced none of its inputs.
+    """
+    for mode, reference in (("mixed", "block_stack_ai.agents.tetris_choice"),
+                            ("mixed-caller", "block_stack_ai.runner.create_agent")):
+        measured = _run_counterexample(tmp_path / mode, mode=mode)
+        assert measured["mode"] == mode, measured
+        assert measured["before"] != measured["on_disk"], measured
+        assert measured["loader"] == measured["on_disk"], measured
+        assert measured["refused"] is True, (
+            f"the {mode} run was stamped with a record instead of being refused: "
+            f"{measured['record']}"
+        )
+        assert reference in measured["refusal"], measured["refusal"]
+        assert measured["record"] is None, measured

@@ -36,13 +36,14 @@ class LiveSession:
         self.game = create_game(**config.game, seed=self.seed)
         self.agent = create_agent(self.name, self.seed)
         # The declared objective is a source identity, and the implementation the
-        # session runs is the one the interpreter loaded when it imported these
-        # modules — a restart cannot change it, and neither can an edit that
-        # lands after the import. It is therefore the identity the modules were
-        # loaded with, read once here and reused for every game this session
-        # records: reading the files at BEGIN (or at END) would attribute a
-        # game's inputs to source bytes that were never loaded whenever a covered
-        # module is edited while the process is alive.
+        # session runs is the one the interpreter had loaded when the session was
+        # built: a restart cannot change it, and neither can an edit that lands
+        # after the import. It is read here, at construction, and reused for every
+        # game this session records — reading the files at BEGIN (or at END) would
+        # attribute a game's inputs to source bytes that were never loaded whenever
+        # a covered module is edited while the process is alive, and a covered
+        # module the process *reloads* after this point is not what this session
+        # computed its earlier choices with either.
         self.objective = _objective_section(self.config, loaded=True)
         self.active = False
         self.records: list[Path] = []

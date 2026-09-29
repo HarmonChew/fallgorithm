@@ -21,8 +21,10 @@ It prints one JSON object and exits 0:
 * ``executed`` — ``block_stack_ai.tetris.WELL_DEPTH_CAP`` as the interpreter
   loaded it: the value the code that ran declares;
 * ``source`` — the same constant as the file on the tree declares it;
-* ``recorded`` — the writer's identity entry for that module
-  (``runner._LOADED_OBJECTIVE_SOURCES``);
+* ``recorded`` — the writer's identity entry for that module (the tree's own
+  writer view: ``runner._loaded_objective_sources()`` where the writer reads it
+  when a run is built, or the import-time ``runner._LOADED_OBJECTIVE_SOURCES``
+  where it binds it once);
 * ``file`` — sha256 of the file on the tree;
 * ``agrees`` — whether ``recorded`` is that file's digest.
 
@@ -51,7 +53,10 @@ def main() -> int:
                          re.MULTILINE)
     assert declared is not None, f"{source} declares no {CONSTANT}"
     digest = hashlib.sha256(source.read_bytes()).hexdigest()
-    recorded = runner._LOADED_OBJECTIVE_SOURCES["block_stack_ai.tetris"]
+    # The writer's view of the loaded identity, as the tree under test carries it.
+    reader = getattr(runner, "_loaded_objective_sources", None)
+    recorded = (reader() if reader is not None
+                else runner._LOADED_OBJECTIVE_SOURCES)["block_stack_ai.tetris"]
     print(json.dumps({
         "executed": getattr(tetris, CONSTANT),
         "source": int(declared.group(1)),

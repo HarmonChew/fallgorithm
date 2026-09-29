@@ -5,9 +5,13 @@ Run each subcommand directly, or ``all`` for every one that needs no arguments:
     PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
     PYTHONPATH=$PWD/src $PY experiments/003-tetris-aware-agent/probes/evidence.py all
 
-Every probe exits 0 on success and prints the values it measured. The pre-change
-side of each new regression is in ``prechange_probe.py``; this file runs against
-this tree.
+Every probe exits 0 on success and prints the values it measured. ``all`` covers
+the checks whose subject is on this tree; the two record checks that need an
+argument — ``publication-record`` and ``base-commit-record``, plus
+``predeclaration-record``, ``check-predeclaration`` and ``report`` — read the
+retained record and the run it cites, and are run with the path they describe.
+The pre-change side of each new regression is in ``prechange_probe.py``; this
+file runs against this tree.
 """
 
 from __future__ import annotations
@@ -28,7 +32,15 @@ from block_stack_ai.agents import create_agent
 from block_stack_ai.engine import create_game
 from block_stack_ai.heuristic import HEIGHT, HIDDEN_ROWS, WIDTH, board_grid, enumerate_placements
 from block_stack_ai.pathaware import grid_columns, lookahead_choice, settle_columns
-from block_stack_ai.runner import _objective_sources, load_config, verify_run
+from block_stack_ai.runner import (
+    FORMAT_VERSION,
+    OUTWARD_IDENTITY_SUITE_FORMAT_VERSION,
+    PRIOR_SUITE_FORMAT_VERSION,
+    SUITE_FORMAT_VERSION,
+    _objective_sources,
+    load_config,
+    verify_run,
+)
 from block_stack_ai.tetris import tetris_choice, weights_record, well_depth
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -104,6 +116,10 @@ OUTCOMES = (OUTCOME_ABSENT, OUTCOME_NOT_A_FILE, OUTCOME_ADDED, OUTCOME_DELETED,
 # The three states one side of a comparison can be in. An untracked directory is
 # one ``git status`` entry, so a compared path need not be a file.
 PATH_STATES = ("file", "directory", "absent")
+# The one path state a side has when it holds a file, named once because the
+# published-file count the prose is derived from, the capture's entry validation
+# and the report all read it.
+STATE_FILE = "file"
 # One captured per-path entry has exactly these keys: the path, the comparison's
 # two decisions (the outcome and whether the path differs), each side's state, and
 # — for a side that is a file — its sha256. The digests are what make ``same``
@@ -202,9 +218,70 @@ def counts_line(compared_count: int, differing: int, uncommitted: int) -> str:
             f"observed_uncommitted_paths={uncommitted}")
 
 
+def compared_paths_prose(compared_count: int, published_files: int) -> str:
+    """The sentence describing the comparison set, from the captured run's counts.
+
+    The record's prose about the compared paths is regenerated from the captured
+    run rather than maintained beside it, because the two had drifted: the field
+    claimed 46 paths in the published tree while the capture beside it held 48
+    entries whose published state is a file. The evidence for the count is the
+    capture's own per-path entries (``publication_file_count``), so a sentence
+    quoting a number the capture does not support is reported instead of certified
+    — and a count regenerated without a matching capture cannot stand either,
+    because the sentence is built from the capture's entries, not from the
+    sentence.
+    """
+    return (
+        "every path either tree tracks, plus this worktree's untracked files, derived "
+        "from Git: a declared list can omit a path the task changes, and the review found "
+        "that hole twice (first this record's own result.json, then any tracked path "
+        f"outside the list); {published_files} of the {compared_count} compared paths are "
+        "files in the published tree and "
+        f"{compared_count - published_files} are not, listed one by one in "
+        "capture.compared_paths with each side's state and whether the run found it "
+        "differing, so the counts above are that list's own lengths"
+    )
+
+
+def publication_file_count(capture: dict) -> int:
+    """How many compared paths the captured run found as files in the published tree.
+
+    Read from the capture's own per-path entries, one state each, which is the only
+    place the run recorded what it observed: the prose the record retains is
+    checked against this derivation.
+    """
+    return sum(1 for entry in capture["compared_paths"]
+               if entry["published"] == STATE_FILE)
+
+
+def _resolved_commit_tree(commit: str) -> tuple[str | None, str]:
+    """The tree this repository's own Git objects give ``commit``, and how.
+
+    A commit/tree pairing a record retains is evidence about a commit, so it is
+    derived from the repository that holds that commit — ``git rev-parse
+    <commit>^{tree}`` — and not from the snapshot the record keeps beside it. A
+    snapshot checked only against its own copies certifies any pair at all: setting
+    every copy of a tree to ``000…`` and regenerating the line that quotes them
+    passes, although no probe could have observed that pairing, because a commit's
+    immutable tree is not that value and Git cannot be made to produce it. The
+    resolution is reported as the string that answers it, so the failure message
+    says which command was run and what it printed. Both the publication snapshot's
+    published commit and the base snapshot's commits are read this way.
+    """
+    if not isinstance(commit, str) or re.fullmatch(r"[0-9a-f]{40}", commit) is None:
+        return None, f"the recorded commit {commit!r} is not a commit id"
+    status, output = _git(PROJECT_ROOT, "rev-parse", f"{commit}^{{tree}}")
+    answer = output.splitlines()[-1] if output.splitlines() else ""
+    how = f"git -C {PROJECT_ROOT} rev-parse {commit}^{{tree}} exited {status} with {output!r}"
+    if status != 0 or re.fullmatch(r"[0-9a-f]{40}", answer) is None:
+        return None, how
+    return answer, how
+
+
 # The base-refresh snapshot's named fields: the values one run measured and the
 # retained record cites. Each is checked against the captured command output it
-# came from, so the fields cannot have been written by different runs.
+# came from — and the two trees among them against this repository's own objects —
+# so the fields cannot have been written by different runs.
 BASE_ANCESTRY_FIELD = "base_is_ancestor_of_remote_main"
 BASE_COMMIT_FIELDS = ("commit", "git_tree_id", "remote_main_tip", "remote_main_tree",
                       "worktree_head", BASE_ANCESTRY_FIELD)
@@ -729,6 +806,18 @@ def check_publication_record(path: Path = RESULT_PATH) -> None:
     from its own recorded states and sha256 digests through ``path_decision`` —
     the same function the probe decides them with — and an entry that disagrees
     with that derivation is reported.
+
+    Two more claims were only ever compared with a copy of themselves, and are
+    derived from evidence outside the pair they are checked against. The
+    commit/tree pairing: ``published_tree`` was validated against the same value
+    inside the capture, so setting both to ``000…`` and regenerating the capture
+    line certified a pairing no publication probe could have observed, because the
+    captured commit's immutable tree is not that value — the tree is resolved from
+    this repository's own objects (``git rev-parse <commit>^{tree}``) instead. And
+    the prose about the comparison set: it was a hand-maintained literal, and it
+    had drifted to 46 paths while the capture beside it held 48 entries whose
+    published state is a file — the sentence is regenerated from the capture's own
+    per-path states through ``compared_paths_prose``.
     """
     record = json.loads(path.read_text(encoding="utf-8"))
     publication = record["publication"]
@@ -876,6 +965,33 @@ def check_publication_record(path: Path = RESULT_PATH) -> None:
     require(publication.get("published_tree") == capture.get("published_tree"),
             f"published_tree is {publication.get('published_tree')!r} but the captured run "
             f"recorded {capture.get('published_tree')!r}")
+    # The commit/tree pairing is evidence about the published commit, so it is
+    # derived from the repository that holds that commit rather than from the copy
+    # inside the capture: two copies set to the same value agree with each other
+    # whatever that value is, and a pairing of zeroes is one no publication probe
+    # could have observed, because the captured commit's immutable tree is not
+    # that value and Git cannot be made to produce it.
+    resolved_tree, how = _resolved_commit_tree(published)
+    print(f"#   published tree resolved from this repository: {resolved_tree} ({how})")
+    if resolved_tree is None:
+        problems.append(
+            f"the published commit {published} does not resolve to a tree in this "
+            f"repository ({how}), so the record's commit/tree pairing is not a value any "
+            "publication probe could have observed"
+        )
+    else:
+        require(publication.get("published_tree") == resolved_tree,
+                f"published_tree is {publication.get('published_tree')!r} but this "
+                f"repository resolves {published}^{{tree}} to {resolved_tree!r}")
+    # The prose about the comparison set is regenerated from the captured run's own
+    # per-path states: a sentence quoting a count the capture does not support is
+    # reported, and so is a capture whose entries were regenerated to agree with a
+    # hand-written sentence only in count.
+    require(publication.get("compared_paths") == compared_paths_prose(
+                len(compared), publication_file_count(capture)),
+            f"compared_paths is {publication.get('compared_paths')!r}, not the sentence "
+            f"the captured run's {len(compared)} entries imply "
+            f"({publication_file_count(capture)} of them files in the published tree)")
 
     state = publication.get("state", "")
     expected_state = state_line(published, publication.get("compared_paths_count"), listed)
@@ -978,6 +1094,33 @@ def check_base_commit_record(path: Path = RESULT_PATH) -> None:
             require(entry.get("output") == base.get(field),
                     f"base_commit.{field} is {base.get(field)!r} but the captured command for "
                     f"{role!r} printed {entry.get('output')!r}")
+    # The two trees the snapshot names are evidence about two commits, so they are
+    # read from this repository's own objects as well as from the copies beside
+    # them: every copy of a tree can be rewritten together, and a copied command
+    # output is not a second observation. The recorded base is the commit this
+    # worktree descends from, so it is always in this checkout's objects; the
+    # observed remote main tip is the remote's own, and a checkout built before it
+    # need not hold it, in which case the captured clone command above is the only
+    # witness and says so.
+    for field, commit, noun in (("git_tree_id", base.get("commit"),
+                                 "the recorded branch base"),
+                                ("remote_main_tree", base.get("remote_main_tip"),
+                                 "the observed remote main tip")):
+        resolved, how = _resolved_commit_tree(commit)
+        if resolved is None:
+            if field == "git_tree_id":
+                problems.append(
+                    f"the recorded base {commit!r} does not resolve to a tree in this "
+                    f"repository ({how}), so the snapshot's commit/tree pairing is not a value "
+                    "any probe could have observed"
+                )
+            else:
+                print(f"# {noun} {commit} is not in this checkout's objects, so its tree is "
+                      f"witnessed by the captured clone command: {how}")
+            continue
+        require(base.get(field) == resolved,
+                f"base_commit.{field} is {base.get(field)!r} but this repository resolves "
+                f"{commit}^{{tree}} to {resolved!r}, the tree of {noun}")
     ancestry = by_role.get(BASE_ANCESTRY_ROLE, [])
     require(len(ancestry) == 1,
             f"the captured run holds {len(ancestry)} commands for the role "
@@ -1230,6 +1373,46 @@ TETRIS_MODULE = PROJECT_ROOT / "src" / "block_stack_ai" / "tetris.py"
 # result and therefore cannot be written before the run.
 OBJECTIVE_SECTION_START = "<!-- predeclared-objective:start -->"
 OBJECTIVE_SECTION_END = "<!-- predeclared-objective:end -->"
+# The superseded captures a predeclaration block retains beside the current one:
+# the record field that names each, and what that capture was, in the order the
+# sentence lists them. Read by ``predeclaration_superseded`` so the sentence is
+# regenerated from the record's own path fields.
+PREDECLARATION_SUPERSEDED = (
+    ("pre_transcription_capture", "a transcription under an earlier timestamp"),
+    ("pre_wrapper_capture", "an identity that stopped at the objective's own imports"),
+    ("earlier_capture", "an earlier capture"),
+)
+
+
+def predeclaration_superseded(record: dict) -> list[tuple[str, str]]:
+    """The (path, what it was) pairs the retained block names beside the capture."""
+    return [(record[field], what) for field, what in PREDECLARATION_SUPERSEDED]
+
+
+def predeclaration_order_line(captured_at: str, cited_created_at: str,
+                              superseded: list) -> str:
+    """The order sentence the retained block has to carry, from its own values.
+
+    The record cites the run it was measured by and the capture that preceded it,
+    so the sentence stating that order is regenerated from the two timestamps the
+    block already carries — the capture's own ``captured_at`` and the cited
+    record's ``created_at`` — plus the superseded captures it names, rather than
+    maintained as a second copy of those values. A sentence left behind quoting an
+    earlier evaluation of the same round while the timestamp beside it was updated
+    is exactly the drift this closes: the two copies had disagreed, and the prose
+    was the one nobody checked.
+    """
+    retained = ", ".join(f"{path} ({what})" for path, what in superseded[:-1])
+    return (
+        f"the capture is kept, not re-made: it is the artifact written at {captured_at} "
+        "from the unchanged tree, and this round changed no module it covers, so "
+        "`predeclare` confirms every digest still equals the tree's and refuses to "
+        "rewrite it. The 10-seed evaluation was re-run after it, so the cited record's "
+        f"own created_at {cited_created_at} postdates the capture and the record's own "
+        "objective.sources equals the capture's. The superseded captures of the earlier "
+        f"rounds are retained beside it: {retained} and {superseded[-1][0]}"
+    )
+
 
 
 def _module_digest() -> str:
@@ -1480,6 +1663,151 @@ def check_predeclaration(path: Path):
     print("# the declared objective is the measured one and predates the record")
 
 
+# The instant-shaped tokens a retained sentence may quote. Both timestamps the
+# block carries are written by ``datetime.isoformat`` in UTC. Any other one in
+# the block is a value left behind by an earlier evaluation of the same round.
+_TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|\+00:00)")
+
+
+def check_predeclaration_record(path: Path = RESULT_PATH) -> None:
+    """The retained predeclaration block is derivable from the artifacts it names.
+
+    Two findings of one shape, both about a retained sentence or field that was
+    only ever compared with a copy of itself. The first: the block carries the
+    cited run's ``created_at`` in ``cited_record_created_at``, but the sentence
+    beside it — ``capture_order`` — still quoted an earlier evaluation's timestamp
+    from the same round, so the block described two measurements. The sentence is
+    therefore *regenerated* from the block's own two timestamps and its own
+    superseded-capture paths through ``predeclaration_order_line``, and the check
+    requires the retained text to be exactly that line. The second: the format
+    version prose in ``record_format_versions.this_round`` still named version 5
+    as the current suite format while the writer emits 6 — the version map beside
+    it already described 5 as the earlier outward-only identity — so the sentence
+    is regenerated from the writer's own version table through
+    ``format_versions_line`` and compared the same way.
+
+    Every value the block quotes is read from the artifact it describes instead of
+    being taken on trust: ``captured_at``, the module and notes-section digests,
+    the identity and the declared weights come from the capture file the block
+    names, the cited ``created_at`` comes from the cited record when this checkout
+    retains it (``runs/`` is ignored output, so a checkout that does not is told
+    so rather than silently passing), and every superseded capture the block names
+    has to exist. No instant-shaped token anywhere in the block may be a value
+    other than those two timestamps, so a stale quote in any sentence is reported.
+    """
+    record = json.loads(path.read_text(encoding="utf-8"))
+    block = record.get("predeclared_objective")
+    if not isinstance(block, dict):
+        raise AssertionError(f"{path}: predeclared_objective is not a recorded block: {block!r}")
+    problems: list[str] = []
+
+    def require(condition: bool, message: str) -> None:
+        if not condition:
+            problems.append(message)
+
+    # The capture artifact is the outside evidence for every digest the block
+    # quotes: read it and compare, rather than comparing the block with itself.
+    capture_file = block.get("capture_file")
+    require(isinstance(capture_file, str),
+            f"capture_file is not the artifact's path: {capture_file!r}")
+    captured = None
+    if isinstance(capture_file, str):
+        capture_path = PROJECT_ROOT / capture_file
+        require(capture_path.is_file(),
+                f"the capture the block names is not on this tree: {capture_file}")
+        if capture_path.is_file():
+            captured = json.loads(capture_path.read_text(encoding="utf-8"))
+    if captured is not None:
+        for field in ("captured_at", "module", "module_sha256", "notes_section",
+                      "notes_section_sha256", "sources", "objective"):
+            require(block.get(field) == captured.get(field),
+                    f"predeclared_objective.{field} is {block.get(field)!r} but the capture "
+                    f"it names records {captured.get(field)!r}")
+    superseded = predeclaration_superseded(block) if all(
+        isinstance(block.get(field), str) for field, _ in PREDECLARATION_SUPERSEDED) else None
+    if superseded is None:
+        require(False,
+                "the block does not name every superseded capture beside the current one: "
+                f"{[field for field, _ in PREDECLARATION_SUPERSEDED]}")
+    else:
+        for superseded_path, _ in superseded:
+            require((PROJECT_ROOT / superseded_path).is_file(),
+                    f"the superseded capture the block names is not on this tree: "
+                    f"{superseded_path}")
+    # The cited run is the artifact the quoted timestamp comes from. ``runs/`` is
+    # ignored output and is not published, so a checkout without it is told which
+    # claim is then unverifiable rather than being passed silently.
+    cited = block.get("cited_record")
+    cited_created_at = block.get("cited_record_created_at")
+    require(isinstance(cited, str), f"cited_record is not a recorded path: {cited!r}")
+    require(isinstance(cited_created_at, str),
+            f"cited_record_created_at is not a recorded timestamp: {cited_created_at!r}")
+    if isinstance(cited, str) and (PROJECT_ROOT / cited).is_file():
+        cited_record = json.loads((PROJECT_ROOT / cited).read_text(encoding="utf-8"))
+        require(cited_record.get("created_at") == cited_created_at,
+                f"cited_record_created_at is {cited_created_at!r} but the cited record "
+                f"{cited} was created at {cited_record.get('created_at')!r}")
+        # The cited record's own identity is what the capture has to agree with,
+        # so the whole pre-run ordering is re-checked against the artifact rather
+        # than restated: ``check_predeclaration`` reads the same file and the same
+        # capture.
+        check_predeclaration(PROJECT_ROOT / cited)
+    else:
+        print(f"# the cited run {cited!r} is not retained in this checkout (``runs/`` is "
+              f"ignored output, so the publication carries the distilled rows under "
+              f"episodes_by_agent_seed instead); its quoted created_at is compared with the "
+              f"cited record when one is present")
+
+    if isinstance(captured, dict) and isinstance(cited_created_at, str) and superseded:
+        require(block.get("capture_order") == predeclaration_order_line(
+                    block.get("captured_at"), cited_created_at, superseded),
+                "capture_order is not the line the block's own timestamps and superseded "
+                f"captures reconstruct, so the prose and the values beside it are not one "
+                f"measurement: {block.get('capture_order')!r}")
+    # Any other instant in the block is a value an earlier evaluation left behind:
+    # the two the block carries are the capture's and the cited run's.
+    quoted = {block.get("captured_at"), cited_created_at}
+    for where, text in _strings(block, "predeclared_objective"):
+        for token in _TIMESTAMP.findall(text):
+            require(token in quoted,
+                    f"{where} quotes the timestamp {token}, which is neither the capture's "
+                    f"captured_at nor the cited record's created_at")
+    # The version prose is a claim about the writer's own table, so it is compared
+    # with the line that table generates rather than with the sentence beside it.
+    prose = record.get("record_format_versions")
+    if isinstance(prose, dict) and "this_round" in prose:
+        require(prose["this_round"].endswith(format_versions_line()),
+                "record_format_versions.this_round does not end with the version prose the "
+                f"writer's own table generates ({format_versions_line()!r}): "
+                f"{prose['this_round']!r}")
+
+    print(f"# {path}: predeclaration block")
+    print(f"#   capture {capture_file} written {block.get('captured_at')}")
+    print(f"#   cited run {cited} created {cited_created_at}")
+    assert not problems, "; ".join(problems)
+    print("# every quoted value comes from the artifact it names")
+
+
+def format_versions_line() -> str:
+    """The version prose, derived from the writer's own version table.
+
+    The retained record's sentence about the checked-in version numbers had gone
+    stale — it still called version 5 the current suite format while
+    ``runner.SUITE_FORMAT_VERSION`` is 6 and the version map beside it already
+    described 5 as the earlier outward-only identity — because it was a second,
+    hand-maintained copy of the constants. It is generated from the writer's own
+    names instead, so the sentence cannot describe a table the writer does not
+    have: a reader asking which number is current is answered by the constants
+    the version dispatch actually uses.
+    """
+    return (
+        "the README's version prose matches the runner's constants "
+        f"({FORMAT_VERSION} scripted / {PRIOR_SUITE_FORMAT_VERSION} prior "
+        f"suite / {OUTWARD_IDENTITY_SUITE_FORMAT_VERSION} outward-identity suite / "
+        f"{SUITE_FORMAT_VERSION} current suite)"
+    )
+
+
 def report(path: Path):
     """The reported per-agent summary, from a saved record.
 
@@ -1527,6 +1855,7 @@ PROBES = {
     "base-commit-record": check_base_commit_record,
     "publication": check_publication,
     "publication-record": check_publication_record,
+    "predeclaration-record": check_predeclaration_record,
     "line-sizes": check_line_sizes,
     "tetris-choice": check_tetris_choice,
     "native-tetris": check_native_tetris,
@@ -1565,10 +1894,13 @@ def _main() -> int:
     if len(sys.argv) == 3 and sys.argv[1] == "check-predeclaration":
         check_predeclaration(Path(sys.argv[2]))
         return 0
+    if len(sys.argv) == 3 and sys.argv[1] == "predeclaration-record":
+        check_predeclaration_record(Path(sys.argv[2]))
+        return 0
     if len(sys.argv) != 2:
         print(f"usage: {sys.argv[0]} {{{','.join(PROBES)}}} | predeclare | "
-              "check-predeclaration R | base-commit-record R | report R | compare A B",
-              file=sys.stderr)
+              "check-predeclaration R | predeclaration-record R | base-commit-record R | "
+              "report R | compare A B", file=sys.stderr)
         return 2
     if sys.argv[1] == "predeclare":
         predeclare()
@@ -1579,8 +1911,8 @@ def _main() -> int:
         names = [sys.argv[1]]
     else:
         print(f"usage: {sys.argv[0]} {{{','.join(PROBES)}}} | predeclare | "
-              "check-predeclaration R | base-commit-record R | report R | compare A B",
-              file=sys.stderr)
+              "check-predeclaration R | predeclaration-record R | base-commit-record R | "
+              "report R | compare A B", file=sys.stderr)
         return 2
     for name in names:
         print(f"########## probe: {name}")
