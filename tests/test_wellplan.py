@@ -1,0 +1,395 @@
+"""Unit tests for the bounded well plan and the plan agent's decisions.
+
+Every test here uses constructed boards and the pure Python model, so the
+registered unit suite stays fast; the native side of the contract is the
+four-row clear in ``test_integration.py``. The objective's values are pinned
+exactly, so the declared weights cannot drift unnoticed.
+
+The constructed boards are boards a game can actually be in: no row is ever
+already complete, because ``Game::clear_rows`` would have cleared one. That
+matters for the reserve, which is measured by settling a vertical I and counting
+the rows the lock clears.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from block_stack_ai import agents as agents_module
+from block_stack_ai import pathaware, runner
+from block_stack_ai import wellplan as wellplan_module
+from block_stack_ai.agents import DOWN, PlacementAgent
+from block_stack_ai.heuristic import HEIGHT, HIDDEN_ROWS, WIDTH, board_grid, feature_score
+from block_stack_ai.pathaware import column_features, grid_columns
+from block_stack_ai.wellplan import (
+    BUILD,
+    DROUGHT_BOUND,
+    HEIGHT_BUDGET,
+    PLAN_AGENT,
+    PLAN_WEIGHTS,
+    RESERVE_CAP,
+    SPEND,
+    WELL_COLUMN,
+    PlanAgent,
+    build_agent,
+    clear_term,
+    column_heights,
+    field_features,
+    holds_well,
+    initial_phase,
+    next_drought,
+    plan_choice,
+    plan_value,
+    stack_height,
+    well_reserve,
+    weights_record,
+)
+
+EMPTY_HIDDEN = ((0,) * WIDTH,) * 2
+EMPTY_ROWS = tuple((0,) * WIDTH for _ in range(HEIGHT))
+EMPTY_GRID = board_grid(EMPTY_ROWS, EMPTY_HIDDEN)
+
+
+def grid_of(rows: list[list[int]], hidden=EMPTY_HIDDEN):
+    return board_grid(tuple(tuple(row) for row in rows), hidden)
+
+
+def blank_rows() -> list[list[int]]:
+    return [[0] * WIDTH for _ in range(HEIGHT)]
+
+
+def stacked(heights: list[int]) -> tuple[tuple[int, ...], ...]:
+    """A grid whose columns are filled from the floor to the given heights."""
+    rows = blank_rows()
+    for column, height in enumerate(heights):
+        for row in range(height):
+            rows[HEIGHT - 1 - row][column] = 1
+    return grid_of(rows)
+
+
+def open_well(height: int) -> tuple[tuple[int, ...], ...]:
+    """Nine columns filled to ``height`` and an empty designated well column."""
+    return stacked([height] * (WIDTH - 1) + [0])
+
+
+def columns_of(grid) -> tuple[int, ...]:
+    return grid_columns(grid)
+
+
+def choose(grid, piece: str, next_piece: str, *, drought: int = 0, first_delay: int = 0):
+    return plan_choice(grid, piece, next_piece, drought=drought, level=18, lines=0,
+                       start_level=18, first_delay_remaining=first_delay,
+                       ruleset="classic_ntsc_extended", mode="endless")
+
+
+def test_declared_weights_are_the_published_ones():
+    """The objective is declared once, and the record names exactly those values."""
+    assert PLAN_WEIGHTS == {
+        "tetrises": 8.0,
+        "premature_clear": -1.0,
+        "holes": -2.0,
+        "aggregate_height": -0.5,
+        "bumpiness": -0.5,
+        "max_height": -1.0,
+        "reserve": 6.0,
+        "overflow": -2.0,
+    }
+    record = weights_record()
+    assert record == {
+        **PLAN_WEIGHTS,
+        "reserve_cap": RESERVE_CAP,
+        "height_budget": HEIGHT_BUDGET,
+        "drought_bound": DROUGHT_BOUND,
+        "well_column": WELL_COLUMN,
+        "tie_break": (
+            "first highest-valued placement in canonical enumeration order: orientation "
+            "ascending, then column ascending"
+        ),
+    }
+    assert RESERVE_CAP == 4 and WELL_COLUMN == WIDTH - 1 == 9
+
+
+def test_clear_term_rewards_only_the_four_line_clear():
+    assert clear_term(4) == 8.0
+    assert clear_term(0) == 0.0
+    assert clear_term(1) == -3.0
+    assert clear_term(2) == -2.0
+    assert clear_term(3) == -1.0
+    assert clear_term(4) > 0 > clear_term(3) > clear_term(2) > clear_term(1)
+
+
+def test_column_heights_and_stack_height_read_the_frozen_features():
+    """The plan's heights are the ones ``pathaware.column_features`` reports."""
+    for heights in ([0] * 10, list(range(0, 10)), [20] * 10, [4] * 9 + [0], [3, 1, 4, 1, 5, 9, 2, 6, 5, 3]):
+        columns = columns_of(stacked(heights))
+        features = column_features(columns)
+        assert max(column_heights(columns)) == features.max_height
+        assert stack_height(columns) == max(heights)
+        field = field_features(columns)
+        assert field.max_height == max(heights[:WELL_COLUMN])
+        assert field.aggregate_height == sum(heights[:WELL_COLUMN])
+
+
+def test_field_features_leave_the_designated_well_out_of_every_field_term():
+    """The held well is a reserve, not four buried holes.
+
+    A four-high field with an empty well column has no field holes at all, and
+    the step down into the well is not bumpiness either, so holding the reserve
+    does not have to outbid the frozen geometry. A buried cell *inside* the well
+    column is not a field hole either: the plan keeps its own measure of what the
+    well is worth, and the well is not part of the field it is trying to keep
+    flat.
+    """
+    columns = columns_of(open_well(4))
+    field = field_features(columns)
+    assert (field.holes, field.aggregate_height, field.bumpiness, field.max_height) == (0, 36, 0, 4)
+
+    # A cell buried under the top of the well column: the I would land above it,
+    # and the field terms still report no holes of their own.
+    rows = blank_rows()
+    for row in range(HEIGHT - 4, HEIGHT):
+        for column in range(WIDTH - 1):
+            rows[row][column] = 1
+    rows[HEIGHT - 1][WELL_COLUMN] = 1
+    field = field_features(columns_of(grid_of(rows)))
+    assert field.holes == 0
+
+
+def test_well_reserve_is_the_rows_a_vertical_i_would_clear():
+    """The reserve is the clear itself, measured by dropping the I in the well.
+
+    A vertical I descends the well column to its floor and fills the four rows
+    above the well column's topmost cell, so the reserve is how many of those
+    rows the lock completes: one per complete row of the field below that band,
+    four at most. An empty board has none, and a well whose band would reach
+    above the ceiling takes no I at all.
+    """
+    assert well_reserve(columns_of(EMPTY_GRID)) == 0
+    for depth in range(1, RESERVE_CAP + 1):
+        assert well_reserve(columns_of(open_well(depth))) == depth
+    assert well_reserve(columns_of(open_well(RESERVE_CAP + 3))) == RESERVE_CAP
+
+    # A well column already filled while the field is missing a column beside it:
+    # the I lands on top of the fill, and the band it fills is not complete.
+    assert well_reserve(columns_of(stacked([6] * 8 + [0, 2]))) == 0
+
+
+def test_a_filled_well_column_leaves_no_reserve():
+    """A board whose well column holds cells has no reserve to spend.
+
+    The bottom row of a reachable board is never already complete — the engine
+    clears full rows as they lock — so a nonempty well column means some field
+    column is empty beside it, and that gap is inside the band the I would fill.
+    The reserve is therefore zero whenever the well column is not empty, which is
+    why the plan's own count of the rows it would clear is only ever earned by
+    leaving the designated column open.
+    """
+    columns = columns_of(stacked([6] * 8 + [0, 1]))
+    assert well_reserve(columns) == 0
+    assert well_reserve(columns_of(stacked([6] * 8 + [0, 2]))) == 0
+
+
+def test_holds_well_is_bounded_by_the_stack_budget_and_the_drought():
+    """Both bounds end the build, and the budget reads the whole stack."""
+    assert holds_well(0, 0)
+    assert holds_well(DROUGHT_BOUND - 1, HEIGHT_BUDGET - 1)
+    assert not holds_well(DROUGHT_BOUND, 0)
+    assert not holds_well(0, HEIGHT_BUDGET)
+    assert initial_phase(0, columns_of(EMPTY_GRID)) == BUILD
+    assert initial_phase(DROUGHT_BOUND, columns_of(EMPTY_GRID)) == SPEND
+    # A tall well column is still stack height: the budget is not only the field.
+    tall_well = stacked([1] * (WIDTH - 1) + [HEIGHT_BUDGET])
+    assert initial_phase(0, columns_of(tall_well)) == SPEND
+
+
+def test_next_drought_restarts_when_the_preview_is_an_i():
+    assert next_drought(4, "I") == 0
+    assert next_drought(4, "T") == 5
+
+
+def test_build_value_is_the_declared_terms_and_the_budget():
+    """The build value of a constructed board is pinned term by term.
+
+    Nine columns filled to four with the well open: no field holes, no
+    bumpiness, an aggregate height of 36, a maximum of 4, a four-row reserve and
+    no overflow, so ``-0.5*36 - 1.0*4 + 6.0*4`` is 2. A short field column costs
+    the reserve a row and the bumpiness step, and a stack over the budget is
+    charged per row beyond it.
+    """
+    assert plan_value(BUILD, 0, columns_of(EMPTY_GRID)) == 0.0
+    assert plan_value(BUILD, 0, columns_of(open_well(4))) == 2.0
+    assert plan_value(BUILD, 0, columns_of(stacked([4] * 8 + [3, 0]))) == -4.0
+    assert plan_value(BUILD, 0, columns_of(open_well(HEIGHT_BUDGET))) == -20.0
+    assert plan_value(BUILD, 0, columns_of(open_well(HEIGHT_BUDGET + 2))) == -35.0
+    assert plan_value(BUILD, 0, columns_of(open_well(1))) == 0.5
+
+
+def test_spend_value_is_the_frozen_flat_board_score():
+    """The abandon scores the board Experiment 002's lookahead scores."""
+    for heights, lines in ((([0] * 9 + [0]), 0), ([4] * 8 + [3, 0], 2), ([0] * 10, 4)):
+        columns = columns_of(stacked(heights))
+        assert plan_value(SPEND, lines, columns) == feature_score(
+            column_features(columns), lines)
+
+
+def test_plan_choice_takes_the_four_line_clear_when_the_i_is_in_play():
+    """The I is spent on the well, and the clear is the Tetris, not a single."""
+    grid = open_well(RESERVE_CAP)
+    choice = choose(grid, "I", "O")
+    assert choice is not None
+    assert (choice.orientation, choice.x, choice.lines_cleared) == (1, WELL_COLUMN, 4)
+
+
+def test_plan_choice_keeps_the_reserve_rather_than_spending_it_on_a_single():
+    """The build phase will not break the reserve for a premature clear.
+
+    Nine columns two rows high with the well open: a T dropped into the well
+    completes two rows and clears a double, which the plan charges, or it can be
+    laid on the field and leave the reserve — and the reserve it leaves is worth
+    more than the clear. The same board with the drought spent is the abandon:
+    the frozen flat score takes the clear, which is how the plan gives the well
+    back when the I is late.
+    """
+    grid = open_well(2)
+    building = choose(grid, "T", "O", drought=0)
+    assert (building.orientation, building.x, building.lines_cleared) == (2, 1, 0)
+    abandoned = choose(grid, "T", "O", drought=DROUGHT_BOUND)
+    assert abandoned.lines_cleared == 1
+    assert abandoned.x == WELL_COLUMN
+
+
+def test_plan_choice_spends_the_well_at_the_stack_budget_too():
+    """The height bound is the other abandon trigger, not only the drought.
+
+    The same board plays differently either side of the budget. At two rows the
+    plan is building, and an S is laid on the field to leave the reserve open; at
+    the budget the plan has abandoned the well, and the frozen flat score takes
+    the clear the S can make by dropping into it.
+    """
+    low = choose(open_well(2), "S", "O")
+    assert (low.orientation, low.x, low.lines_cleared) == (0, 1, 0)
+    capped = choose(open_well(HEIGHT_BUDGET), "S", "O")
+    assert capped.lines_cleared == 1
+
+
+def test_plan_choice_is_deterministic_and_consults_the_preview():
+    """The same board and preview choose the same placement, and the preview decides.
+
+    Two previews the plan can place differently give two different placements on
+    the same board: an I in the preview is the piece that completes the reserve,
+    so the plan reads it and drops the current S to the well side instead of
+    laying it where the I would have gone.
+    """
+    grid = stacked([2] * 8 + [0, 0])
+    first = choose(grid, "S", "O")
+    repeat = choose(grid, "S", "O")
+    assert (repeat.orientation, repeat.x) == (first.orientation, first.x)
+    with_i = choose(grid, "S", "I")
+    assert (with_i.orientation, with_i.x) != (first.orientation, first.x)
+
+
+def test_plan_choice_falls_back_when_no_placement_is_admissible():
+    rows = blank_rows()
+    for row in range(3):
+        for column in range(WIDTH):
+            rows[row][column] = 1
+    assert choose(grid_of(rows), "O", "T") is None
+
+
+def test_create_agent_builds_the_plan_agent_on_the_shared_controller():
+    """The new agent is a placement agent, so it executes plans like the others.
+
+    It is built by the module that owns its objective, and the runner's registry
+    is what a suite is validated against. The shared factory's own module is left
+    untouched and still knows only its own agents: its source is what every
+    record it wrote covers, so an agent added there would invalidate the records
+    of the agents it already dispatches.
+    """
+    agent = build_agent("tetris_plan", 2)
+    assert isinstance(agent, PlanAgent)
+    assert isinstance(agent, PlacementAgent)
+    assert isinstance(runner.build_agent(PLAN_AGENT, 2), PlanAgent)
+    assert PLAN_AGENT in runner.AGENT_NAMES
+    assert PLAN_AGENT not in agents_module.AGENT_NAMES
+    with pytest.raises(ValueError, match="unknown agent"):
+        build_agent("tetris", 2)
+    with pytest.raises(ValueError, match="unknown agent"):
+        runner.build_agent("nonesuch", 2)
+
+
+class PlanState:
+    """The observation fields the controller and the objective read."""
+
+    def __init__(self, grid, piece: str, next_piece: str, piece_count: int = 2):
+        self.piece_count = piece_count
+        self.current_piece = piece
+        self.next_piece = next_piece
+        self.orientation = 0
+        self.x = 5
+        self.phase = "active"
+        self.terminal = False
+        self.board = grid[HIDDEN_ROWS:]
+        self.hidden_rows = grid[:HIDDEN_ROWS]
+        self.level = 18
+        self.lines = 0
+        self.start_level = 18
+        self.first_delay_remaining = 0
+        self.ruleset = "classic_ntsc_extended"
+        self.mode = "endless"
+
+
+def test_plan_agent_emits_the_shared_controller_masks_for_its_choice():
+    """The agent steers the profile the shared plan model computes, not its own."""
+    grid = open_well(RESERVE_CAP)
+    agent = build_agent("tetris_plan", 2)
+    state = PlanState(grid, "I", "O")
+    chosen = plan_choice(grid, "I", "O", drought=agent._drought, level=18, lines=0,
+                         start_level=18, first_delay_remaining=0,
+                         ruleset="classic_ntsc_extended", mode="endless")
+    expected = []
+    release = False
+    orientation, x = state.orientation, state.x
+    for _ in range(64):
+        mask, release = pathaware.plan_mask(orientation, x, (chosen.orientation, chosen.x),
+                                            release, 2)
+        expected.append(mask)
+        if mask == DOWN:
+            break
+    emitted = [agent.act(state) for _ in expected]
+    assert emitted == expected
+    assert emitted[:2] == [pathaware.ROTATE_CW, 0]
+
+    # Nothing admissible: the shared fallback holds Down where the piece spawned.
+    blocked = blank_rows()
+    for row in range(3):
+        for column in range(WIDTH):
+            blocked[row][column] = 1
+    stuck = PlanState(grid_of(blocked), "O", "T", piece_count=7)
+    agent.reset()
+    assert agent.act(stuck) == DOWN
+
+
+def test_plan_agent_counts_the_pieces_it_is_shown_and_restarts_on_an_i(monkeypatch):
+    """The drought the plan reads is the agent's own count of visible pieces.
+
+    The count is the plan's only memory, so it is driven here piece by piece: it
+    grows for every piece whose current and preview are not an I, restarts when
+    either is, and is handed to the objective unchanged.
+    """
+    seen: list[int] = []
+    real = wellplan_module.plan_choice
+
+    def recording(grid, piece, next_piece, *, drought, **rest):
+        seen.append(drought)
+        return real(grid, piece, next_piece, drought=drought, **rest)
+
+    monkeypatch.setattr(wellplan_module, "plan_choice", recording)
+    agent = build_agent("tetris_plan", 0)
+    grid = open_well(1)
+    for index, (piece, preview) in enumerate(
+        [("T", "O"), ("S", "Z"), ("L", "I"), ("J", "T"), ("I", "O")]
+    ):
+        agent.act(PlanState(grid, piece, preview, piece_count=index + 1))
+    # T/O and S/Z count up, the L with an I preview restarts, the J/T counts one,
+    # and the I itself restarts.
+    assert seen == [1, 2, 0, 1, 0]

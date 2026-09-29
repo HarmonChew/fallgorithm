@@ -8,12 +8,19 @@ import json
 from pathlib import Path
 import sys
 
-from .agents import AGENT_NAMES, default_agent
+from .agents import default_agent
 from .engine import EngineError, PROJECT_ROOT, engine_root, git_info, load_binding
 from .live import play_live
 from .menu import PLAY_SPEEDS, select_command
 from .replay import export_replay, watch_run
-from .runner import SuiteConfig, VerificationError, load_config, run_and_save, verify_run
+from .runner import (
+    AGENT_NAMES,
+    SuiteConfig,
+    VerificationError,
+    load_config,
+    run_and_save,
+    verify_run,
+)
 
 
 def _version_label(info: dict[str, object]) -> str:

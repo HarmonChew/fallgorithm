@@ -12,7 +12,7 @@ from block_stack_ai.engine import PROJECT_ROOT
 @pytest.fixture
 def experiment_root(tmp_path, monkeypatch):
     for name in ("000-connection", "001-greedy-heuristic", "002-path-aware-lookahead",
-                 "003-tetris-aware-agent"):
+                 "003-tetris-aware-agent", "004-bounded-well-plan"):
         directory = tmp_path / "experiments" / name
         directory.mkdir(parents=True)
         directory.joinpath("config.json").write_bytes(

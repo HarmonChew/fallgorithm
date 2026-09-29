@@ -10,7 +10,11 @@ agent: it only aims at placements its own frame controller can really execute
 under the engine's gravity, and it uses the player-visible next piece for one
 piece of lookahead. Experiment 003 records the per-step clear-size breakdown
 (singles, doubles, triples and Tetrises) the line total alone discards, and adds
-a Tetris-oriented agent on 002's reachable set. There is no machine learning yet.
+a Tetris-oriented agent on 002's reachable set. Experiment 004 adds a bounded
+well plan: a designated well column, an explicit stack-height budget and a
+spend-or-abandon rule at a self-tracked I-drought bound, on the same reachable
+set, with the declared objective of whichever agent a suite selects recorded and
+replayed. There is no machine learning yet.
 Development proceeds one measured experiment at a time, reusing this engine
 connection and recording path.
 
@@ -87,7 +91,9 @@ outcome, initial/final native state hashes, and Git commit/dirty status for both
 repositories. A dirty or no-commit run is labeled a working-tree run; a matching
 hash verifies this replay, while the Git commit alone cannot restore uncommitted
 edits. A suite record also states the fixed heuristic weights it used, and, when
-it uses the Tetris agent, that agent's declared objective — the module that
+it configures an agent that declares an objective of its own — `tetris` or
+`tetris_plan` today, whichever one the configuration selects — that agent's
+declared objective — the module that
 declares it, the weights it publishes and the source identity of every module
 its decisions run through, the agent wrapper that hands it the state included —
 which `verify` compares as it compares
@@ -109,7 +115,7 @@ reaches and therefore missed the wrapper that drives it, and version 6 is the
 current suite format, which records that identity with the wrapper. A version 3,
 4, 5 or 6
 record must carry the placed-piece count, the clear-size histogram and — for a
-suite that uses the Tetris agent — the declared objective.
+suite that configures an agent with its own declared objective — that objective.
 That is why the version is compared rather than the absence: a section deleted
 from a current record would otherwise be indistinguishable from a record that
 predates it. `verify` re-derives
@@ -237,15 +243,21 @@ suite record's episode identity check, the clear-size metric (the engine's own
 per-step clear result tallied per episode and per agent, with the optional-field
 replay compatibility that keeps older records verifying and the suite-wide rule
 that the histogram is present on every episode and every agent summary or on
-none), the Tetris objective's
-recorded section and its comparison on replay, the identity of every module that
+none), the declared objective's
+recorded section — which follows the agent the configuration selects, `tetris` or
+`tetris_plan` — and its comparison on replay, the refusal of a configuration that
+names two such agents, the registry that dispatches each agent to the module that
+builds it (the shared factory's own source is left untouched, so the identity of a
+record written before the new agent still matches), the identity of every module
+that
 produces its choices (the agent wrapper that hands it the state, beside the
 objective and its helpers) and the loaded code that identity names (a record
 written by a process that imported the objective's modules, had one of their
 files edited and only then imported the writer still carries the loaded bytes,
 and `verify` reports it once the file has moved on), its
-clear, well and board terms and the new agent's choices on constructed boards,
-without the native engine. The second
+clear, well and board terms, the new agent's own count of the pieces it has been
+shown, and the new agents' choices on constructed boards, without the native
+engine. The second
 requires the completed setup and tests native state reads, logical frame counts,
 seeded hash determinism, the placement model against native locks including a
 lock that straddles the ceiling and hidden minos surviving a later clear, the
@@ -253,8 +265,11 @@ whole enumerated placement set against engine-reachable straight drops from the
 spawn origin, the whole reachable plan set against the origins the engine locks
 at when it is driven with each plan's masks, the recorded piece count against the
 native engine's own counters,
-run-record verification for both record formats, the Tetris agent's four-line
-clear on the native engine, the suite record's declared objective and the live
+run-record verification for both record formats, a record written by the frozen
+Experiment 003-era writer still verifying (its declared objective identity still
+matches this tree, and its inputs replay), the Tetris agent's four-line
+clear and the plan agent's four-line clear on a ready native well, the suite
+record's declared objective and the live
 session's clear-size histogram and objective, and desktop replay exports
 through the native writer and verifier. The desktop checks additionally require
 the SDL3 target; they exercise live input, pause/step/restart, record verification,
@@ -271,6 +286,8 @@ are ignored. Temporary run output is disposable.
 
 The runner can keep supplying observations and accepting one frame mask at a
 time. Experiment 001 adds the hand-written greedy placement heuristic and its
-random baseline; later experiments can add lookahead, a search planner, a
-learned evaluator, or a learned frame controller on the same engine connection
+random baseline, Experiment 002 the path-aware one-piece-lookahead agent,
+Experiment 003 the Tetris-oriented objective on 002's reachable set, and
+Experiment 004 the bounded well plan; later experiments can add a search planner,
+a learned evaluator, or a learned frame controller on the same engine connection
 and run-recording workflow. None of those is implemented yet.

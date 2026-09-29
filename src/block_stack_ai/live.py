@@ -8,14 +8,13 @@ import secrets
 import subprocess
 from typing import Any
 
-from .agents import create_agent
 from .engine import EngineError, PROJECT_ROOT, create_game, engine_executable
 from .heuristic import weights_record
 from .runner import (
     SUITE_FORMAT_VERSION, SuiteConfig, VerificationError, _CLEAR_SIZES_FIELD,
     _count_clear_sizes, _count_events, _empty_clear_sizes, _empty_event_counts,
     _hash, _objective_section, _placed_pieces, _record_versions, _summarize,
-    _terminal_reason, load_config, parse_config, save_record,
+    _terminal_reason, build_agent, load_config, parse_config, save_record,
 )
 
 
@@ -34,7 +33,7 @@ class LiveSession:
         self.name = config.agents[0]
         self.seed = config.seeds[0]
         self.game = create_game(**config.game, seed=self.seed)
-        self.agent = create_agent(self.name, self.seed)
+        self.agent = build_agent(self.name, self.seed)
         self.active = False
         self.records: list[Path] = []
         self.inputs: list[int] = []
@@ -57,7 +56,7 @@ class LiveSession:
             # before creating its agent. A reload between games changes this
             # identity; a file edit without a reload does not.
             self.objective = _objective_section(self.config, loaded=True)
-            self.agent = create_agent(self.name, self.seed)
+            self.agent = build_agent(self.name, self.seed)
             self.inputs = []
             self.events = _empty_event_counts()
             self.clear_sizes = _empty_clear_sizes()
@@ -115,7 +114,8 @@ class LiveSession:
             "episodes": [episode],
             "summary": _summarize([episode]),
             # Live play is the second path that writes a suite record, so a live
-            # Tetris game declares its objective exactly as a headless suite does.
+            # game whose agent declares an objective of its own declares it
+            # exactly as a headless suite does.
             # It is the identity captured at this game's BEGIN, not a fresh read: a
             # covered module edited while the session is alive must not be
             # recorded as the code that chose the inputs.

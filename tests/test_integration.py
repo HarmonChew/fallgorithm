@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import random
 import subprocess
+import sys
 
 import pytest
 
@@ -33,6 +36,7 @@ from block_stack_ai.runner import (
     verify_run,
 )
 from block_stack_ai.tetris import weights_record as tetris_weights_record
+from block_stack_ai.wellplan import weights_record as wellplan_weights_record
 
 
 pytestmark = pytest.mark.integration
@@ -40,6 +44,7 @@ CONFIG = PROJECT_ROOT / "experiments" / "000-connection" / "config.json"
 SUITE_CONFIG = PROJECT_ROOT / "experiments" / "001-greedy-heuristic" / "config.json"
 LOOKAHEAD_CONFIG = PROJECT_ROOT / "experiments" / "002-path-aware-lookahead" / "config.json"
 TETRIS_CONFIG = PROJECT_ROOT / "experiments" / "003-tetris-aware-agent" / "config.json"
+PLAN_CONFIG = PROJECT_ROOT / "experiments" / "004-bounded-well-plan" / "config.json"
 
 
 def test_create_read_and_advance_exact_frames():
@@ -655,6 +660,109 @@ def test_tetris_agent_clears_four_rows_on_a_ready_native_well():
         assert game.state.lines == 4
         settled = board_grid(game.state.board, game.state.hidden_rows)
         assert all(cell == 0 for row in settled[2:] for cell in row)
+
+
+def test_plan_agent_clears_four_rows_on_a_ready_native_well():
+    """The plan's reserve is a real four-row clear on the engine.
+
+    Four full rows under columns 0-8 and an empty column 9: the reserve the plan
+    measures on this board is four, so its own choice for an I is the vertical
+    drop into the designated well, and the engine's per-step clear result must be
+    the four lines that reserve claims.
+    """
+    suite = load_config(SUITE_CONFIG)
+    configuration = {**suite.game, "seed": 1}
+    rows = [[0] * WIDTH for _ in range(20)]
+    for row in range(16, 20):
+        for column in range(WIDTH - 1):
+            rows[row][column] = 1
+
+    with create_game(**configuration) as game:
+        game.set_board(rows)
+        game.set_piece("I", x=5, y=0)
+        agent = runner.build_agent("tetris_plan", configuration["seed"])
+        events = None
+        for _ in range(2000):
+            state, events = game.step(agent.act(game.state))
+            if events.locked:
+                break
+        else:
+            raise AssertionError("the placed I never locked")
+        assert events.lines_cleared == 4
+        assert not events.game_over
+        assert game.state.lines == 4
+        settled = board_grid(game.state.board, game.state.hidden_rows)
+        assert all(cell == 0 for row in settled[2:] for cell in row)
+
+
+def test_suite_record_with_the_plan_agent_runs_and_verifies(tmp_path: Path):
+    """The plan agent plays, records its histogram, and declares its own objective."""
+    raw = json.loads(PLAN_CONFIG.read_text(encoding="utf-8"))
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps({**raw, "frame_limit": 400, "seeds": [2], "agents": ["tetris_plan"]}),
+        encoding="utf-8",
+    )
+    path = run_and_save(config_path, tmp_path / "runs")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["format_version"] == SUITE_FORMAT_VERSION
+    assert sorted(record["summary"]) == ["tetris_plan"]
+    episode = record["episodes"][0]
+    assert (episode["clear_sizes"]["singles"]
+            + 2 * episode["clear_sizes"]["doubles"]
+            + 3 * episode["clear_sizes"]["triples"]
+            + 4 * episode["clear_sizes"]["tetrises"]) == episode["result"]["lines"]
+    assert record["objective"] == {
+        "module": "block_stack_ai.wellplan", "weights": wellplan_weights_record(),
+        "sources": runner._objective_sources(agent="tetris_plan"),
+    }
+    verify_run(path)
+
+
+def test_a_record_written_by_the_frozen_writer_still_verifies():
+    """The identity of a record written before this experiment still matches here.
+
+    The fixture is a version-6 suite record written by the frozen Experiment 003
+    tree's own writer (``git archive`` of the branch base's ``src``, whose
+    ``tetris.py`` hashes to the digest Experiment 003's retained capture records),
+    and its ``objective`` section names the Tetris objective and the source
+    identity of the five modules that computed its placements. Adding an agent
+    must not invalidate such a record: the shared agent factory keeps dispatching
+    exactly the agents its frozen source defined, so the digest that record covers
+    is still the digest on this tree, and its recorded inputs replay because the
+    frozen agent's behaviour is unchanged — the fixture's ten seeds' worth of
+    Experiment 003 rows are re-derived in the experiment's own ``baseline`` check.
+    """
+    legacy = (PROJECT_ROOT / "experiments" / "004-bounded-well-plan" / "probes"
+              / "legacy_v6_tetris_record.json")
+    record = json.loads(legacy.read_text(encoding="utf-8"))
+    assert record["format_version"] == SUITE_FORMAT_VERSION
+    assert record["objective"]["module"] == "block_stack_ai.tetris"
+    assert record["objective"]["sources"] == runner._objective_sources()
+    assert runner._objective_sources()["block_stack_ai.agents"] == hashlib.sha256(
+        Path(sys.modules["block_stack_ai.agents"].__file__).read_bytes()).hexdigest()
+    assert sum(episode["result"]["lines"] for episode in record["episodes"]) > 0
+    # The replay reports only the engine's working-tree warning, which every run of
+    # this checkout carries; anything else would be a mismatch.
+    assert all("working-tree" in warning for warning in verify_run(legacy))
+
+
+def test_the_plan_probe_aggregate_command_checks_the_native_fixture():
+    """The documented aggregate probe command runs end to end, native steps included.
+
+    ``probes/evidence.py all`` is what the experiment's notes tell a reader to run.
+    Its native step re-verifies the frozen writer's retained record, so the
+    command is exercised here with that step real rather than stubbed; the
+    engine-independent wiring of the same command is checked by the unit suite.
+    """
+    path = (PROJECT_ROOT / "experiments" / "004-bounded-well-plan" / "probes"
+            / "evidence.py")
+    spec = importlib.util.spec_from_file_location("exp004_plan_probe_integration", path)
+    probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(probe)
+    probe.all_probes()
+    assert probe.main([]) == 0
+    assert probe.main(["check-legacy"]) == 0
 
 
 def test_suite_record_with_the_tetris_agent_runs_and_verifies(tmp_path: Path):
