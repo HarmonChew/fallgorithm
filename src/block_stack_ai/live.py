@@ -35,16 +35,6 @@ class LiveSession:
         self.seed = config.seeds[0]
         self.game = create_game(**config.game, seed=self.seed)
         self.agent = create_agent(self.name, self.seed)
-        # The declared objective is a source identity, and the implementation the
-        # session runs is the one the interpreter had loaded when the session was
-        # built: a restart cannot change it, and neither can an edit that lands
-        # after the import. It is read here, at construction, and reused for every
-        # game this session records — reading the files at BEGIN (or at END) would
-        # attribute a game's inputs to source bytes that were never loaded whenever
-        # a covered module is edited while the process is alive, and a covered
-        # module the process *reloads* after this point is not what this session
-        # computed its earlier choices with either.
-        self.objective = _objective_section(self.config, loaded=True)
         self.active = False
         self.records: list[Path] = []
         self.inputs: list[int] = []
@@ -63,6 +53,10 @@ class LiveSession:
                 raise VerificationError("Desktop initial state differs; rebuild the desktop and native library together")
             # The random baseline owns an RNG; a new game needs a fresh seeded
             # policy too, not just a reset of the frame controller's counters.
+            # Snapshot the loaded code for this game and reject partial reloads
+            # before creating its agent. A reload between games changes this
+            # identity; a file edit without a reload does not.
+            self.objective = _objective_section(self.config, loaded=True)
             self.agent = create_agent(self.name, self.seed)
             self.inputs = []
             self.events = _empty_event_counts()
@@ -122,7 +116,7 @@ class LiveSession:
             "summary": _summarize([episode]),
             # Live play is the second path that writes a suite record, so a live
             # Tetris game declares its objective exactly as a headless suite does.
-            # It is the identity the session was built with, not a fresh read: a
+            # It is the identity captured at this game's BEGIN, not a fresh read: a
             # covered module edited while the session is alive must not be
             # recorded as the code that chose the inputs.
             **self.objective,

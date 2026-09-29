@@ -258,8 +258,9 @@ def _resolved_commit_tree(commit: str) -> tuple[str | None, str]:
     """The tree this repository's own Git objects give ``commit``, and how.
 
     A commit/tree pairing a record retains is evidence about a commit, so it is
-    derived from the repository that holds that commit — ``git rev-parse
-    <commit>^{tree}`` — and not from the snapshot the record keeps beside it. A
+    derived from the repository that holds that commit — first requiring
+    ``git cat-file -t <commit>`` to return ``commit``, then resolving
+    ``git rev-parse <commit>^{tree}`` — not from the snapshot beside it. A
     snapshot checked only against its own copies certifies any pair at all: setting
     every copy of a tree to ``000…`` and regenerating the line that quotes them
     passes, although no probe could have observed that pairing, because a commit's
@@ -270,6 +271,12 @@ def _resolved_commit_tree(commit: str) -> tuple[str | None, str]:
     """
     if not isinstance(commit, str) or re.fullmatch(r"[0-9a-f]{40}", commit) is None:
         return None, f"the recorded commit {commit!r} is not a commit id"
+    status, output = _git(PROJECT_ROOT, "cat-file", "-t", commit)
+    if status != 0 or output != "commit":
+        return None, (
+            f"the recorded commit {commit} is not a commit object: "
+            f"git -C {PROJECT_ROOT} cat-file -t {commit} exited {status} with {output!r}"
+        )
     status, output = _git(PROJECT_ROOT, "rev-parse", f"{commit}^{{tree}}")
     answer = output.splitlines()[-1] if output.splitlines() else ""
     how = f"git -C {PROJECT_ROOT} rev-parse {commit}^{{tree}} exited {status} with {output!r}"

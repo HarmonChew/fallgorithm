@@ -2994,6 +2994,50 @@ def test_publication_record_derives_the_tree_from_the_repository(tmp_path):
         probe.check_publication_record(path)
 
 
+def test_publication_record_rejects_a_tree_in_all_commit_fields(tmp_path):
+    """Consistent copies of a tree hash cannot claim a published commit."""
+    probe = _load_evidence_probe("exp003_publication_commit_type_probe")
+    path, record = _retained_record_copy(tmp_path)
+    probe.check_publication_record(path)
+    publication = record["publication"]
+    tree = publication["published_tree"]
+    for field in ("published_commit", "branch_head", "pull_request_head"):
+        publication[field] = tree
+        publication["capture"][field] = tree
+    publication["publication_capture_line"] = probe.publication_capture_line(
+        publication["capture"])
+    publication["state"] = probe.state_line(
+        tree, publication["compared_paths_count"],
+        publication["repaired_paths_differing_from_this_worktree"])
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(AssertionError, match="not a commit object"):
+        probe.check_publication_record(path)
+
+
+def test_commit_tree_resolution_requires_an_exact_commit_object(tmp_path, monkeypatch):
+    """The shared publication/base resolver also rejects tags that peel to commits."""
+    probe = _load_evidence_probe("exp003_exact_commit_probe")
+
+    def git(*args, input=None):
+        return subprocess.run(
+            ["git", "-C", str(tmp_path), *args], input=input, text=True,
+            capture_output=True, check=True).stdout.strip()
+
+    git("init", "--quiet")
+    tree = git("mktree", input="")
+    commit = git("-c", "user.name=Test", "-c", "user.email=test@example.com",
+                 "commit-tree", tree, input="test commit\n")
+    tag = git("mktag", input=(f"object {commit}\ntype commit\ntag test\n"
+                             "tagger Test <test@example.com> 0 +0000\n\ntest tag\n"))
+    blob = git("hash-object", "-w", "--stdin", input="test blob\n")
+    monkeypatch.setattr(probe, "PROJECT_ROOT", tmp_path)
+    assert probe._resolved_commit_tree(commit)[0] == tree
+    for object_id in (tree, tag, blob):
+        resolved, reason = probe._resolved_commit_tree(object_id)
+        assert resolved is None, (object_id, resolved)
+        assert "not a commit object" in reason
+
+
 def test_publication_record_derives_the_compared_paths_prose(tmp_path):
     """The comparison-set prose is derived from the captured per-path evidence.
 

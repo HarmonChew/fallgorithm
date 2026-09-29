@@ -4933,3 +4933,45 @@ writer instead of stamped with the reloaded module's digest, and the two retaine
 whose guards still asked for the removed import-time snapshot ask through either shape
 of the writer's view, so their counterexamples run again rather than reporting `no
 subject` and exiting 0.
+
+## Publication object types and reused live sessions, 2026-09-29
+
+Two follow-up counterexamples were reproduced on merged main `c654324`.
+Replacing the publication's commit/head fields and their captured copies with
+the published tree hash, then regenerating the matching text, still passed the
+retained-record check. The shared publication/base resolver now requires
+`git cat-file -t` to return `commit` before deriving the tree. Regression checks
+reject the tampered publication and reject tree, blob and annotated-tag objects
+as commit IDs, while accepting a real commit.
+
+A reused `LiveSession` also kept the objective from its construction after a
+module reload changed the next game's implementation. Each `BEGIN` now reads the
+loader's current objective identity and checks for stale imported references
+before creating the game's agent; `END` saves that game's snapshot. A fresh-process
+native regression completes a game, changes the Tetris weight from 8 to 9 in a
+temporary package copy, reloads the modules, and completes a second game through
+the same session. It checks that the second game executes weight 9, records the
+new identity and verifies, while the first record keeps its original identity.
+Two partial-reload cases must fail at `BEGIN` without writing another record.
+The existing regression still checks that file edits without reloads do not
+change the recorded loaded identity.
+
+All five new cases failed before the fixes and passed afterwards. Validation:
+
+```sh
+.venv/bin/python -m pytest -q -p no:cacheprovider -m 'not integration'
+# 174 passed, 30 deselected
+.venv/bin/python -m pytest -q -p no:cacheprovider -m 'integration and not desktop'
+# 24 passed, 180 deselected
+.venv/bin/python -m pytest -q -p no:cacheprovider -m desktop
+# 6 passed, 198 deselected
+```
+
+The retained publication, base-commit and predeclaration record checks also
+passed. The predeclaration check reported that its cited ignored run is absent
+from this checkout, so that run's timestamp was not independently rechecked.
+
+Native checks used the existing local Block Stack build and its dirty checkout
+at `8ca4158711c2d6339cab1ee8d78aa65bd624c89d`; this is a local working-tree
+validation, not a clean dependency rebuild. The production objective, weights
+and retained evaluation results were not changed or re-measured by this repair.

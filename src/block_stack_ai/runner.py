@@ -817,10 +817,10 @@ def _stale_loaded_references(sources: dict[str, str]) -> list[str]:
 def _loaded_objective_sources(shape: str = _IDENTITY_CHOICE) -> dict[str, str]:
     """The loaded identity of the objective's closure, read at this moment.
 
-    Every writer records this, and it is read when the run or live session is
-    constructed — the moment the implementation that will compute the choices is
-    fixed — rather than bound once at import. The value comes from the loader that
-    read each module's source (``sourceidentity``), not from ``module.__file__``
+    Every writer records this before the run's first choice, including at each
+    live game's BEGIN, rather than binding it once at import or session creation.
+    The value comes from the loader that read each module's source
+    (``sourceidentity``), not from ``module.__file__``
     read here, and that record is revised by exactly one event: a load. So a
     module this process *reloaded* before the run was built is recorded as the
     code that will choose the placements, which is the only honest value for a

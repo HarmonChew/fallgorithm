@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
 import pytest
 
-from block_stack_ai.engine import create_game, engine_executable
+from block_stack_ai.engine import create_game, engine_executable, engine_root, native_library_path
 from block_stack_ai.live import LiveSession
 from block_stack_ai import runner
 from block_stack_ai.runner import SuiteConfig, VerificationError, verify_run
@@ -191,9 +193,9 @@ def test_live_tetris_session_snapshots_the_objective_at_begin(tmp_path, monkeypa
     source files when the game ended, while the game's versions were captured at
     BEGIN, so a module edited mid-session was recorded as the code that chose the
     inputs; and reading the files again at a restart's BEGIN attributed the
-    restarted game to source bytes the interpreter never loaded. The session now
-    reads the objective once, when it is built, and persists that identity for
-    every game it records. This drives two Tetris games in one session, changes a
+    restarted game to source bytes the interpreter never loaded. Each BEGIN now
+    reads the loader's identity, which stays unchanged without a reload, and
+    retains it through END. This drives two Tetris games in one session, changes a
     covered module's file after the first BEGIN, and requires both saved records
     to carry the identity of the loaded implementation.
     """
@@ -227,3 +229,85 @@ def test_live_tetris_session_snapshots_the_objective_at_begin(tmp_path, monkeypa
         record = json.loads(path.read_text(encoding="utf-8"))
         assert record["objective"] == session.objective["objective"]
         assert record["objective"]["sources"]["block_stack_ai.tetris"] == original_digest
+
+
+@pytest.mark.parametrize("reload_mode", ["complete", "objective_only", "agents_only"])
+def test_live_session_refreshes_loaded_identity_at_each_begin(tmp_path, reload_mode):
+    """A reused session records reloaded code and refuses inconsistent reloads."""
+    package = Path(sys.modules["block_stack_ai"].__file__).parent
+    source_root = tmp_path / "src"
+    shutil.copytree(package, source_root / package.name,
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    # Use a separate interpreter and package copy so reloads cannot affect other
+    # tests or modify the checkout. Both games use the real native mirror.
+    code = r'''
+import importlib
+import json
+from pathlib import Path
+import sys
+from block_stack_ai import agents, live, runner, tetris
+
+root = Path(sys.argv[1])
+mode = sys.argv[2]
+game = {"ruleset": "classic_ntsc_extended", "mode": "endless",
+        "start_level": 18, "height": 0}
+config = runner.SuiteConfig(game, 1, (2,), ("tetris",))
+session = live.LiveSession(config, root / "runs")
+try:
+    initial = session.game.save_state()
+    session.receive("BEGIN", initial)
+    original = session.objective["objective"]
+    session.receive("STATE", initial)
+    session.receive("END", session.game.save_state())
+    runner.verify_run(session.records[0])
+
+    source = Path(tetris.__file__)
+    text = source.read_text(encoding="utf-8")
+    changed = text.replace('"tetrises": 8.0,', '"tetrises": 9.0,')
+    assert changed != text
+    source.write_text(changed, encoding="utf-8")
+    modules = {"complete": (tetris, agents, runner, live),
+               "objective_only": (tetris,), "agents_only": (agents,)}[mode]
+    for module in modules:
+        importlib.reload(module)
+
+    if mode != "complete":
+        try:
+            session.receive("BEGIN", initial)
+        except runner.VerificationError as error:
+            assert "inconsistent" in str(error), str(error)
+        else:
+            raise AssertionError("BEGIN accepted a partially reloaded implementation")
+        assert not session.active
+        assert len(session.records) == 1
+    else:
+        expected = runner._objective_section(config, loaded=True)["objective"]
+        assert expected["sources"] != original["sources"]
+        session.receive("BEGIN", initial)
+        assert type(session.agent) is agents.TetrisAgent
+        calls = []
+        def track(frame, event, arg):
+            if event == "call" and frame.f_code is tetris.tetris_choice.__code__:
+                calls.append(frame.f_globals["TETRIS_WEIGHTS"]["tetrises"])
+        sys.setprofile(track)
+        try:
+            session.receive("STATE", initial)
+        finally:
+            sys.setprofile(None)
+        session.receive("END", session.game.save_state())
+        record = json.loads(session.records[-1].read_text(encoding="utf-8"))
+        assert calls == [9.0], calls
+        assert record["objective"] == expected, record["objective"]
+        assert json.loads(session.records[0].read_text())["objective"] == original
+        runner.verify_run(session.records[-1])
+finally:
+    session.close()
+'''
+    completed = subprocess.run(
+        [sys.executable, "-c", code, str(tmp_path), reload_mode], cwd=tmp_path,
+        capture_output=True, text=True, timeout=30,
+        env={**os.environ, "PYTHONPATH": str(source_root),
+             "BLOCK_STACK_ROOT": str(engine_root()),
+             "BLOCKS_NATIVE_LIB": str(native_library_path())},
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
