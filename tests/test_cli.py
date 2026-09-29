@@ -11,7 +11,8 @@ from block_stack_ai.engine import PROJECT_ROOT
 
 @pytest.fixture
 def experiment_root(tmp_path, monkeypatch):
-    for name in ("000-connection", "001-greedy-heuristic"):
+    for name in ("000-connection", "001-greedy-heuristic", "002-path-aware-lookahead",
+                 "003-tetris-aware-agent"):
         directory = tmp_path / "experiments" / name
         directory.mkdir(parents=True)
         directory.joinpath("config.json").write_bytes(
@@ -63,6 +64,36 @@ def test_explicit_config_remains_available(experiment_root, monkeypatch):
     config = experiment_root / "experiments/001-greedy-heuristic/config.json"
     assert cli.main(["play", "--config", str(config)]) == 0
     assert calls[0][0] == config
+
+
+def test_play_default_agent_follows_the_selected_experiment(experiment_root, monkeypatch):
+    calls = []
+    monkeypatch.setattr(cli, "play_live", lambda *args: calls.append(args))
+    for selection in ("001", "002", "003"):
+        assert cli.main(["play", "--experiment", selection, "--seed", "2"]) == 0
+    assert [call[1] for call in calls] == ["greedy", "greedy", "lookahead"]
+
+
+def test_play_default_agent_uses_an_explicit_config(experiment_root, monkeypatch):
+    calls = []
+    monkeypatch.setattr(cli, "play_live", lambda *args: calls.append(args))
+    config = experiment_root / "experiments/003-tetris-aware-agent/config.json"
+    assert cli.main(["play", "--config", str(config)]) == 0
+    assert calls == [(config, "lookahead", None, "1", False)]
+
+
+def test_explicit_agent_overrides_the_experiment_default(experiment_root, monkeypatch):
+    calls = []
+    monkeypatch.setattr(cli, "play_live", lambda *args: calls.append(args))
+    assert cli.main(["play", "--experiment", "003", "--agent", "tetris"]) == 0
+    assert calls[0][1] == "tetris"
+
+
+def test_play_rejects_an_agent_the_experiment_does_not_offer(experiment_root, capsys):
+    assert cli.main(["play", "--experiment", "003", "--agent", "random"]) == 1
+    error = capsys.readouterr().err
+    assert "not in this experiment" in error
+    assert "lookahead, tetris" in error
 
 
 @pytest.mark.parametrize("arguments", [
@@ -175,6 +206,13 @@ def test_menu_requires_experiment_and_action_but_defaults_live_settings(experime
     output = capsys.readouterr().out
     assert output.count("Please enter an option number") == 4
     assert "seed: fresh random" in output
+
+
+def test_menu_default_agent_is_the_experiment_default(experiment_root, menu_input, launched):
+    menu_input("4", "1", "", "", "", "", "")
+    assert cli.main(["menu"]) == 0
+    config = experiment_root / "experiments/003-tetris-aware-agent/config.json"
+    assert launched == [("play", (config, "lookahead", None, "1", False))]
 
 
 @pytest.mark.parametrize("seed", ["0", "65535"])

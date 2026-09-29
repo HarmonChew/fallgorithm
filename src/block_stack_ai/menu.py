@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 import shlex
 
+from .agents import default_agent
 from .runner import SuiteConfig, load_config
 
 
@@ -73,8 +74,7 @@ def select_command(experiments: dict[str, Path]) -> list[str] | None:
             live = isinstance(config, SuiteConfig) and action == actions[0]
             command = ["play" if live else "run", "--experiment", name]
             if live:
-                agent = _choose("Agent", list(config.agents),
-                                default="greedy" if "greedy" in config.agents else config.agents[0])
+                agent = _choose("Agent", list(config.agents), default=default_agent(config.agents))
                 seed = _seed()
                 speed = _choose("Speed", [f"{value}x" for value in PLAY_SPEEDS], default="1x")
                 paused = _choose("Start the game", ["Playing", "Paused"], default="Playing") == "Paused"

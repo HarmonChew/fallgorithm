@@ -4,7 +4,9 @@
 placed pieces: it chooses one placement per spawned piece with the configured
 policy, then steers the engine there with the button masks the engine's AI API
 accepts. `LookaheadAgent` plays the same way but chooses from the placements the
-controller can really reach, one piece of lookahead deep.
+controller can really reach, one piece of lookahead deep. `TetrisAgent` uses
+that same reachable set and lookahead with the Tetris-oriented objective of
+:mod:`block_stack_ai.tetris`.
 
 The mask the controller emits for a chosen placement is decided by
 `pathaware.plan_mask`, which the reachability simulation calls too, so the model
@@ -13,6 +15,7 @@ of a plan and the controller executing it cannot drift apart.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 import random
 from typing import Any
@@ -30,8 +33,24 @@ from .pathaware import (
     plan_mask,
 )
 from .pieces import orientation_count
+from .tetris import tetris_choice
 
-AGENT_NAMES = ("random", "greedy", "lookahead")
+# The one agent that scores through a separately declared objective
+# (``block_stack_ai.tetris``) rather than the frozen heuristic mapping, which is
+# why the runner records that objective for any suite that uses it.
+TETRIS_AGENT = "tetris"
+AGENT_NAMES = ("random", "greedy", "lookahead", TETRIS_AGENT)
+
+
+def default_agent(agents: Sequence[str]) -> str:
+    """The agent a live game starts with when none was named.
+
+    The rule is the one the interactive menu has always applied: ``greedy`` when
+    the experiment offers it, otherwise the first agent the experiment
+    configures, so an experiment without greedy starts with an agent it actually
+    has instead of one it does not.
+    """
+    return "greedy" if "greedy" in agents else agents[0]
 
 
 @dataclass(frozen=True)
@@ -186,6 +205,36 @@ class LookaheadAgent(PlacementAgent):
         )
 
 
+class TetrisAgent(PlacementAgent):
+    """Tetris-oriented greedy placement with one piece of lookahead.
+
+    The candidate set is the same reachable set :class:`LookaheadAgent` uses —
+    the placements the controller can really execute from the engine's native
+    spawn state — and the choice is the candidate that maximises
+    :func:`block_stack_ai.tetris.tetris_choice`'s declared objective: four-line
+    clears and a one-column well are rewarded, buried holes, height and a
+    premature non-Tetris clear are penalised. The preview piece is the same
+    player-visible next piece, and when the reachable set is empty this keeps
+    pressing Down where the piece spawned, the shared fallback.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(None)
+
+    def _choose(self, state: Any, grid: Any) -> Placement | None:
+        return tetris_choice(
+            grid,
+            state.current_piece,
+            state.next_piece,
+            level=state.level,
+            lines=state.lines,
+            start_level=state.start_level,
+            first_delay_remaining=state.first_delay_remaining,
+            ruleset=state.ruleset,
+            mode=state.mode,
+        )
+
+
 def create_agent(name: str, seed: int) -> PlacementAgent:
     """Build the agent named by a suite configuration; the random stream is seeded."""
     if name == "greedy":
@@ -194,4 +243,6 @@ def create_agent(name: str, seed: int) -> PlacementAgent:
         return PlacementAgent(RandomPolicy(random.Random(seed)))
     if name == "lookahead":
         return LookaheadAgent()
+    if name == TETRIS_AGENT:
+        return TetrisAgent()
     raise ValueError(f"unknown agent: {name!r}")

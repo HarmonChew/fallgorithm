@@ -1,0 +1,19 @@
+{
+  "captured_at": "2026-09-27T13:53:15.349595+00:00",
+  "module": "src/block_stack_ai/tetris.py",
+  "module_sha256": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e",
+  "note": "the declared objective \u2014 the module and the documented weights table and rationale \u2014 captured from the unmodified tree before the evaluation run; no weight is revised against evaluation outcomes",
+  "notes_section": "experiments/003-tetris-aware-agent/notes.md#predeclared-objective",
+  "notes_section_sha256": "64440cac719602d02e3a1159b264ad41d8dd0309a9344629750e72da955e6368",
+  "objective": {
+    "aggregate_height": -0.5,
+    "bumpiness": -0.5,
+    "holes": -1.0,
+    "max_height": -1.0,
+    "premature_clear": -1.0,
+    "tetrises": 8.0,
+    "tie_break": "first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending",
+    "well_depth": 1.0,
+    "well_depth_cap": 4
+  }
+}

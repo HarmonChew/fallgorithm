@@ -9,7 +9,9 @@ import pytest
 
 from block_stack_ai.engine import create_game, engine_executable
 from block_stack_ai.live import LiveSession
+from block_stack_ai import runner
 from block_stack_ai.runner import SuiteConfig, VerificationError, verify_run
+from block_stack_ai.tetris import weights_record as tetris_weights_record
 
 
 pytestmark = pytest.mark.integration
@@ -106,3 +108,122 @@ def test_native_controller_exits_when_input_pipe_closes(desktop_environment):
     with create_game() as game:
         state = game.load_state(bytes.fromhex(messages[-1].split(" ", 1)[1]))
         assert state.frame == 0
+
+
+def test_live_session_records_the_clear_size_histogram_and_verifies(tmp_path):
+    """A completed live game records the same histogram a suite episode does.
+
+    Live play builds its own episode, so it is the second path that writes
+    episodes. The desktop protocol is driven here with a plain native mirror: the
+    greedy agent clears lines within the frame limit, and the recorded histogram
+    must be non-empty, add up to the line total the record already carries, equal
+    the summary total derived from it, and replay under ``verify_run``. Without
+    the histogram in the episode the summary would carry totals the episode did
+    not record, and the replay would reject the record.
+    """
+    limit = 600
+    config = SuiteConfig(GAME, limit, (2,), ("greedy",))
+    session = LiveSession(config, tmp_path / "runs")
+    try:
+        with create_game(**GAME, seed=2) as desktop:
+            snapshot = desktop.save_state()
+            session.receive("BEGIN", snapshot)
+            while not desktop.state.terminal and desktop.state.frame < limit:
+                mask = session.receive("STATE", snapshot)
+                desktop.step(mask)
+                snapshot = desktop.save_state()
+            session.receive("END", snapshot)
+    finally:
+        session.close()
+    records = list((tmp_path / "runs").glob("*/run.json"))
+    assert len(records) == 1
+    record = json.loads(records[0].read_text(encoding="utf-8"))
+    episode = record["episodes"][0]
+    sizes = episode["clear_sizes"]
+    assert sizes["singles"] + sizes["doubles"] + sizes["triples"] + sizes["tetrises"] > 0
+    assert (sizes["singles"] + 2 * sizes["doubles"] + 3 * sizes["triples"]
+            + 4 * sizes["tetrises"]) == episode["result"]["lines"]
+    assert record["summary"]["greedy"]["clear_sizes"] == sizes
+    verify_run(records[0])
+
+
+def test_live_tetris_session_records_the_objective_and_verifies(tmp_path):
+    """A live Tetris game declares the same objective a headless suite does.
+
+    Live play is the second path that writes a suite record, so the declared
+    objective has to be recorded there too: without it a live Tetris record would
+    verify under whatever objective is current whenever the change happens to
+    preserve the replayed choices, and without the objective's source identity it
+    would verify under a changed formula whenever the weights were unchanged. The
+    desktop protocol is driven with a plain native mirror, and the record must
+    name the declaring module, its weights and the source identity, and replay
+    under ``verify_run``.
+    """
+    limit = 600
+    config = SuiteConfig(GAME, limit, (2,), ("tetris",))
+    session = LiveSession(config, tmp_path / "runs")
+    try:
+        with create_game(**GAME, seed=2) as desktop:
+            snapshot = desktop.save_state()
+            session.receive("BEGIN", snapshot)
+            while not desktop.state.terminal and desktop.state.frame < limit:
+                mask = session.receive("STATE", snapshot)
+                desktop.step(mask)
+                snapshot = desktop.save_state()
+            session.receive("END", snapshot)
+    finally:
+        session.close()
+    records = list((tmp_path / "runs").glob("*/run.json"))
+    assert len(records) == 1
+    record = json.loads(records[0].read_text(encoding="utf-8"))
+    assert record["objective"] == {
+        "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
+        "sources": runner._objective_sources(),
+    }
+    assert sorted(record["summary"]) == ["tetris"]
+    verify_run(records[0])
+
+
+def test_live_tetris_session_snapshots_the_objective_at_begin(tmp_path, monkeypatch):
+    """A mid-game edit to a covered module is not recorded as the code that chose inputs.
+
+    The reviewer's findings: ``_objective_section(self.config)`` read the covered
+    source files when the game ended, while the game's versions were captured at
+    BEGIN, so a module edited mid-session was recorded as the code that chose the
+    inputs; and reading the files again at a restart's BEGIN attributed the
+    restarted game to source bytes the interpreter never loaded. The session now
+    reads the objective once, when it is built, and persists that identity for
+    every game it records. This drives two Tetris games in one session, changes a
+    covered module's file after the first BEGIN, and requires both saved records
+    to carry the identity of the loaded implementation.
+    """
+    limit = 60
+    config = SuiteConfig(GAME, limit, (2,), ("tetris",))
+    module = sys.modules["block_stack_ai.tetris"]
+    original_path = Path(module.__file__)
+    original_bytes = original_path.read_bytes()
+    original_digest = runner._objective_sources()["block_stack_ai.tetris"]
+    session = LiveSession(config, tmp_path / "runs")
+    try:
+        # The second game is a live restart (`R`) after the edit.
+        for _ in range(2):
+            with create_game(**GAME, seed=2) as desktop:
+                snapshot = desktop.save_state()
+                session.receive("BEGIN", snapshot)
+                mutated = tmp_path / "tetris.py"
+                mutated.write_bytes(original_bytes + b"\n# changed mid-game\n")
+                monkeypatch.setattr(module, "__file__", str(mutated))
+                while not desktop.state.terminal and desktop.state.frame < limit:
+                    mask = session.receive("STATE", snapshot)
+                    desktop.step(mask)
+                    snapshot = desktop.save_state()
+                session.receive("END", snapshot)
+    finally:
+        monkeypatch.setattr(module, "__file__", str(original_path))
+        session.close()
+    records = sorted((tmp_path / "runs").glob("*/run.json"))
+    assert len(records) == 2
+    for path in records:
+        record = json.loads(path.read_text(encoding="utf-8"))
+        assert record["objective"] == session.objective["objective"]
+        assert record["objective"]["sources"]["block_stack_ai.tetris"] == original_digest

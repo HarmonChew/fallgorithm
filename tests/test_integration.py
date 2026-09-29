@@ -7,7 +7,7 @@ import subprocess
 
 import pytest
 
-from block_stack_ai.agents import DOWN
+from block_stack_ai.agents import DOWN, create_agent
 from block_stack_ai.engine import PROJECT_ROOT, create_game, engine_executable
 from block_stack_ai.replay import export_replay
 from block_stack_ai.heuristic import SPAWN_ORIGIN_Y, WIDTH, board_grid, enumerate_placements, settle
@@ -19,7 +19,12 @@ from block_stack_ai.pathaware import (
     simulate_plan,
 )
 from block_stack_ai.pieces import PIECES, cells, orientation_count
+from block_stack_ai import runner
 from block_stack_ai.runner import (
+    LEGACY_SUITE_FORMAT_VERSION,
+    PRIOR_SUITE_FORMAT_VERSION,
+    SUITE_FORMAT_VERSION,
+    FORMAT_VERSION,
     VerificationError,
     load_config,
     parse_config,
@@ -27,12 +32,14 @@ from block_stack_ai.runner import (
     run_episode,
     verify_run,
 )
+from block_stack_ai.tetris import weights_record as tetris_weights_record
 
 
 pytestmark = pytest.mark.integration
 CONFIG = PROJECT_ROOT / "experiments" / "000-connection" / "config.json"
 SUITE_CONFIG = PROJECT_ROOT / "experiments" / "001-greedy-heuristic" / "config.json"
 LOOKAHEAD_CONFIG = PROJECT_ROOT / "experiments" / "002-path-aware-lookahead" / "config.json"
+TETRIS_CONFIG = PROJECT_ROOT / "experiments" / "003-tetris-aware-agent" / "config.json"
 
 
 def test_create_read_and_advance_exact_frames():
@@ -62,7 +69,7 @@ def test_same_seed_and_inputs_have_same_native_hash():
 def test_save_and_verify_real_run(tmp_path: Path):
     path = run_and_save(CONFIG, tmp_path / "runs")
     record = json.loads(path.read_text(encoding="utf-8"))
-    assert record["format_version"] == 1
+    assert record["format_version"] == FORMAT_VERSION
     assert record["inputs"]
     assert record["result"]["frame_count"] == len(record["inputs"])
     verify_run(path)
@@ -293,7 +300,7 @@ def test_suite_save_and_verify_real_run(tmp_path: Path):
 
     path = run_and_save(config_path, tmp_path / "runs")
     record = json.loads(path.read_text(encoding="utf-8"))
-    assert record["format_version"] == 2
+    assert record["format_version"] == SUITE_FORMAT_VERSION
     assert sorted(record["summary"]) == ["greedy", "random"]
     assert len(record["episodes"]) == 4
     for summary in record["summary"].values():
@@ -607,8 +614,124 @@ def test_suite_record_with_the_lookahead_agent_runs_and_verifies(tmp_path: Path)
     )
     path = run_and_save(config_path, tmp_path / "runs")
     record = json.loads(path.read_text(encoding="utf-8"))
-    assert record["format_version"] == 2
+    assert record["format_version"] == SUITE_FORMAT_VERSION
     assert sorted(record["summary"]) == ["lookahead"]
     assert len(record["episodes"]) == 1
     assert record["episodes"][0]["result"]["stopping_reason"] in {"game_over", "frame_limit"}
+    verify_run(path)
+
+
+def test_tetris_agent_clears_four_rows_on_a_ready_native_well():
+    """The declared objective spends the I on a four-row clear, on the engine.
+
+    The board holds four full rows under columns 0-8 and an empty column 9, the
+    classic Tetris setup. The agent drives the real engine from the spawn state,
+    and the engine's own per-step clear result must be the four lines
+    ``tetris_choice`` claims: the only four-row clear on this board is the
+    vertical I in column 9, so a four-line clear on the engine is that placement.
+    """
+    suite = load_config(SUITE_CONFIG)
+    configuration = {**suite.game, "seed": 1}
+    rows = [[0] * WIDTH for _ in range(20)]
+    for row in range(16, 20):
+        for column in range(WIDTH - 1):
+            rows[row][column] = 1
+
+    with create_game(**configuration) as game:
+        game.set_board(rows)
+        game.set_piece("I", x=5, y=0)
+        agent = create_agent("tetris", configuration["seed"])
+        events = None
+        for _ in range(2000):
+            state, events = game.step(agent.act(game.state))
+            if events.locked:
+                break
+        else:
+            raise AssertionError("the placed I never locked")
+        assert events.lines_cleared == 4
+        assert not events.game_over
+        # The four rows cleared, so the visible field is empty and the engine's
+        # line counter advanced by exactly four.
+        assert game.state.lines == 4
+        settled = board_grid(game.state.board, game.state.hidden_rows)
+        assert all(cell == 0 for row in settled[2:] for cell in row)
+
+
+def test_suite_record_with_the_tetris_agent_runs_and_verifies(tmp_path: Path):
+    """The new agent plays a suite episode, records its clear sizes, and replays."""
+    raw = json.loads(TETRIS_CONFIG.read_text(encoding="utf-8"))
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps({**raw, "frame_limit": 400, "seeds": [2], "agents": ["tetris"]}),
+        encoding="utf-8",
+    )
+    path = run_and_save(config_path, tmp_path / "runs")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["format_version"] == SUITE_FORMAT_VERSION
+    assert sorted(record["summary"]) == ["tetris"]
+    assert len(record["episodes"]) == 1
+    episode = record["episodes"][0]
+    assert sorted(episode["clear_sizes"]) == ["doubles", "singles", "tetrises", "triples"]
+    assert (episode["clear_sizes"]["singles"]
+            + 2 * episode["clear_sizes"]["doubles"]
+            + 3 * episode["clear_sizes"]["triples"]
+            + 4 * episode["clear_sizes"]["tetrises"]) == episode["result"]["lines"]
+    assert episode["result"]["stopping_reason"] in {"game_over", "frame_limit"}
+    # The replay re-derives the histogram from the engine's own clear result.
+    verify_run(path)
+
+
+def test_suite_record_with_the_tetris_agent_declares_its_objective(tmp_path: Path):
+    """A real tetris suite records the objective that chose its placements.
+
+    The record names the module that declares the objective, the weights it
+    publishes and the source identity of the modules its decisions are computed
+    from, and the replay compares them. The section is required at the version
+    this writer emits, because the writer always records it for a suite that uses
+    the agent: deleting it makes the record verify under whatever objective is
+    current, so it is reported, and deleting only the identity is reported too,
+    because the current writer always records that. The same JSON under the
+    legacy version, which never emitted the section, still verifies, and so does
+    the same JSON under the prior version, whose writer emitted the objective
+    without the identity.
+    """
+    raw = json.loads(TETRIS_CONFIG.read_text(encoding="utf-8"))
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps({**raw, "frame_limit": 400, "seeds": [2], "agents": ["tetris"]}),
+        encoding="utf-8",
+    )
+    path = run_and_save(config_path, tmp_path / "runs")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["format_version"] == SUITE_FORMAT_VERSION
+    assert record["objective"] == {
+        "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
+        "sources": runner._objective_sources(),
+    }
+    verify_run(path)
+
+    stripped = json.loads(json.dumps(record))
+    del stripped["objective"]
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    with pytest.raises(VerificationError, match=r"objective: absent, but a record of this "
+                                                r"format version declares the objective"):
+        verify_run(path)
+
+    legacy = json.loads(json.dumps(stripped))
+    legacy["format_version"] = LEGACY_SUITE_FORMAT_VERSION
+    path.write_text(json.dumps(legacy), encoding="utf-8")
+    verify_run(path)
+
+    # The identity is the newer half of the section, gated separately: a version-5
+    # record without it had it deleted, while the version-4 writer never recorded
+    # it and its records keep verifying.
+    without_identity = json.loads(json.dumps(record))
+    del without_identity["objective"]["sources"]
+    path.write_text(json.dumps(without_identity), encoding="utf-8")
+    with pytest.raises(VerificationError, match=r"objective\.sources: absent, but a record of "
+                                                r"this format version always carries it"):
+        verify_run(path)
+
+    without_identity["format_version"] = PRIOR_SUITE_FORMAT_VERSION
+    path.write_text(json.dumps(without_identity), encoding="utf-8")
     verify_run(path)

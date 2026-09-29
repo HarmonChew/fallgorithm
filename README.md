@@ -8,7 +8,9 @@ playing algorithms on top of that path: a one-piece greedy placement heuristic
 and a uniform random legal-placement baseline. Experiment 002 adds a path-aware
 agent: it only aims at placements its own frame controller can really execute
 under the engine's gravity, and it uses the player-visible next piece for one
-piece of lookahead. There is no machine learning yet.
+piece of lookahead. Experiment 003 records the per-step clear-size breakdown
+(singles, doubles, triples and Tetrises) the line total alone discards, and adds
+a Tetris-oriented agent on 002's reachable set. There is no machine learning yet.
 Development proceeds one measured experiment at a time, reusing this engine
 connection and recording path.
 
@@ -84,14 +86,47 @@ configuration and 16-bit seed, the executed mask for each frame, event totals,
 outcome, initial/final native state hashes, and Git commit/dirty status for both
 repositories. A dirty or no-commit run is labeled a working-tree run; a matching
 hash verifies this replay, while the Git commit alone cannot restore uncommitted
-edits. A suite record also states the fixed heuristic weights it used, and
-`verify` re-derives every episode from the recorded agent name and seed, which
+edits. A suite record also states the fixed heuristic weights it used, and, when
+it uses the Tetris agent, that agent's declared objective — the module that
+declares it, the weights it publishes and the source identity of every module
+its decisions run through, the agent wrapper that hands it the state included —
+which `verify` compares as it compares
+the heuristic mapping, so a record cannot verify under a different objective
+merely because the change preserved its replayed choices. That identity is the
+source the run loaded: the package's own loader reads each module's source once,
+digests it, and executes the code compiled from those same bytes — so neither a
+later read of `module.__file__` nor a valid-but-stale `__pycache__` entry beside
+an edited file can make a record name code that did not run. An edit that lands
+after a module is imported is therefore reported by `verify` rather than
+certified, because the file its identity names no longer holds the bytes that
+were loaded. A record's
+`format_version` says which sections its writer always recorded: versions 1 and 2
+are the older formats, whose sections may be absent; version 3 is the current
+scripted format, version 4 is the prior suite format, whose writer recorded the
+declared objective without the source identity its successor adds, version 5 is
+the suite format whose identity stopped at the modules the objective's own code
+reaches and therefore missed the wrapper that drives it, and version 6 is the
+current suite format, which records that identity with the wrapper. A version 3,
+4, 5 or 6
+record must carry the placed-piece count, the clear-size histogram and — for a
+suite that uses the Tetris agent — the declared objective.
+That is why the version is compared rather than the absence: a section deleted
+from a current record would otherwise be indistinguishable from a record that
+predates it. `verify` re-derives
+every episode from the recorded agent name and seed, which
 must appear in the configured order: agent order, then seed order. Each episode
 and summary reports `pieces_placed`, the number of pieces the engine wrote to
 the board (its `locked` events minus the failed top-out lock; a piece still in
 play at a frame-limit stop and the topping-out lock that places nothing are not
 counted); records written before that field carry the legacy `pieces` key
-holding the preview counter and still verify under that meaning.
+holding the preview counter and still verify under that meaning. Each episode
+and summary also reports `clear_sizes`, how many locks cleared one, two, three
+and four rows, tallied from the engine's own per-step clear result; in a current
+record the histogram is present on every episode and every agent summary, and in
+a legacy one it is present on every one of them or on none — the summary's totals
+are derived from the episodes, so a legacy record's summary re-derives without a
+section its episodes never recorded — so a record written
+before that field existed is an older format and still verifies.
 
 Only gameplay masks 0–31 are used. A `0` frame releases held buttons. Rotation
 fires on a new press edge, so the connection script and the placement agents
@@ -116,7 +151,8 @@ next input from the desktop's current state on every logical frame. The desktop
 owns the game clock and renders that game as it runs. No recorded game is loaded.
 The selected experiment supplies its game settings and frame limit; experiment
 001 uses a 60,000-frame limit. `--agent` chooses an algorithm within that
-experiment (default: `greedy`). Experiment 000 is a fixed controller script and
+experiment (default: `greedy` when the experiment offers it, otherwise the
+experiment's first agent). Experiment 000 is a fixed controller script and
 supports `run` and replay rather than live placement play.
 
 **P** pauses, **.** advances one frame while paused, **R** restarts the same seed,
@@ -197,7 +233,19 @@ rule, placement enumeration including the spawn-origin entry and the
 downward-only descent rule, board scoring, deterministic tie-breaking, the
 placement controller, the placed-piece metric (the engine's board placements,
 above which sit its lock and preview counters) in both record formats and the
-suite record's episode identity check, without the native engine. The second
+suite record's episode identity check, the clear-size metric (the engine's own
+per-step clear result tallied per episode and per agent, with the optional-field
+replay compatibility that keeps older records verifying and the suite-wide rule
+that the histogram is present on every episode and every agent summary or on
+none), the Tetris objective's
+recorded section and its comparison on replay, the identity of every module that
+produces its choices (the agent wrapper that hands it the state, beside the
+objective and its helpers) and the loaded code that identity names (a record
+written by a process that imported the objective's modules, had one of their
+files edited and only then imported the writer still carries the loaded bytes,
+and `verify` reports it once the file has moved on), its
+clear, well and board terms and the new agent's choices on constructed boards,
+without the native engine. The second
 requires the completed setup and tests native state reads, logical frame counts,
 seeded hash determinism, the placement model against native locks including a
 lock that straddles the ceiling and hidden minos surviving a later clear, the
@@ -205,7 +253,9 @@ whole enumerated placement set against engine-reachable straight drops from the
 spawn origin, the whole reachable plan set against the origins the engine locks
 at when it is driven with each plan's masks, the recorded piece count against the
 native engine's own counters,
-run-record verification for both record formats, and desktop replay exports
+run-record verification for both record formats, the Tetris agent's four-line
+clear on the native engine, the suite record's declared objective and the live
+session's clear-size histogram and objective, and desktop replay exports
 through the native writer and verifier. The desktop checks additionally require
 the SDL3 target; they exercise live input, pause/step/restart, record verification,
 invalid masks and pipe closure using dummy video/audio. None needs a display.

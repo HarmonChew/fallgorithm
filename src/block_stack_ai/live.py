@@ -12,8 +12,9 @@ from .agents import create_agent
 from .engine import EngineError, PROJECT_ROOT, create_game, engine_executable
 from .heuristic import weights_record
 from .runner import (
-    SUITE_FORMAT_VERSION, SuiteConfig, VerificationError, _count_events,
-    _empty_event_counts, _hash, _placed_pieces, _record_versions, _summarize,
+    SUITE_FORMAT_VERSION, SuiteConfig, VerificationError, _CLEAR_SIZES_FIELD,
+    _count_clear_sizes, _count_events, _empty_clear_sizes, _empty_event_counts,
+    _hash, _objective_section, _placed_pieces, _record_versions, _summarize,
     _terminal_reason, load_config, parse_config, save_record,
 )
 
@@ -34,10 +35,21 @@ class LiveSession:
         self.seed = config.seeds[0]
         self.game = create_game(**config.game, seed=self.seed)
         self.agent = create_agent(self.name, self.seed)
+        # The declared objective is a source identity, and the implementation the
+        # session runs is the one the interpreter had loaded when the session was
+        # built: a restart cannot change it, and neither can an edit that lands
+        # after the import. It is read here, at construction, and reused for every
+        # game this session records — reading the files at BEGIN (or at END) would
+        # attribute a game's inputs to source bytes that were never loaded whenever
+        # a covered module is edited while the process is alive, and a covered
+        # module the process *reloads* after this point is not what this session
+        # computed its earlier choices with either.
+        self.objective = _objective_section(self.config, loaded=True)
         self.active = False
         self.records: list[Path] = []
         self.inputs: list[int] = []
         self.events = _empty_event_counts()
+        self.clear_sizes = _empty_clear_sizes()
 
     def close(self) -> None:
         self.game.close()
@@ -54,6 +66,7 @@ class LiveSession:
             self.agent = create_agent(self.name, self.seed)
             self.inputs = []
             self.events = _empty_event_counts()
+            self.clear_sizes = _empty_clear_sizes()
             self.initial_hash = _hash(self.game)
             self.created_at = datetime.now(timezone.utc).isoformat()
             self.versions = _record_versions()
@@ -71,6 +84,7 @@ class LiveSession:
             _, events = self.game.step(mask)
             self.inputs.append(mask)
             _count_events(self.events, events)
+            _count_clear_sizes(self.clear_sizes, events)
             return mask
         if kind == "ABORT":
             self.active = False
@@ -96,6 +110,7 @@ class LiveSession:
             "agent": self.name, "seed": self.seed, "initial_state_hash": self.initial_hash,
             "inputs": self.inputs.copy(), "result": result,
             "pieces_placed": _placed_pieces(self.events),
+            _CLEAR_SIZES_FIELD: self.clear_sizes.copy(),
         }
         record = {
             "format_version": SUITE_FORMAT_VERSION,
@@ -105,6 +120,12 @@ class LiveSession:
             "heuristic": weights_record(),
             "episodes": [episode],
             "summary": _summarize([episode]),
+            # Live play is the second path that writes a suite record, so a live
+            # Tetris game declares its objective exactly as a headless suite does.
+            # It is the identity the session was built with, not a fresh read: a
+            # covered module edited while the session is alive must not be
+            # recorded as the code that chose the inputs.
+            **self.objective,
         }
         path = save_record(record, self.runs_dir)
         self.records.append(path)
