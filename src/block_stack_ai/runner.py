@@ -621,6 +621,12 @@ def _objective_sources() -> dict[str, str]:
     module's own text is unchanged — so the closure is walked from the objective's
     own namespace instead of being hand-listed, and a module that stops being used
     drops out of it by itself.
+
+    This reads the files **now**, which is what a verifier wants: it compares a
+    record against the tree that is on disk. A writer must instead record
+    ``_LOADED_OBJECTIVE_SOURCES``, the same identity as it stood when these
+    modules were imported, because a run executes the loaded code rather than
+    whatever is on disk when the record is written.
     """
     sources: dict[str, str] = {}
     pending = [tetris]
@@ -637,7 +643,16 @@ def _objective_sources() -> dict[str, str]:
     return {name: sources[name] for name in sorted(sources)}
 
 
-def _objective_record(config: SuiteConfig) -> dict[str, Any] | None:
+# The objective's source identity as it stood when the objective's modules were
+# imported — the code a run actually executes. Every writer records this, not a
+# later read: an edit that lands after the import but before the record is written
+# was never loaded, so a later read would name source the run did not run (the
+# interactive menu imports the modules, waits for a selection, and only then
+# starts a game).
+_LOADED_OBJECTIVE_SOURCES = _objective_sources()
+
+
+def _objective_record(config: SuiteConfig, *, loaded: bool = False) -> dict[str, Any] | None:
     """The declared objective a suite record must carry, or ``None`` without the agent.
 
     The ``heuristic`` mapping is written for every suite because every placement
@@ -645,20 +660,23 @@ def _objective_record(config: SuiteConfig) -> dict[str, Any] | None:
     separately declared objective, so a suite that uses it records that objective
     too: the module that declares it, the weights its ``weights_record()``
     publishes, and the source identity of the modules its decisions are computed
-    from. A suite without the agent has no such objective to record.
+    from. A suite without the agent has no such objective to record. A writer
+    passes ``loaded=True`` so the identity is the code the interpreter loaded; the
+    verifier leaves it ``False`` so the identity is compared against the files on
+    the tree now.
     """
     if TETRIS_AGENT not in config.agents:
         return None
     return {
         "module": tetris.__name__,
         "weights": tetris.weights_record(),
-        _OBJECTIVE_SOURCES_FIELD: _objective_sources(),
+        _OBJECTIVE_SOURCES_FIELD: _LOADED_OBJECTIVE_SOURCES if loaded else _objective_sources(),
     }
 
 
-def _objective_section(config: SuiteConfig) -> dict[str, Any]:
+def _objective_section(config: SuiteConfig, *, loaded: bool = False) -> dict[str, Any]:
     """The record entry that declares a suite's Tetris objective, if it has one."""
-    objective = _objective_record(config)
+    objective = _objective_record(config, loaded=loaded)
     return {} if objective is None else {_OBJECTIVE_FIELD: objective}
 
 
@@ -734,8 +752,8 @@ def run_and_save(
         record["heuristic"] = weights_record()
         # A suite that uses the Tetris agent declares its objective beside the
         # frozen heuristic mapping, so the record names the weights that chose
-        # its placements.
-        record.update(_objective_section(config))
+        # its placements and the source identity the interpreter loaded.
+        record.update(_objective_section(config, loaded=True))
         episodes = run_suite(config, game_factory)
         record["episodes"] = episodes
         record["summary"] = _summarize(episodes)

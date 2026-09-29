@@ -99,6 +99,59 @@ OUTCOMES = (OUTCOME_ABSENT, OUTCOME_NOT_A_FILE, OUTCOME_ADDED, OUTCOME_DELETED,
 # The three states one side of a comparison can be in. An untracked directory is
 # one ``git status`` entry, so a compared path need not be a file.
 PATH_STATES = ("file", "directory", "absent")
+# One captured per-path entry has exactly these keys: the path, the comparison's
+# two decisions (the outcome and whether the path differs), each side's state, and
+# — for a side that is a file — its sha256. The digests are what make ``same``
+# distinguishable from ``differs`` when both sides are files; without them the
+# outcome would have to be taken on trust.
+CAPTURED_PATH_KEYS = ("path", "outcome", "differs", "published", "worktree",
+                      "published_sha256", "worktree_sha256")
+
+
+def path_decision(published_state: str, published_digest: str | None,
+                  worktree_state: str, worktree_digest: str | None) -> tuple[str, bool]:
+    """The outcome and differing decision one pair of states implies.
+
+    The probe takes a compared path's two states — each a file with its sha256, a
+    directory, or absent — and this one function decides both what the run reports
+    and what ``check_publication_record`` requires of a retained entry. A retained
+    entry whose stored outcome or ``differs`` flag disagrees with its own recorded
+    states is therefore reported instead of certified: the fields of such an entry
+    can each be a legal value while their combination is one no run produced.
+    """
+    if published_state == "absent" and worktree_state == "absent":
+        outcome = OUTCOME_ABSENT
+    elif published_state == "directory" or worktree_state == "directory":
+        outcome = OUTCOME_NOT_A_FILE
+    elif published_state == "absent":
+        outcome = OUTCOME_ADDED
+    elif worktree_state == "absent":
+        outcome = OUTCOME_DELETED
+    elif published_digest == worktree_digest:
+        outcome = OUTCOME_SAME
+    else:
+        outcome = OUTCOME_DIFFERS
+    differs = (published_state, published_digest) != (worktree_state, worktree_digest)
+    return outcome, differs
+
+
+def _captured_digests_agree(entry: dict) -> bool:
+    """A captured path's digests are present exactly when that side is a file.
+
+    A file's digest is the sha256 the probe read; a directory or an absent path
+    has no digest, and a stray one would let a captured entry describe a state no
+    run read. The digest is what separates ``same`` from ``differs``, so it has to
+    be well formed for the derivation to mean anything.
+    """
+    for state_key, digest_key in (("published", "published_sha256"),
+                                  ("worktree", "worktree_sha256")):
+        digest = entry[digest_key]
+        if entry[state_key] == "file":
+            if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+                return False
+        elif digest is not None:
+            return False
+    return True
 
 
 def publication_capture_line(capture: dict) -> str:
@@ -147,8 +200,9 @@ def counts_line(compared_count: int, differing: int, uncommitted: int) -> str:
 # The base-refresh snapshot's named fields: the values one run measured and the
 # retained record cites. Each is checked against the captured command output it
 # came from, so the fields cannot have been written by different runs.
+BASE_ANCESTRY_FIELD = "base_is_ancestor_of_remote_main"
 BASE_COMMIT_FIELDS = ("commit", "git_tree_id", "remote_main_tip", "remote_main_tree",
-                      "worktree_head", "base_is_ancestor_of_remote_main")
+                      "worktree_head", BASE_ANCESTRY_FIELD)
 # The captured commands, by the role whose value each produced.
 BASE_COMMIT_ROLES = (
     ("refreshed remote main commit from the clone", "remote_main_tip"),
@@ -158,6 +212,11 @@ BASE_COMMIT_ROLES = (
     ("this worktree's HEAD", "worktree_head"),
 )
 BASE_ANCESTRY_ROLE = "the recorded base is an ancestor of the refreshed remote main"
+# The base-refresh capture's other ancestry command: this worktree's HEAD descending
+# from the recorded base. ``base_state_line`` claims it, so the record check has to
+# require the captured command that establishes it — otherwise a snapshot could
+# carry the sentence while its captured command failed or is missing.
+BASE_WORKTREE_ANCESTRY_ROLE = "the worktree HEAD descends from the recorded base"
 
 
 def base_state_line(fields: dict) -> str:
@@ -527,23 +586,13 @@ def check_publication():
     differs: dict[str, bool] = {}
     for path in sorted(states):
         (published_state, published_digest), (worktree_state, worktree_digest) = states[path]
-        if published_state == "absent" and worktree_state == "absent":
-            outcomes[path] = OUTCOME_ABSENT
-        elif published_state == "directory" or worktree_state == "directory":
-            outcomes[path] = OUTCOME_NOT_A_FILE
-        elif published_state == "absent":
-            outcomes[path] = OUTCOME_ADDED
-        elif worktree_state == "absent":
-            outcomes[path] = OUTCOME_DELETED
-        elif published_digest == worktree_digest:
-            outcomes[path] = OUTCOME_SAME
-        else:
-            outcomes[path] = OUTCOME_DIFFERS
-        # The comparison's own decision, taken here from the two states: a path
+        # The comparison's own decisions, taken here from the two states by the
+        # one function ``check_publication_record`` also derives them with: a path
         # differs from this worktree unless the two sides are the same state, so a
         # tracked deletion, a file added here and a file whose content moved all
         # count, while a file that is a directory on both sides does not.
-        differs[path] = states[path][0] != states[path][1]
+        outcomes[path], differs[path] = path_decision(
+            published_state, published_digest, worktree_state, worktree_digest)
     differing = [path for path in sorted(states) if differs[path]]
     for path in sorted(states):
         (published_state, published_digest), (worktree_state, worktree_digest) = states[path]
@@ -606,9 +655,11 @@ def check_publication():
             {
                 "path": path,
                 "outcome": outcomes[path],
+                "differs": differs[path],
                 "published": states[path][0][0],
                 "worktree": states[path][1][0],
-                "differs": differs[path],
+                "published_sha256": states[path][0][1],
+                "worktree_sha256": states[path][1][1],
             }
             for path in sorted(states)
         ],
@@ -664,6 +715,15 @@ def check_publication_record(path: Path = RESULT_PATH) -> None:
     is the capture's differing paths, the differing count is that list's length
     and the run is labelled with the command that produced it and the time it was
     captured.
+
+    The fourth counterexample is the per-path fields themselves: an entry whose
+    ``outcome`` was changed to ``same`` while its two recorded sides are still
+    differing files has a legal outcome, two legal states and a legal boolean
+    beside them, so validating each field alone certified a snapshot no run
+    produced. Each entry's outcome and differing flag are therefore **derived**
+    from its own recorded states and sha256 digests through ``path_decision`` —
+    the same function the probe decides them with — and an entry that disagrees
+    with that derivation is reported.
     """
     record = json.loads(path.read_text(encoding="utf-8"))
     publication = record["publication"]
@@ -679,6 +739,16 @@ def check_publication_record(path: Path = RESULT_PATH) -> None:
             f"{path}: publication.capture is not the recorded run this check describes: "
             f"{capture!r}"
         )
+    # The refs the run resolved are captured evidence too: the record describes the
+    # branch and PR this probe watches, so a snapshot whose capture names another
+    # ref is not a run of this probe regardless of how consistent its other fields
+    # are.
+    require(capture.get("branch_ref") == TASK_BRANCH_REF,
+            f"the captured run resolved the branch {capture.get('branch_ref')!r}, not this "
+            f"probe's {TASK_BRANCH_REF!r}")
+    require(capture.get("pull_request_ref") == TASK_PR_REF,
+            f"the captured run resolved the pull request {capture.get('pull_request_ref')!r}, "
+            f"not this probe's {TASK_PR_REF!r}")
     for field in ("compared_paths", "uncommitted_paths", "declared_paths"):
         if not isinstance(capture.get(field), list):
             raise AssertionError(
@@ -688,17 +758,45 @@ def check_publication_record(path: Path = RESULT_PATH) -> None:
     compared = capture["compared_paths"]
     if any(
         not isinstance(entry, dict)
-        or set(entry) != {"path", "outcome", "published", "worktree", "differs"}
+        or set(entry) != set(CAPTURED_PATH_KEYS)
         or entry["outcome"] not in OUTCOMES
         or entry["published"] not in PATH_STATES
         or entry["worktree"] not in PATH_STATES
         or not isinstance(entry["differs"], bool)
+        or not _captured_digests_agree(entry)
         for entry in compared
     ):
         raise AssertionError(
             f"{path}: publication.capture.compared_paths is not one recorded outcome per "
             f"compared path: {compared!r}"
         )
+    # Each entry's outcome and differing decision are recomputed from its own
+    # recorded states and digests. Checking the fields one at a time is not
+    # enough: an entry whose outcome was changed to ``same`` while its two sides
+    # are differing files still has a legal outcome, two legal states and a legal
+    # boolean beside them, so only the derivation from the recorded evidence can
+    # report a snapshot no run produced.
+    for entry in compared:
+        outcome, differs = path_decision(
+            entry["published"], entry["published_sha256"],
+            entry["worktree"], entry["worktree_sha256"])
+        require(entry["outcome"] == outcome,
+                f"the captured entry for {entry['path']!r} records the outcome "
+                f"{entry['outcome']!r}, but its recorded states and digests imply {outcome!r}")
+        require(entry["differs"] == differs,
+                f"the captured entry for {entry['path']!r} records differs="
+                f"{entry['differs']!r}, but its recorded states and digests imply {differs!r}")
+    # The producer builds one entry per compared path from a dictionary keyed by
+    # the path, so a capture that names a path twice, or omits a declared repaired
+    # path, is one no run produced — and the counts alone cannot tell, because a
+    # swapped-in duplicate keeps them.
+    captured_paths = [entry["path"] for entry in compared]
+    duplicates = sorted({path for path in captured_paths if captured_paths.count(path) > 1})
+    require(not duplicates,
+            f"the captured run compares these paths more than once: {duplicates}")
+    missing = sorted(set(REPAIRED_PATHS) - set(captured_paths))
+    require(not missing,
+            f"the captured run does not compare these declared repaired paths: {missing}")
     require(publication.get("publication_capture_line") == publication_capture_line(capture),
             "publication_capture_line is not the probe's line for the capture recorded "
             "beside it")
@@ -721,13 +819,23 @@ def check_publication_record(path: Path = RESULT_PATH) -> None:
     require(differing == len(captured_differing),
             f"observed_differing_paths is {differing!r} but the captured run records "
             f"{len(captured_differing)} differing paths")
+    # The producer requires every differing path to be one this worktree holds
+    # uncommitted; a captured run whose differing list names a path its uncommitted
+    # list does not is a snapshot ``check_publication`` would have rejected, so the
+    # retained checker requires the same coverage rather than equal counts alone.
+    unexplained = sorted(set(captured_differing) - set(capture["uncommitted_paths"]))
+    require(not unexplained,
+            f"the captured run records these paths differing but not uncommitted: "
+            f"{unexplained}")
     require(publication.get("observed_uncommitted_paths") == len(capture["uncommitted_paths"]),
             f"observed_uncommitted_paths is "
             f"{publication.get('observed_uncommitted_paths')!r} but the captured run records "
             f"{len(capture['uncommitted_paths'])} uncommitted paths")
-    require(publication.get("observed_uncommitted_paths") == differing,
-            f"observed_uncommitted_paths is {publication.get('observed_uncommitted_paths')!r} "
-            f"but observed_differing_paths is {differing!r}")
+    # The producer does not require the two sets to have the same size: a path can
+    # be uncommitted while its content already equals the publication (a mode-only
+    # change, or a local edit that reproduces the published bytes), so requiring
+    # equal counts would reject a capture the probe can emit. The coverage above is
+    # the invariant that matters.
     declared = len(REPAIRED_PATHS)
     require(publication.get("repaired_paths_compared_by_content") == declared,
             f"repaired_paths_compared_by_content is "
@@ -752,8 +860,12 @@ def check_publication_record(path: Path = RESULT_PATH) -> None:
                 f"{field} is {publication.get(field)!r} but the captured run recorded "
                 f"{capture.get(captured_field)!r}")
     published = publication["published_commit"]
-    for field in ("branch_head", "published_commit", "pull_request_head",
-                  "observed_worktree_head"):
+    # Only the published identities have to be one commit: the branch ref, the PR
+    # head and the clone's HEAD. The worktree HEAD is this checkout's own and the
+    # probe explicitly permits it to differ (a published tree behind a lagging
+    # review worktree, or the reverse), so it is compared with its captured value
+    # above and not with the published commit.
+    for field in ("branch_head", "published_commit", "pull_request_head"):
         require(publication.get(field) == published,
                 f"{field} is {publication.get(field)!r} but published_commit is {published!r}")
     require(publication.get("published_tree") == capture.get("published_tree"),
@@ -801,7 +913,10 @@ def check_base_commit_record(path: Path = RESULT_PATH) -> None:
     the role whose value it produced — the ``base_capture`` line the probe emits is
     required to be the line for the capture beside it, and the printed state line
     is reconstructed from the fields through the same ``base_state_line`` the probe
-    prints it with. The prose is checked the same way: every commit id anywhere in
+    prints it with. Both captured ancestry commands are required, each with exit 0:
+    the remote-main role that produced
+    ``base_is_ancestor_of_remote_main``, and the worktree-HEAD role whose descent
+    ``base_state_line`` claims. The prose is checked the same way: every commit id anywhere in
     the object has to be one the run observed, so a conclusion left behind by an
     earlier run is reported rather than certified.
     """
@@ -819,6 +934,11 @@ def check_base_commit_record(path: Path = RESULT_PATH) -> None:
             f"{path}: base_commit.capture is not the recorded run this check describes: "
             f"{capture!r}"
         )
+    # The ref the run resolved is captured evidence: a snapshot whose capture names
+    # another ref is not a run of this probe.
+    require(capture.get("remote_main_ref") == REMOTE_MAIN_REF,
+            f"the captured run resolved the ref {capture.get('remote_main_ref')!r}, not this "
+            f"probe's {REMOTE_MAIN_REF!r}")
     for field in BASE_COMMIT_FIELDS:
         require(capture.get(field) == base.get(field),
                 f"base_commit.{field} is {base.get(field)!r} but the captured run recorded "
@@ -826,6 +946,14 @@ def check_base_commit_record(path: Path = RESULT_PATH) -> None:
     require(base.get("commit") == BASE_COMMIT,
             f"base_commit.commit is {base.get('commit')!r} but this probe's recorded base is "
             f"{BASE_COMMIT!r}")
+    # ``check_remote_main`` requires the tree when the observed tip is the recorded
+    # base itself: one commit has one tree, so a snapshot that names the base as
+    # the tip while giving it a different tree is a state the producer rejects.
+    if base.get("remote_main_tip") == base.get("commit"):
+        require(base.get("remote_main_tree") == base.get("git_tree_id"),
+                f"base_commit.remote_main_tip is the recorded base {base.get('commit')!r} but "
+                f"its tree {base.get('remote_main_tree')!r} is not the recorded base tree "
+                f"{base.get('git_tree_id')!r}")
 
     by_role: dict[str, list[dict]] = {}
     for entry in capture["commands"]:
@@ -852,6 +980,30 @@ def check_base_commit_record(path: Path = RESULT_PATH) -> None:
     if len(ancestry) == 1:
         require(ancestry[0].get("exit") == 0,
                 f"the captured ancestry command exited {ancestry[0].get('exit')!r}")
+        # The producer derives this flag as ``status == 0``, so the recorded flag
+        # has to be that derivation: a snapshot that pairs the flag False with a
+        # captured command that exited 0 is one no run produced, however equal the
+        # field and its capture copy are.
+        derived_ancestor = ancestry[0].get("exit") == 0
+        for where, value in (("base_commit", base.get(BASE_ANCESTRY_FIELD)),
+                             ("publication.capture", capture.get(BASE_ANCESTRY_FIELD))):
+            require(value is derived_ancestor,
+                    f"{where}.{BASE_ANCESTRY_FIELD} is {value!r} but the captured ancestry "
+                    f"command exited {ancestry[0].get('exit')!r}, which implies "
+                    f"{derived_ancestor!r}")
+    # ``state`` says this worktree's HEAD descends from the recorded base, so the
+    # captured command that establishes it is required too: every field above can
+    # be right while the one command that backs the sentence failed or was dropped
+    # from the snapshot.
+    worktree_ancestry = by_role.get(BASE_WORKTREE_ANCESTRY_ROLE, [])
+    require(len(worktree_ancestry) == 1,
+            f"the captured run holds {len(worktree_ancestry)} commands for the role "
+            f"{BASE_WORKTREE_ANCESTRY_ROLE!r}, which the state line claims")
+    if len(worktree_ancestry) == 1:
+        require(worktree_ancestry[0].get("exit") == 0,
+                f"the captured worktree-ancestry command exited "
+                f"{worktree_ancestry[0].get('exit')!r}, so the state line's claim that this "
+                f"worktree's HEAD descends from the base is not established")
 
     require(base.get("base_capture_line") == base_capture_line(capture),
             "base_capture_line is not the probe's line for the capture recorded beside it")
@@ -1155,9 +1307,10 @@ def predeclare():
             raise AssertionError(
                 "the existing capture covers only the declaring module, not every module "
                 "the objective's decisions are computed from (the set the record's "
-                "objective.sources identity enumerates); add the captured identity to the "
-                "existing capture from the record's own identity and the unchanged modules, "
-                "or capture the objective again and re-measure the evaluation"
+                "objective.sources identity enumerates); remove it deliberately to capture "
+                "the objective again from the unchanged tree, and re-measure the evaluation "
+                "after the new capture — do not transcribe the run's identity into an "
+                "earlier capture"
             )
         if existing["module_sha256"] != digest:
             raise AssertionError(
@@ -1179,6 +1332,15 @@ def predeclare():
                 "the declared-objective section of notes.md no longer matches the captured "
                 f"rationale ({existing['notes_section_sha256']} != {section_digest}); a changed "
                 "objective needs a new experiment, not a rewritten capture"
+            )
+        # An existing capture is kept, but not an edited one: a capture whose
+        # declared mapping is not the one the objective's code publishes would
+        # declare weights no run used while every digest still matched.
+        if existing.get("objective") != weights_record():
+            raise AssertionError(
+                "the existing capture's declared weights are not the ones the objective's code "
+                f"publishes ({existing.get('objective')} != {weights_record()}); a changed "
+                "objective needs a new experiment, not an edited capture"
             )
         print(f"# notes section sha256 {existing['notes_section_sha256']}")
         print(f"# objective identity: {len(existing['sources'])} modules, {existing['sources']}")
@@ -1215,11 +1377,11 @@ def check_predeclaration(path: Path):
     ``created_at``, so the declaration predates the measurement. Each digest still
     equals the captured one: the declaring module's and the documented rationale's,
     and the identity of every module the objective's decisions are computed from —
-    the same set the record's ``objective.sources`` carries when its version
-    records one, which is the value the measurement itself wrote. Covering the
-    helpers is what makes a post-capture change to any of them reportable: hashing
-    only the declaring module leaves a helper's change invisible even though it
-    moves every value the objective computes.
+    the same identity the record's ``objective.sources`` carries, which is the
+    value the measurement itself wrote and which this check now requires rather
+    than skips. Covering the helpers is what makes a post-capture change to any of
+    them reportable: hashing only the declaring module leaves a helper's change
+    invisible even though it moves every value the objective computes.
     """
     captured = json.loads(PREDECLARATION.read_text(encoding="utf-8"))
     record = json.loads(path.read_text(encoding="utf-8"))
@@ -1253,23 +1415,55 @@ def check_predeclaration(path: Path):
         "the declared-objective section of notes.md changed after the predeclaration, so "
         "the documented rationale is not the one captured before the run"
     )
+    # The digests tie the capture to the module texts; the weights are the other
+    # half of the declaration and have to be the ones that code publishes and the
+    # ones the cited run recorded, or the capture would declare a mapping no run
+    # used while every digest still matched.
+    declared = captured.get("objective")
+    if not isinstance(declared, dict):
+        raise AssertionError(
+            "the capture records no objective mapping, so the declared weights cannot be "
+            f"compared with the measured ones: {declared!r}"
+        )
+    published = weights_record()
+    print(f"# declared objective: {declared}")
+    print(f"# published objective: {published}")
+    assert declared == published, (
+        "the captured objective's weights are not the ones the objective's code publishes: "
+        f"{declared} != {published}"
+    )
     assert created_at >= captured_at, (
         f"the record was created at {created_at}, before the predeclaration at {captured_at}"
     )
     section = record.get("objective")
     recorded_sources = section.get("sources") if isinstance(section, dict) else None
     if recorded_sources is None:
-        # A record whose version predates the identity records none; the digests
-        # above still tie the declared objective to the modules that are here now,
-        # and the ordering to the run.
-        print("# the cited record carries no objective identity (its version predates it), so "
-              "the captured identity is checked against the current modules alone")
-    else:
-        print(f"# the cited record's own objective identity: {recorded_sources}")
-        assert recorded_sources == captured["sources"], (
-            "the objective identity the cited record carries is not the declared one, so "
-            f"the measurement used a different objective: {recorded_sources}"
+        # The capture's whole point is that the run's own identity is compared
+        # with it: a cited record that carries none leaves the capture tied only
+        # to the modules on the tree when the check runs, so a post-run
+        # transcription could bless a changed implementation under the capture's
+        # earlier timestamp. The record this experiment cites is written by the
+        # current writer, which always records the identity.
+        raise AssertionError(
+            "the cited record carries no objective identity, so the capture cannot be "
+            "compared with the identity the measurement itself wrote; cite a record of a "
+            "version whose writer records it"
         )
+    print(f"# the cited record's own objective identity: {recorded_sources}")
+    assert recorded_sources == captured["sources"], (
+        "the objective identity the cited record carries is not the declared one, so "
+        f"the measurement used a different objective: {recorded_sources}"
+    )
+    recorded_weights = section.get("weights")
+    print(f"# the cited record's own objective weights: {recorded_weights}")
+    assert recorded_weights == declared, (
+        "the weights the cited record's objective carries are not the declared ones, so "
+        f"the measurement was scored by a different mapping: {recorded_weights} != {declared}"
+    )
+    assert digest == captured["sources"]["block_stack_ai.tetris"], (
+        "the capture's declaring-module digest is not its identity entry for that module, "
+        "so the capture describes two objectives"
+    )
     print("# the declared objective is the measured one and predates the record")
 
 

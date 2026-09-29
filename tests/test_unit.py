@@ -2178,6 +2178,79 @@ def test_base_commit_record_rejects_a_snapshot_that_mixes_runs(tmp_path):
              r"recorded True")
 
 
+def test_base_commit_record_requires_the_captured_worktree_ancestry_command(tmp_path):
+    """The snapshot's claim that this worktree descends from the base is captured.
+
+    ``base_state_line`` says this worktree's HEAD descends from the recorded base,
+    and the run captures the ``merge-base --is-ancestor`` command that establishes
+    it. The retained check validated only the remote-main ancestry role, so a
+    snapshot could carry the sentence with that command's exit status changed, or
+    with the command dropped, and still certify. Both are now reported.
+    """
+    probe = _load_evidence_probe("exp003_base_commit_probe")
+    path, record = _retained_record_copy(tmp_path)
+    probe.check_base_commit_record(path)
+
+    def rejected(tamper, message):
+        _rejected_tamper(path, record, probe.check_base_commit_record, tamper, message)
+
+    def failed_worktree_ancestry(tampered):
+        base = tampered["base_commit"]
+        entry = next(command for command in base["capture"]["commands"]
+                     if command["role"] == probe.BASE_WORKTREE_ANCESTRY_ROLE)
+        entry["exit"] = 1
+        base["base_capture_line"] = probe.base_capture_line(base["capture"])
+        return tampered
+
+    def dropped_worktree_ancestry(tampered):
+        base = tampered["base_commit"]
+        base["capture"]["commands"] = [
+            command for command in base["capture"]["commands"]
+            if command["role"] != probe.BASE_WORKTREE_ANCESTRY_ROLE]
+        base["base_capture_line"] = probe.base_capture_line(base["capture"])
+        return tampered
+
+    def drifted_remote_ref(tampered):
+        base = tampered["base_commit"]
+        base["capture"]["remote_main_ref"] = "refs/heads/other"
+        base["base_capture_line"] = probe.base_capture_line(base["capture"])
+        return tampered
+
+    def contradictory_ancestry_flag(tampered):
+        # Both copies of the flag agree on False while the captured command
+        # exited 0: the derivation the producer uses makes that impossible.
+        base = tampered["base_commit"]
+        base[probe.BASE_ANCESTRY_FIELD] = False
+        base["capture"][probe.BASE_ANCESTRY_FIELD] = False
+        base["base_capture_line"] = probe.base_capture_line(base["capture"])
+        return tampered
+
+    def mismatched_base_tree(tampered):
+        # The observed tip is the recorded base, so the one commit would have two
+        # trees: the field, its capture copy and the captured output move together.
+        base = tampered["base_commit"]
+        other = "0" * 40
+        base["remote_main_tree"] = other
+        base["capture"]["remote_main_tree"] = other
+        for command in base["capture"]["commands"]:
+            if command["role"] == "refreshed remote main tree from the clone":
+                command["output"] = other
+        base["base_capture_line"] = probe.base_capture_line(base["capture"])
+        return tampered
+
+    rejected(failed_worktree_ancestry, r"worktree-ancestry command exited 1")
+    rejected(dropped_worktree_ancestry,
+             r"holds 0 commands for the role .*which the state line claims")
+    rejected(drifted_remote_ref,
+             r"resolved the ref 'refs/heads/other', not this probe's")
+    rejected(contradictory_ancestry_flag,
+             r"base_commit\.base_is_ancestor_of_remote_main is False but the captured "
+             r"ancestry command exited 0, which implies True")
+    rejected(mismatched_base_tree,
+             r"remote_main_tip is the recorded base .* but its tree .* is not the recorded "
+             r"base tree")
+
+
 def _drive_remote_main_probe(probe, tmp_path, monkeypatch, *, remote_tip, remote_tree,
                              base_tree, worktree_head, base_on_remote, base_on_head=True):
     """Run ``check_remote_main`` with the Git plumbing stubbed for one state.
@@ -2330,6 +2403,124 @@ def test_publication_record_counts_come_from_the_captured_run(tmp_path):
              r"uncommitted paths")
 
 
+def test_publication_record_derives_each_capture_entry_from_its_recorded_states(tmp_path):
+    """A captured entry's two decisions follow from its own recorded states.
+
+    The reviewer's counterexample: the retained entry for a differing file has its
+    outcome changed to ``same`` while its recorded sides are still two files and
+    its ``differs`` flag is still true. Every field is individually a legal value —
+    ``same`` is a known outcome, ``file`` a known state — but their combination is
+    one no run produced, so validating the fields one at a time certifies a
+    snapshot that was never measured. The check recomputes the outcome and the
+    differing flag from the entry's own states and digests, so the regenerated
+    capture line is reported; the genuine capture still passes.
+    """
+    probe = _load_publication_probe()
+    path, record = _retained_record_copy(tmp_path)
+    probe.check_publication_record(path)
+    capture = record["publication"]["capture"]
+    differing = next(entry for entry in capture["compared_paths"] if entry["differs"])
+    assert differing["published"] == "file" and differing["worktree"] == "file"
+
+    def rejected(**changes):
+        tampered = json.loads(json.dumps(record))
+        target = next(entry for entry in tampered["publication"]["capture"]["compared_paths"]
+                      if entry["path"] == differing["path"])
+        target.update(changes)
+        tampered["publication"]["publication_capture_line"] = \
+            probe.publication_capture_line(tampered["publication"]["capture"])
+        path.write_text(json.dumps(tampered), encoding="utf-8")
+        with pytest.raises(AssertionError) as error:
+            probe.check_publication_record(path)
+        return str(error.value)
+
+    message = rejected(outcome="same")
+    assert f"the captured entry for {differing['path']!r} records the outcome 'same'" in message
+    assert "imply 'differs'" in message
+    message = rejected(differs=False)
+    assert "records differs=False, but its recorded states and digests imply True" in message
+    # A digest that a state does not have is not a combination any run read either.
+    message = rejected(outcome="added", differs=True)
+    assert "imply 'differs'" in message and "imply 'added'" not in message
+
+    # The refs the run resolved are captured evidence too: a capture naming
+    # another branch is not a run of this probe, however consistent it is.
+    tampered = json.loads(json.dumps(record))
+    tampered["publication"]["capture"]["branch_ref"] = "refs/heads/other"
+    tampered["publication"]["publication_capture_line"] = \
+        probe.publication_capture_line(tampered["publication"]["capture"])
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    with pytest.raises(AssertionError, match=r"resolved the branch 'refs/heads/other'"):
+        probe.check_publication_record(path)
+
+    # A differing path that the captured uncommitted list does not name is the
+    # state ``check_publication`` rejects; equal counts alone cannot see it.
+    tampered = json.loads(json.dumps(record))
+    capture = tampered["publication"]["capture"]
+    differing = next(entry for entry in capture["compared_paths"] if entry["differs"])
+    unchanged = next(entry["path"] for entry in capture["compared_paths"]
+                     if not entry["differs"] and entry["outcome"] == "same")
+    capture["uncommitted_paths"] = [
+        unchanged if path == differing["path"] else path
+        for path in capture["uncommitted_paths"]]
+    tampered["publication"]["publication_capture_line"] = \
+        probe.publication_capture_line(capture)
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    with pytest.raises(AssertionError,
+                       match=r"records these paths differing but not uncommitted"):
+        probe.check_publication_record(path)
+
+    # The list's coverage is a claim too: a declared repaired path replaced by a
+    # duplicate of an unchanged entry keeps every count while comparing a path
+    # twice and omitting the declared one.
+    tampered = json.loads(json.dumps(record))
+    capture = tampered["publication"]["capture"]
+    entries = capture["compared_paths"]
+    declared = next(
+        (item for item in entries
+         if item["path"] in probe.REPAIRED_PATHS and not item["differs"]),
+        next(item for item in entries if item["path"] in probe.REPAIRED_PATHS))
+    donor = next(item for item in entries
+                 if item["path"] != declared["path"]
+                 and item["differs"] == declared["differs"])
+    declared.update(donor)
+    tampered["publication"]["publication_capture_line"] = \
+        probe.publication_capture_line(capture)
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    with pytest.raises(AssertionError, match=r"compares these paths more than once"):
+        probe.check_publication_record(path)
+
+    # The worktree HEAD is this checkout's own: the probe records it beside the
+    # published commit and permits it to differ, so a snapshot from that state has
+    # to certify once its capture line is regenerated.
+    tampered = json.loads(json.dumps(record))
+    other_head = "1" * 40
+    tampered["publication"]["capture"]["worktree_head"] = other_head
+    tampered["publication"]["observed_worktree_head"] = other_head
+    tampered["publication"]["publication_capture_line"] = \
+        probe.publication_capture_line(tampered["publication"]["capture"])
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    probe.check_publication_record(path)
+
+    # An uncommitted path whose content already equals the publication (a
+    # mode-only change, or an edit reproducing the published bytes) is a capture
+    # the probe can emit: only coverage of the differing paths is required.
+    tampered = json.loads(json.dumps(record))
+    capture = tampered["publication"]["capture"]
+    extra = next(entry["path"] for entry in capture["compared_paths"]
+                 if entry["outcome"] == "same" and entry["path"] not in capture["uncommitted_paths"])
+    capture["uncommitted_paths"] = sorted(capture["uncommitted_paths"] + [extra])
+    tampered["publication"]["observed_uncommitted_paths"] = len(capture["uncommitted_paths"])
+    tampered["publication"]["publication_capture_line"] = \
+        probe.publication_capture_line(capture)
+    tampered["publication"]["counts_line"] = probe.counts_line(
+        tampered["publication"]["compared_paths_count"],
+        tampered["publication"]["observed_differing_paths"],
+        tampered["publication"]["observed_uncommitted_paths"])
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    probe.check_publication_record(path)
+
+
 def test_predeclaration_covers_every_module_of_the_objective_identity(tmp_path, monkeypatch):
     """The captured objective covers the helpers its decisions run through.
 
@@ -2350,8 +2541,22 @@ def test_predeclaration_covers_every_module_of_the_objective_identity(tmp_path, 
     captured = json.loads(capture.read_text(encoding="utf-8"))
     record_path = tmp_path / "run.json"
     record_path.write_text(
-        json.dumps({"created_at": "2099-01-01T00:00:00+00:00"}), encoding="utf-8")
+        json.dumps({"created_at": "2099-01-01T00:00:00+00:00",
+                    "objective": {"sources": captured["sources"],
+                                  "weights": captured["objective"]}}), encoding="utf-8")
     probe.check_predeclaration(record_path)
+
+    # A cited record that carries no identity cannot tie the capture to what the
+    # measurement itself wrote: the run's own identity must be compared, so its
+    # absence is reported rather than skipped.
+    record_path.write_text(
+        json.dumps({"created_at": "2099-01-01T00:00:00+00:00"}), encoding="utf-8")
+    with pytest.raises(AssertionError, match="carries no objective identity"):
+        probe.check_predeclaration(record_path)
+    record_path.write_text(
+        json.dumps({"created_at": "2099-01-01T00:00:00+00:00",
+                    "objective": {"sources": captured["sources"],
+                                  "weights": captured["objective"]}}), encoding="utf-8")
 
     # The capture covers the identity's whole set, not one module.
     assert set(captured["sources"]) == set(runner._objective_sources())
@@ -2369,6 +2574,20 @@ def test_predeclaration_covers_every_module_of_the_objective_identity(tmp_path, 
             # replaces reported nothing here.
             if name != "block_stack_ai.tetris":
                 assert probe._module_digest() == captured["module_sha256"]
+
+    # The declared mapping is compared too: an edited capture whose weights are
+    # not the ones the objective's code publishes cannot certify a run scored by
+    # the published ones, and predeclare refuses to keep such a capture.
+    capture.write_text(json.dumps(
+        {**captured, "objective": {**captured["objective"], "tetrises": 80.0}}),
+        encoding="utf-8")
+    with pytest.raises(AssertionError,
+                       match=r"not the ones the objective's code publishes"):
+        probe.check_predeclaration(record_path)
+    with pytest.raises(AssertionError,
+                       match=r"declared weights are not the ones the objective's code publishes"):
+        probe.predeclare()
+    capture.write_text(json.dumps(captured), encoding="utf-8")
 
     # A capture of the pre-change shape — the declaring module's digest alone —
     # is refused by the capture path and cannot support the check either.

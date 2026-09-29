@@ -182,3 +182,48 @@ def test_live_tetris_session_records_the_objective_and_verifies(tmp_path):
     }
     assert sorted(record["summary"]) == ["tetris"]
     verify_run(records[0])
+
+
+def test_live_tetris_session_snapshots_the_objective_at_begin(tmp_path, monkeypatch):
+    """A mid-game edit to a covered module is not recorded as the code that chose inputs.
+
+    The reviewer's findings: ``_objective_section(self.config)`` read the covered
+    source files when the game ended, while the game's versions were captured at
+    BEGIN, so a module edited mid-session was recorded as the code that chose the
+    inputs; and reading the files again at a restart's BEGIN attributed the
+    restarted game to source bytes the interpreter never loaded. The session now
+    reads the objective once, when it is built, and persists that identity for
+    every game it records. This drives two Tetris games in one session, changes a
+    covered module's file after the first BEGIN, and requires both saved records
+    to carry the identity of the loaded implementation.
+    """
+    limit = 60
+    config = SuiteConfig(GAME, limit, (2,), ("tetris",))
+    module = sys.modules["block_stack_ai.tetris"]
+    original_path = Path(module.__file__)
+    original_bytes = original_path.read_bytes()
+    original_digest = runner._objective_sources()["block_stack_ai.tetris"]
+    session = LiveSession(config, tmp_path / "runs")
+    try:
+        # The second game is a live restart (`R`) after the edit.
+        for _ in range(2):
+            with create_game(**GAME, seed=2) as desktop:
+                snapshot = desktop.save_state()
+                session.receive("BEGIN", snapshot)
+                mutated = tmp_path / "tetris.py"
+                mutated.write_bytes(original_bytes + b"\n# changed mid-game\n")
+                monkeypatch.setattr(module, "__file__", str(mutated))
+                while not desktop.state.terminal and desktop.state.frame < limit:
+                    mask = session.receive("STATE", snapshot)
+                    desktop.step(mask)
+                    snapshot = desktop.save_state()
+                session.receive("END", snapshot)
+    finally:
+        monkeypatch.setattr(module, "__file__", str(original_path))
+        session.close()
+    records = sorted((tmp_path / "runs").glob("*/run.json"))
+    assert len(records) == 2
+    for path in records:
+        record = json.loads(path.read_text(encoding="utf-8"))
+        assert record["objective"] == session.objective["objective"]
+        assert record["objective"]["sources"]["block_stack_ai.tetris"] == original_digest

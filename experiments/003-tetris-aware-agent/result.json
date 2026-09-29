@@ -1,6 +1,6 @@
 {
   "base_commit": {
-    "base_capture_line": "base_capture={\"base_is_ancestor_of_remote_main\": true, \"commands\": [{\"command\": \"git -C /tmp/exp003-remote-main rev-parse HEAD\", \"exit\": 0, \"output\": \"d83a5bc54a76bb23cd38e4afbab8192b0e2a207f\", \"role\": \"refreshed remote main commit from the clone\"}, {\"command\": \"git -C /tmp/exp003-remote-main rev-parse HEAD^{tree}\", \"exit\": 0, \"output\": \"c312a71489219625b402172042cb78bb2a41cbc4\", \"role\": \"refreshed remote main tree from the clone\"}, {\"command\": \"git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f\", \"exit\": 0, \"output\": \"d83a5bc54a76bb23cd38e4afbab8192b0e2a207f\", \"role\": \"the recorded branch base commit\"}, {\"command\": \"git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}\", \"exit\": 0, \"output\": \"c312a71489219625b402172042cb78bb2a41cbc4\", \"role\": \"the recorded branch base tree\"}, {\"command\": \"git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD\", \"exit\": 0, \"output\": \"01c47550bb1ab3218d122b23ac9ac891fc693a22\", \"role\": \"this worktree's HEAD\"}, {\"command\": \"git -C /tmp/exp003-remote-main merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD\", \"exit\": 0, \"output\": \"\", \"role\": \"the recorded base is an ancestor of the refreshed remote main\"}, {\"command\": \"git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD\", \"exit\": 0, \"output\": \"\", \"role\": \"the worktree HEAD descends from the recorded base\"}], \"commit\": \"d83a5bc54a76bb23cd38e4afbab8192b0e2a207f\", \"git_tree_id\": \"c312a71489219625b402172042cb78bb2a41cbc4\", \"remote_main_ref\": \"refs/heads/main\", \"remote_main_tip\": \"d83a5bc54a76bb23cd38e4afbab8192b0e2a207f\", \"remote_main_tree\": \"c312a71489219625b402172042cb78bb2a41cbc4\", \"worktree_head\": \"01c47550bb1ab3218d122b23ac9ac891fc693a22\"}",
+    "base_capture_line": "base_capture={\"base_is_ancestor_of_remote_main\": true, \"commands\": [{\"command\": \"git -C /tmp/exp003-remote-main rev-parse HEAD\", \"exit\": 0, \"output\": \"d83a5bc54a76bb23cd38e4afbab8192b0e2a207f\", \"role\": \"refreshed remote main commit from the clone\"}, {\"command\": \"git -C /tmp/exp003-remote-main rev-parse HEAD^{tree}\", \"exit\": 0, \"output\": \"c312a71489219625b402172042cb78bb2a41cbc4\", \"role\": \"refreshed remote main tree from the clone\"}, {\"command\": \"git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f\", \"exit\": 0, \"output\": \"d83a5bc54a76bb23cd38e4afbab8192b0e2a207f\", \"role\": \"the recorded branch base commit\"}, {\"command\": \"git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}\", \"exit\": 0, \"output\": \"c312a71489219625b402172042cb78bb2a41cbc4\", \"role\": \"the recorded branch base tree\"}, {\"command\": \"git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD\", \"exit\": 0, \"output\": \"a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59\", \"role\": \"this worktree's HEAD\"}, {\"command\": \"git -C /tmp/exp003-remote-main merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD\", \"exit\": 0, \"output\": \"\", \"role\": \"the recorded base is an ancestor of the refreshed remote main\"}, {\"command\": \"git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD\", \"exit\": 0, \"output\": \"\", \"role\": \"the worktree HEAD descends from the recorded base\"}], \"commit\": \"d83a5bc54a76bb23cd38e4afbab8192b0e2a207f\", \"git_tree_id\": \"c312a71489219625b402172042cb78bb2a41cbc4\", \"remote_main_ref\": \"refs/heads/main\", \"remote_main_tip\": \"d83a5bc54a76bb23cd38e4afbab8192b0e2a207f\", \"remote_main_tree\": \"c312a71489219625b402172042cb78bb2a41cbc4\", \"worktree_head\": \"a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59\"}",
     "base_is_ancestor_of_remote_main": true,
     "capture": {
       "base_is_ancestor_of_remote_main": true,
@@ -32,7 +32,7 @@
         {
           "command": "git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD",
           "exit": 0,
-          "output": "01c47550bb1ab3218d122b23ac9ac891fc693a22",
+          "output": "a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59",
           "role": "this worktree's HEAD"
         },
         {
@@ -53,7 +53,7 @@
       "remote_main_ref": "refs/heads/main",
       "remote_main_tip": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f",
       "remote_main_tree": "c312a71489219625b402172042cb78bb2a41cbc4",
-      "worktree_head": "01c47550bb1ab3218d122b23ac9ac891fc693a22"
+      "worktree_head": "a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59"
     },
     "checked_by": "evidence.py remote-main; evidence.py base-commit-record",
     "commit": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f",
@@ -61,8 +61,8 @@
     "note": "one run of the base-refresh probe at this round's frozen tree, cached here field by field: every named value is the output of the captured command whose role produced it, the state line is the one that run printed, and the object names no commit the run did not observe. The recorded base is the commit this task branch was cut from; the probe asserts that the observed remote main tip contains it, so the check still holds after later commits reach main, this experiment's own merge included",
     "remote_main_tip": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f",
     "remote_main_tree": "c312a71489219625b402172042cb78bb2a41cbc4",
-    "state": "the recorded branch base is d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree c312a71489219625b402172042cb78bb2a41cbc4); the observed remote main tip is that base; this worktree's HEAD is 01c47550bb1ab3218d122b23ac9ac891fc693a22, which descends from it",
-    "worktree_head": "01c47550bb1ab3218d122b23ac9ac891fc693a22"
+    "state": "the recorded branch base is d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree c312a71489219625b402172042cb78bb2a41cbc4); the observed remote main tip is that base; this worktree's HEAD is a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59, which descends from it",
+    "worktree_head": "a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59"
   },
   "base_commit_provenance": {
     "harness_recorded_tree_content_hash": "7ca89481035ec0c17937f1102c59dd65717e3e034d226e161e7912e116f1cf5c",
@@ -86,7 +86,7 @@
     "summary_matches_experiment_002_result_json": true
   },
   "clear_size_metric": {
-    "compatibility": "a record of a legacy version (1 or 2) that carries neither the per-episode field nor the summary section still verifies; a version 3, 4 or 5 record must carry it, so deleting it from a current record is reported instead of verifying. A present section is compared with the same type-and-key rules as the mandatory ones, and in a legacy record presence is all-or-nothing across the complete suite \u2014 every episode and every agent summary in one record \u2014 so a record that stripped the histogram from one agent while another kept it, or that reports totals its episodes do not carry, is rejected rather than verified with a partial histogram. Records written by the pre-change writer for experiments 000, 001 and 002 verify end to end (see legacy_experiment_records).",
+    "compatibility": "a record of a legacy version (1 or 2) that carries neither the per-episode field nor the summary section still verifies; a version 3, 4 or 5 record must carry it, so deleting it from a current record is reported instead of verifying. A present section is compared with the same type-and-key rules as the mandatory ones, and in a legacy record presence is all-or-nothing across the complete suite — every episode and every agent summary in one record — so a record that stripped the histogram from one agent while another kept it, or that reports totals its episodes do not carry, is rejected rather than verified with a partial histogram. Records written by the pre-change writer for experiments 000, 001 and 002 verify end to end (see legacy_experiment_records).",
     "definitions": {
       "headline_tetris_line_rate": "4 * tetrises / total lines; zero total lines is a rate of 0.0",
       "safety_cap": "an episode stopped at the configured frame_limit is a configured safety stop, never a game over",
@@ -100,7 +100,7 @@
       "tetrises"
     ],
     "live_path": "live desktop play builds its own episode and suite record, so it tallies and records the same histogram before saving; without it a live game that cleared a line would save a record whose summary did not match its episode and would fail verification",
-    "piece_metric_rule": "the per-agent summary reports the piece-count key the record as a whole carries \u2014 the current pieces_placed, the legacy pieces, or neither in a record older than both \u2014 read from every episode rather than from the first episode of each group. A record whose first episode of an agent lost the key while the later ones kept it is a mixed shape no writer emits; selecting the metric from that first episode re-derived a summary with no piece metric and matched the stripped record, so the missing counts verified. The key must be recorded on every episode of a record or on none, and a version whose writer always emits pieces_placed requires it on every episode and every agent summary. The reviewer's counterexample is executed as prechange_probe.py piece_summary_schema: the tree this repair replaces accepted the stripped record (verify_run returned []), the trees before it raised KeyError('pieces') from the same first-episode selection, and this tree reports 'The piece count must be recorded on every episode of a record or on none'",
+    "piece_metric_rule": "the per-agent summary reports the piece-count key the record as a whole carries — the current pieces_placed, the legacy pieces, or neither in a record older than both — read from every episode rather than from the first episode of each group. A record whose first episode of an agent lost the key while the later ones kept it is a mixed shape no writer emits; selecting the metric from that first episode re-derived a summary with no piece metric and matched the stripped record, so the missing counts verified. The key must be recorded on every episode of a record or on none, and a version whose writer always emits pieces_placed requires it on every episode and every agent summary. The reviewer's counterexample is executed as prechange_probe.py piece_summary_schema: the tree this repair replaces accepted the stripped record (verify_run returned []), the trees before it raised KeyError('pieces') from the same first-episode selection, and this tree reports 'The piece count must be recorded on every episode of a record or on none'",
     "place": "a top-level per-episode field beside pieces_placed, never a leaf inside result or result.event_counts, because verify_run compares a result object's keys with the replay's exactly; required at record versions 3, 4 and 5, optional only at the legacy versions 1 and 2",
     "source": "the engine's own per-step events.lines_cleared (1/2/3/4), the same event result.event_counts.lines_cleared sums, so the histogram adds up to result.lines",
     "summary": "each agent's summary carries the totals of its episodes' histograms"
@@ -131,27 +131,29 @@
     ]
   },
   "determinism": {
-    "format_versions": "the fresh records are format_version 5; the retained records are 14 at version 2, 7 at version 4 and 6 at version 5, every one of them replayed by the sweep below",
-    "note": "two fresh records of the same configuration, from separate processes this round, are identical across configuration, heuristic, episodes and summary (evidence.py compare, exit 0); every record the earlier rounds left in runs/ is identical to them as well, so neither this repair nor any earlier one moved a measured number. The runner change this round touches the summary's piece metric only: it reads the key from every episode instead of the group's first one, which for a well-formed record selects the same key as before. The records of the earlier rounds carry version 2 (14) and version 4 (7) and still verify under their own gating; this round's writer emits version 5.",
+    "format_versions": "the fresh records are format_version 5; the retained records are 14 at version 2, 7 at version 4 and 13 at version 5, every one of them replayed by the sweep below",
+    "note": "two fresh records of the same configuration, from separate processes this round, are identical across configuration, heuristic, episodes and summary (evidence.py compare, exit 0), so the deterministic 10-seed metrics are reproduced after the re-run that postdates the objective capture: lookahead 9128 lines and a 0.0876424% Tetris line rate, tetris 3495 lines and 1.1444921%. This round changed verification, the live objective's read time and documentation; the headless runner and the frozen heuristic are untouched, so no measured number moves. The counts are the runs/ directory's contents at this round's freeze; runs/ is disposable ignored output",
     "record_paths": [
-      "runs/20260928T142239844188Z-6a79b233/run.json",
-      "runs/20260928T135755269490Z-dde2fc28/run.json"
+      "runs/20260928T153237203272Z-57406741/run.json",
+      "runs/20260928T152709932202Z-f82efe29/run.json"
     ],
     "repeat_run_configuration_identical": true,
     "repeat_run_episodes_identical": true,
     "repeat_run_summary_identical": true,
     "runs_compared": 2,
-    "this_round_record": "runs/20260928T142239844188Z-6a79b233/run.json",
+    "this_round_record": "runs/20260928T213539517569Z-2036931a/run.json",
     "verify_exit_code": 0,
     "wall_clock_seconds": [
-      131.9,
-      133.8
+      132.7,
+      132.3
     ]
   },
-  "elapsed_evaluation_note": "evidence.py evaluation wall clock for the 20-episode suite (10 seeds x 2 agents at frame_limit 200000), measured with time.monotonic() around run_and_save by the documented path: the frozen tree's runs measured 131.9 s (inside the final evidence.py all), 132.1 s and 133.8 s (a repeat); the runs of the earlier repair rounds measured 132.3-140.8 s, so the spread is the machine's and not the repair's",
+  "elapsed_evaluation_note": "evidence.py evaluation wall clock for the 20-episode suite (10 seeds x 2 agents at frame_limit 200000) on the repaired tree, measured with time.monotonic() around run_and_save; the run was made after the objective capture it cites, so the evaluation postdates the declaration",
   "elapsed_evaluation_seconds": [
-    131.9,
-    132.1,
+    132.7,
+    131.8,
+    131.7,
+    132.3,
     133.8
   ],
   "engine_git": {
@@ -463,10 +465,10 @@
     }
   ],
   "fallgorithm_git": {
-    "commit": "01c47550bb1ab3218d122b23ac9ac891fc693a22",
+    "commit": "a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59",
     "dirty": true,
     "kind": "working-tree",
-    "note": "this worktree's HEAD: the publication of the previous repair round (01c47550), which the service committed and pushed after that round's review \u2014 the branch ref and PR #11's head name it, so it is the pre-change tree this round's findings were measured on. This round repairs five findings against it and holds the repair uncommitted here; the pre-change trees are extracted with git archive (01c47550 into /tmp/exp003-published) when a probe needs the pre-change side."
+    "note": "this worktree's HEAD: the published head a14fe1843 (PR #11), which carries this repair's uncommitted work; a commit hash alone cannot recreate the working tree it measured"
   },
   "heuristic": {
     "aggregate_height": -0.5,
@@ -511,19 +513,19 @@
     "command": "$PY -m block_stack_ai.cli verify runs/<record>/run.json for every record in runs/, 12 at a time (temporary driver, /tmp/exp003-sweep.py)",
     "exit": 0,
     "legacy_shapes": "the records written by the base commit's writer for experiments 000 (version 1), 001 and 002 (version 2) were regenerated with that tree's src and then verified by this tree's verify_run, each exiting 0; notes.md item 4 reproduces the runs and the record shapes",
-    "note": "all 27 records retained at this round's freeze replay from their own recorded inputs with only the engine working-tree warning: 14 at version 2 and 7 at version 4 written by earlier rounds' writers, and 6 at version 5 written by this round's. The runner change this round reads the summary's piece key from every episode; a record whose episodes and summary carry the same key \u2014 every record here \u2014 re-derives the same summary as before, which is what the sweep checks. The pre-change writer's own records for experiments 000, 001 and 002 are verified beside it and their shapes are quoted in notes.md item 4",
+    "note": "all 34 records retained at this round's freeze replay from their own recorded inputs with only the engine working-tree warning: 14 at version 2 and 7 at version 4 written by earlier rounds' writers, and 13 at version 5 written by this round's runs and the previous round's. This round changed verification, the live objective's read time and documentation, not the headless runner, so every record re-derives the same summary; the pre-change writer's own records for experiments 000, 001 and 002 are verified beside it and their shapes are quoted in notes.md item 4",
     "this_round": {
-      "command": "$PY -m block_stack_ai.cli verify runs/<record>/run.json for every record in runs/",
+      "command": "ls runs/*/run.json | xargs -P 12 -I{} $PY -m block_stack_ai.cli verify {} (per-record logs in /tmp/exp003-sweep6, temporary)",
       "exit": 0,
-      "note": "the sweep's per-record logs and the combined result are in /tmp/exp003-sweep (temporary); notes.md item 4 quotes the summary line",
-      "scope": "all 27 records in runs/ at this round's freeze, twelve processes at a time"
+      "scope": "all 34 records in runs/ at this round's freeze, twelve processes at a time",
+      "note": "every record replays from its own recorded inputs with only the engine working-tree warning"
     }
   },
   "objective_record": {
     "compatibility": "a legacy suite record (version 2) without the section and a version-4 record without the identity both still verify, which is what keeps the runs of this experiment written by both writers valid; the current version's writer always emits both, so deleting either from a newly written record is reported. A record whose configuration has no Tetris agent must not carry the section, because no writer emits one.",
     "field": "objective",
     "identity": {
-      "covers": "the declaring module and the modules its code calls \u2014 the frozen geometry and board model it imports and Experiment 002's reachable-set enumeration it reuses \u2014 discovered from the objective's own namespace rather than hand-listed, so a module that stops being used drops out of the identity by itself and a helper cannot change the objective's values unrecorded",
+      "covers": "the declaring module and the modules its code calls — the frozen geometry and board model it imports and Experiment 002's reachable-set enumeration it reuses — discovered from the objective's own namespace rather than hand-listed, so a module that stops being used drops out of the identity by itself and a helper cannot change the objective's values unrecorded",
       "digests": {
         "block_stack_ai.heuristic": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
         "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
@@ -533,7 +535,7 @@
       "field": "objective.sources",
       "gating": "required at version 5, the version this repair writes; optional at version 4 and 2, whose writers recorded no identity, and compared when present",
       "value": "one sha256 per package module the objective's decisions are computed from, keyed by module name",
-      "why": "the weights are constants, so a formula change that leaves them alone changes every value the objective computes while the recorded weights still compare equal, and the replayed choices catch it only when the change happens to move one of them. The reviewer's counterexample \u2014 the clear term charging a premature clear at twice the declared rate \u2014 keeps every weight and is reported by this identity alone"
+      "why": "the weights are constants, so a formula change that leaves them alone changes every value the objective computes while the recorded weights still compare equal, and the replayed choices catch it only when the change happens to move one of them. The reviewer's counterexample — the clear term charging a premature clear at twice the declared rate — keeps every weight and is reported by this identity alone"
     },
     "module": "block_stack_ai.tetris",
     "place": "a top-level suite section beside the frozen heuristic mapping, never a leaf inside an episode or its result; required by a suite that uses the Tetris agent at every version whose writer emits one (4 and 5), optional only at the legacy version 2",
@@ -543,14 +545,14 @@
   },
   "predeclared_objective": {
     "capture_file": "experiments/003-tetris-aware-agent/probes/predeclared_objective.json",
-    "captured_at": "2026-09-27T15:54:19.727662+00:00",
-    "cited_record": "runs/20260927T171756139218Z-ceb3fba6/run.json",
-    "cited_record_created_at": "2026-09-27T17:15:43.122494+00:00",
+    "captured_at": "2026-09-28T15:30:20.689842+00:00",
+    "cited_record": "runs/20260928T153237203272Z-57406741/run.json",
+    "cited_record_created_at": "2026-09-28T15:30:24.688298+00:00",
     "earlier_capture": "experiments/003-tetris-aware-agent/probes/predeclared_objective.earlier.json",
     "identity_coverage": "the capture records the digest of every module the objective's decisions are computed from, the same set the run record's objective.sources identity enumerates, discovered from the objective's own namespace through the runner's _objective_sources() rather than hand-listed; check-predeclaration requires that mapping to equal the current modules and, when the cited record's version carries one, the identity the run itself wrote, and requires the declaring module's digest to be the identity's entry for it. Before this round the capture recorded only src/block_stack_ai/tetris.py, so a post-capture change to a helper moved every value the objective computes and was not reported: the reviewer's finding, executed as prechange_probe.py predeclaration_identity (exit 1 on the tree this repair replaces, exit 0 here)",
     "module": "src/block_stack_ai/tetris.py",
     "module_sha256": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e",
-    "note": "the capture records the module digest and the digest of the notes' declared-objective section \u2014 the weights table and rationale alone, delimited by the predeclared-objective markers \u2014 and is not overwritten while both still match; the cited record was created after this capture, which check-predeclaration re-checks mechanically. The capture was re-made three times as the marked section changed; the final text is the objective alone (the provenance and replay-guarantee note now sits below the end marker), and the superseded captures are kept beside it",
+    "note": "the capture records the module digest, the digest of the notes' declared-objective section and the identity of every module the objective's decisions are computed from, all written by one pre-run capture; check-predeclaration requires each digest to equal the current module and the cited record's own objective.sources identity, so a covered module changed after the capture or a transcription under an earlier timestamp is reported",
     "notes_section": "experiments/003-tetris-aware-agent/notes.md#predeclared-objective",
     "notes_section_sha256": "b676a981d184f5bcf53909d4f9201db5e7e05df411e624f32fa2a377d1df6e9b",
     "objective": {
@@ -572,13 +574,14 @@
       "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
       "block_stack_ai.tetris": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e"
     },
-    "sources_note": "the four digests were added to probes/predeclared_objective.json from the evaluation record's own objective.sources identity, which the run wrote, and are equal to the modules on this tree (the tetris entry is the module_sha256 the capture already recorded); captured_at is untouched, so the ordering against the cited record is unchanged. The check requires both equalities, so the transcription cannot drift unnoticed"
+    "pre_transcription_capture": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-transcription.json",
+    "capture_order": "the capture was re-made from the unchanged tree at 2026-09-28T15:30:20.689842+00:00 and the 10-seed evaluation was re-run after it, so the cited record's own created_at 2026-09-28T15:30:24.688298+00:00 postdates the capture and the whole capture file is a pre-run artifact, not just its timestamp; the superseded transcription that copied the run's identity under the earlier captured_at 2026-09-27T15:54:19.727662+00:00 is retained beside it as predeclared_objective.pre-transcription.json"
   },
   "publication": {
     "branch": "rakazo/experiment-003-tetris-aware-agent",
-    "branch_head": "01c47550bb1ab3218d122b23ac9ac891fc693a22",
+    "branch_head": "a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59",
     "capture": {
-      "branch_head": "01c47550bb1ab3218d122b23ac9ac891fc693a22",
+      "branch_head": "a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59",
       "branch_ref": "refs/heads/rakazo/experiment-003-tetris-aware-agent",
       "compared_paths": [
         {
@@ -586,322 +589,423 @@
           "outcome": "same",
           "path": ".github/workflows/ci.yml",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "4185e28c0bbcc4495c3717ef784d1141c282d70a35cacb4c633ad3d367c6c90a",
+          "worktree": "file",
+          "worktree_sha256": "4185e28c0bbcc4495c3717ef784d1141c282d70a35cacb4c633ad3d367c6c90a"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": ".gitignore",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "6c6c612e42315a24d2be9b7ddbf6d425e175199a9d86d80ab60be7eba1626cbb",
+          "worktree": "file",
+          "worktree_sha256": "6c6c612e42315a24d2be9b7ddbf6d425e175199a9d86d80ab60be7eba1626cbb"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "AGENTS.md",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "8edae270262292f8f6b863f2a36e40a53abed41a2e4ff0c68dc6c17f4e779c8d",
+          "worktree": "file",
+          "worktree_sha256": "8edae270262292f8f6b863f2a36e40a53abed41a2e4ff0c68dc6c17f4e779c8d"
         },
         {
-          "differs": false,
-          "outcome": "same",
+          "differs": true,
+          "outcome": "differs",
           "path": "README.md",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "dbae0210bb7c5441bd6f2d45bde20e0561aade3cf4160996e0b7748799f476b4",
+          "worktree": "file",
+          "worktree_sha256": "7a4216b51c7b71df0ac61009126b51029ce5349d287096a70221f5971bbb6733"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/000-connection/config.json",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "6126a1d5092727ebed8688e368301a95f1ee5e0b4287dfecd260f2f88ac3c974",
+          "worktree": "file",
+          "worktree_sha256": "6126a1d5092727ebed8688e368301a95f1ee5e0b4287dfecd260f2f88ac3c974"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/000-connection/notes.md",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "fc1d7aef384ec725225c1a57b81a6c2d0e403e47174c8c64ce70fde248fba4fa",
+          "worktree": "file",
+          "worktree_sha256": "fc1d7aef384ec725225c1a57b81a6c2d0e403e47174c8c64ce70fde248fba4fa"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/000-connection/result.json",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "36ad6f1e200cd5a34c7fad492d260db30ab85e0731d2a8c4015f86adde62fd1d",
+          "worktree": "file",
+          "worktree_sha256": "36ad6f1e200cd5a34c7fad492d260db30ab85e0731d2a8c4015f86adde62fd1d"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/001-greedy-heuristic/config.json",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "303f66d00af0376ad6c22bcec7bc2a218503277500cfc71aea8a56a98ca91ea9",
+          "worktree": "file",
+          "worktree_sha256": "303f66d00af0376ad6c22bcec7bc2a218503277500cfc71aea8a56a98ca91ea9"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/001-greedy-heuristic/notes.md",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "1c2b838a60afe9b8843bce322f9df92bd3765f6d5042bb7b2c0474fe85fb9a18",
+          "worktree": "file",
+          "worktree_sha256": "1c2b838a60afe9b8843bce322f9df92bd3765f6d5042bb7b2c0474fe85fb9a18"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/001-greedy-heuristic/result.json",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "11da7b4b689508430fd28872282c29de355e9c57b3ed9d43156edc42d58b8df0",
+          "worktree": "file",
+          "worktree_sha256": "11da7b4b689508430fd28872282c29de355e9c57b3ed9d43156edc42d58b8df0"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/002-path-aware-lookahead/config.json",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "fa6de6c7d081374a19423295d6781c368b64e78537888251ca9db2606e9dade6",
+          "worktree": "file",
+          "worktree_sha256": "fa6de6c7d081374a19423295d6781c368b64e78537888251ca9db2606e9dade6"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/002-path-aware-lookahead/notes.md",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "bb1cfa2e8859ef8ef77afd9ea8d614c90a0bc808b2f14363464601c8274aa504",
+          "worktree": "file",
+          "worktree_sha256": "bb1cfa2e8859ef8ef77afd9ea8d614c90a0bc808b2f14363464601c8274aa504"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/002-path-aware-lookahead/probes/evidence.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "b298d5debce549cced63d5d487916c634f79d5faa1954afe4ab7ba3cde90c8a5",
+          "worktree": "file",
+          "worktree_sha256": "b298d5debce549cced63d5d487916c634f79d5faa1954afe4ab7ba3cde90c8a5"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/002-path-aware-lookahead/probes/prechange_probe.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "8337b7c6614035e217c12e26c479cc04660488b87d46e6d93e307290983539b8",
+          "worktree": "file",
+          "worktree_sha256": "8337b7c6614035e217c12e26c479cc04660488b87d46e6d93e307290983539b8"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/002-path-aware-lookahead/result.json",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "c48715c3d67b7357380e7db717de25d90056067a3a50ac15420521a22d14cfca",
+          "worktree": "file",
+          "worktree_sha256": "c48715c3d67b7357380e7db717de25d90056067a3a50ac15420521a22d14cfca"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/003-tetris-aware-agent/config.json",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "a9b20935a6892bbc6cf8e4ab433ef38573d66c0fda45108ee74853e347a3d7b0",
+          "worktree": "file",
+          "worktree_sha256": "a9b20935a6892bbc6cf8e4ab433ef38573d66c0fda45108ee74853e347a3d7b0"
         },
         {
           "differs": true,
           "outcome": "differs",
           "path": "experiments/003-tetris-aware-agent/notes.md",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "4e5312183b5afd34138976f029540c10b7a512ac48fd546edb6a6a3b445a71bb",
+          "worktree": "file",
+          "worktree_sha256": "a5e7cdd843b56205937c7566bf5979def01a637aa86c15360b1dce8279b0112f"
         },
         {
           "differs": true,
           "outcome": "differs",
           "path": "experiments/003-tetris-aware-agent/probes/evidence.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "fb352797d6c60033a52c252deb2322ceb10283f002120bda1c58b6fa9c9691e8",
+          "worktree": "file",
+          "worktree_sha256": "e742c7c3c4e3bc0bba49339ffca506cd328941dddf9aa2276c14a7f4f2a22e42"
         },
         {
           "differs": true,
           "outcome": "differs",
           "path": "experiments/003-tetris-aware-agent/probes/prechange_probe.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "4e8bba40cd0df5e47196f9d31962b8c76f749ba4d9d93afe3993d27bd689c7f8",
+          "worktree": "file",
+          "worktree_sha256": "b8ed086587818ba559fc297f76797deab93b8dd9200514785c66bf5b78dd9558"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/003-tetris-aware-agent/probes/predeclared_objective.earlier.json",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "e15fe4269cd9be7a5aca33434324d3488f3b16e5679d275bfef4f8b66adbd647",
+          "worktree": "file",
+          "worktree_sha256": "e15fe4269cd9be7a5aca33434324d3488f3b16e5679d275bfef4f8b66adbd647"
         },
         {
           "differs": true,
           "outcome": "differs",
           "path": "experiments/003-tetris-aware-agent/probes/predeclared_objective.json",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "33b7ecaa41df2c313a684f0aa6264ba7ebe56dff6a56704991e6f6df13328544",
+          "worktree": "file",
+          "worktree_sha256": "8577dd1dd841b0dd56a0e913567d19d59395cb399ea54f6961ea24d7ea457fe8"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-repair.json",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "d88c749e14dc240e94928ca65573a604e5865fdc54ea2bd0fbe71b84dcd57a6d",
+          "worktree": "file",
+          "worktree_sha256": "d88c749e14dc240e94928ca65573a604e5865fdc54ea2bd0fbe71b84dcd57a6d"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-replay-note.json",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "479abee7bb6c35ed33d0532452ecb8573f4e478dd229566d94f804e1c2a24a87",
+          "worktree": "file",
+          "worktree_sha256": "479abee7bb6c35ed33d0532452ecb8573f4e478dd229566d94f804e1c2a24a87"
+        },
+        {
+          "differs": true,
+          "outcome": "added",
+          "path": "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-transcription.json",
+          "published": "absent",
+          "published_sha256": null,
+          "worktree": "file",
+          "worktree_sha256": "33b7ecaa41df2c313a684f0aa6264ba7ebe56dff6a56704991e6f6df13328544"
         },
         {
           "differs": true,
           "outcome": "differs",
           "path": "experiments/003-tetris-aware-agent/result.json",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "03a9c60f33462bb94090b3162126805a6ce40709100b71b54241009b1bbfbe7e",
+          "worktree": "file",
+          "worktree_sha256": "bebf00832247e6f484dfb8cf212b3f6103464c9d06603085b12cfb96728f555a"
         },
         {
-          "differs": true,
-          "outcome": "differs",
+          "differs": false,
+          "outcome": "same",
           "path": "experiments/README.md",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "deba3725b6aaa681c8cbade942994359ae170e0231c91c7a1aaff70678ce0abe",
+          "worktree": "file",
+          "worktree_sha256": "deba3725b6aaa681c8cbade942994359ae170e0231c91c7a1aaff70678ce0abe"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "pyproject.toml",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "eb12de5b47a2a880c497460eec778a4927fc6d9789c6cb07732c9229e160d75d",
+          "worktree": "file",
+          "worktree_sha256": "eb12de5b47a2a880c497460eec778a4927fc6d9789c6cb07732c9229e160d75d"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "scripts/setup_engine.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "640f3cdd2de7f5cd46a55bf42274f11d05b2676761a5805f4106317febc20f5d",
+          "worktree": "file",
+          "worktree_sha256": "640f3cdd2de7f5cd46a55bf42274f11d05b2676761a5805f4106317febc20f5d"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "src/block_stack_ai/__init__.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "81ffd3a679d0ca136e729372efa76864131f5c4564090b128ae2581aa7e1294f",
+          "worktree": "file",
+          "worktree_sha256": "81ffd3a679d0ca136e729372efa76864131f5c4564090b128ae2581aa7e1294f"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "src/block_stack_ai/agents.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329",
+          "worktree": "file",
+          "worktree_sha256": "2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "src/block_stack_ai/cli.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "c9a6a9785404842b65933cb106825d7740f867b26031a31960f4c405970e2c91",
+          "worktree": "file",
+          "worktree_sha256": "c9a6a9785404842b65933cb106825d7740f867b26031a31960f4c405970e2c91"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "src/block_stack_ai/engine.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "6c6ababa0e527053892a5a77fecf58e7c5079473f6c0c51647c38c6fab0ac60b",
+          "worktree": "file",
+          "worktree_sha256": "6c6ababa0e527053892a5a77fecf58e7c5079473f6c0c51647c38c6fab0ac60b"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "src/block_stack_ai/heuristic.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
+          "worktree": "file",
+          "worktree_sha256": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea"
         },
         {
-          "differs": false,
-          "outcome": "same",
+          "differs": true,
+          "outcome": "differs",
           "path": "src/block_stack_ai/live.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "b03ef0f6919406469561ff3fb826dfa407a2d40a69eecd83b7120c41c191de81",
+          "worktree": "file",
+          "worktree_sha256": "8b258799b6c8c35982e89f8ef1566fca3e65601f3d20027719c7b1793b98c231"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "src/block_stack_ai/menu.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "9f073abb8164189f42b36b05097f82b48e759ad8ca76173c8ad7735d1e1fcb31",
+          "worktree": "file",
+          "worktree_sha256": "9f073abb8164189f42b36b05097f82b48e759ad8ca76173c8ad7735d1e1fcb31"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "src/block_stack_ai/pathaware.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
+          "worktree": "file",
+          "worktree_sha256": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "src/block_stack_ai/pieces.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
+          "worktree": "file",
+          "worktree_sha256": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "src/block_stack_ai/replay.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "04517705cc803eb4a9b68170a15e73bcef0d0ab329220949070eae576fef89ce",
+          "worktree": "file",
+          "worktree_sha256": "04517705cc803eb4a9b68170a15e73bcef0d0ab329220949070eae576fef89ce"
         },
         {
-          "differs": true,
-          "outcome": "differs",
+          "differs": false,
+          "outcome": "same",
           "path": "src/block_stack_ai/runner.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "77efc7bde9794983fb6108ef5c734adbf2314e7908e39dba5b4d73046a012774",
+          "worktree": "file",
+          "worktree_sha256": "77efc7bde9794983fb6108ef5c734adbf2314e7908e39dba5b4d73046a012774"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "src/block_stack_ai/tetris.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e",
+          "worktree": "file",
+          "worktree_sha256": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "tests/test_cli.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "decce003f597e195c8e5f2935206ab8ae8caf1ff7dfb95e02af94e7f1fa57074",
+          "worktree": "file",
+          "worktree_sha256": "decce003f597e195c8e5f2935206ab8ae8caf1ff7dfb95e02af94e7f1fa57074"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "tests/test_heuristic.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "3cb42cd057111998e3e26cb6d6b8ebaf9875ea2cb4de18728873b0df88dc6c01",
+          "worktree": "file",
+          "worktree_sha256": "3cb42cd057111998e3e26cb6d6b8ebaf9875ea2cb4de18728873b0df88dc6c01"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "tests/test_integration.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "babb55c786d6b4f9e6ea3267d3877f1101cf5496f51e9e435556cce01a3a1650",
+          "worktree": "file",
+          "worktree_sha256": "babb55c786d6b4f9e6ea3267d3877f1101cf5496f51e9e435556cce01a3a1650"
         },
         {
-          "differs": false,
-          "outcome": "same",
+          "differs": true,
+          "outcome": "differs",
           "path": "tests/test_live.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "c217994cbb6076f7282882a6e27a042e5cb11333323dc26d24f9148b759dde9c",
+          "worktree": "file",
+          "worktree_sha256": "e45771fc7b271ad07b9ea89aeb92987aa15be38c54f7cd59d05e46d4bae2b171"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "tests/test_pathaware.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "3a46c844b47cbc7df862ec8757186fc2f890aa43c280546a34fa3ea45720dc0a",
+          "worktree": "file",
+          "worktree_sha256": "3a46c844b47cbc7df862ec8757186fc2f890aa43c280546a34fa3ea45720dc0a"
         },
         {
           "differs": false,
           "outcome": "same",
           "path": "tests/test_tetris.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "5e693910540af4c2117a5073b6c6d66af6088d823b819185427a16f9d0c97eaa",
+          "worktree": "file",
+          "worktree_sha256": "5e693910540af4c2117a5073b6c6d66af6088d823b819185427a16f9d0c97eaa"
         },
         {
           "differs": true,
           "outcome": "differs",
           "path": "tests/test_unit.py",
           "published": "file",
-          "worktree": "file"
+          "published_sha256": "9eda53ed5ae24d045cdd37c57253349b800cd6aa854756517f1ee2fc71c2f189",
+          "worktree": "file",
+          "worktree_sha256": "ebae689ea94ce8c74e3b3f2e8dbcbd4fe66aa0f7e2a891dd758b3fb17b97a41f"
         }
       ],
       "declared_paths": [
@@ -918,69 +1022,74 @@
         "tests/test_integration.py",
         "tests/test_live.py"
       ],
-      "published_commit": "01c47550bb1ab3218d122b23ac9ac891fc693a22",
-      "published_tree": "2472db99e1134420c24ed983c96bcaf5a16c1051",
-      "pull_request_head": "01c47550bb1ab3218d122b23ac9ac891fc693a22",
+      "published_commit": "a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59",
+      "published_tree": "5108a42dce17b3b22708a539e6cd3be480a88779",
+      "pull_request_head": "a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59",
       "pull_request_ref": "refs/pull/11/head",
       "uncommitted_paths": [
+        "README.md",
         "experiments/003-tetris-aware-agent/notes.md",
         "experiments/003-tetris-aware-agent/probes/evidence.py",
         "experiments/003-tetris-aware-agent/probes/prechange_probe.py",
         "experiments/003-tetris-aware-agent/probes/predeclared_objective.json",
+        "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-transcription.json",
         "experiments/003-tetris-aware-agent/result.json",
-        "experiments/README.md",
-        "src/block_stack_ai/runner.py",
+        "src/block_stack_ai/live.py",
+        "tests/test_live.py",
         "tests/test_unit.py"
       ],
-      "worktree_head": "01c47550bb1ab3218d122b23ac9ac891fc693a22"
+      "worktree_head": "a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59"
     },
-    "captured_at": "2026-09-28T14:32:32.104886+00:00",
-    "command": "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/exp003-publication-run.txt",
+    "captured_at": "2026-09-29T00:12:35.645974+00:00",
+    "command": "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/exp003-pub-final2.txt",
     "compared_paths": "every path either tree tracks, plus this worktree's untracked files, derived from Git: a declared list can omit a path the task changes, and the review found that hole twice (first this record's own result.json, then any tracked path outside the list); 46 paths in the published tree at this round's run, listed one by one in capture.compared_paths with each side's state and whether the run found it differing, so the counts above are that list's own lengths",
-    "compared_paths_count": 46,
-    "counts_line": "declared_paths_compared_by_content=12 compared_paths_count=46 observed_differing_paths=8 observed_uncommitted_paths=8",
-    "note": "publication is service-owned and gated on an exact-tree approval, so the branch ref and the PR head move together: the probe asserts that the two refs name one commit and that the commit descends from the recorded base, and it compares the compared paths' content \u2014 per-file sha256 in the published clone beside this worktree's \u2014 instead of their presence. When the contents differ it requires the difference to be exactly the repair this worktree holds uncommitted, prints the differing paths and reports the earlier-publication state instead of calling the repair published; a published tree differing from a clean worktree fails. The run stores its own captured state in `capture` \u2014 the resolved refs and commits, the declared list, one outcome per compared path with each side's state and the run's differing decision, and this worktree's uncommitted paths \u2014 and quotes its own emitted lines rather than paraphrasing them: `publication_capture_line` is the `publication_capture` line verbatim, `state` is its state line verbatim and `counts_line` is its counts line verbatim. `evidence.py publication-record` reads every count the record cites out of that captured run's own lists (the compared-path count is the capture's length, the differing list is the capture's differing paths, the uncommitted count is the capture's uncommitted paths), reconstructs the state line from the record's own commit, compared-path count and differing-path list, compares the commit fields with the capture's own values, and requires `counts_line` to be the probe's line for the fields beside it \u2014 so a count regenerated with the shipped helpers, or a field left behind by an earlier run, is reported instead of certified",
-    "observed_differing_paths": 8,
-    "observed_uncommitted_paths": 8,
-    "observed_worktree_head": "01c47550bb1ab3218d122b23ac9ac891fc693a22",
-    "probe": "experiments/003-tetris-aware-agent/probes/evidence.py publication; evidence.py publication-record; evidence.py publication-record; evidence.py publication-record; evidence.py publication-record; evidence.py publication-record",
-    "publication_capture_line": "publication_capture={\"branch_head\": \"01c47550bb1ab3218d122b23ac9ac891fc693a22\", \"branch_ref\": \"refs/heads/rakazo/experiment-003-tetris-aware-agent\", \"compared_paths\": [{\"differs\": false, \"outcome\": \"same\", \"path\": \".github/workflows/ci.yml\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \".gitignore\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"AGENTS.md\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"README.md\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/000-connection/config.json\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/000-connection/notes.md\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/000-connection/result.json\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/001-greedy-heuristic/config.json\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/001-greedy-heuristic/notes.md\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/001-greedy-heuristic/result.json\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/002-path-aware-lookahead/config.json\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/002-path-aware-lookahead/notes.md\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/002-path-aware-lookahead/probes/evidence.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/002-path-aware-lookahead/probes/prechange_probe.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/002-path-aware-lookahead/result.json\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/003-tetris-aware-agent/config.json\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"experiments/003-tetris-aware-agent/notes.md\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"experiments/003-tetris-aware-agent/probes/evidence.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"experiments/003-tetris-aware-agent/probes/prechange_probe.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/003-tetris-aware-agent/probes/predeclared_objective.earlier.json\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"experiments/003-tetris-aware-agent/probes/predeclared_objective.json\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-repair.json\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-replay-note.json\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"experiments/003-tetris-aware-agent/result.json\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"experiments/README.md\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"pyproject.toml\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"scripts/setup_engine.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/__init__.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/agents.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/cli.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/engine.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/heuristic.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/live.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/menu.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/pathaware.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/pieces.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/replay.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"src/block_stack_ai/runner.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/tetris.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"tests/test_cli.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"tests/test_heuristic.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"tests/test_integration.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"tests/test_live.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"tests/test_pathaware.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"tests/test_tetris.py\", \"published\": \"file\", \"worktree\": \"file\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"tests/test_unit.py\", \"published\": \"file\", \"worktree\": \"file\"}], \"declared_paths\": [\"src/block_stack_ai/runner.py\", \"src/block_stack_ai/live.py\", \"src/block_stack_ai/agents.py\", \"src/block_stack_ai/tetris.py\", \"experiments/003-tetris-aware-agent/notes.md\", \"experiments/003-tetris-aware-agent/result.json\", \"experiments/003-tetris-aware-agent/probes/evidence.py\", \"experiments/003-tetris-aware-agent/probes/prechange_probe.py\", \"experiments/README.md\", \"tests/test_unit.py\", \"tests/test_integration.py\", \"tests/test_live.py\"], \"published_commit\": \"01c47550bb1ab3218d122b23ac9ac891fc693a22\", \"published_tree\": \"2472db99e1134420c24ed983c96bcaf5a16c1051\", \"pull_request_head\": \"01c47550bb1ab3218d122b23ac9ac891fc693a22\", \"pull_request_ref\": \"refs/pull/11/head\", \"uncommitted_paths\": [\"experiments/003-tetris-aware-agent/notes.md\", \"experiments/003-tetris-aware-agent/probes/evidence.py\", \"experiments/003-tetris-aware-agent/probes/prechange_probe.py\", \"experiments/003-tetris-aware-agent/probes/predeclared_objective.json\", \"experiments/003-tetris-aware-agent/result.json\", \"experiments/README.md\", \"src/block_stack_ai/runner.py\", \"tests/test_unit.py\"], \"worktree_head\": \"01c47550bb1ab3218d122b23ac9ac891fc693a22\"}",
-    "published_commit": "01c47550bb1ab3218d122b23ac9ac891fc693a22",
-    "published_tree": "2472db99e1134420c24ed983c96bcaf5a16c1051",
+    "compared_paths_count": 47,
+    "counts_line": "declared_paths_compared_by_content=12 compared_paths_count=47 observed_differing_paths=10 observed_uncommitted_paths=10",
+    "note": "publication is service-owned and gated on an exact-tree approval, so the branch ref and the PR head move together: the probe asserts that the two refs name one commit and that the commit descends from the recorded base, and it compares the compared paths' content — per-file sha256 in the published clone beside this worktree's — instead of their presence. When the contents differ it requires the difference to be exactly the repair this worktree holds uncommitted, prints the differing paths and reports the earlier-publication state instead of calling the repair published; a published tree differing from a clean worktree fails. The run stores its own captured state in `capture` — the resolved refs and commits, the declared list, one outcome per compared path with each side's state and the run's differing decision, and this worktree's uncommitted paths — and quotes its own emitted lines rather than paraphrasing them: `publication_capture_line` is the `publication_capture` line verbatim, `state` is its state line verbatim and `counts_line` is its counts line verbatim. `evidence.py publication-record` reads every count the record cites out of that captured run's own lists (the compared-path count is the capture's length, the differing list is the capture's differing paths, the uncommitted count is the capture's uncommitted paths), reconstructs the state line from the record's own commit, compared-path count and differing-path list, compares the commit fields with the capture's own values, and requires `counts_line` to be the probe's line for the fields beside it — so a count regenerated with the shipped helpers, or a field left behind by an earlier run, is reported instead of certified",
+    "observed_differing_paths": 10,
+    "observed_uncommitted_paths": 10,
+    "observed_worktree_head": "a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59",
+    "probe": "experiments/003-tetris-aware-agent/probes/evidence.py publication; evidence.py publication-record; the unit regressions that drive publication_record_derivation and the counts capture",
+    "publication_capture_line": "publication_capture={\"branch_head\": \"a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59\", \"branch_ref\": \"refs/heads/rakazo/experiment-003-tetris-aware-agent\", \"compared_paths\": [{\"differs\": false, \"outcome\": \"same\", \"path\": \".github/workflows/ci.yml\", \"published\": \"file\", \"published_sha256\": \"4185e28c0bbcc4495c3717ef784d1141c282d70a35cacb4c633ad3d367c6c90a\", \"worktree\": \"file\", \"worktree_sha256\": \"4185e28c0bbcc4495c3717ef784d1141c282d70a35cacb4c633ad3d367c6c90a\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \".gitignore\", \"published\": \"file\", \"published_sha256\": \"6c6c612e42315a24d2be9b7ddbf6d425e175199a9d86d80ab60be7eba1626cbb\", \"worktree\": \"file\", \"worktree_sha256\": \"6c6c612e42315a24d2be9b7ddbf6d425e175199a9d86d80ab60be7eba1626cbb\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"AGENTS.md\", \"published\": \"file\", \"published_sha256\": \"8edae270262292f8f6b863f2a36e40a53abed41a2e4ff0c68dc6c17f4e779c8d\", \"worktree\": \"file\", \"worktree_sha256\": \"8edae270262292f8f6b863f2a36e40a53abed41a2e4ff0c68dc6c17f4e779c8d\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"README.md\", \"published\": \"file\", \"published_sha256\": \"dbae0210bb7c5441bd6f2d45bde20e0561aade3cf4160996e0b7748799f476b4\", \"worktree\": \"file\", \"worktree_sha256\": \"7a4216b51c7b71df0ac61009126b51029ce5349d287096a70221f5971bbb6733\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/000-connection/config.json\", \"published\": \"file\", \"published_sha256\": \"6126a1d5092727ebed8688e368301a95f1ee5e0b4287dfecd260f2f88ac3c974\", \"worktree\": \"file\", \"worktree_sha256\": \"6126a1d5092727ebed8688e368301a95f1ee5e0b4287dfecd260f2f88ac3c974\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/000-connection/notes.md\", \"published\": \"file\", \"published_sha256\": \"fc1d7aef384ec725225c1a57b81a6c2d0e403e47174c8c64ce70fde248fba4fa\", \"worktree\": \"file\", \"worktree_sha256\": \"fc1d7aef384ec725225c1a57b81a6c2d0e403e47174c8c64ce70fde248fba4fa\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/000-connection/result.json\", \"published\": \"file\", \"published_sha256\": \"36ad6f1e200cd5a34c7fad492d260db30ab85e0731d2a8c4015f86adde62fd1d\", \"worktree\": \"file\", \"worktree_sha256\": \"36ad6f1e200cd5a34c7fad492d260db30ab85e0731d2a8c4015f86adde62fd1d\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/001-greedy-heuristic/config.json\", \"published\": \"file\", \"published_sha256\": \"303f66d00af0376ad6c22bcec7bc2a218503277500cfc71aea8a56a98ca91ea9\", \"worktree\": \"file\", \"worktree_sha256\": \"303f66d00af0376ad6c22bcec7bc2a218503277500cfc71aea8a56a98ca91ea9\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/001-greedy-heuristic/notes.md\", \"published\": \"file\", \"published_sha256\": \"1c2b838a60afe9b8843bce322f9df92bd3765f6d5042bb7b2c0474fe85fb9a18\", \"worktree\": \"file\", \"worktree_sha256\": \"1c2b838a60afe9b8843bce322f9df92bd3765f6d5042bb7b2c0474fe85fb9a18\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/001-greedy-heuristic/result.json\", \"published\": \"file\", \"published_sha256\": \"11da7b4b689508430fd28872282c29de355e9c57b3ed9d43156edc42d58b8df0\", \"worktree\": \"file\", \"worktree_sha256\": \"11da7b4b689508430fd28872282c29de355e9c57b3ed9d43156edc42d58b8df0\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/002-path-aware-lookahead/config.json\", \"published\": \"file\", \"published_sha256\": \"fa6de6c7d081374a19423295d6781c368b64e78537888251ca9db2606e9dade6\", \"worktree\": \"file\", \"worktree_sha256\": \"fa6de6c7d081374a19423295d6781c368b64e78537888251ca9db2606e9dade6\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/002-path-aware-lookahead/notes.md\", \"published\": \"file\", \"published_sha256\": \"bb1cfa2e8859ef8ef77afd9ea8d614c90a0bc808b2f14363464601c8274aa504\", \"worktree\": \"file\", \"worktree_sha256\": \"bb1cfa2e8859ef8ef77afd9ea8d614c90a0bc808b2f14363464601c8274aa504\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/002-path-aware-lookahead/probes/evidence.py\", \"published\": \"file\", \"published_sha256\": \"b298d5debce549cced63d5d487916c634f79d5faa1954afe4ab7ba3cde90c8a5\", \"worktree\": \"file\", \"worktree_sha256\": \"b298d5debce549cced63d5d487916c634f79d5faa1954afe4ab7ba3cde90c8a5\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/002-path-aware-lookahead/probes/prechange_probe.py\", \"published\": \"file\", \"published_sha256\": \"8337b7c6614035e217c12e26c479cc04660488b87d46e6d93e307290983539b8\", \"worktree\": \"file\", \"worktree_sha256\": \"8337b7c6614035e217c12e26c479cc04660488b87d46e6d93e307290983539b8\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/002-path-aware-lookahead/result.json\", \"published\": \"file\", \"published_sha256\": \"c48715c3d67b7357380e7db717de25d90056067a3a50ac15420521a22d14cfca\", \"worktree\": \"file\", \"worktree_sha256\": \"c48715c3d67b7357380e7db717de25d90056067a3a50ac15420521a22d14cfca\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/003-tetris-aware-agent/config.json\", \"published\": \"file\", \"published_sha256\": \"a9b20935a6892bbc6cf8e4ab433ef38573d66c0fda45108ee74853e347a3d7b0\", \"worktree\": \"file\", \"worktree_sha256\": \"a9b20935a6892bbc6cf8e4ab433ef38573d66c0fda45108ee74853e347a3d7b0\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"experiments/003-tetris-aware-agent/notes.md\", \"published\": \"file\", \"published_sha256\": \"4e5312183b5afd34138976f029540c10b7a512ac48fd546edb6a6a3b445a71bb\", \"worktree\": \"file\", \"worktree_sha256\": \"a5e7cdd843b56205937c7566bf5979def01a637aa86c15360b1dce8279b0112f\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"experiments/003-tetris-aware-agent/probes/evidence.py\", \"published\": \"file\", \"published_sha256\": \"fb352797d6c60033a52c252deb2322ceb10283f002120bda1c58b6fa9c9691e8\", \"worktree\": \"file\", \"worktree_sha256\": \"e742c7c3c4e3bc0bba49339ffca506cd328941dddf9aa2276c14a7f4f2a22e42\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"experiments/003-tetris-aware-agent/probes/prechange_probe.py\", \"published\": \"file\", \"published_sha256\": \"4e8bba40cd0df5e47196f9d31962b8c76f749ba4d9d93afe3993d27bd689c7f8\", \"worktree\": \"file\", \"worktree_sha256\": \"b8ed086587818ba559fc297f76797deab93b8dd9200514785c66bf5b78dd9558\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/003-tetris-aware-agent/probes/predeclared_objective.earlier.json\", \"published\": \"file\", \"published_sha256\": \"e15fe4269cd9be7a5aca33434324d3488f3b16e5679d275bfef4f8b66adbd647\", \"worktree\": \"file\", \"worktree_sha256\": \"e15fe4269cd9be7a5aca33434324d3488f3b16e5679d275bfef4f8b66adbd647\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"experiments/003-tetris-aware-agent/probes/predeclared_objective.json\", \"published\": \"file\", \"published_sha256\": \"33b7ecaa41df2c313a684f0aa6264ba7ebe56dff6a56704991e6f6df13328544\", \"worktree\": \"file\", \"worktree_sha256\": \"8577dd1dd841b0dd56a0e913567d19d59395cb399ea54f6961ea24d7ea457fe8\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-repair.json\", \"published\": \"file\", \"published_sha256\": \"d88c749e14dc240e94928ca65573a604e5865fdc54ea2bd0fbe71b84dcd57a6d\", \"worktree\": \"file\", \"worktree_sha256\": \"d88c749e14dc240e94928ca65573a604e5865fdc54ea2bd0fbe71b84dcd57a6d\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-replay-note.json\", \"published\": \"file\", \"published_sha256\": \"479abee7bb6c35ed33d0532452ecb8573f4e478dd229566d94f804e1c2a24a87\", \"worktree\": \"file\", \"worktree_sha256\": \"479abee7bb6c35ed33d0532452ecb8573f4e478dd229566d94f804e1c2a24a87\"}, {\"differs\": true, \"outcome\": \"added\", \"path\": \"experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-transcription.json\", \"published\": \"absent\", \"published_sha256\": null, \"worktree\": \"file\", \"worktree_sha256\": \"33b7ecaa41df2c313a684f0aa6264ba7ebe56dff6a56704991e6f6df13328544\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"experiments/003-tetris-aware-agent/result.json\", \"published\": \"file\", \"published_sha256\": \"03a9c60f33462bb94090b3162126805a6ce40709100b71b54241009b1bbfbe7e\", \"worktree\": \"file\", \"worktree_sha256\": \"bebf00832247e6f484dfb8cf212b3f6103464c9d06603085b12cfb96728f555a\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"experiments/README.md\", \"published\": \"file\", \"published_sha256\": \"deba3725b6aaa681c8cbade942994359ae170e0231c91c7a1aaff70678ce0abe\", \"worktree\": \"file\", \"worktree_sha256\": \"deba3725b6aaa681c8cbade942994359ae170e0231c91c7a1aaff70678ce0abe\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"pyproject.toml\", \"published\": \"file\", \"published_sha256\": \"eb12de5b47a2a880c497460eec778a4927fc6d9789c6cb07732c9229e160d75d\", \"worktree\": \"file\", \"worktree_sha256\": \"eb12de5b47a2a880c497460eec778a4927fc6d9789c6cb07732c9229e160d75d\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"scripts/setup_engine.py\", \"published\": \"file\", \"published_sha256\": \"640f3cdd2de7f5cd46a55bf42274f11d05b2676761a5805f4106317febc20f5d\", \"worktree\": \"file\", \"worktree_sha256\": \"640f3cdd2de7f5cd46a55bf42274f11d05b2676761a5805f4106317febc20f5d\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/__init__.py\", \"published\": \"file\", \"published_sha256\": \"81ffd3a679d0ca136e729372efa76864131f5c4564090b128ae2581aa7e1294f\", \"worktree\": \"file\", \"worktree_sha256\": \"81ffd3a679d0ca136e729372efa76864131f5c4564090b128ae2581aa7e1294f\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/agents.py\", \"published\": \"file\", \"published_sha256\": \"2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329\", \"worktree\": \"file\", \"worktree_sha256\": \"2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/cli.py\", \"published\": \"file\", \"published_sha256\": \"c9a6a9785404842b65933cb106825d7740f867b26031a31960f4c405970e2c91\", \"worktree\": \"file\", \"worktree_sha256\": \"c9a6a9785404842b65933cb106825d7740f867b26031a31960f4c405970e2c91\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/engine.py\", \"published\": \"file\", \"published_sha256\": \"6c6ababa0e527053892a5a77fecf58e7c5079473f6c0c51647c38c6fab0ac60b\", \"worktree\": \"file\", \"worktree_sha256\": \"6c6ababa0e527053892a5a77fecf58e7c5079473f6c0c51647c38c6fab0ac60b\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/heuristic.py\", \"published\": \"file\", \"published_sha256\": \"7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea\", \"worktree\": \"file\", \"worktree_sha256\": \"7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"src/block_stack_ai/live.py\", \"published\": \"file\", \"published_sha256\": \"b03ef0f6919406469561ff3fb826dfa407a2d40a69eecd83b7120c41c191de81\", \"worktree\": \"file\", \"worktree_sha256\": \"8b258799b6c8c35982e89f8ef1566fca3e65601f3d20027719c7b1793b98c231\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/menu.py\", \"published\": \"file\", \"published_sha256\": \"9f073abb8164189f42b36b05097f82b48e759ad8ca76173c8ad7735d1e1fcb31\", \"worktree\": \"file\", \"worktree_sha256\": \"9f073abb8164189f42b36b05097f82b48e759ad8ca76173c8ad7735d1e1fcb31\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/pathaware.py\", \"published\": \"file\", \"published_sha256\": \"c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884\", \"worktree\": \"file\", \"worktree_sha256\": \"c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/pieces.py\", \"published\": \"file\", \"published_sha256\": \"434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad\", \"worktree\": \"file\", \"worktree_sha256\": \"434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/replay.py\", \"published\": \"file\", \"published_sha256\": \"04517705cc803eb4a9b68170a15e73bcef0d0ab329220949070eae576fef89ce\", \"worktree\": \"file\", \"worktree_sha256\": \"04517705cc803eb4a9b68170a15e73bcef0d0ab329220949070eae576fef89ce\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/runner.py\", \"published\": \"file\", \"published_sha256\": \"77efc7bde9794983fb6108ef5c734adbf2314e7908e39dba5b4d73046a012774\", \"worktree\": \"file\", \"worktree_sha256\": \"77efc7bde9794983fb6108ef5c734adbf2314e7908e39dba5b4d73046a012774\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"src/block_stack_ai/tetris.py\", \"published\": \"file\", \"published_sha256\": \"3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e\", \"worktree\": \"file\", \"worktree_sha256\": \"3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"tests/test_cli.py\", \"published\": \"file\", \"published_sha256\": \"decce003f597e195c8e5f2935206ab8ae8caf1ff7dfb95e02af94e7f1fa57074\", \"worktree\": \"file\", \"worktree_sha256\": \"decce003f597e195c8e5f2935206ab8ae8caf1ff7dfb95e02af94e7f1fa57074\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"tests/test_heuristic.py\", \"published\": \"file\", \"published_sha256\": \"3cb42cd057111998e3e26cb6d6b8ebaf9875ea2cb4de18728873b0df88dc6c01\", \"worktree\": \"file\", \"worktree_sha256\": \"3cb42cd057111998e3e26cb6d6b8ebaf9875ea2cb4de18728873b0df88dc6c01\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"tests/test_integration.py\", \"published\": \"file\", \"published_sha256\": \"babb55c786d6b4f9e6ea3267d3877f1101cf5496f51e9e435556cce01a3a1650\", \"worktree\": \"file\", \"worktree_sha256\": \"babb55c786d6b4f9e6ea3267d3877f1101cf5496f51e9e435556cce01a3a1650\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"tests/test_live.py\", \"published\": \"file\", \"published_sha256\": \"c217994cbb6076f7282882a6e27a042e5cb11333323dc26d24f9148b759dde9c\", \"worktree\": \"file\", \"worktree_sha256\": \"e45771fc7b271ad07b9ea89aeb92987aa15be38c54f7cd59d05e46d4bae2b171\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"tests/test_pathaware.py\", \"published\": \"file\", \"published_sha256\": \"3a46c844b47cbc7df862ec8757186fc2f890aa43c280546a34fa3ea45720dc0a\", \"worktree\": \"file\", \"worktree_sha256\": \"3a46c844b47cbc7df862ec8757186fc2f890aa43c280546a34fa3ea45720dc0a\"}, {\"differs\": false, \"outcome\": \"same\", \"path\": \"tests/test_tetris.py\", \"published\": \"file\", \"published_sha256\": \"5e693910540af4c2117a5073b6c6d66af6088d823b819185427a16f9d0c97eaa\", \"worktree\": \"file\", \"worktree_sha256\": \"5e693910540af4c2117a5073b6c6d66af6088d823b819185427a16f9d0c97eaa\"}, {\"differs\": true, \"outcome\": \"differs\", \"path\": \"tests/test_unit.py\", \"published\": \"file\", \"published_sha256\": \"9eda53ed5ae24d045cdd37c57253349b800cd6aa854756517f1ee2fc71c2f189\", \"worktree\": \"file\", \"worktree_sha256\": \"ebae689ea94ce8c74e3b3f2e8dbcbd4fe66aa0f7e2a891dd758b3fb17b97a41f\"}], \"declared_paths\": [\"src/block_stack_ai/runner.py\", \"src/block_stack_ai/live.py\", \"src/block_stack_ai/agents.py\", \"src/block_stack_ai/tetris.py\", \"experiments/003-tetris-aware-agent/notes.md\", \"experiments/003-tetris-aware-agent/result.json\", \"experiments/003-tetris-aware-agent/probes/evidence.py\", \"experiments/003-tetris-aware-agent/probes/prechange_probe.py\", \"experiments/README.md\", \"tests/test_unit.py\", \"tests/test_integration.py\", \"tests/test_live.py\"], \"published_commit\": \"a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59\", \"published_tree\": \"5108a42dce17b3b22708a539e6cd3be480a88779\", \"pull_request_head\": \"a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59\", \"pull_request_ref\": \"refs/pull/11/head\", \"uncommitted_paths\": [\"README.md\", \"experiments/003-tetris-aware-agent/notes.md\", \"experiments/003-tetris-aware-agent/probes/evidence.py\", \"experiments/003-tetris-aware-agent/probes/prechange_probe.py\", \"experiments/003-tetris-aware-agent/probes/predeclared_objective.json\", \"experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-transcription.json\", \"experiments/003-tetris-aware-agent/result.json\", \"src/block_stack_ai/live.py\", \"tests/test_live.py\", \"tests/test_unit.py\"], \"worktree_head\": \"a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59\"}",
+    "published_commit": "a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59",
+    "published_tree": "5108a42dce17b3b22708a539e6cd3be480a88779",
     "pull_request": 11,
-    "pull_request_head": "01c47550bb1ab3218d122b23ac9ac891fc693a22",
+    "pull_request_head": "a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59",
     "pull_request_url": "https://github.com/HarmonChew/fallgorithm/pull/11",
-    "repaired_paths": "the 12 files this experiment adds or repairs: the runner's metric and objective identity, the live path that records them, the agents module, the Tetris objective, this record and the notes, both probes, the experiments index and the two suites and the live suite (src/block_stack_ai/runner.py, src/block_stack_ai/live.py, src/block_stack_ai/agents.py, src/block_stack_ai/tetris.py, experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/result.json, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/README.md, tests/test_unit.py, tests/test_integration.py, tests/test_live.py); compared per file by sha256, since presence cannot tell a published repair from an earlier publication containing the same names. `repaired_paths_compared_by_content` is not transcribed: it is the `declared_paths_compared_by_content` value of the run's own counts line, cited verbatim in counts_line, and `publication-record` requires it to be this list's own length \u2014 the earlier record said 11 while experiments/README.md made the declaration 12. This record is in the list: the review found it missing, so a state where every other compared path matched but the reported result was still the previous round's would have been certified as published",
+    "repaired_paths": "the 12 files this experiment adds or repairs: the runner's metric and objective identity, the live path that records them, the agents module, the Tetris objective, this record and the notes, both probes, the experiments index and the two suites and the live suite (src/block_stack_ai/runner.py, src/block_stack_ai/live.py, src/block_stack_ai/agents.py, src/block_stack_ai/tetris.py, experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/result.json, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/README.md, tests/test_unit.py, tests/test_integration.py, tests/test_live.py); compared per file by sha256, since presence cannot tell a published repair from an earlier publication containing the same names. `repaired_paths_compared_by_content` is not transcribed: it is the `declared_paths_compared_by_content` value of the run's own counts line, cited verbatim in counts_line, and `publication-record` requires it to be this list's own length — the earlier record said 11 while experiments/README.md made the declaration 12. This record is in the list: the review found it missing, so a state where every other compared path matched but the reported result was still the previous round's would have been certified as published",
     "repaired_paths_compared_by_content": 12,
     "repaired_paths_differing_from_this_worktree": [
+      "README.md",
       "experiments/003-tetris-aware-agent/notes.md",
       "experiments/003-tetris-aware-agent/probes/evidence.py",
       "experiments/003-tetris-aware-agent/probes/prechange_probe.py",
       "experiments/003-tetris-aware-agent/probes/predeclared_objective.json",
+      "experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-transcription.json",
       "experiments/003-tetris-aware-agent/result.json",
-      "experiments/README.md",
-      "src/block_stack_ai/runner.py",
+      "src/block_stack_ai/live.py",
+      "tests/test_live.py",
       "tests/test_unit.py"
     ],
-    "state": "the refs name an earlier publication: 01c47550bb1ab3218d122b23ac9ac891fc693a22; 8 of 46 compared paths differ from this worktree (experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/003-tetris-aware-agent/probes/predeclared_objective.json, experiments/003-tetris-aware-agent/result.json, experiments/README.md, src/block_stack_ai/runner.py, tests/test_unit.py), and this worktree holds the unpublished repair",
-    "states": "each compared path's state is read once per side \u2014 a file with its sha256, a directory, or absent \u2014 and reported in one of the states a comparison has: identical, differing, deleted from this worktree while the publication tracks it, added here since the publication, present in neither tree, or not a file on one side (a directory at a compared path, which an untracked directory entry produces). No branch reads a digest its state does not have. The outcome and the run's differing decision are recorded per path in capture.compared_paths, and the report, the state line and the captured lists all read that one decision"
+    "state": "the refs name an earlier publication: a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59; 10 of 47 compared paths differ from this worktree (README.md, experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/003-tetris-aware-agent/probes/predeclared_objective.json, experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-transcription.json, experiments/003-tetris-aware-agent/result.json, src/block_stack_ai/live.py, tests/test_live.py, tests/test_unit.py), and this worktree holds the unpublished repair",
+    "states": "each compared path's state is read once per side — a file with its sha256, a directory, or absent — and reported in one of the states a comparison has: identical, differing, deleted from this worktree while the publication tracks it, added here since the publication, present in neither tree, or not a file on one side (a directory at a compared path, which an untracked directory entry produces). No branch reads a digest its state does not have. The outcome and the run's differing decision are recorded per path in capture.compared_paths, and the report, the state line and the captured lists all read that one decision"
   },
   "record_format_versions": {
     "field": "format_version",
     "identity": "the objective's source identity is newer than the objective section itself, so it is gated by the version separately: the version-4 writer recorded the objective without it and the version-2 writer recorded no objective at all, so both keep verifying, and an identity a record does carry is compared at every version",
     "piece_count": "the placed-piece count is gated by the same rule because deleting it from a suite record left _summarize re-deriving a summary from episodes with no piece key and raising KeyError: 'pieces'; _summarize now reads the key from every episode and omits the metric for a record that carries none, and _compare_summary gives the piece metric the same presence rule as the histogram: required at versions 3, 4 and 5 on every episode and every agent summary, and all-or-nothing across the complete record before them",
-    "pre_change_measurement": "on the tree this repair replaces (01c47550) four of this round's five rows are failure-before values: prechange_probe.py predeclaration_identity accepts a helper changed after the capture (exit 1 with that value), piece_summary_schema accepts the stripped record (verify_run returned []), remote_main_durability rejects an observed remote main that contains the recorded base (AssertionError: ('bbbb\u2026', 'd83a5bc\u2026')), and publication_count_capture accepts counts regenerated with the shipped helpers. base_commit_record is the new-capability row and is a pin; its pre-change subject is the retained object's own mixed state, and the substitute is this tree's check rejecting that object, both pasted in notes.md item 6.",
-    "regression": "objective_identity; objective_required_when_versioned; the histogram and piece-count cases in test_unit.py; and this round's five: test_predeclaration_covers_every_module_of_the_objective_identity, test_verification_rejects_a_mixed_piece_count_schema, test_publication_record_counts_come_from_the_captured_run, test_remote_main_check_holds_when_main_has_moved_on, test_base_commit_record_rejects_a_snapshot_that_mixes_runs",
+    "pre_change_measurement": "on the tree this repair replaces (01c47550) four of this round's five rows are failure-before values: prechange_probe.py predeclaration_identity accepts a helper changed after the capture (exit 1 with that value), piece_summary_schema accepts the stripped record (verify_run returned []), remote_main_durability rejects an observed remote main that contains the recorded base (AssertionError: ('bbbb…', 'd83a5bc…')), and publication_count_capture accepts counts regenerated with the shipped helpers. base_commit_record is the new-capability row and is a pin; its pre-change subject is the retained object's own mixed state, and the substitute is this tree's check rejecting that object, both pasted in notes.md item 6.",
+    "regression": "objective_identity; objective_required_when_versioned; the histogram and piece-count cases in test_unit.py; and this round's five: test_predeclaration_covers_every_module_of_the_objective_identity, test_verification_rejects_a_mixed_piece_count_schema, test_publication_record_counts_come_from_the_captured_run, test_remote_main_check_holds_when_main_has_moved_on, test_base_commit_record_rejects_a_snapshot_that_mixes_runs; and this round's five: test_publication_record_derives_each_capture_entry_from_its_recorded_states, test_base_commit_record_requires_the_captured_worktree_ancestry_command, test_predeclaration_covers_every_module_of_the_objective_identity (identity now required), test_live_tetris_session_snapshots_the_objective_at_begin (integration), and the four prechange_probe.py ids publication_record_derivation, base_worktree_ancestry, live_objective_snapshot, predeclaration_record_identity",
     "reused": "the version numbers are reused, not a schema history: the same number was written by writers that emitted different sections, so a version says which sections the verifier must require and not which sections a record of that number happens to carry. The base commit's writer (d83a5bc, PR #9's merge) emitted the placed-piece count at version 1 for a scripted episode and at version 2 for a suite, which re-running it on experiments/000-connection, 001 and 002 reproduces below; the writer older still wrote the same numbers without that key, which is the shape the version-1 compatibility row pins. This experiment's own earlier rounds also wrote suites at version 2. A legacy version's sections may therefore be absent and are compared when present; the current version's must be present.",
-    "unchanged": "the weights, the agents and every recorded value are unchanged: the sections each writer emits, and the versions it emits them at, are the same as before this repair \u2014 only the objective's identity is added, and the version number the writer records moves from 4 to 5 so that the section's presence is gated",
+    "unchanged": "the weights, the agents and every recorded value are unchanged: the sections each writer emits, and the versions it emits them at, are the same as before this repair — only the objective's identity is added, and the version number the writer records moves from 4 to 5 so that the section's presence is gated",
     "versions": {
-      "1": "a scripted episode; every section added since \u2014 the placed-piece count, the clear-size histogram and the declared objective \u2014 may be absent and is compared when present",
+      "1": "a scripted episode; every section added since — the placed-piece count, the clear-size histogram and the declared objective — may be absent and is compared when present",
       "2": "a suite; the same, with a present histogram required to be complete across the record (every episode and every agent summary), and an objective in a suite without the Tetris agent still rejected",
       "3": "a scripted episode the current writer emits; it must carry pieces_placed and clear_sizes",
-      "4": "a suite the prior writer emitted; it must carry pieces_placed and clear_sizes on every episode, clear_sizes on every agent summary, and objective when its configuration uses the Tetris agent \u2014 every section that writer wrote, except the objective's source identity, which it never recorded",
+      "4": "a suite the prior writer emitted; it must carry pieces_placed and clear_sizes on every episode, clear_sizes on every agent summary, and objective when its configuration uses the Tetris agent — every section that writer wrote, except the objective's source identity, which it never recorded",
       "5": "a suite the current writer emits; it must carry all of the above, including the objective's source identity"
     },
-    "why": "the verifier used to infer 'legacy record' from an absent optional section, which is the same JSON as a section deleted after the record was written: deleting `objective`, `clear_sizes` or `pieces_placed` from a newly written record left it verifying under a schema weaker than the writer's. The version is the marker that distinguishes the two cases for the versions the current writer emits."
+    "why": "the verifier used to infer 'legacy record' from an absent optional section, which is the same JSON as a section deleted after the record was written: deleting `objective`, `clear_sizes` or `pieces_placed` from a newly written record left it verifying under a schema weaker than the writer's. The version is the marker that distinguishes the two cases for the versions the current writer emits.",
+    "this_round": "five repairs of one shape, each deriving its claim from the captured evidence: the publication snapshot's per-path outcome and differing flag are recomputed from the recorded states and digests, the objective capture is a genuine pre-run artifact whose cited record must carry a matching identity, the base snapshot requires its captured worktree-ancestry command with exit 0, the README's version prose matches the runner's constants (3 scripted / 4 prior suite / 5 current suite), and every writer records the source identity the interpreter loaded"
   },
   "record_reproduces_retained_rows": {
     "compared": [
@@ -990,23 +1099,23 @@
       "episodes_by_agent_seed"
     ],
     "equal": true,
-    "fresh_record": "runs/20260928T142239844188Z-6a79b233/run.json",
-    "note": "this round's fresh record equals the retained configuration, the retained per-agent summary, the retained stopping counts and all 20 distilled per-episode rows, so the published figures above \u2014 9128 lines over 10 lookahead games with 2 Tetrises, 3495 lines over 10 tetris games with 10 Tetrises, and every rate computed from them \u2014 are reproduced by this round's run rather than carried over. The four clear-size totals and the two stopping reasons are unchanged, including the single frame-cap stop, which is a configured safety stop and not a game over"
+    "fresh_record": "runs/20260928T153237203272Z-57406741/run.json",
+    "note": "this round's fresh record equals the retained configuration, the retained per-agent summary, the retained stopping counts and all 20 distilled per-episode rows, so the published figures above — 9128 lines over 10 lookahead games with 2 Tetrises, 3495 lines over 10 tetris games with 10 Tetrises, and every rate computed from them — are reproduced by this round's run rather than carried over. The four clear-size totals and the two stopping reasons are unchanged, including the single frame-cap stop, which is a configured safety stop and not a game over"
   },
-  "repaired_tree_suite_wall_clock_seconds": 133.8,
+  "repaired_tree_suite_wall_clock_seconds": 132.7,
   "repairs": {
     "evidence": "notes.md item 1's table rows and item 6's pasted stdout; experiments/003-tetris-aware-agent/probes/prechange_probe.py ids predeclaration_identity, piece_summary_schema, publication_count_capture, remote_main_durability and base_commit_record",
     "findings": [
       {
         "counterexample": "the capture hashed only the declaring module (TETRIS_MODULE) while the recorded objective identity covers tetris.py plus heuristic.py, pathaware.py and pieces.py, so a change to a helper after the capture still passed",
-        "fix": "the capture records the identity's whole set \u2014 discovered from the objective's own namespace through runner._objective_sources(), the same closure the record's objective.sources enumerates \u2014 and the check requires it to equal the current modules and, when the cited record's version carries one, the identity that run wrote, with the declaring module's digest required to be the identity's entry for it",
+        "fix": "the capture records the identity's whole set — discovered from the objective's own namespace through runner._objective_sources(), the same closure the record's objective.sources enumerates — and the check requires it to equal the current modules and, when the cited record's version carries one, the identity that run wrote, with the declaring module's digest required to be the identity's entry for it",
         "place": "probes/evidence.py check_predeclaration / predeclare",
-        "pre_change_value": "01c47550: exit 1, 'the tree accepted a change to block_stack_ai.heuristic after the capture: the capture covers only the declaring module \u2026'. Same value on dc3c29c and fbe21e1; the base commit predates the experiment and reports no subject",
+        "pre_change_value": "01c47550: exit 1, 'the tree accepted a change to block_stack_ai.heuristic after the capture: the capture covers only the declaring module …'. Same value on dc3c29c and fbe21e1; the base commit predates the experiment and reports no subject",
         "regression": "tests/test_unit.py::test_predeclaration_covers_every_module_of_the_objective_identity (mutates each covered module through a copy of its file and requires rejection, with the declaring module's digest still equal); prechange_probe.py predeclaration_identity",
         "review_thread": "PRRT_kwDOUm-m7M6mr856"
       },
       {
-        "counterexample": "the summary's piece metric was selected from the first episode of each group, so a record with pieces_placed stripped from each agent's first episode and from that agent's summary \u2014 while the later episodes kept the counts \u2014 verified with the metric dropped, a mixed legacy schema no writer emits",
+        "counterexample": "the summary's piece metric was selected from the first episode of each group, so a record with pieces_placed stripped from each agent's first episode and from that agent's summary — while the later episodes kept the counts — verified with the metric dropped, a mixed legacy schema no writer emits",
         "fix": "_piece_metric_field reads the key from every episode of the record (the current pieces_placed, the legacy pieces, or neither), so a mixed record is reported instead of summarised; _compare_summary gives the piece metric the same presence rule as the clear-size histogram (required at versions 3, 4 and 5, all-or-nothing before them), so a summary that lost the count its episodes all carry is reported",
         "place": "src/block_stack_ai/runner.py _summarize / _compare_summary",
         "pre_change_value": "01c47550: exit 1, accepted the stripped record (verify_run returned []); dc3c29c, fbe21e1 and the base commit: exit 1, KeyError('pieces') from the same first-episode selection",
@@ -1014,8 +1123,8 @@
         "review_thread": "PRRT_kwDOUm-m7M6mr86E"
       },
       {
-        "counterexample": "the record's counts were compared with other values the shipped helpers derive \u2014 the differing count against its list's length, the state line against the counts beside it \u2014 and the record kept only prose about the compared paths, so changing compared_paths_count and regenerating the derived lines still verified",
-        "fix": "the probe stores the run's captured state as one line \u2014 the declared list, one outcome per compared path (with each side's state and the run's own differing decision) and this worktree's uncommitted paths \u2014 and the check reads every count the record cites out of those captured lists, requires the quoted capture line to be the line for the capture beside it, and requires the commit fields to be the captured run's own values",
+        "counterexample": "the record's counts were compared with other values the shipped helpers derive — the differing count against its list's length, the state line against the counts beside it — and the record kept only prose about the compared paths, so changing compared_paths_count and regenerating the derived lines still verified",
+        "fix": "the probe stores the run's captured state as one line — the declared list, one outcome per compared path (with each side's state and the run's own differing decision) and this worktree's uncommitted paths — and the check reads every count the record cites out of those captured lists, requires the quoted capture line to be the line for the capture beside it, and requires the commit fields to be the captured run's own values",
         "place": "probes/evidence.py check_publication_record",
         "pre_change_value": "01c47550: exit 1, accepted the record whose count was regenerated with its own helpers ('every field of the snapshot is consistent with that one run'); dc3c29c and fbe21e1 have no check_publication_record, so the row reports no subject there",
         "regression": "tests/test_unit.py::test_publication_record_counts_come_from_the_captured_run (regenerated count, regenerated differing list, drifted capture); the extended offline test proves the record's lists are a driven run's own emitted capture; prechange_probe.py publication_count_capture",
@@ -1023,26 +1132,26 @@
       },
       {
         "counterexample": "the probe required the current remote main tip to equal the fixed base commit d83a5bc, so the evidence file necessarily failed once any later commit reached main, including this experiment's own merge",
-        "fix": "the probe asserts what is durable \u2014 the recorded base resolves to one commit with one tree, the observed remote main tip contains it (the base is an ancestor of the tip or the tip itself), and the worktree HEAD descends from the base \u2014 reading the tip, its tree and the base's ancestry from a full clone (ancestry cannot be tested against a shallow one), and reports the observed tip and the recorded base beside each other on one state line",
+        "fix": "the probe asserts what is durable — the recorded base resolves to one commit with one tree, the observed remote main tip contains it (the base is an ancestor of the tip or the tip itself), and the worktree HEAD descends from the base — reading the tip, its tree and the base's ancestry from a full clone (ancestry cannot be tested against a shallow one), and reports the observed tip and the recorded base beside each other on one state line",
         "place": "probes/evidence.py check_remote_main",
-        "pre_change_value": "01c47550: exit 1, 'the tree rejected an observed remote main that contains the recorded base: (bbbb\u2026, d83a5bc\u2026)'. Same value on dc3c29c and fbe21e1; the base commit predates the experiment",
+        "pre_change_value": "01c47550: exit 1, 'the tree rejected an observed remote main that contains the recorded base: (bbbb…, d83a5bc…)'. Same value on dc3c29c and fbe21e1; the base commit predates the experiment",
         "regression": "tests/test_unit.py::test_remote_main_check_holds_when_main_has_moved_on (main ahead and containing the base, main equal with a mismatched tree, main not containing the base, a HEAD that does not descend); prechange_probe.py remote_main_durability",
         "review_thread": "PRRT_kwDOUm-m7M6mr86V"
       },
       {
         "counterexample": "the retained object mixed states: its captured rev-parse HEAD output and conclusion named dc3c29c449, its worktree_head field named fbe21e13, and the notes named ed8830a1, so no run produced it",
-        "fix": "the whole object is regenerated from one run at this round's frozen tree: each named field is the output of a captured command carrying the role that produced it, the object quotes the run's own base_capture line, the state line is reconstructed from the fields by the same helper the probe prints it with, and every commit id in the object \u2014 prose included \u2014 must be one the run observed. PR #9's provenance, which is not a value this run observed, moved to the sibling base_commit_provenance object; the notes' base prose names the same state",
+        "fix": "the whole object is regenerated from one run at this round's frozen tree: each named field is the output of a captured command carrying the role that produced it, the object quotes the run's own base_capture line, the state line is reconstructed from the fields by the same helper the probe prints it with, and every commit id in the object — prose included — must be one the run observed. PR #9's provenance, which is not a value this run observed, moved to the sibling base_commit_provenance object; the notes' base prose names the same state",
         "place": "experiments/003-tetris-aware-agent/result.json base_commit",
-        "pre_change_value": "new capability: the check does not exist before this round, so the row is a pin and is not counted as a failure-before. The pre-change value it reports is the artifact: 01c47550's base_commit.worktree_head is fbe21e13\u2026 while the rev-parse HEAD output captured inside the same object is dc3c29c4\u2026, and nothing in that tree reports it (dc3c29c and fbe21e1 name the same commit in both places). Executed substitute: this tree's check rejects that object (exit 1, 'base_commit.capture is not the recorded run this check describes: None') and a copy of this round's record whose field disagrees with its captured output (exit 1, 'base_commit.worktree_head is d83a5bc\u2026 but the captured command for \"this worktree's HEAD\" printed 01c47550\u2026'); prechange_probe.py base_commit_record",
+        "pre_change_value": "new capability: the check does not exist before this round, so the row is a pin and is not counted as a failure-before. The pre-change value it reports is the artifact: 01c47550's base_commit.worktree_head is fbe21e13… while the rev-parse HEAD output captured inside the same object is dc3c29c4…, and nothing in that tree reports it (dc3c29c and fbe21e1 name the same commit in both places). Executed substitute: this tree's check rejects that object (exit 1, 'base_commit.capture is not the recorded run this check describes: None') and a copy of this round's record whose field disagrees with its captured output (exit 1, 'base_commit.worktree_head is d83a5bc… but the captured command for \"this worktree's HEAD\" printed 01c47550…'); prechange_probe.py base_commit_record",
         "regression": "tests/test_unit.py::test_base_commit_record_rejects_a_snapshot_that_mixes_runs (drifted field, drifted capture with the regenerated line, prose naming an unobserved commit, drifted state line, drifted ancestry); evidence.py base-commit-record",
         "review_thread": "PRRT_kwDOUm-m7M6mr86m"
       }
     ],
     "note": "the five review threads are left open: this round repairs the code and the record, and the service publishes and resolves them after a verified approval",
     "round": "reviewed against the published head 01c47550bb1ab3218d122b23ac9ac891fc693a22 (tree 2472db99e1134420c24ed983c96bcaf5a16c1051)",
-    "shape": "one shape, five places: every check compared a value with another value the same code derived, so a change made on both sides verified. Each repair replaces the derived-or-asserted input with a captured one \u2014 the objective's identity, the record's own episodes, the run's compared-path list, the observed remote main \u2014 and each regression reproduces the reviewer's counterexample by mutating the recorded artifact or source and asserting the rejection."
+    "shape": "one shape, five places: every check compared a value with another value the same code derived, so a change made on both sides verified. Each repair replaces the derived-or-asserted input with a captured one — the objective's identity, the record's own episodes, the run's compared-path list, the observed remote main — and each regression reproduces the reviewer's counterexample by mutating the recorded artifact or source and asserting the rejection."
   },
-  "run_record": "runs/20260928T142239844188Z-6a79b233/run.json (temporary ignored run output: runs/ is ignored at any depth; the distilled per-episode rows are copied into this file under episodes_by_agent_seed)",
+  "run_record": "runs/20260928T153237203272Z-57406741/run.json (temporary ignored run output: runs/ is ignored at any depth; the distilled per-episode rows are copied into this file under episodes_by_agent_seed). This is the evaluation made after the objective capture, so it is the record the predeclaration and the elapsed time cite",
   "status": "passed",
   "stopping": {
     "episodes_stopped_at_the_cap": {
@@ -1060,8 +1169,8 @@
       }
     }
   },
-  "suite_wall_clock_seconds": 131.9,
-  "suite_wall_clock_seconds_note": "the cited record's run (runs/20260928T141015188587Z-7cf4d02e/run.json); this round's repeat of the same 20-episode suite measured 133.8 s (runs/20260928T135755269490Z-dde2fc28/run.json)",
+  "suite_wall_clock_seconds": 132.7,
+  "suite_wall_clock_seconds_note": "the cited re-run (runs/20260928T153237203272Z-57406741/run.json) took 132.7 s for the 20-episode suite (10 seeds x 2 agents at frame_limit 200000); the repeat that postdates the capture took 132.3 s, and the earlier rounds' runs measured 132.3-133.8 s, so the spread is the machine's",
   "summary": {
     "lookahead": {
       "clear_sizes": {
@@ -1138,16 +1247,17 @@
     }
   },
   "tests": {
-    "fresh_run": "157 passed, 26 deselected (unit, 0.79 s) and 26 passed, 157 deselected (integration, 1.93 s), this round's repair in place; the base commit's own suite reports 110 passed, 21 deselected",
-    "integration_passed": 26,
+    "fresh_run": "159 passed, 27 deselected (unit, 0.84 s) and 27 passed, 159 deselected (integration, 1.96 s), this round's repair in place",
+    "unit_passed": 159,
+    "integration_passed": 27,
     "new_this_round": [
+      "tests/test_unit.py::test_publication_record_derives_each_capture_entry_from_its_recorded_states",
+      "tests/test_unit.py::test_base_commit_record_requires_the_captured_worktree_ancestry_command",
       "tests/test_unit.py::test_predeclaration_covers_every_module_of_the_objective_identity",
-      "tests/test_unit.py::test_verification_rejects_a_mixed_piece_count_schema",
-      "tests/test_unit.py::test_publication_record_counts_come_from_the_captured_run",
-      "tests/test_unit.py::test_remote_main_check_holds_when_main_has_moved_on",
-      "tests/test_unit.py::test_base_commit_record_rejects_a_snapshot_that_mixes_runs"
-    ],
-    "unit_passed": 157
+      "tests/test_live.py::test_live_tetris_session_snapshots_the_objective_at_begin (integration)",
+      "probes/prechange_probe.py: publication_record_derivation, base_worktree_ancestry, live_objective_snapshot, predeclaration_record_identity",
+      "reviewer follow-up: the live-session restart, the derived ancestry flag and the uncommitted coverage (same two test names plus the extended live test)"
+    ]
   },
   "tetris_agent": {
     "candidate_set": "the same reachable set Experiment 002's lookahead uses (pathaware._reachable), simulated from the engine's native spawn state with the same mask function the controller executes",
@@ -1184,7 +1294,7 @@
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record   # the retained snapshot is one run's",
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-published-result.json   # exit 1: the pre-change record mixed two runs",
     "PYTHONPATH=/tmp/exp003-attempt8/src $PY /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/result.json   # exit 1: repaired_paths_compared_by_content is 11 but 12 repaired paths are declared",
-    "PYTHONPATH=/tmp/exp003-attempt8/src $PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/result.json   # exit 1: \u2026is 11 but the probe's counts line declares 12 repaired paths compared by content",
+    "PYTHONPATH=/tmp/exp003-attempt8/src $PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/result.json   # exit 1: …is 11 but the probe's counts line declares 12 repaired paths compared by content",
     "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-drift-state.json   # exit 1: state is not the line these fields reconstruct",
     "PYTHONPATH=/tmp/exp003-attempt8/src $PY /tmp/exp003-attempt8/experiments/003-tetris-aware-agent/probes/evidence.py publication-record /tmp/exp003-drift-state.json   # exit 0: the pre-change check matched the state line by substring",
     "git show ed8830a15d05a70fbd1783e4a6faa26df78a1d05:experiments/003-tetris-aware-agent/result.json > /tmp/exp003-published-result.json",
@@ -1227,5 +1337,133 @@
   "verification": "passed",
   "verification_warnings": [
     "The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source."
-  ]
+  ],
+  "repairs_this_round": {
+    "round": "reviewed against the published head a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59 (tree per the published branch); pre-change tree archived at /tmp/exp003-head",
+    "shape": "five places where a check or a writer took a value on trust instead of deriving it from the captured evidence, or read it at a time other than the one the claim is about, plus the analogous field-independence holes the audit found in the same checks (the captured refs)",
+    "findings": [
+      {
+        "thread": "PRRT_kwDOUm-m7M6mvieE",
+        "place": "experiments/003-tetris-aware-agent/probes/evidence.py check_publication_record",
+        "counterexample": "the retained capture entry for a differing file has outcome rewritten to 'same' while its recorded sides stay file/file and differs stays true; the capture line is regenerated with the shipped helper",
+        "fix": "outcome and differs are recomputed from each entry's recorded states and sha256 digests through path_decision, the same function check_publication uses; the capture records each side's digest; both record checks require the captured run's own refs to be the refs the probe watches; the captured uncommitted list must cover every path the capture records differing; and the comparison paths must be unique and cover every declared repaired path — the producer builds one entry per path from a keyed dictionary, so each of those is a snapshot it cannot emit",
+        "pre_change_value": "a14fe1843: exit 1, 'the tree accepted a captured entry whose outcome says \\'same\\' while its recorded sides are two differing files' (prechange_probe.py publication_record_derivation)",
+        "regression": "tests/test_unit.py::test_publication_record_derives_each_capture_entry_from_its_recorded_states; prechange_probe.py publication_record_derivation"
+      },
+      {
+        "thread": "PRRT_kwDOUm-m7M6mvieN",
+        "place": "experiments/003-tetris-aware-agent/probes/predeclared_objective.json; evidence.py check_predeclaration",
+        "counterexample": "the capture's helper digests were copied from the evaluation record's own identity after the run under the earlier captured_at 2026-09-27T15:54:19.727662+00:00, and the check skipped the run's identity whenever a cited record carried none",
+        "fix": "the capture is re-made from the unchanged tree and the 10-seed evaluation is re-run after it, so the whole capture file predates the run; check-predeclaration requires the cited record to carry the identity the run itself wrote and to equal the capture, reads the capture's declared mapping and compares it with both the weights the objective's code publishes and the weights the cited record carries; and predeclare refuses to keep a capture whose declared weights are not the published ones",
+        "pre_change_value": "a14fe1843: exit 1, 'the tree accepted a cited record that carries no objective identity: the capture is never compared with the identity the measurement itself wrote' (prechange_probe.py predeclaration_record_identity)",
+        "regression": "tests/test_unit.py::test_predeclaration_covers_every_module_of_the_objective_identity; prechange_probe.py predeclaration_record_identity",
+        "deterministic_metrics_reconfirmed": "lookahead 9128 lines / 0.0876424%; tetris 3495 lines / 1.1444921%"
+      },
+      {
+        "thread": "PRRT_kwDOUm-m7M6mvieW",
+        "place": "experiments/003-tetris-aware-agent/probes/evidence.py check_base_commit_record",
+        "counterexample": "the captured 'the worktree HEAD descends from the recorded base' command has its exit set to 1 and the capture line regenerated; the snapshot still certified although base_state_line claims the descent",
+        "fix": "check_base_commit_record requires exactly one captured worktree-ancestry command with exit 0 (BASE_WORKTREE_ANCESTRY_ROLE), derives base_is_ancestor_of_remote_main from the captured remote-ancestry command's exit status instead of comparing the field with its capture copy, and requires one tree when the observed tip is the recorded base itself — the invariant check_remote_main already asserts",
+        "pre_change_value": "a14fe1843: exit 1, 'the tree accepted a base snapshot whose worktree-ancestry command failed' (prechange_probe.py base_worktree_ancestry)",
+        "regression": "tests/test_unit.py::test_base_commit_record_requires_the_captured_worktree_ancestry_command; prechange_probe.py base_worktree_ancestry"
+      },
+      {
+        "thread": "PRRT_kwDOUm-m7M6mviec",
+        "place": "README.md; experiments/003-tetris-aware-agent/notes.md",
+        "counterexample": "the README said versions 3 and 4 are the ones this writer emits, while the suite writer emits version 5 and version 4 is the prior suite format without the objective source identity",
+        "fix": "the README describes version 3 as the current scripted format, version 4 as the prior suite format and version 5 as the current suite format, matching runner.py's FORMAT_VERSION, PRIOR_SUITE_FORMAT_VERSION and SUITE_FORMAT_VERSION; the analogous shorthand in notes.md is corrected",
+        "pre_change_value": "documentation-only, no code contract: a14fe1843's runner.py constants are FORMAT_VERSION = 3, PRIOR_SUITE_FORMAT_VERSION = 4, SUITE_FORMAT_VERSION = 5 while its README names 3 and 4; the substitute evidence is the corrected prose matching those constants",
+        "regression": "none (documentation); the claim is pinned by the constants it must match"
+      },
+      {
+        "thread": "PRRT_kwDOUm-m7M6mviej",
+        "place": "src/block_stack_ai/live.py LiveSession.receive",
+        "counterexample": "a covered module's file is changed after the first BEGIN and the session plays two games (the second a restart); the saved records carried the post-edit identity as the code that chose the inputs",
+        "fix": "the session reads the identity the interpreter loaded (runner._LOADED_OBJECTIVE_SOURCES, snapshotted when the objective's modules were imported) and persists it for every game it records — a live restart included",
+        "pre_change_value": "a14fe1843: exit 1, 'game 1's record carries the identity read after the edit, not the identity of the loaded implementation the session started with'; the record's block_stack_ai.tetris digest was 184466ec... against the loaded implementation's 3d32c1c3... (prechange_probe.py live_objective_snapshot)",
+        "regression": "tests/test_live.py::test_live_tetris_session_snapshots_the_objective_at_begin (integration); prechange_probe.py live_objective_snapshot"
+      },
+      {
+        "thread": "reviewer follow-up (round 2)",
+        "place": "src/block_stack_ai/runner.py run_and_save / _objective_sources; src/block_stack_ai/live.py LiveSession",
+        "counterexample": "the modules are imported (as the interactive menu does while it waits for a selection), a covered file is edited, and the run is started: the loaded code is the pre-edit one while a call-time read would hash the post-edit file",
+        "fix": "_LOADED_OBJECTIVE_SOURCES is computed when runner imports the objective's modules and every writer (run_and_save, LiveSession) records it; the verifier keeps calling _objective_sources(), which reads the files on the tree it is verifying",
+        "pre_change_value": "a14fe1843 has no split: every writer hashes whatever is on disk when it writes, so an edit between import and write is recorded though it never ran",
+        "regression": "tests/test_live.py::test_live_tetris_session_snapshots_the_objective_at_begin (the session's identity is the loaded one); tests/test_unit.py::test_suite_records_the_objective_of_the_tetris_agent and tests/test_unit.py::test_the_objective_identity_is_the_source_of_the_modules_it_runs still pin the verifier's reading of the tree"
+      }
+    ],
+    "note": "the five review threads are left open; this round repairs the code and the record, and the service owns publication, so the threads are resolved only after a verified fix is published",
+    "evidence": "notes.md 'This round's repairs (reviewed against a14fe1843)' section and the validation evidence below",
+    "review_follow_up": {
+      "note": "on the repaired tree the reviewer returned three further findings of the same shape; each is fixed and carries a regression, and the two probe rows were extended to execute the new counterexamples on both trees",
+      "items": [
+        {
+          "finding": "the live session re-read the objective at a restart BEGIN, recording an identity the loaded implementation never had",
+          "fix": "read once at session construction, reused for every game",
+          "regression": "tests/test_live.py::test_live_tetris_session_snapshots_the_objective_at_begin (two games in one session); prechange_probe.py live_objective_snapshot",
+          "pre_change_value": "a14fe1843: exit 1, game 1 record digest 184466ec... against the loaded 3d32c1c3..."
+        },
+        {
+          "finding": "base_is_ancestor_of_remote_main was compared with its capture copy, not derived from the captured command exit",
+          "fix": "derived as exit == 0 and compared against both recorded copies",
+          "regression": "tests/test_unit.py::test_base_commit_record_requires_the_captured_worktree_ancestry_command; prechange_probe.py base_worktree_ancestry",
+          "pre_change_value": "a14fe1843: exit 1, both copies False with the command at exit 0 accepted"
+        },
+        {
+          "finding": "capture.uncommitted_paths was compared only by length",
+          "fix": "the producer's coverage invariant is required: every captured differing path is one the capture records uncommitted",
+          "regression": "tests/test_unit.py::test_publication_record_derives_each_capture_entry_from_its_recorded_states; prechange_probe.py publication_record_derivation",
+          "pre_change_value": "a14fe1843: exit 1, a differing path swapped out of the uncommitted list accepted"
+        },
+        {
+          "finding": "the retained base snapshot did not require one tree when the observed tip is the recorded base",
+          "fix": "the tree equality check_remote_main asserts is required for the retained snapshot too",
+          "regression": "tests/test_unit.py::test_base_commit_record_requires_the_captured_worktree_ancestry_command; prechange_probe.py base_worktree_ancestry",
+          "pre_change_value": "a14fe1843: exit 1, the recorded base named as the tip with a different tree accepted"
+        },
+        {
+          "finding": "check_predeclaration never read the capture's declared weights",
+          "fix": "the declared mapping is compared with the weights the code publishes and the weights the cited record carries, and predeclare refuses an edited capture",
+          "regression": "tests/test_unit.py::test_predeclaration_covers_every_module_of_the_objective_identity; prechange_probe.py predeclaration_weights",
+          "pre_change_value": "a14fe1843: exit 1, tetrises 80.0 declared while the run recorded 8.0"
+        },
+        {
+          "finding": "the captured comparison list was validated by length only",
+          "fix": "the comparison paths must be unique and cover every declared repaired path",
+          "regression": "tests/test_unit.py::test_publication_record_derives_each_capture_entry_from_its_recorded_states; prechange_probe.py publication_record_derivation",
+          "pre_change_value": "a14fe1843: exit 1, a declared path replaced by a duplicate entry accepted"
+        },
+        {
+          "finding": "writers read the objective sources when the record was written, not when the implementation was loaded",
+          "fix": "runner._LOADED_OBJECTIVE_SOURCES is snapshotted at import and every writer records it",
+          "regression": "tests/test_live.py::test_live_tetris_session_snapshots_the_objective_at_begin",
+          "pre_change_value": "a14fe1843: no split; an edit between import and write is recorded as the code that ran"
+        },
+        {
+          "finding": "the retained publication check required the worktree HEAD to equal the published commit",
+          "fix": "only the branch ref, PR head and clone HEAD must be one commit; the worktree HEAD is compared with its captured value",
+          "regression": "tests/test_unit.py::test_publication_record_derives_each_capture_entry_from_its_recorded_states (the supported state now certifies)",
+          "pre_change_value": "n/a: a false rejection introduced by this round and removed before review, not a state the pre-change tree had"
+        },
+        {
+          "finding": "the same check required the uncommitted count to equal the differing count",
+          "fix": "the differing-path coverage stays; the equality is gone, because an uncommitted path can already match the publication",
+          "regression": "tests/test_unit.py::test_publication_record_derives_each_capture_entry_from_its_recorded_states (the extra-uncommitted capture now certifies)",
+          "pre_change_value": "n/a: a false rejection introduced by this round"
+        },
+        {
+          "finding": "predeclaration_identity's positive-control record carried no weights",
+          "fix": "the record carries the captured objective mapping",
+          "regression": "prechange_probe.py predeclaration_identity exits 0 on this tree",
+          "pre_change_value": "n/a: the fixture predated the weights check"
+        },
+        {
+          "finding": "the primary run_record named the pre-capture evaluation, which the new ordering check rejects",
+          "fix": "run_record and record_reproduces_retained_rows.fresh_record name the post-capture evaluation runs/20260928T153237203272Z-57406741/run.json",
+          "regression": "evidence.py check-predeclaration on that record exits 0",
+          "pre_change_value": "n/a: a record reference that was stale once the capture was re-made"
+        }
+      ]
+    }
+  }
 }

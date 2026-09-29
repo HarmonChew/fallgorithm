@@ -88,13 +88,17 @@ repositories. A dirty or no-commit run is labeled a working-tree run; a matching
 hash verifies this replay, while the Git commit alone cannot restore uncommitted
 edits. A suite record also states the fixed heuristic weights it used, and, when
 it uses the Tetris agent, that agent's declared objective — the module that
-declares it and the weights it publishes — which `verify` compares as it compares
+declares it, the weights it publishes and the source identity of the modules its
+decisions are computed from — which `verify` compares as it compares
 the heuristic mapping, so a record cannot verify under a different objective
 merely because the change preserved its replayed choices. A record's
 `format_version` says which sections its writer always recorded: versions 1 and 2
-are the older formats, whose sections may be absent, and versions 3 and 4 are the
-ones this writer emits, which must carry the placed-piece count, the clear-size
-histogram and — for a suite that uses the Tetris agent — the declared objective.
+are the older formats, whose sections may be absent; version 3 is the current
+scripted format, version 4 is the prior suite format, whose writer recorded the
+declared objective without the source identity its successor adds, and version 5
+is the current suite format, which records that identity too. A version 3, 4 or 5
+record must carry the placed-piece count, the clear-size histogram and — for a
+suite that uses the Tetris agent — the declared objective.
 That is why the version is compared rather than the absence: a section deleted
 from a current record would otherwise be indistinguishable from a record that
 predates it. `verify` re-derives

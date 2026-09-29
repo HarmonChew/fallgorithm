@@ -35,6 +35,15 @@ class LiveSession:
         self.seed = config.seeds[0]
         self.game = create_game(**config.game, seed=self.seed)
         self.agent = create_agent(self.name, self.seed)
+        # The declared objective is a source identity, and the implementation the
+        # session runs is the one the interpreter loaded when it imported these
+        # modules — a restart cannot change it, and neither can an edit that
+        # lands after the import. It is therefore the identity the modules were
+        # loaded with, read once here and reused for every game this session
+        # records: reading the files at BEGIN (or at END) would attribute a
+        # game's inputs to source bytes that were never loaded whenever a covered
+        # module is edited while the process is alive.
+        self.objective = _objective_section(self.config, loaded=True)
         self.active = False
         self.records: list[Path] = []
         self.inputs: list[int] = []
@@ -112,7 +121,10 @@ class LiveSession:
             "summary": _summarize([episode]),
             # Live play is the second path that writes a suite record, so a live
             # Tetris game declares its objective exactly as a headless suite does.
-            **_objective_section(self.config),
+            # It is the identity the session was built with, not a fresh read: a
+            # covered module edited while the session is alive must not be
+            # recorded as the code that chose the inputs.
+            **self.objective,
         }
         path = save_record(record, self.runs_dir)
         self.records.append(path)

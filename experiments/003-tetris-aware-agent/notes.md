@@ -14,12 +14,18 @@ review rounds. Each round is named by the head it was reviewed against —
 unrecorded objective), `cfab11e2` (the record-format version marker), `fbe21e1`
 (the publication probe's tracked deletion and the declared objective's weight
 comparison), `ed8830a1` (the objective's source identity, one measured
-publication snapshot, and the version numbers' reuse), and **this round**,
-reviewed against the published head `01c47550` (the declared objective's identity
-as captured coverage, the summary's piece count read from the whole record, the
-publication snapshot's counts checked against a captured path list, the base
-refresh's durability once main moves on, and the retained base snapshot drawn
-from one run). A passage written in an earlier round that says "this round" means
+publication snapshot, and the version numbers' reuse), `01c47550` (the declared
+objective's identity as captured coverage, the summary's piece count read from
+the whole record, the publication snapshot's counts checked against a captured
+path list, the base refresh's durability once main moves on, and the retained
+base snapshot drawn from one run), and **this round**, reviewed against the
+published head `a14fe1843` (the publication snapshot's per-path fields validated
+one at a time rather than derived from the recorded evidence, the objective
+capture's helper digests transcribed from the run after the fact under an earlier
+`captured_at`, the retained base snapshot's worktree-ancestry command not
+required, the README's format-version prose naming the wrong current versions,
+and the live session reading the objective's sources at END instead of BEGIN). A
+passage written in an earlier round that says "this round" means
 the round it was written in; the passages this round adds say so, and item 1
 lists the tree each round's probes were run against.
 
@@ -337,7 +343,7 @@ enumeration order (orientation ascending, then column ascending), the same rule
 <!-- predeclared-objective:end -->
 
 The objective is measured from the working tree at the recorded fallgorithm
-commit: the cited run record names commit `fbe21e1` with `dirty: true`, so the
+commit: the cited run record names commit `a14fe1843` with `dirty: true`, so the
 run is a **working-tree run** and, like the dirty engine, a commit hash alone
 cannot recreate the tree it measured. Verification ties a saved suite record to
 this objective two ways: the record now carries the declared objective itself —
@@ -356,45 +362,54 @@ it nowhere and keep verifying.
 **When the objective was declared.** The declaration is captured mechanically,
 so the ordering the criterion requires is checkable rather than asserted:
 `evidence.py predeclare` wrote `probes/predeclared_objective.json` with
-`captured_at` `2026-09-27T15:54:19.727662+00:00`, the digest of
-`src/block_stack_ai/tetris.py` (`sha256:3d32c1c3…`) and the digest of this notes
+`captured_at` `2026-09-28T15:30:20.689842+00:00`, the digest of
+`src/block_stack_ai/tetris.py` (`sha256:3d32c1c3…`), the digest of this notes
 file's declared-objective section — the weights table and its rationale above,
 delimited by the `predeclared-objective` markers, and nothing else, so the
-provenance note below the end marker is outside the digest (`sha256:b676a981…`).
-The evaluation cited here was run after that capture. `evidence.py
+provenance note below the end marker is outside the digest (`sha256:b676a981…`)
+— and the identity of every module the objective's decisions are computed from.
+This round's 10-seed evaluation was run **after** that capture; the cited record's
+own `created_at` is `2026-09-28T15:30:24.688298+00:00`. `evidence.py
 check-predeclaration <record>` re-checks every claim mechanically, printing the
-capture time, the record's own `created_at`
-`2026-09-27T17:15:43.122494+00:00`, and the module and notes-section digests as
-they stand, both still equal to the captured ones. Those printed values are in
-the validation evidence below. The capture is never overwritten while the module
-and the notes section still match it, so a later `predeclare` cannot move the
-capture past a record citing it; a module or section that no longer matches is
-reported as a changed objective instead of being silently re-captured. This
-repair neither changed `src/block_stack_ai/tetris.py` nor touched the marked
-section, so the capture and both digests stand unchanged, and `predeclare`
-re-prints them instead of re-capturing.
+capture time, the record's `created_at`, the module and notes-section digests as
+they stand, and the record's own `objective.sources` identity, which it now
+requires rather than skips; those printed values are in the validation evidence
+below. The capture is never overwritten while the module, the identity and the
+notes section still match it, so a later `predeclare` cannot move the capture past
+a record citing it, and it refuses to add the identity to an older capture: a
+module or section that no longer matches is reported as a changed objective
+instead of being silently re-captured, and the superseded transcription is kept
+beside the capture as `predeclared_objective.pre-transcription.json`. Neither
+this round nor the previous one changed `src/block_stack_ai/tetris.py` or touched
+the marked section, so both digests stand as the earlier capture recorded them,
+and the re-capture writes the same digests with a new, genuine capture time.
 
-**This round covers the whole declared objective, not just its declaring
+**The capture covers the whole declared objective, not just its declaring
 module.** The capture recorded the digest of the module that declares the
 objective while the run record's `objective.sources` identity covers every module
 the objective's decisions are computed from — `block_stack_ai.tetris` plus
 `block_stack_ai.heuristic`, `block_stack_ai.pathaware` and
 `block_stack_ai.pieces` — so a post-capture change to a **helper** moved every
 value the objective computes and still passed `check-predeclaration`, which is
-the hole this round closes. The capture now records the same set, discovered from
-the objective's own namespace through the runner's `_objective_sources()` rather
-than hand-listed, and `check-predeclaration` requires that mapping to equal both
-the current modules and, when the cited record's version carries one, the
-identity **the run itself wrote** into the record; the declaring module's digest
-must be the identity's entry for it, so the two digests describe one objective
-rather than two. The four digests were added to
-[`probes/predeclared_objective.json`](probes/predeclared_objective.json) from the
-run record's own identity (the values are equal to the current modules, which is
-what the check requires), with `sources_note` recording that provenance and the
-original `captured_at` left untouched, so the ordering against the cited record
-is unchanged. The `predeclaration_identity` row in item 1 executes the
-counterexample: a helper changed after the capture is reported by this tree and
-was not reported by `01c47550`.
+the hole the `01c47550` round closed. That round added the four digests to
+[`probes/predeclared_objective.json`](probes/predeclared_objective.json) by
+copying them out of the evaluation record's own identity and left the earlier
+`captured_at` beside them, with a `sources_note` recording that provenance;
+**this round removes that transcription.** A capture whose contents were written
+after the run under an earlier timestamp is not a pre-run declaration, and a
+check that skipped the run's own identity whenever a cited record carried none
+could not tell it from one. The capture is therefore re-made from the tree
+before the evaluation and the evaluation is re-run after it, so the ordering the
+criterion requires holds for the whole file and not only for its timestamp;
+`predeclared_objective.pre-transcription.json` is the superseded transcription,
+kept beside it as the earlier captures are. `check-predeclaration` now requires
+the cited record to carry the identity **the run itself wrote** and to equal the
+capture — the declaring module's digest must be the identity's entry for that
+module, and the capture's mapping must equal both the current modules and the
+record's own — so a covered module changed after the capture is reported, and a
+record without an identity is reported instead of being checked against the
+current modules alone. The `predeclaration_identity` and
+`predeclaration_record_identity` rows in item 1 execute both counterexamples.
 
 ## Stop criteria and definitions
 
@@ -460,17 +475,20 @@ none of its figures is a safety stop; the frozen agent's seed-18 episode stopped
 at the configured 200000-frame cap and is reported as such, not as a game over.
 
 **Elapsed time:** this round's full runs of the documented path on the repaired
-tree took **131.9 s**, **132.1 s** and **133.8 s** for the 20-episode suite (10
+tree took **132.7 s**, **132.3 s**, **133.7 s**, **132.4 s**, **131.8 s** and
+**131.7 s** for the
+20-episode suite (10
 seeds × 2 agents at `frame_limit` 200000), measured with
-`time.monotonic()` around `run_and_save` by `evidence.py evaluation` (one inside
-the final `evidence.py all`, one an earlier run, one a repeat); the runs of the
-earlier repair rounds measured 132.3–140.8 s, so the spread is the machine's and
+`time.monotonic()` around `run_and_save` by `evidence.py evaluation` — the first
+is the run made after the objective capture this round cites, the others repeats
+and `evidence.py all` runs; the runs of the earlier repair rounds measured
+131.9–140.8 s, so the
+spread is the machine's and
 not the repair's. Each `evaluation` invocation also
 replayed all 20 episodes from their recorded inputs with `verify`, so one
 invocation takes about 280 s — the run plus its replay. This round's cited record
-is `runs/20260928T142239844188Z-6a79b233/run.json`, written by the documented
-`evidence.py all` path, and the repeat is
-`runs/20260928T135755269490Z-dde2fc28/run.json`. This round's other measured cost
+is `runs/20260928T153237203272Z-57406741/run.json` and the repeat is
+`runs/20260928T152709932202Z-f82efe29/run.json`. This round's other measured cost
 is the base refresh: the full clone of the remote takes about 1.6 s for the whole
 probe, the same order as the shallow clone it replaced, so making ancestry
 checkable did not change the probe's class of runtime. The suite's summary is
@@ -484,13 +502,145 @@ instead of the group's first one — selects the same key it did before for a
 well-formed record. Every record the earlier rounds left in `runs/` is identical
 to them as well, which is the persistence of every published figure under each
 repair. The retained records are fourteen at version 2, seven at version 4 and
-six at version 5; ten of the version-2 records carry no `objective` section at
+thirteen at version 5 (this round's seven fresh records — the baseline run, the
+evaluation after the capture, and five `evidence.py all` runs — add seven
+version-5 records to the six the earlier rounds left); ten of
+the version-2 records carry no `objective` section at
 all, four carry it (written after it was added) and all fourteen carry the
 histogram, while the version-4 records carry the objective without the source
 identity and the version-5 records carry it too. All of them still verify (item
 4), so every legacy gate the verifier has is exercised by a retained record, and
 none of the earlier rounds' records carries the identity its version does not
 require.
+
+## This round's repairs (reviewed against `a14fe1843`)
+
+Every finding below has one shape: a checker (or a writer) took a value on trust
+instead of deriving it from the captured evidence, or read it at a moment other
+than the one the claim is about. Each is repaired by deriving the claim from the
+record, and each carries a counterexample regression executed on the pre-change
+head `a14fe1843` (archived at `/tmp/exp003-head`) and on this tree. The
+pre-change value is the failure message the replaced code returned because it
+accepted the counterexample; the rows marked *documentation-only* have no code
+contract to violate and name their executed substitute instead.
+
+| Finding | Counterexample | Pre-change value on `a14fe1843` | Regression |
+| --- | --- | --- | --- |
+| The publication snapshot's per-path fields were validated one at a time, never as a combination, and the comparison list was read by length. | The retained entry for a differing file has `outcome` rewritten to `same` while both recorded sides stay `file` and `differs` stays true; a differing path is swapped out of `capture.uncommitted_paths` for an unchanged one; and a declared repaired path's unchanged entry is replaced by a duplicate of another unchanged entry — each with the capture line regenerated by the shipped helper and every count preserved. | `exit 1`: `the tree accepted: an entry whose outcome says 'same' while its recorded sides are two differing files; a capture whose differing path is not in its uncommitted list; a capture that compares a path twice and omits a declared repaired path — so a snapshot no run produced certifies` (`prechange_probe.py publication_record_derivation`) | `test_publication_record_derives_each_capture_entry_from_its_recorded_states`; `publication_record_derivation` exits 0 on this tree |
+| The objective capture's helper digests were transcribed from the run's identity after the fact under an earlier `captured_at`, the check skipped the run's identity when a record carried none, and it never read the capture's declared weights. | A cited record that carries no objective identity passed the check; and a capture whose declared `tetrises` was raised from `8.0` to `80.0` certified the existing run, whose recorded weight is `8.0`. | `exit 1`: `the tree accepted a cited record that carries no objective identity …` and `the tree accepted a capture whose declared weights are not the ones the objective's code publishes` (`prechange_probe.py predeclaration_record_identity`, `predeclaration_weights`) | `test_predeclaration_covers_every_module_of_the_objective_identity`; both rows exit 0 on this tree |
+| The retained base snapshot's worktree-ancestry command was not required, its ancestry flag was compared rather than derived, and it did not require one tree for one commit. | The captured worktree-ancestry command's exit is set to 1; both copies of `base_is_ancestor_of_remote_main` are set to `false` while the remote-ancestry command still exited 0; and the recorded base is named as the observed tip with a different tree in the field, its capture copy and the captured `rev-parse` output. | `exit 1`: `the tree accepted: a worktree-ancestry command that failed; an ancestry flag that contradicts the captured command's exit status; a snapshot that gives the recorded base a different tree` (`prechange_probe.py base_worktree_ancestry`) | `test_base_commit_record_requires_the_captured_worktree_ancestry_command`; `base_worktree_ancestry` exits 0 on this tree |
+| `README.md` said versions 3 and 4 are the ones this writer emits, while the suite writer emits 5 and version 4 is the prior suite format. | Documentation-only; `runner.py`'s constants are `FORMAT_VERSION = 3`, `PRIOR_SUITE_FORMAT_VERSION = 4`, `SUITE_FORMAT_VERSION = 5`. | The prose of `a14fe1843` states the wrong pair; the executed substitute is that the corrected prose matches those three constants (the same claim `notes.md`'s shorthand made and no longer does). | Corrected in `README.md` and the analogous shorthand in `notes.md`; no code contract |
+| The live session read the objective's source files when the game ended (and again at a restart's BEGIN), while its versions were captured at BEGIN. | A covered module's file is changed after the first BEGIN and the session plays two games (the second a restart); the saved records then carried the post-edit identity as the code that chose the inputs. | `exit 1`: `game 1's record carries the identity read after the edit, not the identity of the loaded implementation the session started with` — the record's `block_stack_ai.tetris` digest was `184466ec…`, the mutated file, against the loaded implementation's `3d32c1c3…` (`prechange_probe.py live_objective_snapshot`) | `test_live_tetris_session_snapshots_the_objective_at_begin` (integration, two games in one session); `live_objective_snapshot` exits 0 on this tree |
+| The headless writer read the objective's sources when the record was written, not when the implementation was loaded. | The modules are imported (as the interactive menu does while it waits), a covered file is edited, and the run is started: the loaded code is the pre-edit one while a call-time read would hash the post-edit file. | Executed on this tree: `runner._LOADED_OBJECTIVE_SOURCES` is computed at import and every writer records it, while the verifier keeps reading the files on the tree (`_objective_sources`); the pre-change `a14fe1843` has no such split, so a writer there hashes whatever is on disk when it writes. | `runner._LOADED_OBJECTIVE_SOURCES` (used by `run_and_save` and `LiveSession`); verification is unchanged |
+
+The same shape was audited in the rest of the probes and in the retained record:
+`check_publication`'s outcome and differing decision and
+`check_publication_record`'s per-entry derivation now share one function
+(`path_decision`), so a retained entry is a claim derived from its recorded
+states rather than four fields each checked alone; `check_publication_record` and
+`check_base_commit_record` also require the captured run's own refs to be the
+refs the probe watches, since a capture naming another branch or ref is not a run
+of this probe however consistent its other fields are; `check_base_commit_record`
+requires both ancestry commands **and** derives
+`base_is_ancestor_of_remote_main` from the remote-ancestry command's exit status
+instead of comparing the field with its capture copy, **and** requires one tree
+for one commit when the observed tip is the base itself, which the producer also
+requires;
+`check_publication_record` requires every captured differing path to be one the
+capture records uncommitted, the producer's own invariant, instead of comparing
+the uncommitted list by length alone, and requires the comparison paths to be
+unique and to cover every declared repaired path, because a swapped-in duplicate
+keeps every count while comparing a path twice and omitting a declared one;
+`check_predeclaration` reads the capture's declared mapping and compares it with
+both the weights the objective's code publishes and the weights the cited record
+carries, so a declaration and a measurement can no longer disagree while every
+digest matches; every writer records the source identity the interpreter
+**loaded** (`runner._LOADED_OBJECTIVE_SOURCES`) rather than a read taken when the
+record is written, so an edit that lands after the import — the interactive menu
+waits between importing the modules and starting a game — cannot name code the
+run never loaded; `check_remote_main` still asserts the
+worktree descent inline; and `prechange_probe.py`'s drivers report a subject that
+does not exist instead of aborting. The executed pre-change rows are pasted below.
+
+**Second-review follow-ups.** Four further findings on the repaired tree, each
+repaired and pinned:
+
+* The retained publication check required `observed_worktree_head` to equal the
+  published commit, so a capture from a state the probe explicitly supports — a
+  worktree `HEAD` that differs from the refs — was rejected although every field
+  came from one run. Only the branch ref, the PR head and the clone's `HEAD` need
+  be one commit; the worktree `HEAD` is compared with its captured value. The
+  regression now requires that snapshot to certify.
+* The same check required the uncommitted count to equal the differing count,
+  which rejects a genuine capture with an extra uncommitted path whose bytes
+  already match the publication — a mode-only change, or an edit reproducing the
+  published bytes. The producer requires only that every differing path be
+  uncommitted, so the coverage check stays and the equality is gone; the
+  regression requires that capture to certify too.
+* `predeclaration_identity`'s positive-control record carried no weights, so it
+  failed the tightened check before it changed a helper; it now carries the
+  captured mapping, and the row reaches the behaviour it validates.
+* `result.json`'s primary `run_record` and
+  `record_reproduces_retained_rows.fresh_record` still named the pre-capture run
+  `20260928T142239844188Z`, which the new ordering check rejects; both now name
+  the post-capture evaluation `20260928T153237203272Z-57406741`, the record the
+  predeclaration and the elapsed time cite.
+
+```text
+########## probe: publication_record_derivation   (PYTHONPATH=/tmp/exp003-head/src, a14fe1843)
+# the retained record passes the check
+# the differing file pair: 'experiments/003-tetris-aware-agent/notes.md' (file vs file, differs True)
+# its outcome rewritten to 'same' with both sides still files and differs true
+# a declared repaired path replaced by a duplicate of an unchanged one
+# every field of the snapshot is consistent with that one run
+AssertionError: the tree accepted: an entry whose outcome says 'same' while its recorded sides
+are two differing files; a capture whose differing path is not in its uncommitted list; a
+capture that compares a path twice and omits a declared repaired path — so a snapshot no run
+produced certifies
+exit=1
+
+########## probe: base_worktree_ancestry   (PYTHONPATH=/tmp/exp003-head/src, a14fe1843)
+# the retained snapshot passes the check
+# the 'the worktree HEAD descends from the recorded base' command's exit changed to 1
+# both copies of 'base_is_ancestor_of_remote_main' changed to False while the command exited 0
+# the recorded base named as the observed tip with a different tree
+# every field, captured command and sentence of the snapshot is that one run's
+AssertionError: the tree accepted: a worktree-ancestry command that failed; an ancestry flag that
+contradicts the captured command's exit status; a snapshot that gives the recorded base a
+different tree — so the state line's claim is not established by the capture the record retains
+exit=1
+
+########## probe: predeclaration_weights   (PYTHONPATH=/tmp/exp003-head/src, a14fe1843)
+# the capture's declared tetrises weight changed from 8.0 to 80.0; the cited record carries the
+published mapping
+# the declared objective is the measured one and predates the record
+AssertionError: the tree accepted a capture whose declared weights are not the ones the
+objective's code publishes, so the declaration and the measurement can disagree while every
+digest matches
+exit=1
+
+########## probe: predeclaration_record_identity   (PYTHONPATH=/tmp/exp003-head/src, a14fe1843)
+# the cited record carries no objective identity (its version predates it), so the captured
+identity is checked against the current modules alone
+# the declared objective is the measured one and predates the record
+AssertionError: the tree accepted a cited record that carries no objective identity: the capture is
+never compared with the identity the measurement itself wrote, so a post-run transcription under an
+earlier timestamp cannot be told from a genuine pre-run capture
+exit=1
+
+########## probe: live_objective_snapshot   (PYTHONPATH=/tmp/exp003-head/src, a14fe1843)
+# the session's BEGIN objective identity: {…
+#   'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
+# the record's objective identity: {…
+#   'block_stack_ai.tetris': '184466ecdc508ca4593ad838cb60bd67b546f0ae9fede61ab0ae75085814fcc6'}
+AssertionError: game 1's record carries the identity read after the edit, not the identity of the
+loaded implementation the session started with
+exit=1
+```
+
+On this tree the same four rows exit 0, and the two integration regressions pass;
+the full commands and exit statuses are in the "this round's rows" block of the
+validation evidence below.
 
 ## Validation evidence
 
@@ -567,6 +717,52 @@ $PY experiments/003-tetris-aware-agent/probes/evidence.py base-commit-record   #
 $PY experiments/003-tetris-aware-agent/probes/evidence.py base-commit-record /tmp/exp003-published/experiments/003-tetris-aware-agent/result.json   # exit 1: the pre-change object has no captured run
 PYTHONPATH=$PWD/src $PY -c "from pathlib import Path; from block_stack_ai.runner import verify_run; [verify_run(p) for p in sorted(Path('runs').glob('*/run.json'))]"   # every retained record still verifies
 PYTHONPATH=/tmp/exp003-published/src $PY experiments/002-path-aware-lookahead/probes/evidence.py replay runs/20260927T155639890404Z-ffa2811a/run.json   # 002's own probe replays a legacy record through the changed summary rule
+# this round's rows, pre-change head a14fe1843 (/tmp/exp003-head) and after (/tmp/exp003-after)
+mkdir -p /tmp/exp003-head && git archive a14fe1843d10a2a20fde0a8a82dacc45b8ab9b59 | tar -x -C /tmp/exp003-head
+rm -rf /tmp/exp003-after && mkdir -p /tmp/exp003-after && cp -r src experiments /tmp/exp003-after/
+PYTHONPATH=/tmp/exp003-head/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_record_derivation /tmp/exp003-head/experiments/003-tetris-aware-agent/probes/evidence.py   # exit 1: outcome 'same' accepted beside two differing files
+PYTHONPATH=/tmp/exp003-head/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py base_worktree_ancestry /tmp/exp003-head/experiments/003-tetris-aware-agent/probes/evidence.py   # exit 1: a failed worktree-ancestry command accepted
+PYTHONPATH=/tmp/exp003-head/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py predeclaration_record_identity /tmp/exp003-head/experiments/003-tetris-aware-agent/probes/evidence.py   # exit 1: a record with no objective identity accepted
+PYTHONPATH=/tmp/exp003-head/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py predeclaration_weights /tmp/exp003-head/experiments/003-tetris-aware-agent/probes/evidence.py   # exit 1: an edited declared weight accepted
+PYTHONPATH=/tmp/exp003-head/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py live_objective_snapshot   # exit 1: the post-edit identity recorded, not the loaded implementation's
+PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_record_derivation $PWD/experiments/003-tetris-aware-agent/probes/evidence.py   # exit 0
+PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py base_worktree_ancestry $PWD/experiments/003-tetris-aware-agent/probes/evidence.py   # exit 0
+PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py predeclaration_record_identity $PWD/experiments/003-tetris-aware-agent/probes/evidence.py   # exit 0
+PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py predeclaration_weights $PWD/experiments/003-tetris-aware-agent/probes/evidence.py   # exit 0
+PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py live_objective_snapshot   # exit 0
+mkdir -p /tmp/exp003-base && git archive d83a5bc54a76bb23cd38e4afbab8192b0e2a207f | tar -x -C /tmp/exp003-base
+PYTHONPATH=/tmp/exp003-base/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py publication_record_derivation   # exit 0: no subject on the tree that predates the experiment
+PYTHONPATH=/tmp/exp003-base/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py base_worktree_ancestry   # exit 0: no subject on this tree
+PYTHONPATH=/tmp/exp003-base/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py predeclaration_record_identity   # exit 0: no subject on this tree
+PYTHONPATH=/tmp/exp003-base/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py predeclaration_weights   # exit 0: no subject on this tree
+PYTHONPATH=/tmp/exp003-base/src $PY experiments/003-tetris-aware-agent/probes/prechange_probe.py live_objective_snapshot   # exit 0: no tetris agent on this tree
+$PY -m pytest -q -p no:cacheprovider -m 'not integration'     # this round: 159 passed, 27 deselected
+$PY -m pytest -q -p no:cacheprovider -m integration           # this round: 27 passed, 159 deselected
+mv experiments/003-tetris-aware-agent/probes/predeclared_objective.json experiments/003-tetris-aware-agent/probes/predeclared_objective.pre-transcription.json
+$PY experiments/003-tetris-aware-agent/probes/evidence.py predeclare   # re-capture from the unchanged tree, before the evaluation
+$PY experiments/003-tetris-aware-agent/probes/evidence.py evaluation   # 20 episodes, 132.7 s, record runs/20260928T153237203272Z-57406741/run.json
+$PY experiments/003-tetris-aware-agent/probes/evidence.py check-predeclaration runs/20260928T153237203272Z-57406741/run.json   # exit 0; the record's own identity equals the capture
+$PY experiments/003-tetris-aware-agent/probes/evidence.py compare runs/20260928T153237203272Z-57406741/run.json runs/20260928T152709932202Z-f82efe29/run.json   # exit 0: identical configuration, heuristic, episodes and summary
+PYTHONPATH=$PWD/src $PY -c "from pathlib import Path; from block_stack_ai.runner import verify_run; [verify_run(p) for p in sorted(Path('runs').glob('*/run.json'))]"   # every retained record still verifies
+```
+
+**Round 6 rows, executed.** The pre-change stdout is pasted in "This round's
+five repairs"; the text below the equality in the objective capture is the
+re-run's confirmation that the recorded identity is the beginning-of-run one:
+
+```text
+########## probe: check-predeclaration  (this tree, runs/20260928T153237203272Z-57406741/run.json)
+# predeclaration captured_at: 2026-09-28T15:30:20.689842+00:00 (module sha256 3d32c1c3…, notes section sha256 b676a981…, 4 identity modules)
+# evaluation record created_at: 2026-09-28T15:30:24.688298+00:00
+# the cited record's own objective identity: {… 'block_stack_ai.tetris': '3d32c1c3…'}
+# the declared objective is the measured one and predates the record
+exit=0
+
+########## probe: live_objective_snapshot  (this tree)
+# the session's BEGIN objective identity: {… 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
+# the record's objective identity: {… 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
+result: the tree under test satisfies this probe
+exit=0
 ```
 
 **0. Base refresh.** `evidence.py remote-main` (exit 0) resolves the
@@ -685,7 +881,13 @@ accepted by substring: it is reconstructed from the record's commit, compared-pa
 count and differing-path list through the probe's own `state_line` and must be that
 exact line, so a state left behind by an earlier run cannot sit beside a later
 run's counts. The snapshot below is the run that regenerated every field, captured
-after the declared list and the probe stopped changing.
+after the declared list and the probe stopped changing. **This round regenerated
+it again**: the per-path capture now records each side's digest so the outcome and
+differing flag can be derived rather than trusted, so the object in
+[`result.json`](result.json) is one run of the repaired probe — the refs at
+`a14fe1843`, this repair's differing paths — and the block below remains the
+`01c47550` round's run, which the check still accepts for the shape it was written
+in; the round-6 section above quotes this round's emitted lines.
 
 The digest the block below prints for `notes.md` is the file's value at that run:
 pasting the block into that same file changes it, so a re-run reports the same
@@ -847,6 +1049,22 @@ rows; the fifth is a new capability and is marked as a pin.
 | `test_remote_main_check_holds_when_main_has_moved_on` | `remote_main_durability` | 1 | The reviewer's counterexample, measured on `01c47550`'s probe file: with the observed remote main tip ahead of the recorded base and containing it, that probe raises `AssertionError: ('bbbb…', 'd83a5bc…')` — the equality with a fixed tip it requires fails, so the evidence file could not survive this experiment's own merge. This tree accepts that state and reports both tips (`… remote main has since moved to bbbb…, which contains it; this worktree's HEAD is eeee…, which descends from it`) and still reports a remote main that does not contain the base. The same value on `dc3c29c` and `fbe21e1`; `no subject on this tree` at the base commit. |
 | `test_base_commit_record_rejects_a_snapshot_that_mixes_runs` | `base_commit_record` | — | **No pre-change counterpart: the check is new capability**, so the row is a pin. What `01c47550` can show is the artifact: its retained `base_commit.worktree_head` names `fbe21e13…` while the `rev-parse HEAD` output captured inside the same object names `dc3c29c4…`, and nothing in that tree reports it (`dc3c29c`'s and `fbe21e1`'s retained objects, by contrast, name the same commit in both places, which the pin prints as well). Executed substitute: this worktree's check rejects exactly the pre-change object (`AssertionError: … base_commit.capture is not the recorded run this check describes: None`) and a copy of this round's record whose field disagrees with its captured output (`base_commit.worktree_head is 'd83a5bc…' but the captured command for "this worktree's HEAD" printed '01c47550…'`); both runs are pasted in item 6. |
 
+**Round 6's rows** (pre-change tree `a14fe1843`, `/tmp/exp003-head`; the
+ids also run with this tree's `src` as `/tmp/exp003-after`). Each row's full
+stdout is pasted in "This round's repairs" above. The recorded base commit
+`d83a5bc` predates Experiment 003, so all four ids there report `no subject on
+this tree` — `live_objective_snapshot` because the base registry has no `tetris`
+agent — instead of aborting on an import, and are not counted as failure-before
+rows.
+
+| New test | Baseline probe | Exit | Pre-change behaviour it pins |
+| --- | --- | --- | --- |
+| `test_publication_record_derives_each_capture_entry_from_its_recorded_states` | `publication_record_derivation` | 1 | The reviewer's counterexamples, measured on `a14fe1843`'s own retained record with its own probe file: (a) the differing file entry's `outcome` is rewritten to `same` while both recorded sides stay `file` and `differs` stays true; (b) a differing path is swapped out of `capture.uncommitted_paths` for an unchanged one; (c) a declared repaired path's unchanged entry is replaced by a duplicate of another unchanged entry — each with the capture line regenerated by that tree's shipped helper and every count preserved, after which its `check_publication_record` prints `# every field of the snapshot is consistent with that one run` and accepts the record (the producer builds one entry per path from a keyed dictionary, so it cannot emit any of them). This tree reports `the captured entry for 'README.md' records the outcome 'same', but its recorded states and digests imply 'differs'`, `the captured run records these paths differing but not uncommitted: ['README.md']` and `the captured run compares these paths more than once: ['.github/workflows/ci.yml']; the captured run does not compare these declared repaired paths: ['experiments/README.md']`. |
+| `test_predeclaration_covers_every_module_of_the_objective_identity` | `predeclaration_record_identity`, `predeclaration_weights` | 1 | The reviewer's second and third counterexamples, measured on `a14fe1843`'s probe file: a cited record that carries no `objective.sources` is accepted (`the cited record carries no objective identity (its version predates it), so the captured identity is checked against the current modules alone`), and a capture whose declared `tetrises` is raised from `8.0` to `80.0` certifies the existing run, whose recorded Tetris weight is `8.0` (`# the declared objective is the measured one and predates the record`). This tree reports `the cited record carries no objective identity, so the capture cannot be compared with the identity the measurement itself wrote` and `the captured objective's weights are not the ones the objective's code publishes: … 'tetrises': 80.0 …`. |
+| `test_base_commit_record_requires_the_captured_worktree_ancestry_command` | `base_worktree_ancestry` | 1 | The reviewer's counterexamples, measured on `a14fe1843`'s retained record with its own probe file: (a) the captured `the worktree HEAD descends from the recorded base` command's exit is set to 1; (b) both copies of `base_is_ancestor_of_remote_main` are set to `false` while the captured remote-ancestry command still exited 0; (c) the recorded base is named as the observed tip with a different tree in the field, its capture copy and the captured `rev-parse` output — and the snapshot is still certified each time (`# every field, captured command and sentence of the snapshot is that one run's`), though `check_remote_main` derives the flag as `status == 0` and requires the tree when the tip is the base. This tree reports `the captured worktree-ancestry command exited 1 …`, `base_commit.base_is_ancestor_of_remote_main is False but the captured ancestry command exited 0, which implies True` and `base_commit.remote_main_tip is the recorded base … but its tree … is not the recorded base tree …`. |
+| the `README.md` version prose (finding 4) | — | — | Documentation-only row, with no pre-change code contract to violate: `a14fe1843`'s README says versions 3 and 4 are the ones this writer emits while its own `runner.py` defines `FORMAT_VERSION = 3`, `PRIOR_SUITE_FORMAT_VERSION = 4` and `SUITE_FORMAT_VERSION = 5`. Executed substitute: the corrected README names version 3 the current scripted format, version 4 the prior suite format and version 5 the current suite format, matching those constants, and the analogous shorthand in `notes.md` is corrected. No test is added or weakened. |
+| `test_live_tetris_session_snapshots_the_objective_at_begin` (integration) | `live_objective_snapshot` | 1 | The reviewer's counterexamples, measured on `a14fe1843`'s `src`: a covered module's file is changed after the first BEGIN and the session is driven through two games (the second a live restart), and the first saved record's `block_stack_ai.tetris` digest is `184466ec…` — the mutated file — against the loaded implementation's `3d32c1c3…`, so the record names post-edit code as the code that chose the inputs. This tree reads the identity once when the session is built and persists it for both records, which carry the loaded implementation's digest. |
+
 The replaced presence-only probe, re-run in the `fbe21e1` round on that round's
 worktree as item 1's table describes (its file written into `probes/` as
 `.publication-before.py`, run, removed): it reads the refs, lists each repaired
@@ -953,8 +1171,9 @@ content was reviewed:
   present", while the writer that emits it records it unconditionally, so a
   section deleted from a current record was indistinguishable from a record that
   predates it and verified silently. One repair covers all three: the record's
-  `format_version` now says which sections its writer emitted (1/2 legacy, 3/4
-  current), the current versions require them, and the legacy versions keep the
+  `format_version` now says which sections its writer emitted (1/2 legacy; 3, 4
+  and 5 are what the writers of this experiment emit, version 5 being the current
+  suite format), the current versions require them, and the legacy versions keep the
   presence rule. The audit enumerated the optional top-level sections of both
   record shapes — the scripted episode's `pieces_placed` and `clear_sizes`, the
   suite's per-episode and per-summary `clear_sizes`, `pieces_placed` and
@@ -2631,6 +2850,17 @@ reported before the check refuses it.
   compared as recorded metadata and re-derived choices, not as a proof that the
   weights were never revised — the predeclaration capture is what dates that
   claim.
+* **The capture's ordering is a file artifact, not a cryptographic timestamp.**
+  The repaired capture is written from the tree before the cited evaluation and
+  `check-predeclaration` requires the cited record's own `objective.sources` to
+  equal it, so a transcription written after the run under an earlier
+  `captured_at` is no longer accepted: the identity the measurement itself wrote
+  has to match the capture. What the check cannot prove is that the file it reads
+  was not rewritten before the review — the capture is an uncommitted artifact of
+  the reviewing worktree, and rewriting both its contents and its `captured_at`
+  would reproduce the transcription the check is meant to reject. The ordering is
+  therefore evidenced by the file's own timestamp, the run's `created_at` and the
+  identity equality, and reviewed as such.
 * **The retained snapshots are one run's, and that run was this machine's.** The
   `base_commit` object quotes the commands a full clone produced, so it carries
   the worktree path and the `/tmp/exp003-remote-main` clone path literally; the
@@ -2691,7 +2921,7 @@ time and checked against the run it names, instead of a mix of two that named
 neither. And the version numbers are described as what they are — reused, so a
 legacy version's sections may be absent and are compared when present — rather
 than as a schema history the record's own evidence contradicts. No weight, agent,
-placement or measured figure changed, and all 21 records already in `runs/` still
+placement or measured figure changed, and the 21 records then in `runs/` still
 verify.
 
 Five checks that compared a value with another value the same code derived are now
@@ -2718,3 +2948,26 @@ again reproduce the published figures for both agents, and the files this round
 changes are the runner's summary rule, the two probes, the declared objective's
 capture, the retained record, the notes, the experiments index and the unit
 suite.
+
+This round repairs five findings that share that shape one level deeper: each
+check validated a field without deriving it from the captured evidence, or a
+writer read its inputs at the wrong moment. The publication snapshot's per-path
+outcome and differing flag are now recomputed from the entry's own recorded states
+and sha256 digests, so an entry that says a differing file is `same` — each field
+legal, the combination one no run produced — is reported. The declared objective's
+capture is a genuine pre-run artifact with the run's own identity compared against
+it, instead of helper digests transcribed after the run under an earlier
+`captured_at`, and the cited record must carry that identity for the comparison to
+happen at all. The retained base snapshot must now carry the captured
+worktree-ancestry command with exit 0, which is the claim its state line makes.
+The README's version prose names version 3 the current scripted format, version 4
+the prior suite format and version 5 the current suite format, matching the
+runner's constants. And every writer records the objective's source identity as it
+was when the interpreter loaded those modules — the code a run actually executes,
+restarts and an edit between import and start included — so a record cannot name
+source the run never ran. No weight, agent, placement or measured figure changed:
+the 10-seed
+evaluation was re-run after the capture and reproduces 9128 lines at a 0.0876424%
+Tetris line rate for `lookahead` and 3495 lines at 1.1444921% for `tetris`, the
+same numbers the earlier rounds published, and every retained record in `runs/`
+still replays from its own inputs.
