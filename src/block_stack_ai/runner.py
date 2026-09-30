@@ -177,6 +177,11 @@ _IDENTITY_CHOICE = "choice"
 # that version's identity covered, or ``None`` for a version whose writer emitted
 # none — an identity such a record carries anyway is an edit, and is compared
 # against the current shape, because no writer ever emitted another one there.
+# What a version's writer emitted is only half of what a record can be asked for:
+# the version is also a claim about which writer wrote it, so a record that
+# configures an agent no writer of that version could build is an edit rather
+# than a legacy record, and is reported by ``_check_declared_agent_versions``
+# before this table's requirements are applied.
 _SUITE_FORMAT_VERSIONS = {
     LEGACY_SUITE_FORMAT_VERSION: (False, None),
     PRIOR_SUITE_FORMAT_VERSION: (True, None),
@@ -228,15 +233,45 @@ _PACKAGE_PREFIX = f"{__package__}."
 # recorder alone rather than papering over a missing digest.
 _IDENTITY_EXCLUDED_MODULES = frozenset({f"{__package__}.sourceidentity"})
 
+@dataclass(frozen=True)
+class DeclaredObjective:
+    """One agent's declared objective, and the writer version that introduced it.
+
+    ``module`` declares the objective's weights and formula, ``owner`` is the
+    module that builds the agent when the objective's own module does (``None``
+    when the shared agent factory does), and ``introduced_in`` is the suite
+    format version whose writer first made the agent configurable. The last is a
+    property of the agent, not of the writer that runs now: it is what stops a
+    record from claiming a version that never knew the agent it configures, which
+    would otherwise decide the objective section's required-ness — and the
+    identity's — by the version the record itself chose.
+    """
+
+    module: ModuleType
+    owner: ModuleType | None
+    introduced_in: int
+
+
 # The agents whose choices a separately declared objective computes: for each
 # one, the module that declares its weights and formula, and — when its objective
 # module also owns the agent — the module that builds it. ``None`` means the
 # shared agent factory defines it, and that factory's own module drives it.
 # Registering an agent here is what makes a suite that configures it record, and
 # verify, its objective.
-DECLARED_OBJECTIVES: dict[str, tuple[ModuleType, ModuleType | None]] = {
-    TETRIS_AGENT: (tetris, None),
-    PLAN_AGENT: (wellplan, wellplan),
+DECLARED_OBJECTIVES: dict[str, DeclaredObjective] = {
+    # The version-2 writer already built the Tetris agent: Experiment 003's early
+    # rounds wrote such suites, before the objective section existed, so a
+    # version-2 record of a Tetris suite legitimately carries no objective. The
+    # plan agent is declared beside the objective that computes its choices and
+    # was added by the writer that emits version 6, which always records the
+    # objective, the identity behind it and the dispatch that builds the agent —
+    # no older version's writer ever emitted one, so a record that claims an older
+    # version while configuring the plan is an edit, not a legacy record. The
+    # version is the writer's version when the agent was introduced, not the
+    # writer's current one: a later writer that moves ``SUITE_FORMAT_VERSION``
+    # keeps verifying the records the version-6 writer emitted.
+    TETRIS_AGENT: DeclaredObjective(tetris, None, LEGACY_SUITE_FORMAT_VERSION),
+    PLAN_AGENT: DeclaredObjective(wellplan, wellplan, 6),
 }
 # Every agent a suite may configure: the shared factory's own, then the agents a
 # declared objective owns. The runner is the registry the configuration is
@@ -256,11 +291,6 @@ def _declared_agents(names: Iterable[str]) -> tuple[str, ...]:
     return tuple(name for name in dict.fromkeys(names) if name in DECLARED_OBJECTIVES)
 
 
-def _objective_owner(agent: str) -> ModuleType:
-    """The module that builds this agent, and whose bytes drive its choices."""
-    return DECLARED_OBJECTIVES[agent][1] or sys.modules[create_agent.__module__]
-
-
 def build_agent(name: str, seed: int) -> Any:
     """Build the agent a suite names; the random stream is seeded by its factory.
 
@@ -274,9 +304,9 @@ def build_agent(name: str, seed: int) -> Any:
     """
     if name not in AGENT_NAMES:
         raise ValueError(f"unknown agent: {name!r}")
-    owner = DECLARED_OBJECTIVES.get(name, (None, None))[1]
-    if owner is not None:
-        return owner.build_agent(name, seed)
+    objective = DECLARED_OBJECTIVES.get(name)
+    if objective is not None and objective.owner is not None:
+        return objective.owner.build_agent(name, seed)
     return create_agent(name, seed)
 
 
@@ -798,7 +828,7 @@ def _choice_walk_seeds(agent: str) -> list[ModuleType]:
     writer recorded, which is what keeps the records written before this
     experiment verifying.
     """
-    objective = DECLARED_OBJECTIVES[agent][0]
+    objective = DECLARED_OBJECTIVES[agent].module
     return [objective, _choice_driver(agent)]
 
 
@@ -812,7 +842,7 @@ def _choice_driver(agent: str) -> ModuleType:
     in exactly the same way, because a change to it can build a different
     implementation for the same agent name.
     """
-    if DECLARED_OBJECTIVES[agent][1] is None:
+    if DECLARED_OBJECTIVES[agent].owner is None:
         return sys.modules[create_agent.__module__]
     return sys.modules[build_agent.__module__]
 
@@ -828,7 +858,8 @@ def _sibling_objective_modules(agent: str) -> set[int]:
     objective module — because a sibling reached *from the seed objective's own
     namespace* would be dropped as well.
     """
-    return {id(DECLARED_OBJECTIVES[name][0]) for name in DECLARED_OBJECTIVES if name != agent}
+    return {id(DECLARED_OBJECTIVES[name].module) for name in DECLARED_OBJECTIVES
+            if name != agent}
 
 
 def _module_source_digest(module: ModuleType, *, loaded: bool) -> str:
@@ -899,7 +930,7 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE, *, agent: str = TETRIS_AGE
     closure cannot drift between the two — both enumerate the same modules — and
     only the bytes each digest is taken over differ.
     """
-    seeds = ([DECLARED_OBJECTIVES[agent][0]] if shape == _IDENTITY_OUTWARD
+    seeds = ([DECLARED_OBJECTIVES[agent].module] if shape == _IDENTITY_OUTWARD
              else _choice_walk_seeds(agent))
     excluded = _sibling_objective_modules(agent)
     pending = list(seeds)
@@ -1046,7 +1077,7 @@ def _objective_record(config: SuiteConfig, *, loaded: bool = False,
     agent = _declared_agent(config)
     if agent is None:
         return None
-    module = DECLARED_OBJECTIVES[agent][0]
+    module = DECLARED_OBJECTIVES[agent].module
     return {
         "module": module.__name__,
         "weights": module.weights_record(),
@@ -1080,6 +1111,35 @@ def _objective_section(config: SuiteConfig, *, loaded: bool = False) -> dict[str
     return {} if objective is None else {_OBJECTIVE_FIELD: objective}
 
 
+def _check_declared_agent_versions(config: SuiteConfig, version: int, path: Path) -> None:
+    """A record cannot claim a version whose writer never knew the agent it configures.
+
+    The section requirements are read from the record's own format version, so a
+    record could otherwise be relabelled to a version before the objective section
+    existed and verified with its objective — and, one version later, the identity
+    behind it and the dispatch that builds the agent — all dropped. The agent
+    names a suite may configure are not version-gated, so nothing else notices:
+    the verifier would compare the record against whatever objective is current
+    while the record's own text claims the older writer chose it. The version is a
+    claim about the writer, and the writer that first made an agent configurable
+    is a property of that agent (``DeclaredObjective.introduced_in``), not of the
+    version the record carries. The Tetris agent predates the objective section —
+    the version-2 writer already built it, so its version-2 records legitimately
+    carry no objective — while the plan agent was introduced by the version-6
+    writer, which always records it; a record that configures the plan below
+    version 6 is therefore an edit, not a record of an older writer, and is
+    reported before any section is compared.
+    """
+    for agent in _declared_agents(config.agents):
+        introduced = DECLARED_OBJECTIVES[agent].introduced_in
+        if version < introduced:
+            raise VerificationError(
+                f"Recorded format_version {version} in {path} predates the agent it "
+                f"configures: {agent} was introduced by the writer that emits version "
+                f"{introduced}"
+            )
+
+
 def _compare_objective(record: dict[str, Any], config: SuiteConfig,
                        required: bool, identity_shape: str | None) -> list[str]:
     """Differences for the declared-objective section of a suite record.
@@ -1102,6 +1162,12 @@ def _compare_objective(record: dict[str, Any], config: SuiteConfig,
     identity is compared in every case. A section in a record whose configuration
     declares no objective of its own is a difference too, because no writer emits
     one.
+
+    Which version's requirements apply is not the record's to choose: the writer
+    that could have configured the agent it names is a property of that agent, and
+    ``_check_declared_agent_versions`` reports a record below it before this
+    comparison runs, so a record cannot be relabelled out of the section — or, one
+    version later, out of the identity inside it.
 
     ``identity_shape`` is the shape the record's own version's writer emitted, as
     the version table gives it: the modules the objective's own code reaches, or
@@ -1299,8 +1365,9 @@ def _verify_scripted(record: dict[str, Any], path: Path, sections_required: bool
     return warnings
 
 
-def _verify_suite(record: dict[str, Any], path: Path, sections_required: bool,
-                  identity_shape: str | None, game_factory: Callable[..., Any]) -> list[str]:
+def _verify_suite(record: dict[str, Any], path: Path, version: int,
+                  game_factory: Callable[..., Any]) -> list[str]:
+    sections_required, identity_shape = _SUITE_FORMAT_VERSIONS[version]
     recorded_engine, configuration = _record_sections(record, path)
     # ``weights_record()`` carries the writer's float weights and the tie-break
     # string, so the same type-and-key comparison the episodes and summary get
@@ -1320,6 +1387,7 @@ def _verify_suite(record: dict[str, Any], path: Path, sections_required: bool,
         raise VerificationError(f"Malformed run record in {path}: {error}") from error
     if not isinstance(config, SuiteConfig):
         raise VerificationError(f"Malformed run record in {path}: not a suite configuration")
+    _check_declared_agent_versions(config, version, path)
     objective_differences = _compare_objective(record, config, sections_required,
                                                identity_shape)
     if objective_differences:
@@ -1420,6 +1488,5 @@ def verify_run(path: Path, game_factory: Callable[..., Any] = create_game) -> li
     if version in _SCRIPTED_FORMAT_VERSIONS:
         return _verify_scripted(record, path, _SCRIPTED_FORMAT_VERSIONS[version], game_factory)
     if version in _SUITE_FORMAT_VERSIONS:
-        sections_required, identity_shape = _SUITE_FORMAT_VERSIONS[version]
-        return _verify_suite(record, path, sections_required, identity_shape, game_factory)
+        return _verify_suite(record, path, version, game_factory)
     raise VerificationError(f"Unsupported run record format in {path}")

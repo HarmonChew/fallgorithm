@@ -13,7 +13,16 @@ import pytest
 from block_stack_ai.agents import DOWN, create_agent
 from block_stack_ai.engine import PROJECT_ROOT, create_game, engine_executable
 from block_stack_ai.replay import export_replay
-from block_stack_ai.heuristic import SPAWN_ORIGIN_Y, WIDTH, board_grid, enumerate_placements, settle
+from block_stack_ai import wellplan
+from block_stack_ai.heuristic import (
+    GRID_ROWS,
+    HEIGHT,
+    SPAWN_ORIGIN_Y,
+    WIDTH,
+    board_grid,
+    enumerate_placements,
+    settle,
+)
 from block_stack_ai.pathaware import (
     grid_columns,
     plan_mask,
@@ -45,6 +54,16 @@ SUITE_CONFIG = PROJECT_ROOT / "experiments" / "001-greedy-heuristic" / "config.j
 LOOKAHEAD_CONFIG = PROJECT_ROOT / "experiments" / "002-path-aware-lookahead" / "config.json"
 TETRIS_CONFIG = PROJECT_ROOT / "experiments" / "003-tetris-aware-agent" / "config.json"
 PLAN_CONFIG = PROJECT_ROOT / "experiments" / "004-bounded-well-plan" / "config.json"
+
+
+def _plan_probe(name="exp004_plan_probe"):
+    """The 004 probe file, loaded from the experiment so its checks can be driven."""
+    path = (PROJECT_ROOT / "experiments" / "004-bounded-well-plan" / "probes"
+            / "evidence.py")
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_create_read_and_advance_exact_frames():
@@ -695,6 +714,32 @@ def test_plan_agent_clears_four_rows_on_a_ready_native_well():
         assert all(cell == 0 for row in settled[2:] for cell in row)
 
 
+def test_the_plan_reads_a_native_hidden_stack_as_over_its_budget():
+    """A column above the ceiling is stack height to the plan, on the engine's rows.
+
+    The engine's hidden buffer is real stack: the suite's own ``seed_hidden``
+    template locks an O above the ceiling, so columns 8 and 9 hold cells in the
+    hidden rows while the visible board is empty. Reading heights from the visible
+    field alone made that state look like an empty board, which left
+    ``holds_well`` true and the SPEND transition unreachable on a topped-out
+    stack; the plan's height is measured from the lowest occupied cell of the
+    whole grid, so the phase it reads here is the one the engine's state is in.
+    """
+    suite = load_config(SUITE_CONFIG)
+    configuration = {**suite.game, "seed": 1}
+    template, _ = _spawn_template(configuration, [[0] * WIDTH for _ in range(20)], False,
+                                  seed_hidden=True)
+    with template:
+        grid = board_grid(template.state.board, template.state.hidden_rows)
+        assert all(cell == 0 for row in grid[2:] for cell in row)
+        assert grid[0][8:10] == (1, 1) and grid[1][8:10] == (1, 1)
+        columns = grid_columns(grid)
+        assert wellplan.stack_height(columns) == GRID_ROWS
+        assert wellplan.stack_height(columns) > HEIGHT
+        assert not wellplan.holds_well(0, wellplan.stack_height(columns))
+        assert wellplan.initial_phase(0, columns) == wellplan.SPEND
+
+
 def test_suite_record_with_the_plan_agent_runs_and_verifies(tmp_path: Path):
     """The plan agent plays, records its histogram, and declares its own objective."""
     raw = json.loads(PLAN_CONFIG.read_text(encoding="utf-8"))
@@ -742,9 +787,64 @@ def test_a_record_written_by_the_frozen_writer_still_verifies():
     assert runner._objective_sources()["block_stack_ai.agents"] == hashlib.sha256(
         Path(sys.modules["block_stack_ai.agents"].__file__).read_bytes()).hexdigest()
     assert sum(episode["result"]["lines"] for episode in record["episodes"]) > 0
-    # The replay reports only the engine's working-tree warning, which every run of
-    # this checkout carries; anything else would be a mismatch.
-    assert all("working-tree" in warning for warning in verify_run(legacy))
+    # The verifier's only warnings are the engine-Git advisories, and they describe
+    # this checkout's engine state rather than the record: which of them appears
+    # changes when the engine's own working-tree edits are committed, while the
+    # record, its replay and its identity are unchanged. Comparing against the
+    # verifier's own advisory vocabulary (``probe.engine_advisories``) rather than
+    # one wording keeps the check about the record instead of about the engine's
+    # dirty flag.
+    advisories = _plan_probe("exp004_plan_legacy_probe").engine_advisories()
+    assert advisories
+    warnings = verify_run(legacy)
+    assert all(warning in advisories for warning in warnings), warnings
+
+
+def test_the_frozen_record_checks_tolerate_a_committed_engine(monkeypatch):
+    """The legacy checks read the verifier's advisories, not one engine state.
+
+    The fixture records the engine as a working tree at a specific commit, so a
+    checkout whose engine edits are committed — or whose engine has no Git metadata
+    at all — reports different engine advisories than this one does. That is a
+    property of the engine checkout and not of the record: the identity still
+    matches this tree and the recorded inputs still replay. Requiring the
+    working-tree wording specifically made the frozen-record checks fail on those
+    states, so they now compare against the verifier's own advisory vocabulary and
+    this test pins the states the old wording rejected.
+    """
+    probe = _plan_probe("exp004_plan_committed_engine_probe")
+    committed = {"commit": "0" * 40, "dirty": False, "kind": "committed"}
+    with monkeypatch.context() as patch:
+        patch.setattr(runner, "git_info", lambda root: dict(committed))
+        probe.check_legacy()
+        warnings = verify_run(probe.LEGACY_RECORD)
+    assert warnings and all(
+        warning in probe.engine_advisories() for warning in warnings), warnings
+    # The state this guards: the committed engine reports the recorded-vs-current
+    # advisory, which the old wording requirement rejected.
+    assert not all("working-tree" in warning for warning in warnings)
+
+
+def test_the_frozen_record_checks_tolerate_an_unversioned_engine(monkeypatch):
+    """The advisory vocabulary is derived independently of this checkout's Git state.
+
+    An engine checkout with no Git metadata records ``commit`` and ``dirty`` as
+    ``None``, so a vocabulary derived from a synthetic section of ``None`` values
+    matched that state and dropped the recorded-vs-current advisory — and the frozen
+    fixture, which records a commit and a dirty flag, then reported a warning the
+    vocabulary did not contain. The derivation now makes both of the verifier's
+    advisory branches fire whatever the checkout is, and this pins the state that
+    broke it.
+    """
+    probe = _plan_probe("exp004_plan_unversioned_engine_probe")
+    unversioned = {"commit": None, "dirty": None, "kind": "unversioned"}
+    with monkeypatch.context() as patch:
+        patch.setattr(runner, "git_info", lambda root: dict(unversioned))
+        advisories = probe.engine_advisories()
+        assert len(advisories) == 2, advisories
+        probe.check_legacy()
+        warnings = verify_run(probe.LEGACY_RECORD)
+    assert warnings and all(warning in advisories for warning in warnings), warnings
 
 
 def test_the_plan_probe_aggregate_command_checks_the_native_fixture():
@@ -755,11 +855,7 @@ def test_the_plan_probe_aggregate_command_checks_the_native_fixture():
     command is exercised here with that step real rather than stubbed; the
     engine-independent wiring of the same command is checked by the unit suite.
     """
-    path = (PROJECT_ROOT / "experiments" / "004-bounded-well-plan" / "probes"
-            / "evidence.py")
-    spec = importlib.util.spec_from_file_location("exp004_plan_probe_integration", path)
-    probe = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(probe)
+    probe = _plan_probe("exp004_plan_probe_integration")
     probe.all_probes()
     assert probe.main([]) == 0
     assert probe.main(["check-legacy"]) == 0

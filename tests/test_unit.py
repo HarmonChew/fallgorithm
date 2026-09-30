@@ -1564,6 +1564,69 @@ def test_suite_records_the_objective_of_the_configured_agent(tmp_path, monkeypat
         verify_run(path, factory)
 
 
+def test_a_record_cannot_be_relabelled_below_the_version_that_introduced_its_agent(
+    tmp_path, monkeypatch
+):
+    """The objective's required-ness cannot be escaped by claiming an older writer.
+
+    The section requirements are read from the record's own ``format_version``, so
+    a plan record relabelled to a version before the objective section existed
+    verified with its objective deleted — and, at the versions whose writer
+    recorded the objective but no identity, with the identity behind it deleted
+    too: the agent name a suite may configure is not version-gated, so nothing
+    else noticed. The writer that could have configured an agent is a property of
+    that agent, so a record's own declared agent pins the oldest version it may
+    claim; every older relabel is reported before any section is compared. The
+    Tetris agent's version-2 compatibility is unchanged, because its own version-2
+    writer already built it and wrote no objective.
+    """
+    path, factory, record = _objective_suite(
+        tmp_path, monkeypatch, agents=("lookahead", "tetris_plan"))
+    assert verify_run(path, factory) == []
+    # The floor is the version Experiment 004's writer emitted, when the plan agent
+    # was introduced. A later writer that moves ``SUITE_FORMAT_VERSION`` must not
+    # move this value: the version-6 plan records it emitted still have to verify.
+    assert runner.DECLARED_OBJECTIVES[runner.PLAN_AGENT].introduced_in == 6
+    assert 6 <= runner.SUITE_FORMAT_VERSION
+
+    stripped_objective = json.loads(json.dumps(record))
+    del stripped_objective["objective"]
+    stripped_identity = json.loads(json.dumps(record))
+    del stripped_identity["objective"]["sources"]
+
+    # Every version whose writer never knew the plan agent is an impossible claim,
+    # whether the objective is present or not: the relabel itself is the edit.
+    for version in (runner.LEGACY_SUITE_FORMAT_VERSION, runner.PRIOR_SUITE_FORMAT_VERSION,
+                    runner.OUTWARD_IDENTITY_SUITE_FORMAT_VERSION):
+        for edited in (stripped_objective, stripped_identity, record):
+            relabelled = json.loads(json.dumps(edited))
+            relabelled["format_version"] = version
+            path.write_text(json.dumps(relabelled), encoding="utf-8")
+            with pytest.raises(VerificationError,
+                               match=r"format_version \d+ .*predates the agent"):
+                verify_run(path, factory)
+
+    # At the version whose writer introduced it, both sections are required.
+    path.write_text(json.dumps(stripped_objective), encoding="utf-8")
+    with pytest.raises(VerificationError, match=r"objective: absent"):
+        verify_run(path, factory)
+    path.write_text(json.dumps(stripped_identity), encoding="utf-8")
+    with pytest.raises(VerificationError, match=r"objective\.sources: absent"):
+        verify_run(path, factory)
+
+    # The Tetris agent is the other case: the version-2 writer already built it and
+    # wrote no objective, so that relabel is genuine writer output and verifies.
+    tetris_path, tetris_factory, tetris_record = _objective_suite(
+        tmp_path, monkeypatch, agents=("lookahead", "tetris"))
+    assert runner.DECLARED_OBJECTIVES[runner.TETRIS_AGENT].introduced_in == \
+        runner.LEGACY_SUITE_FORMAT_VERSION
+    legacy = json.loads(json.dumps(tetris_record))
+    del legacy["objective"]
+    legacy["format_version"] = runner.LEGACY_SUITE_FORMAT_VERSION
+    tetris_path.write_text(json.dumps(legacy), encoding="utf-8")
+    assert verify_run(tetris_path, tetris_factory) == []
+
+
 def test_the_two_declared_objectives_keep_separate_identities():
     """Each objective's identity covers its own code and not its sibling's.
 
@@ -1675,6 +1738,34 @@ def test_the_dispatcher_bound_is_derived_from_the_retained_artifacts(monkeypatch
         assert bumped["experiment_003_current_suite_token"] == "7 current suite"
         with pytest.raises(AssertionError):
             probe.check_dispatcher_bound({"dispatcher_coverage": bumped})
+
+
+def test_the_engine_advisory_vocabulary_does_not_depend_on_the_checkout(monkeypatch):
+    """The legacy checks' advisory set is derived, and the same on every engine state.
+
+    ``engine_advisories`` reads the verifier's own warning code rather than copying
+    its two messages. Deriving them from a synthetic engine section of ``None``
+    values was wrong: an engine checkout without Git metadata records ``commit`` and
+    ``dirty`` as ``None``, so the synthetic section matched it and the
+    recorded-vs-current advisory dropped out of the vocabulary — and the frozen
+    fixture, which records a commit and a dirty flag, then reported a warning the
+    vocabulary did not contain, so the legacy checks rejected a valid replay on that
+    checkout. The derivation now makes both of the verifier's advisory branches fire
+    whatever this checkout's state is, and the strings it returns are the verifier's
+    own.
+    """
+    probe = _load_plan_probe("exp004_plan_advisory_probe")
+    difference = "Engine Git version or dirty status differs from the recorded run."
+    working_tree = (
+        "The engine is a working-tree run; matching Git metadata cannot prove identical "
+        "uncommitted source."
+    )
+    for state in ({"commit": "abc123", "dirty": False, "kind": "committed"},
+                  {"commit": "abc123", "dirty": True, "kind": "working-tree"},
+                  {"commit": None, "dirty": None, "kind": "unversioned"}):
+        with monkeypatch.context() as patch:
+            patch.setattr(runner, "git_info", lambda root, state=state: dict(state))
+            assert probe.engine_advisories() == (difference, working_tree), state
 
 
 def test_a_suite_configures_at_most_one_declared_objective(tmp_path, monkeypatch):
@@ -1888,18 +1979,55 @@ def test_the_plan_result_record_rederives_its_metrics_and_capture(tmp_path):
     with pytest.raises(AssertionError, match="agent_factory_digest"):
         probe.check_record(path)
 
+    # The retained objective section's complete source mapping is compared with the
+    # capture, entry by entry: the factory's digest and the dispatcher's are two of
+    # its entries, and a tampered one is named in the report.
     stale_objective = json.loads(json.dumps(record))
     stale_objective["objective_record"]["sources"]["block_stack_ai.agents"] = "0" * 64
     path.write_text(json.dumps(stale_objective), encoding="utf-8")
-    with pytest.raises(AssertionError, match="agent-factory digest"):
+    with pytest.raises(AssertionError, match=r"block_stack_ai\.agents: recorded '0{64}'"):
         probe.check_record(path)
 
-    # The dispatcher's digest is derived the same way: the plan's identity covers
-    # the runner's own bytes, so a value that is not them is reported.
     stale_runner = json.loads(json.dumps(record))
     stale_runner["objective_record"]["sources"]["block_stack_ai.runner"] = "0" * 64
     path.write_text(json.dumps(stale_runner), encoding="utf-8")
-    with pytest.raises(AssertionError, match="dispatcher digest"):
+    with pytest.raises(AssertionError, match=r"block_stack_ai\.runner: recorded '0{64}'"):
+        probe.check_record(path)
+
+    # The retained objective section is compared whole, so a truncated source
+    # mapping, changed weights or a different module is reported even when the
+    # predeclaration block beside it still matches its capture.
+    truncated_objective = json.loads(json.dumps(record))
+    del truncated_objective["objective_record"]["sources"]["block_stack_ai.wellplan"]
+    path.write_text(json.dumps(truncated_objective), encoding="utf-8")
+    with pytest.raises(AssertionError, match="complete captured identity"):
+        probe.check_record(path)
+
+    stale_weights = json.loads(json.dumps(record))
+    stale_weights["objective_record"]["weights"]["tetrises"] = 1.0
+    path.write_text(json.dumps(stale_weights), encoding="utf-8")
+    with pytest.raises(AssertionError, match="weights is not the weights"):
+        probe.check_record(path)
+
+    other_module = json.loads(json.dumps(record))
+    other_module["objective_record"]["module"] = "block_stack_ai.tetris"
+    path.write_text(json.dumps(other_module), encoding="utf-8")
+    with pytest.raises(AssertionError, match="not the module the tree's registry selects"):
+        probe.check_record(path)
+
+    # The block's own two timestamps are compared with each other, not only against
+    # the sentence they generate: a capture that claims to precede a record which
+    # predates it is reported even when the temporary run record is gone, which is
+    # the clean-checkout case the sentence alone cannot decide.
+    contradicted_order = json.loads(json.dumps(record))
+    contradicted_order["predeclared_objective"]["cited_record_created_at"] = (
+        contradicted_order["predeclared_objective"]["captured_at"])
+    contradicted_order["predeclared_objective"]["capture_order"] = (
+        probe.predeclaration_order_line(
+            contradicted_order["predeclared_objective"]["captured_at"],
+            contradicted_order["predeclared_objective"]["cited_record_created_at"]))
+    path.write_text(json.dumps(contradicted_order), encoding="utf-8")
+    with pytest.raises(AssertionError, match="timestamps contradict"):
         probe.check_record(path)
 
     # The mechanism block is derived from the model too, so a contradicting number
@@ -1946,6 +2074,151 @@ def test_the_plan_result_record_rederives_its_metrics_and_capture(tmp_path):
     path.write_text(json.dumps(self_superseded), encoding="utf-8")
     with pytest.raises(AssertionError, match="lists the current capture as superseded"):
         probe.check_record(path)
+
+    # The reproduction block is a claim that the comparison was complete, so its
+    # count, fields, source and sentence are derived from Experiment 003's rows and
+    # this result's own configuration: a block that says a truncated comparison
+    # reproduced -- what the baseline command used to print after iterating the
+    # fresh episodes alone -- is reported here.
+    miscounted_baseline = json.loads(json.dumps(record))
+    miscounted_baseline["baseline"]["reproduction"]["episodes_compared"] = 19
+    path.write_text(json.dumps(miscounted_baseline), encoding="utf-8")
+    with pytest.raises(AssertionError, match="complete configured"):
+        probe.check_record(path)
+
+    unfielded = json.loads(json.dumps(record))
+    unfielded["baseline"]["reproduction"]["fields_checked"] = ["lines", "score"]
+    path.write_text(json.dumps(unfielded), encoding="utf-8")
+    with pytest.raises(AssertionError, match="set of fields the probe compares"):
+        probe.check_record(path)
+
+    resourced = json.loads(json.dumps(record))
+    resourced["baseline"]["reproduction"]["published_rows_source"] = "somewhere else"
+    path.write_text(json.dumps(resourced), encoding="utf-8")
+    with pytest.raises(AssertionError, match="does not name the retained rows"):
+        probe.check_record(path)
+
+    restated = json.loads(json.dumps(record))
+    restated["baseline"]["reproduction"]["result"] = (
+        "Experiment 003's rows reproduce exactly")
+    path.write_text(json.dumps(restated), encoding="utf-8")
+    with pytest.raises(AssertionError, match="sentence the published metrics reconstruct"):
+        probe.check_record(path)
+
+    # The retained rows themselves are required to be the complete configured set
+    # on both sides, so a duplicate or a missing pair is reported before any
+    # aggregate is taken over them.
+    duplicated_rows = json.loads(json.dumps(record))
+    duplicated_rows["episodes_by_agent_seed"].append(
+        dict(duplicated_rows["episodes_by_agent_seed"][0]))
+    path.write_text(json.dumps(duplicated_rows), encoding="utf-8")
+    with pytest.raises(AssertionError, match="twice"):
+        probe.check_record(path)
+
+    truncated_rows = json.loads(json.dumps(record))
+    truncated_rows["episodes_by_agent_seed"].pop()
+    path.write_text(json.dumps(truncated_rows), encoding="utf-8")
+    with pytest.raises(AssertionError, match="not the configured"):
+        probe.check_record(path)
+
+
+def _baseline_replay(retained: dict, rows: list[dict]) -> dict:
+    """A fresh run record shaped like a replay of Experiment 003's configuration."""
+    return {
+        "configuration": json.loads(json.dumps(retained["configuration"])),
+        "episodes": [
+            {
+                "agent": row["agent"],
+                "seed": row["seed"],
+                "pieces_placed": row["pieces_placed"],
+                "clear_sizes": row["clear_sizes"],
+                "result": {
+                    "lines": row["lines"],
+                    "score": row["score"],
+                    "frame_count": row["frames"],
+                    "stopping_reason": row["stopping_reason"],
+                },
+            }
+            for row in rows
+        ],
+    }
+
+
+def _tampered_replay(retained: dict, rows: list[dict], tamper: str) -> dict:
+    """Experiment 003's rows as a fresh run record, with one named defect."""
+    if tamper == "complete":
+        return _baseline_replay(retained, rows)
+    if tamper == "truncated":
+        return _baseline_replay(retained, rows[:-1])
+    if tamper == "duplicated":
+        return _baseline_replay(retained, [rows[0]] + rows[:-1])
+    if tamper == "configuration":
+        record = _baseline_replay(retained, rows)
+        record["configuration"] = {**record["configuration"], "frame_limit": 199999}
+        return record
+    if tamper == "contradicting":
+        record = _baseline_replay(retained, rows)
+        record["episodes"][0]["result"]["lines"] += 1
+        return record
+    raise AssertionError(f"unknown tamper: {tamper}")
+
+
+@pytest.mark.parametrize("tamper,message", [
+    ("complete", None),
+    ("truncated", "not the configured"),
+    ("duplicated", "twice"),
+    ("configuration", "is not Experiment 003's configuration"),
+    ("contradicting", "did not reproduce"),
+])
+def test_the_plan_baseline_claim_requires_the_complete_identity_set(
+    tmp_path, monkeypatch, tamper, message
+):
+    """A reproduction is claimed only for the whole configured set.
+
+    ``baseline`` printed its claim after iterating the fresh episodes alone, so one
+    matching episode, or twenty copies of one key, read as "Experiment 003's
+    published rows reproduce exactly". The claim now requires the fresh
+    configuration to be Experiment 003's and both sides to carry every configured
+    ``(agent, seed)`` exactly once, so a truncated set, a duplicated key and a
+    mismatched configuration are each reported instead. The recorded run is
+    synthesised from Experiment 003's own retained rows, so the check is exercised
+    without replaying the native suite.
+    """
+    probe = _load_plan_probe("exp004_plan_baseline_probe")
+    retained = json.loads(probe.TETRIS_RESULT.read_text(encoding="utf-8"))
+    rows = retained["episodes_by_agent_seed"]
+    path = tmp_path / "003-replay.json"
+    path.write_text(json.dumps(_tampered_replay(retained, rows, tamper)), encoding="utf-8")
+    if message is None:
+        probe.baseline(path)
+        return
+    with pytest.raises(AssertionError, match=message):
+        probe.baseline(path)
+
+
+def test_the_plan_baseline_requires_the_retained_rows_to_be_the_complete_set(
+    tmp_path, monkeypatch
+):
+    """The retained side is required to be the complete set too.
+
+    Experiment 003's own rows are what every published aggregate and every
+    reproduction claim rests on, so a truncated copy of them cannot be reproduced
+    by a complete fresh run -- the comparison has to fail rather than print a claim
+    about the rows that remain.
+    """
+    probe = _load_plan_probe("exp004_plan_baseline_retained_probe")
+    retained = json.loads(probe.TETRIS_RESULT.read_text(encoding="utf-8"))
+    rows = retained["episodes_by_agent_seed"]
+    shortened = json.loads(json.dumps(retained))
+    shortened["episodes_by_agent_seed"] = shortened["episodes_by_agent_seed"][:-1]
+    retained_path = tmp_path / "003-result.json"
+    retained_path.write_text(json.dumps(shortened), encoding="utf-8")
+    path = tmp_path / "003-replay.json"
+    path.write_text(json.dumps(_baseline_replay(retained, rows)), encoding="utf-8")
+    with monkeypatch.context() as patch:
+        patch.setattr(probe, "TETRIS_RESULT", retained_path)
+        with pytest.raises(AssertionError, match="not the configured"):
+            probe.baseline(path)
 
 
 def test_the_plan_mechanism_claims_are_derived_from_the_model(monkeypatch):
@@ -2012,6 +2285,31 @@ def test_the_plan_mechanism_claims_are_derived_from_the_model(monkeypatch):
         ))
         with pytest.raises(AssertionError, match="does not show a divergence"):
             probe.check_mechanism({"objective_mechanism": probe.mechanism_claims()})
+
+    # The budget claim is the third of the class: a copy that no longer matches the
+    # model, or one whose board does not rest above the ceiling, is reported rather
+    # than read as evidence for the sentence it is paired with.
+    stale_budget = json.loads(json.dumps(derived))
+    stale_budget["hidden_rows_are_stack_height"]["stack_height"] = 0
+    with pytest.raises(AssertionError, match="not the one the tree's model derives"):
+        probe.check_mechanism({"objective_mechanism": stale_budget})
+
+    original_budget_claim = probe.budget_claim
+
+    def empty_board_budget():
+        claim = original_budget_claim()
+        claim.update(columns=[0] * probe.heuristic.WIDTH,
+                     column_heights=[0] * probe.heuristic.WIDTH,
+                     stack_height=0, visible_field_max_height=0,
+                     holds_well=True, phase=probe.wellplan.BUILD,
+                     statement="an empty board keeps building")
+        return claim
+
+    with monkeypatch.context() as patch:
+        patch.setattr(probe, "budget_claim", empty_board_budget)
+        with pytest.raises(AssertionError, match="does not state the case"):
+            probe.check_mechanism({"objective_mechanism": probe.mechanism_claims()})
+
     # The unpatched derivation still passes after both sentinel checks.
     probe.check_mechanism({"objective_mechanism": probe.mechanism_claims()})
 

@@ -51,7 +51,16 @@ lines and scoring more, on Experiment 003's identical ten seeds and game setting
   implementation is built, so a change to the dispatch that happens to replay the
   recorded inputs is reported instead of certifying the record. A record carries
   one such section, so a configuration naming two declared-objective agents is
-  refused at parse time rather than recorded ambiguously.
+  refused at parse time rather than recorded ambiguously. Which version's
+  requirements apply is not the record's to choose either: the writer that first
+  made an agent configurable is a property of that agent
+  (`runner.DECLARED_OBJECTIVES[...].introduced_in`), so a record that configures
+  the plan agent at a version older than the one that introduced it — a
+  combination no writer ever emitted — is reported as an edit before any section is
+  compared. Without that, relabelling a plan record to a version before the
+  objective section existed verified it with the objective, the identity behind it
+  and the dispatch that builds the agent all dropped, because the section
+  requirements were read from the version the record itself claimed.
 
 ## Method
 
@@ -141,7 +150,17 @@ the objective's count is not restricted to a column that is open to the floor.
 
 **An explicit stack-height budget.** The plan builds only while the whole stack —
 the well column included — stands below `height_budget`, and the settled stack's
-height over the budget is charged again by `overflow`.
+height over the budget is charged again by `overflow`. The height is measured over
+the engine's whole 22-row grid, not the visible field alone: a column whose cells
+rest in the two hidden rows above the ceiling has reached the top of the stack, and
+reading it as an empty column would leave the plan building while `BUILD`'s own
+budget and the `SPEND` transition were both unreachable. The retained evidence
+derives that state from the plan's own functions (`result.json` →
+`objective_mechanism.hidden_rows_are_stack_height`): on the column masks the
+engine's hidden buffer produces, the frozen visible-field measure reads 0 while the
+plan's height is 22, so `stack_height` is 22 and the phase is `SPEND`. The native
+integration suite reaches the same state on the engine itself by locking an O above
+the ceiling (`test_the_plan_reads_a_native_hidden_stack_as_over_its_budget`).
 
 **Spend-or-abandon at a self-tracked I-drought bound.** The agent counts the
 pieces it has been shown since an I was last visible to it, as the current piece
@@ -175,17 +194,21 @@ composition does not take at all.
 
 ## Results
 
-Measured on 2026-09-30 at fallgorithm `4140ad6d` (working tree, `dirty: true` — the
-committed experiment plus the identity, prose and probe changes of this repair) with
-the sibling engine `8ca41587` (working tree), on the ten seeds
-number 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, start level 18, frame limit 200000. The run
-record is `runs/20260930T010141245162Z-edcbfcfe/run.json` (temporary, ignored
-output); its per-episode rows, its metrics and the objective it declared are
-retained in [`result.json`](result.json), and `verify` replays the record from its
-own recorded inputs (exit 0, with the engine working-tree warning). The declared
-objective's identity in that record is the seven-module one described above, so the
-run that produced these numbers is one whose identity covers the dispatch that
-selected its agent.
+Measured on 2026-09-30 at fallgorithm `ea8f7db8` (working tree, `dirty: true` — the
+committed experiment plus the verification, height-accounting, prose and probe
+changes of this repair) with the sibling engine `8ca41587` (working tree), on the
+ten seeds number 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, start level 18, frame limit
+200000. The run record is `runs/20260930T020945782490Z-f908aba9/run.json`
+(temporary, ignored output); its per-episode rows, its metrics and the objective it
+declared are retained in [`result.json`](result.json), and `verify` replays the
+record from its own recorded inputs (exit 0, with the engine working-tree warning).
+The declared objective's identity in that record is the seven-module one described
+above, so the run that produced these numbers is one whose identity covers the
+dispatch that selected its agent. The evaluation was re-measured after the plan's
+height accounting was corrected (see *The verification surface and the height
+accounting*, below); its per-episode rows and metrics are identical to the
+superseded run's, so the numbers below are the same measurement under corrected
+code rather than a revised one.
 
 | Agent | Tetris line rate | Tetris lines / lines | Mean lines | Mean score | Mean frames | Pieces placed | Stopping |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -222,23 +245,27 @@ lines, and the strongest (seed 14) cleared 1304; the per-seed rows are in
 
 **Baseline reproduction.** Experiment 003's own configuration, re-run on this tree
 (`$PY -m block_stack_ai.cli run --config experiments/003-tetris-aware-agent/config.json`,
-record `runs/20260930T010647636520Z-6c8252b6/run.json`, `verify` exit 0), reproduces
+record `runs/20260930T020906802373Z-c4b7cb3d/run.json`, `verify` exit 0), reproduces
 every published per-episode row field by field — lines, score, frames,
 `pieces_placed`, stopping reason and clear-size histogram, for all 20 episodes —
 and reproduces its published summary (912.8 mean lines / 2,822,959.9 mean score for
 `lookahead`, 349.5 / 567,266.2 for `tetris`). `probes/evidence.py baseline` is the
-mechanical form of that comparison. That re-run is a version-6 record of the
-*Tetris* agent, so its identity is the five modules that agent's writer recorded and
-carries no dispatcher entry; the frozen objective, its agent, its weights
-and its results are unchanged, and so is the shared agent factory that builds that
-agent: its source is byte-identical to the branch base, which is what keeps the
-identity of the record this comparison cites — and of every record Experiment 003
-retained — matching this tree.
+mechanical form of that comparison, and it makes its claim only for the complete
+configured `(agent, seed)` set: the fresh run's configuration has to be Experiment
+003's, and both sides have to carry every one of the 20 pairs exactly once, so a
+truncated comparison or a duplicated key is reported instead of printed as a
+reproduction. That re-run is a version-6 record of the *Tetris* agent, so its
+identity is the five modules that agent's writer recorded and carries no dispatcher
+entry; the frozen objective, its agent, its weights and its results are unchanged,
+and so is the shared agent factory that builds that agent: its source is
+byte-identical to the branch base, which is what keeps the identity of the record
+this comparison cites — and of every record Experiment 003 retained — matching
+this tree.
 
 **Predeclaration.** `probes/evidence.py predeclare` wrote
-`probes/predeclared_objective.json` at 2026-09-30T00:55:20.631059+00:00, before the
-evaluation record's own `created_at` 2026-09-30T00:58:39.088832+00:00, capturing
-the objective module (`src/block_stack_ai/wellplan.py`, `sha256:0f740233…`), the
+`probes/predeclared_objective.json` at 2026-09-30T02:06:32.477792+00:00, before the
+evaluation record's own `created_at` 2026-09-30T02:06:49.115337+00:00, capturing
+the objective module (`src/block_stack_ai/wellplan.py`, `sha256:474beb3e…`), the
 marked rationale section of this file (`sha256:f167d0c9…`), the published weights
 and constants, and the identity of the seven modules the plan's choices run
 through — the objective module, the board model, the reachable set, the wrapper and
@@ -247,31 +274,36 @@ implementation. `probes/evidence.py check-predeclaration <record>` re-checks all
 it against the tree and against the identity the run itself wrote,
 `probes/evidence.py check-legacy` re-verifies the frozen writer's retained record,
 and `probes/evidence.py check-record result.json` re-derives the retained record's
-claims — its metrics from its episode rows, its acceptance verdicts from its
-thresholds, its capture order sentence from its own timestamps and its named
-superseded captures from the files on the tree, its agent-factory and dispatcher
-digests from those modules' own bytes, and its reserve and composition claims from
-the model rather than from the prose beside them.
+claims — its metrics and its complete `(agent, seed)` row set, its acceptance
+verdicts from its thresholds, its capture order sentence from its own timestamps
+and its named superseded captures from the files on the tree, its agent-factory and
+dispatcher digests from those modules' own bytes, its baseline block from
+Experiment 003's rows and its own configuration, and its reserve, composition and
+height claims from the model rather than from the prose beside them.
 
-The capture has been made three times, and both superseded ones are kept beside it.
-The first (2026-09-29T17:11:15.420024+00:00) preceded the first ten-seed run
+The capture has been made four times, and all three superseded ones are kept beside
+it. The first (2026-09-29T17:11:15.420024+00:00) preceded the first ten-seed run
 (`runs/20260929T171936702109Z-3733d12b`); the plan agent was then moved out of the
 shared factory into its objective module (see *What this experiment adds*), so the
 objective module's source changed and a second capture
 (`2026-09-29T17:45:37.951959+00:00`) was taken before the evaluation was re-run
-(`runs/20260929T174836231811Z-b6c35f6b`); and the identity walk was then corrected
-so that a plan record covers the module that decides which implementation is built
+(`runs/20260929T174836231811Z-b6c35f6b`); the identity walk was then corrected so
+that a plan record covers the module that decides which implementation is built
 (*The dispatch is part of the plan's identity*, above), which changes the declared
-identity itself, so a third capture was taken before this evaluation was re-run
-(`runs/20260930T010141245162Z-edcbfcfe`). The superseded captures are
-`probes/predeclared_objective.pre-agent-move.json` and
-`probes/predeclared_objective.pre-dispatch.json`, each valid for the design it
+identity itself, so a third capture was taken before the evaluation was re-run
+(`runs/20260930T010141245162Z-edcbfcfe`); and the plan's height accounting was then
+corrected (*The verification surface and the height accounting*, below), which
+changes the objective module's source, so a fourth capture was taken before this
+evaluation was re-run (`runs/20260930T020945782490Z-f908aba9`). The superseded
+captures are `probes/predeclared_objective.pre-height-fix.json`,
+`probes/predeclared_objective.pre-dispatch.json` and
+`probes/predeclared_objective.pre-agent-move.json`, each valid for the design it
 preceded; `check-record` requires each to exist, to predate the current capture and
 to describe a different subject. Every re-run's per-episode rows and metrics are
 identical to the run it superseded (`result.json` records that comparison), so the
-reorganisation and the identity correction changed no outcome, and the declared
-*rationale* section's digest is the same in all three captures because none of the
-changes touched a declared weight or constant.
+reorganisation, the identity correction and the height correction changed no
+outcome, and the declared *rationale* section's digest is the same in all four
+captures because none of the changes touched a declared weight or constant.
 
 The correction is what makes the incomplete identity visible: the previous
 publication's plan record, `runs/20260929T174836231811Z-b6c35f6b/run.json`, now
@@ -296,8 +328,15 @@ version-6 suite record written by the frozen writer itself — `git archive` of 
 branch base's `src`, whose `tetris.py` hashes to the digest Experiment 003's
 retained capture records (`3d32c1c3…`) — and `probes/evidence.py check-legacy`
 verifies it against this tree: its recorded identity equals this tree's Tetris
-identity, its recorded inputs replay, and the only warning is the engine's
-working-tree one. The integration suite runs the same check, and
+identity, its recorded inputs replay, and every warning is an engine-Git advisory
+rather than a complaint about the record. Which of those advisories appears is a
+property of the engine checkout and not of the record — the fixture records the
+engine as a working tree at a commit, so a checkout whose engine edits are later
+committed reports the recorded-vs-current advisory instead — so the check compares
+against the verifier's own advisory vocabulary (`engine_advisories`, derived from
+`runner._engine_warnings`) rather than one wording, and
+`tests/test_integration.py::test_the_frozen_record_checks_tolerate_a_committed_engine`
+pins both states. The integration suite runs the same check, and
 `probes/evidence.py check-record result.json` derives the same factory digest from
 this tree's bytes and compares it with the retained fixture's identity and the
 result's own claims, so the statement cannot go stale. The rest of the
@@ -349,12 +388,107 @@ objective module reloaded alone, and the factory's module reloaded alone — are
 still refused, because in each case the stale reference is held by a module the
 identity covers or by the factory itself.
 
+**The verification surface and the height accounting.** The external review of the
+first publication found three defects, each verified against the code before it was
+repaired.
+
+*The objective section could be dropped by relabelling.* Which sections a suite
+record must carry was read from the record's own `format_version`, while the agent
+names a suite may configure are not version-gated — so a plan record relabelled to
+a version before the objective section existed verified with its objective deleted,
+and one relabelled to a version whose writer recorded the objective but no identity
+verified with the identity deleted too. Neither is a record any writer emitted: the
+writer that could have configured an agent is a property of that agent, and
+`runner.DECLARED_OBJECTIVES[...].introduced_in` records it. A record that
+configures the plan agent below version 6 — the version whose writer introduced it,
+and which always records the objective, its identity and the dispatch that builds
+the agent — is now reported as an edit before any section is compared
+(`runner._check_declared_agent_versions`), so the section's required-ness follows
+the record's own declared agent instead of the version the record chose to claim.
+The Tetris agent is the other case and is unchanged: the version-2 writer already
+built it and wrote no objective, so its version-2 records keep verifying.
+`tests/test_unit.py::test_a_record_cannot_be_relabelled_below_the_version_that_introduced_its_agent`
+walks the ladder for both agents, and was confirmed to fail before the repair.
+
+*The reproduction claims were not claims about a complete set.* `probes/evidence.py
+baseline` iterated the fresh run's episodes alone and then printed that Experiment
+003's published rows reproduce exactly: one matching episode, or twenty copies of
+one key, read as the whole set, and the fresh configuration was never compared with
+Experiment 003's. Both reproduction commands now build both sides as `(agent,
+seed)` maps, require each to be the complete configured set with no duplicate, and
+require the fresh configuration to be Experiment 003's before any claim is printed
+(`rows_by_identity`, `check_identity_set`); `check-record` derives the retained
+baseline block's episode count, field list, row source and result sentence from
+Experiment 003's rows and this file's own configuration rather than reading them.
+The regression tests cover a truncated set, a duplicated key and a mismatched
+configuration. The rest of the probe was audited for the same shape — a claim made
+by iterating one side of a comparison — and the two reproduction commands were the
+whole of it: `report` prints a record's own metrics and claims no reproduction, and
+the runner's verifier already requires a suite record's episodes to be exactly the
+configured `(agent, seed)` sequence before it replays them.
+
+*The plan's height accounting ignored the hidden rows.* `wellplan.column_heights`
+read the visible field alone, so a column whose cells all rest in the engine's two
+hidden rows — a column at the ceiling, which the engine really reaches, as the
+native `seed_hidden` fixture shows — read as height 0. Every consumer inherited it:
+`holds_well` kept building on a topped-out stack, `initial_phase` could not take
+the `SPEND` transition, and `plan_value`'s overflow charged nothing for the state
+that had already spent the stack. The height is now measured from the lowest
+occupied cell of the whole 22-row grid, which is exactly the frozen
+`column_features` value for a column with a visible cell and above `HEIGHT` for a
+hidden-only one, so the budget and the overflow read that state as over the
+ceiling. The corrected reading is derived from the plan's own functions in
+`objective_mechanism.hidden_rows_are_stack_height` and reached on the engine itself
+by `tests/test_integration.py::test_the_plan_reads_a_native_hidden_stack_as_over_its_budget`;
+both were confirmed to fail before the repair. The evaluation was re-measured under
+the corrected code (`runs/20260930T020945782490Z-f908aba9/run.json`) and its
+per-episode rows and metrics are identical to the superseded run's, because no
+episode of the ten reached that state.
+
+*The legacy-record checks rejected an advisory engine warning.* `check-legacy` and
+the integration check on the frozen writer's record asserted that every warning the
+verifier returned contained the working-tree wording. The fixture records the
+engine as a working tree at a commit, so those checks fail on a checkout whose
+engine edits are later committed — the verifier then reports the recorded-vs-current
+advisory instead — even though the record, its replay and its identity are
+unchanged; the warning is advisory and describes the engine checkout, not the
+record. Both checks now compare against the verifier's own advisory vocabulary,
+derived from `runner._engine_warnings` (`engine_advisories`), so either engine
+state passes while a warning about the record's content does not, and
+`tests/test_integration.py::test_the_frozen_record_checks_tolerate_a_committed_engine`
+pins the committed state that the old wording rejected. That derivation is itself
+checkout-independent: an engine checkout with no Git metadata records `commit` and
+`dirty` as `None`, so a synthetic section of `None` values matched it and dropped
+the recorded-vs-current advisory from the vocabulary, making the same checks reject
+a valid replay there. The section the vocabulary is derived from now makes both of
+the verifier's advisory branches fire whatever the checkout is, and
+`test_the_frozen_record_checks_tolerate_an_unversioned_engine` and
+`tests/test_unit.py::test_the_engine_advisory_vocabulary_does_not_depend_on_the_checkout`
+pin the unversioned state.
+
+*Two retained-evidence checks compared only part of the claim they certified.*
+`check-record` compared `objective_record` entry by entry for the two digests the
+dispatcher finding turned on, so a retained result whose objective section had lost
+a module, or whose weights, module or any other digest had changed, still passed
+while the predeclaration block beside it matched its capture. It now compares that
+section whole — the module the tree's registry selects, that module's published
+weights, and every entry of the captured identity, with the differing entries named
+in the report. And the predeclaration block's order sentence was checked only
+against the line its own two timestamps generate, which inserts "before" whatever
+the values are: a block whose `cited_record_created_at` predated its `captured_at`,
+with the sentence regenerated to match, certified a chronology it contradicted —
+and the cited run record is a temporary, ignored artifact that a clean checkout no
+longer holds, so nothing else could decide it. `check-record` now compares the two
+timestamps chronologically as well. Both are covered by negative tests: a truncated
+source mapping, changed weights, a different module, and a contradicted timestamp
+order are each reported.
+
 ## Reproduction
 
 ```sh
 PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
-$PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 198 passed
-$PY -m pytest -q -p no:cacheprovider -m integration            # 34 passed
+$PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 210 passed
+$PY -m pytest -q -p no:cacheprovider -m integration            # 37 passed
 $PY -m block_stack_ai.cli run --config experiments/004-bounded-well-plan/config.json
 $PY -m block_stack_ai.cli verify runs/<run-id>/run.json
 $PY experiments/004-bounded-well-plan/probes/evidence.py check-predeclaration runs/<run-id>/run.json
@@ -407,6 +541,17 @@ $PY experiments/004-bounded-well-plan/probes/evidence.py all
   both `tetris` and `tetris_plan`. This experiment therefore compares against
   Experiment 003's retained rows and against a re-run of its own configuration,
   not against a same-run baseline.
+* The plan's height accounting was corrected after the first publication (see *The
+  verification surface and the height accounting*): a column whose cells rest in
+  the engine's two hidden rows is stack height (22 on the plan's scale, against the
+  frozen visible-field measure of 0) rather than an empty column, so the budget,
+  the `SPEND` transition and the overflow term read that state correctly. The
+  retained evaluation was re-measured under the corrected code and its per-episode
+  rows and metrics are identical, because no episode of the ten reached that state:
+  the corrected reading is derived in
+  `objective_mechanism.hidden_rows_are_stack_height` and reached on the engine
+  itself by the native integration test named above, not by the ten-seed
+  measurement.
 
 ## Conclusion
 
@@ -424,4 +569,9 @@ growing while the plan waits. The cost is survival: the plan clears fewer lines
 than the frozen `lookahead` agent on the same seeds, so the result is a preserved
 Tetris rate with better lines and score than Experiment 003, not the aspirational
 912.8 mean lines.
+
+The three thresholds are met by the re-measurement taken after the height
+accounting was corrected, whose per-episode rows and metrics are identical to the
+superseded run's, so the verdict is the same measurement under corrected code
+rather than a revised one.
 

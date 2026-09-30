@@ -19,7 +19,14 @@ from block_stack_ai import agents as agents_module
 from block_stack_ai import pathaware, runner
 from block_stack_ai import wellplan as wellplan_module
 from block_stack_ai.agents import DOWN, PlacementAgent
-from block_stack_ai.heuristic import HEIGHT, HIDDEN_ROWS, WIDTH, board_grid, feature_score
+from block_stack_ai.heuristic import (
+    GRID_ROWS,
+    HEIGHT,
+    HIDDEN_ROWS,
+    WIDTH,
+    board_grid,
+    feature_score,
+)
 from block_stack_ai.pathaware import column_features, grid_columns
 from block_stack_ai.wellplan import (
     BUILD,
@@ -119,7 +126,13 @@ def test_clear_term_rewards_only_the_four_line_clear():
 
 
 def test_column_heights_and_stack_height_read_the_frozen_features():
-    """The plan's heights are the ones ``pathaware.column_features`` reports."""
+    """Where a column holds a visible cell, the plan's height is the frozen one.
+
+    ``column_features`` measures the visible field alone; the plan measures the
+    whole stack, so the two agree exactly on every column with a visible cell and
+    differ only where a column's cells all rest above the ceiling — the case the
+    next test pins.
+    """
     for heights in ([0] * 10, list(range(0, 10)), [20] * 10, [4] * 9 + [0], [3, 1, 4, 1, 5, 9, 2, 6, 5, 3]):
         columns = columns_of(stacked(heights))
         features = column_features(columns)
@@ -128,6 +141,29 @@ def test_column_heights_and_stack_height_read_the_frozen_features():
         field = field_features(columns)
         assert field.max_height == max(heights[:WELL_COLUMN])
         assert field.aggregate_height == sum(heights[:WELL_COLUMN])
+
+
+def test_a_column_resting_in_the_hidden_rows_is_over_the_budget():
+    """Cells above the ceiling are stack height, not an empty column.
+
+    The engine's two hidden rows are part of the stack: a piece comes to rest
+    there when nothing below it is free, which the native integration test reaches
+    by locking an O above the ceiling. Reading such a column as height 0 would
+    leave the plan building on a topped-out stack — ``holds_well`` true, the SPEND
+    transition unreachable and the overflow term zero — so the height is measured
+    from the lowest occupied cell of the whole 22-row grid. The frozen field
+    measure still reports nothing there, which is the reading this replaces.
+    """
+    hidden_only = (1, 2) + (0,) * (WIDTH - 2)
+    heights = column_heights(hidden_only)
+    assert heights[:2] == (GRID_ROWS, GRID_ROWS - 1)
+    assert heights[2:] == (0,) * (WIDTH - 2)
+    assert stack_height(hidden_only) == GRID_ROWS
+    assert column_features(hidden_only).max_height == 0
+    assert not holds_well(0, stack_height(hidden_only))
+    assert initial_phase(0, hidden_only) == SPEND
+    assert plan_value(BUILD, 0, hidden_only) < 0.0 == plan_value(
+        BUILD, 0, columns_of(EMPTY_GRID))
 
 
 def test_field_features_leave_the_designated_well_out_of_every_field_term():

@@ -11,15 +11,20 @@ every claim of that capture against the tree and against the record the
 experiment cites; ``check-record <result.json>`` re-derives the retained
 result's own claims -- its metrics from its episode rows, its predeclaration
 block from the capture and the tree, the agent-factory and dispatcher digests from
-the modules' own bytes, and the objective's mechanism from the model (the reserve
-on a board whose well column is occupied, and one composition divergence per
-phase); ``reproduce <result.json>`` plays the
+the modules' own bytes, the objective's mechanism from the model (the reserve
+on a board whose well column is occupied, one composition divergence per phase,
+and the stack height and phase of a board whose cells rest in the engine's hidden
+rows), the baseline block from Experiment 003's retained rows and its own
+configuration, and every reported row set from the configured identity set;
+``reproduce <result.json>`` plays the
 retained configuration again and compares every retained outcome with the fresh
 one, so the retained evidence stays replayable once the temporary run records are
 gone; ``report <run.json>`` prints a saved run's retained metrics; and
 ``baseline <run.json>`` compares a fresh run of Experiment 003's frozen
 configuration with the rows Experiment 003 published, so the comparison the new
 agent is measured against is re-derived on this tree rather than carried over.
+Both comparisons require the complete configured ``(agent, seed)`` set on each
+side, so a truncated or duplicated run cannot be reported as a reproduction.
 
 ``all`` runs the checks that need no argument: the capture against the tree, and
 the retained result's own claims when the result is retained. The
@@ -268,6 +273,74 @@ def metrics_of(rows: list[dict], agent: str) -> dict:
     }
 
 
+# The fields a reproduction compares per episode: the recorded outcome of one
+# game. A retained row and a fresh run-record episode are both reduced to these
+# before any comparison, so a reproduction claim covers exactly the fields the
+# experiment reports and cannot be made from a different set of them.
+REPRODUCTION_FIELDS = ("lines", "score", "frames", "pieces_placed",
+                       "stopping_reason", "clear_sizes")
+
+
+def episode_row(episode: dict) -> dict:
+    """One run-record episode reduced to the fields a reproduction compares."""
+    return {
+        "agent": episode["agent"],
+        "seed": episode["seed"],
+        "lines": episode["result"]["lines"],
+        "score": episode["result"]["score"],
+        "frames": episode["result"]["frame_count"],
+        "pieces_placed": episode["pieces_placed"],
+        "stopping_reason": episode["result"]["stopping_reason"],
+        "clear_sizes": episode["clear_sizes"],
+    }
+
+
+def rows_by_identity(rows: list[dict], where: str) -> dict[tuple[str, int], dict]:
+    """``(agent, seed)`` to row, with a duplicated identity rejected.
+
+    A comparison that iterates one side alone cannot notice the other side missing
+    a row or holding one key twice: a single matching episode, or twenty copies of
+    one, would read as a complete reproduction. Both sides are therefore built as
+    maps, and the callers require each map's key set to be the configured one, so
+    the set equality means something.
+    """
+    by_identity: dict[tuple[str, int], dict] = {}
+    for row in rows:
+        key = (row["agent"], row["seed"])
+        assert key not in by_identity, f"{where} carries {key} twice"
+        by_identity[key] = row
+    return by_identity
+
+
+def configured_identities(configuration: dict) -> set[tuple[str, int]]:
+    """The ``(agent, seed)`` pairs a suite configuration emits."""
+    return {(agent, seed) for agent in configuration["agents"]
+            for seed in configuration["seeds"]}
+
+
+def check_identity_set(by_identity: dict, configuration: dict, where: str) -> None:
+    """The rows must be exactly the configured identity set, none missing or extra."""
+    expected = configured_identities(configuration)
+    assert set(by_identity) == expected, (
+        f"{where} is not the configured (agent, seed) set: "
+        # Sorted by ``repr``: a tampered record can carry an identity of the wrong
+        # type, and the report has to be an assertion, not a TypeError from sorting
+        # a mixed set of keys.
+        f"{sorted(set(by_identity) ^ expected, key=repr)}"
+    )
+
+
+def reproduction_differences(recorded: dict, fresh: dict) -> list[str]:
+    """Field-by-field differences over the identities both sides carry."""
+    differences = []
+    for key in sorted(set(recorded) & set(fresh)):
+        for field in REPRODUCTION_FIELDS:
+            if recorded[key][field] != fresh[key][field]:
+                differences.append(f"{key} {field}: retained {recorded[key][field]!r}, "
+                                   f"replayed {fresh[key][field]!r}")
+    return differences
+
+
 def predeclaration_order_line(captured_at: str, cited_created_at: str) -> str:
     """The order sentence the retained block has to carry, from its own values."""
     return (
@@ -464,8 +537,55 @@ def composition_statement(claim: dict) -> str:
     )
 
 
+def budget_claim() -> dict:
+    """The derived budget claim: cells above the ceiling are stack height.
+
+    The reading this experiment's earlier retained result carried measured each
+    column from the visible field alone, so a column whose cells all rest in the
+    engine's two hidden rows read as height 0 — an empty column on a stack that has
+    already reached the ceiling — and the whole-stack budget never ended the build
+    there: ``holds_well`` stayed true, ``initial_phase`` could not take the SPEND
+    transition and the overflow term charged nothing. The engine really reaches
+    that state: the native integration test locks an O above the ceiling and leaves
+    both hidden rows occupied with the visible board empty
+    (``_spawn_template(seed_hidden=True)``). The claim is derived from the plan's
+    own functions on the column masks that state produces, so the retained prose
+    about the budget is read from the model instead of restated.
+    """
+    columns = (tuple(1 << row for row in range(heuristic.HIDDEN_ROWS))
+               + (0,) * (heuristic.WIDTH - heuristic.HIDDEN_ROWS))
+    height = wellplan.stack_height(columns)
+    claim = {
+        "columns": list(columns),
+        "hidden_rows": heuristic.HIDDEN_ROWS,
+        "column_heights": list(wellplan.column_heights(columns)),
+        "visible_field_max_height": heuristic.board_features(
+            tuple(tuple((columns[column] >> row) & 1
+                        for column in range(heuristic.WIDTH))
+                  for row in range(heuristic.GRID_ROWS))).max_height,
+        "stack_height": height,
+        "holds_well": wellplan.holds_well(CLAIM_DROUGHT, height),
+        "phase": wellplan.initial_phase(CLAIM_DROUGHT, columns),
+        "build_value": round(wellplan.plan_value(wellplan.BUILD, 0, columns), 3),
+    }
+    claim["statement"] = budget_statement(claim)
+    return claim
+
+
+def budget_statement(claim: dict) -> str:
+    """The sentence a derived budget claim has to carry."""
+    return (
+        f"a column whose cells all rest in the {claim['hidden_rows']} hidden rows above "
+        f"the ceiling has height {claim['column_heights'][0]} while the frozen visible "
+        f"field reads {claim['visible_field_max_height']}, so stack_height is "
+        f"{claim['stack_height']} and the plan's phase on that board is "
+        f"{claim['phase'].upper()}: cells above the ceiling are stack height, not an "
+        "empty column"
+    )
+
+
 def mechanism_claims() -> dict:
-    """The objective's two derived mechanism claims, from the tree's own model."""
+    """The objective's derived mechanism claims, from the tree's own model."""
     reserve = reserve_claim()
     reserve["statement"] = reserve_statement(reserve)
     return {
@@ -473,6 +593,7 @@ def mechanism_claims() -> dict:
         "composition_differs_from_experiment_003": [
             composition_claim(case) for case in COMPOSITION_CASES
         ],
+        "hidden_rows_are_stack_height": budget_claim(),
     }
 
 
@@ -488,6 +609,12 @@ def check_mechanism(retained: dict) -> None:
     :mod:`block_stack_ai.wellplan`, and the retained block must equal that
     derivation field for field — including its generated sentence — so a
     contradicted or stale copy is reported rather than read as evidence.
+
+    The budget claim is the third, and the same class: it was written from a
+    visible-field reading of the heights and was false about a column resting in
+    the engine's hidden rows, which read as height 0 on a stack already at the
+    ceiling. It is re-derived from the plan's own functions on the column masks
+    that state produces.
     """
     recorded = retained.get("objective_mechanism")
     assert isinstance(recorded, dict), (
@@ -519,11 +646,26 @@ def check_mechanism(retained: dict) -> None:
             f"the composition claim for the {case['piece']} does not show a divergence, "
             "so it does not state the case it exists to state"
         )
+    budget = recorded.get("hidden_rows_are_stack_height")
+    derived_budget = derived["hidden_rows_are_stack_height"]
+    assert budget == derived_budget, (
+        "the retained budget claim is not the one the tree's model derives:\n  "
+        f"recorded {budget}\n  derived  {derived_budget}"
+    )
+    assert (budget["stack_height"] > heuristic.HEIGHT
+            and budget["visible_field_max_height"] == 0
+            and budget["phase"] == wellplan.SPEND), (
+        "the budget claim's board does not state the case it exists to state: a column "
+        "resting in the hidden rows with an empty visible field, over the budget"
+    )
     print(f"# reserve claim: well mask {reserve['well_column_mask']} with reserve "
           f"{reserve['well_reserve']} on {len(reserve['sequence'])} recorded placements")
     for case in cases:
         print(f"# composition claim ({case['phase']}): plan {case['plan_choice']} vs "
               f"clear-term-only {case['prior_composition_choice']}")
+    print(f"# budget claim: hidden-only column height {budget['column_heights'][0]} "
+          f"(visible field {budget['visible_field_max_height']}) gives stack_height "
+          f"{budget['stack_height']} and phase {budget['phase']}")
 
 
 def dispatcher_bound() -> dict:
@@ -621,8 +763,8 @@ def check_record(path: Path) -> None:
     block's objective, identity, digests and named superseded captures have to
     equal the capture file, the artifacts it names and the tree as they stand, so a
     retained claim cannot outlive the code it describes.
-    The legacy-verification block's agent-factory digest has to be the digest of
-    the factory module's bytes on this tree and of that module in the retained
+    The legacy-verification block's agent-factory digest has to be the digest of the
+    factory module's bytes on this tree and of that module in the retained
     frozen fixture's identity (``frozen_factory_digest``), and the objective
     section and the capture have to carry the same digest, so a claim written for
     the superseded design -- the plan agent added *to* the shared factory -- cannot
@@ -631,12 +773,19 @@ def check_record(path: Path) -> None:
     runner's own bytes on this tree, so the code that selects which implementation
     is built is covered by the record that reports it. The mechanism block has to
     be what the tree's model derives (``check_mechanism``): the reserve on a board
-    whose well column is occupied, and one divergence per phase between the plan's
-    composition and a current-placement term of ``clear_term`` alone, so prose
-    about the objective's behaviour is derived rather than restated. The metrics
-    block has to be the aggregate of the episode rows the same file carries, so the
-    reported means, rates and stopping counts cannot drift from the episodes they
-    summarise. And the cited run record's own ``created_at`` has to be the one the
+    whose well column is occupied, one divergence per phase between the plan's
+    composition and a current-placement term of ``clear_term`` alone, and the
+    stack height and phase of a board whose cells rest in the engine's hidden rows,
+    so prose about the objective's behaviour is derived rather than restated. The
+    metrics block has to be the aggregate of the episode rows the same file carries,
+    and those rows -- like Experiment 003's -- have to be the complete configured
+    ``(agent, seed)`` set with no duplicate, so the reported means, rates and
+    stopping counts cannot drift from the episodes they summarise or stand in for a
+    set that is not the experiment's. The baseline block's published metrics have to
+    be Experiment 003's rows' aggregate, and its reproduction block's count, fields,
+    source and sentence have to be the ones those artifacts reconstruct, so a
+    comparison that was not complete cannot be reported as one. And the cited run
+    record's own ``created_at`` has to be the one the
     block names, when this checkout still retains that temporary run. Finally, the
     coverage bound is derived (``check_dispatcher_bound``): which module selects each
     declared agent's implementation, which modules each identity covers, the keys the
@@ -650,6 +799,19 @@ def check_record(path: Path) -> None:
     assert block["capture_order"] == predeclaration_order_line(
         block["captured_at"], block["cited_record_created_at"]), (
         "capture_order is not the line this block's own two timestamps reconstruct"
+    )
+    # The sentence says the capture precedes the cited record, so the block's own
+    # two timestamps are compared with each other as well: ``predeclaration_order_line``
+    # inserts "before" whatever the values are, and the cited record itself is a
+    # temporary, ignored artifact, so a block whose ``cited_record_created_at``
+    # predates its ``captured_at`` would otherwise certify a chronology it
+    # contradicts -- with the sentence regenerated to match -- in exactly the clean
+    # checkout that no longer holds that record.
+    assert datetime.fromisoformat(block["captured_at"]) < datetime.fromisoformat(
+        block["cited_record_created_at"]), (
+        "the retained block claims the capture precedes the cited record, but its own "
+        f"timestamps contradict that: captured_at {block['captured_at']} is not before "
+        f"cited_record_created_at {block['cited_record_created_at']}"
     )
     assert block["captured_at"] == capture["captured_at"]
     assert block["module"] == capture["module"]
@@ -704,6 +866,39 @@ def check_record(path: Path) -> None:
     # digest of the tree's own file and of the retained fixture, so a claim written
     # for the design where the agent was added to the factory cannot pass.
     factory = frozen_factory_digest()
+    # The retained objective section is the run's own declaration of the objective
+    # that chose its placements, so it is compared whole: the module the tree's
+    # registry selects, that module's published weights, and every entry of the
+    # captured source identity, with the differing entries named. A retained result
+    # whose section lost a module, or whose weights, module or any digest changed,
+    # would otherwise pass while the predeclaration block beside it still matched
+    # its capture, so the record's own claim about the code that chose its
+    # placements would contradict the capture it is supposed to be.
+    plan_agent = runner._declared_agents(retained["configuration"]["agents"])[0]
+    plan_module = runner.DECLARED_OBJECTIVES[plan_agent].module
+    objective_section = retained["objective_record"]
+    assert objective_section["module"] == plan_module.__name__, (
+        "objective_record.module is not the module the tree's registry selects for "
+        f"{plan_agent}: {objective_section['module']!r} != {plan_module.__name__!r}"
+    )
+    assert objective_section["weights"] == plan_module.weights_record(), (
+        "objective_record.weights is not the weights the selected objective publishes: "
+        f"{objective_section['weights']} != {plan_module.weights_record()}"
+    )
+    source_differences = [
+        f"{name}: recorded {objective_section['sources'].get(name)!r}, "
+        f"captured {digest!r}"
+        for name, digest in capture["sources"].items()
+        if objective_section["sources"].get(name) != digest
+    ] + [
+        f"{name}: recorded but not part of the captured identity"
+        for name in objective_section["sources"]
+        if name not in capture["sources"]
+    ]
+    assert not source_differences, (
+        "objective_record.sources is not the complete captured identity of the "
+        "objective:\n  " + "\n  ".join(source_differences)
+    )
     legacy = retained["legacy_verification"]
     assert legacy["agent_factory_digest"] == factory, (
         "legacy_verification.agent_factory_digest is not the digest of this tree's "
@@ -718,32 +913,18 @@ def check_record(path: Path) -> None:
         f"{RUNNER_MODULE.name}: {legacy['dispatcher_digest']} != "
         f"{_sha256(RUNNER_MODULE.read_bytes())}"
     )
-    assert retained["objective_record"]["sources"]["block_stack_ai.agents"] == factory, (
-        "objective_record.sources does not carry this tree's agent-factory digest"
-    )
     assert block["sources"]["block_stack_ai.agents"] == factory, (
         "predeclared_objective.sources does not carry this tree's agent-factory digest"
     )
-    # The dispatcher's digest is derived the same way. The plan's agent is selected
-    # by the runner's dispatch, so the identity a plan record carries has to name
-    # that module and its digest has to be the source on this tree; a record whose
-    # identity stopped at the objective module and the wrapper would keep replaying
-    # the same inputs under a dispatch that builds something else. The frozen
-    # fixture's Tetris identity is the shape its version 6 writer recorded, which is
-    # why that identity -- and Experiment 003's preserved capture -- carries no
-    # dispatcher entry; ``frozen_factory_digest`` derives it unchanged.
-    dispatcher = "block_stack_ai.runner"
-    runner_digest = _sha256(RUNNER_MODULE.read_bytes())
-    assert dispatcher in current_sources(), (
+    # The dispatcher is the entry the previous findings turned on, and its presence
+    # in the plan's own identity is a property of the tree rather than of the
+    # record: the frozen fixture's Tetris identity is the five modules its version-6
+    # writer recorded and carries no dispatcher entry, while the plan's walk seeds
+    # the module whose dispatch decides which implementation is built.
+    assert "block_stack_ai.runner" in current_sources(), (
         "the plan's identity does not cover the dispatcher that selects its agent, so a "
         "change to it could not be caught"
     )
-    for where, sources in (("objective_record.sources", retained["objective_record"]["sources"]),
-                           ("predeclared_objective.sources", block["sources"])):
-        assert sources.get(dispatcher) == runner_digest, (
-            f"{where} does not carry this tree's dispatcher digest: "
-            f"{sources.get(dispatcher)} != {runner_digest}"
-        )
     assert "block_stack_ai.runner" not in runner._objective_sources(), (
         "the Tetris identity is no longer the shape its version 6 writer recorded"
     )
@@ -754,6 +935,12 @@ def check_record(path: Path) -> None:
     check_dispatcher_bound(retained)
     check_mechanism(retained)
     rows = retained["episodes_by_agent_seed"]
+    # The retained rows are the complete configured identity set, each pair once:
+    # every aggregate and acceptance verdict below is taken over them, and a
+    # truncated or duplicated set would aggregate something that is not this
+    # experiment's measurement.
+    by_identity = rows_by_identity(rows, "the retained episode rows")
+    check_identity_set(by_identity, retained["configuration"], "the retained episode rows")
     for agent in retained["configuration"]["agents"]:
         assert retained["metrics"][agent] == metrics_of(rows, agent), (
             f"the retained metrics for {agent} are not the aggregate of its own rows"
@@ -765,7 +952,6 @@ def check_record(path: Path) -> None:
     # metrics and each verdict is the comparison its own threshold states, so a
     # "met" that its numbers no longer support is reported. The three thresholds
     # are the ones the experiment was given; the comparison is re-made, not read.
-    plan_agent = runner._declared_agents(retained["configuration"]["agents"])[0]
     plan = retained["metrics"][plan_agent]
     acceptance = retained["acceptance"]
     thresholds = (
@@ -812,6 +998,13 @@ def check_record(path: Path) -> None:
     # it is derived here and not trusted as the prose beside it.
     tetris_record = json.loads(TETRIS_RESULT.read_text(encoding="utf-8"))
     tetris_rows = tetris_record["episodes_by_agent_seed"]
+    # Experiment 003's rows are the complete configured identity set, with no
+    # duplicate: every published aggregate below is taken over them, so a
+    # truncated or duplicated set would aggregate something that is not the
+    # experiment's measurement.
+    tetris_by_identity = rows_by_identity(tetris_rows, "Experiment 003's retained rows")
+    check_identity_set(tetris_by_identity, tetris_record["configuration"],
+                       "Experiment 003's retained rows")
     published = retained["baseline"]["published_metrics"]
     assert set(published) == set(tetris_record["configuration"]["agents"]), sorted(published)
     for agent, metrics in published.items():
@@ -819,6 +1012,36 @@ def check_record(path: Path) -> None:
             f"baseline.published_metrics.{agent} is not the aggregate of Experiment 003's "
             "retained rows"
         )
+    # The reproduction block is the claim that the comparison was complete, so its
+    # numbers and sentence are derived from the artifacts rather than read: the
+    # count is the configured identity set of Experiment 003's rows, the fields are
+    # the ones the probe compares, the source names the rows the aggregate is taken
+    # from, and the sentence is the one those published metrics reconstruct. A
+    # block that says a truncated comparison reproduced -- what ``baseline`` used to
+    # print after iterating the fresh episodes alone -- is reported here.
+    reproduction = retained["baseline"]["reproduction"]
+    configured_pairs = len(configured_identities(tetris_record["configuration"]))
+    assert reproduction["episodes_compared"] == len(tetris_rows) == configured_pairs, (
+        "baseline.reproduction.episodes_compared is not the complete configured "
+        f"(agent, seed) set of Experiment 003's rows: "
+        f"{reproduction['episodes_compared']} against {len(tetris_rows)} rows and "
+        f"{configured_pairs} configured pairs"
+    )
+    assert reproduction["fields_checked"] == list(REPRODUCTION_FIELDS), (
+        "baseline.reproduction.fields_checked is not the set of fields the probe "
+        f"compares: {reproduction['fields_checked']} != {list(REPRODUCTION_FIELDS)}"
+    )
+    assert reproduction["published_rows_source"] == (
+        f"{TETRIS_RESULT.relative_to(PROJECT_ROOT)}#episodes_by_agent_seed"
+    ), (
+        "baseline.reproduction.published_rows_source does not name the retained rows "
+        f"the published metrics are aggregated from: {reproduction['published_rows_source']}"
+    )
+    assert reproduction["result"] == baseline_result_statement(published), (
+        "baseline.reproduction.result is not the sentence the published metrics "
+        f"reconstruct:\n  recorded {reproduction['result']}\n  derived  "
+        f"{baseline_result_statement(published)}"
+    )
     cited = PROJECT_ROOT / block["cited_record"]
     if cited.exists():
         created_at = json.loads(cited.read_text(encoding="utf-8"))["created_at"]
@@ -867,6 +1090,25 @@ def report(path: Path) -> None:
         print(f"#   stopping {summary['stopping_reasons']} at the frame cap: {capped}")
 
 
+def baseline_result_statement(published: dict) -> str:
+    """The result sentence the baseline block's published metrics reconstruct.
+
+    The block's prose is a claim about numbers, so it is generated from them: a
+    sentence naming means that the retained rows no longer aggregate to is
+    reported instead of read as a measurement of the baseline.
+    """
+    sides = ", ".join(
+        f"the {agent} side {metrics['lines_mean']} mean lines and "
+        f"{metrics['score_mean']:,.1f} mean score"
+        for agent, metrics in sorted(published.items())
+    )
+    return (
+        "Experiment 003's configuration, replayed on this tree, reproduces every "
+        "published per-episode row and summary it published: " + sides
+        + ", which are the numbers the acceptance criteria name"
+    )
+
+
 def baseline(path: Path) -> None:
     """Compare a fresh run of Experiment 003's configuration with its retained rows.
 
@@ -876,29 +1118,29 @@ def baseline(path: Path) -> None:
     objective shares the module the agent factory selects, the board model and the
     reachable set, so a behaviour change in any of them would move this comparison
     even though no weight of Experiment 003's was touched.
+
+    The claim is only made for a complete reproduction: the fresh run's
+    configuration has to be Experiment 003's, and both sides have to carry every
+    configured ``(agent, seed)`` exactly once. Iterating the fresh episodes alone
+    -- what this did before -- printed the claim for a single matching episode, or
+    for twenty copies of one key, so a truncated or duplicated comparison read as
+    evidence that the whole published set reproduced.
     """
     fresh = json.loads(path.read_text(encoding="utf-8"))
     retained = json.loads(TETRIS_RESULT.read_text(encoding="utf-8"))
-    rows = {(row["agent"], row["seed"]): row for row in retained["episodes_by_agent_seed"]}
-    differences = []
-    compared = 0
-    for episode in fresh["episodes"]:
-        key = (episode["agent"], episode["seed"])
-        recorded = rows[key]
-        compared += 1
-        actual = {
-            "lines": episode["result"]["lines"],
-            "score": episode["result"]["score"],
-            "frames": episode["result"]["frame_count"],
-            "pieces_placed": episode["pieces_placed"],
-            "stopping_reason": episode["result"]["stopping_reason"],
-            "clear_sizes": episode["clear_sizes"],
-        }
-        for field, value in actual.items():
-            if recorded[field] != value:
-                differences.append(f"{key} {field}: retained {recorded[field]!r}, "
-                                   f"replayed {value!r}")
-    print(f"# compared {compared} episodes against Experiment 003's retained rows")
+    assert fresh["configuration"] == retained["configuration"], (
+        "the fresh run is not Experiment 003's configuration, so it cannot reproduce "
+        f"its rows: {fresh['configuration']} != {retained['configuration']}"
+    )
+    rows = rows_by_identity(retained["episodes_by_agent_seed"],
+                            "Experiment 003's retained rows")
+    check_identity_set(rows, retained["configuration"], "Experiment 003's retained rows")
+    fresh_rows = rows_by_identity([episode_row(episode) for episode in fresh["episodes"]],
+                                  f"the fresh run {path}")
+    check_identity_set(fresh_rows, retained["configuration"], f"the fresh run {path}")
+    differences = reproduction_differences(rows, fresh_rows)
+    print(f"# compared {len(rows)} episodes against Experiment 003's retained rows, "
+          "the complete configured (agent, seed) set")
     if differences:
         raise AssertionError("the frozen Experiment 003 rows did not reproduce:\n  "
                              + "\n  ".join(differences))
@@ -918,37 +1160,26 @@ def reproduce(path: Path) -> None:
     clear-size histogram -- and each agent's aggregate metrics with the retained
     rows. A single difference is reported, so the retained evidence is replayable
     in a clean checkout that no longer holds the temporary run.
+
+    As in ``baseline``, the claim covers the whole configured identity set: both
+    sides are required to carry every ``(agent, seed)`` exactly once, so a
+    truncated or duplicated retained row cannot stand in for the set it claims to
+    reproduce.
     """
     retained = json.loads(path.read_text(encoding="utf-8"))
-    rows = {(row["agent"], row["seed"]): row for row in retained["episodes_by_agent_seed"]}
     configuration = runner.parse_config(retained["configuration"])
-    fresh: list[dict] = []
-    differences: list[str] = []
-    for episode in runner.run_suite(configuration):
-        row = {
-            "agent": episode["agent"],
-            "seed": episode["seed"],
-            "lines": episode["result"]["lines"],
-            "score": episode["result"]["score"],
-            "frames": episode["result"]["frame_count"],
-            "pieces_placed": episode["pieces_placed"],
-            "stopping_reason": episode["result"]["stopping_reason"],
-            "clear_sizes": episode["clear_sizes"],
-        }
-        fresh.append(row)
-        recorded = rows[(row["agent"], row["seed"])]
-        for field in ("lines", "score", "frames", "pieces_placed", "stopping_reason",
-                      "clear_sizes"):
-            if recorded[field] != row[field]:
-                differences.append(
-                    f"{row['agent']}/{row['seed']} {field}: retained {recorded[field]!r}, "
-                    f"replayed {row[field]!r}"
-                )
+    rows = rows_by_identity(retained["episodes_by_agent_seed"],
+                            f"{path.name}'s retained rows")
+    check_identity_set(rows, retained["configuration"], f"{path.name}'s retained rows")
+    fresh = [episode_row(episode) for episode in runner.run_suite(configuration)]
+    fresh_rows = rows_by_identity(fresh, "the replayed suite")
+    check_identity_set(fresh_rows, retained["configuration"], "the replayed suite")
+    differences = reproduction_differences(rows, fresh_rows)
     for agent in configuration.agents:
         if retained["metrics"][agent] != metrics_of(fresh, agent):
             differences.append(f"{agent}: the replayed metrics are not the retained ones")
     print(f"# replayed {len(fresh)} episodes of the retained configuration "
-          f"({', '.join(configuration.agents)})")
+          f"({', '.join(configuration.agents)}), the complete configured (agent, seed) set")
     if differences:
         raise AssertionError("the retained rows did not reproduce:\n  "
                              + "\n  ".join(differences))
@@ -984,6 +1215,32 @@ def frozen_factory_digest() -> str:
     return tree
 
 
+def engine_advisories() -> tuple[str, ...]:
+    """The engine-Git advisories the verifier reports, read from its own warning code.
+
+    ``verify_run`` reports no warning about a record's content: its only warnings
+    are these, and they describe this checkout's engine state rather than the
+    record. Which of them appears therefore changes with that state — a record
+    written while the engine was a working tree warns about the recorded-vs-current
+    difference once the engine's own edits are committed — so a check that required
+    one particular wording failed on a state change while the record, its replay
+    and its identity were unchanged.
+
+    The set is derived from the verifier's own ``_engine_warnings`` rather than
+    copied beside it, and the synthetic engine section is chosen to make *both*
+    branches fire whatever this checkout's Git state is: a ``dirty`` flag that is
+    not a boolean is a difference the verifier reports by its own documented rule,
+    and a recorded ``kind`` that is not ``"committed"`` always draws the
+    working-tree notice. A section of ``None`` values would not: an engine checkout
+    without Git metadata records ``commit`` and ``dirty`` as ``None``, so it matches
+    such a section and the difference advisory would drop out of the vocabulary,
+    making the legacy checks reject a valid replay on that checkout.
+    """
+    return tuple(runner._engine_warnings({
+        "commit": "\x00advisory-probe", "dirty": "advisory-probe", "kind": "advisory-probe",
+    }))
+
+
 def check_legacy() -> None:
     """A record written by the frozen writer still verifies against this tree.
 
@@ -995,9 +1252,9 @@ def check_legacy() -> None:
     agent to this project must not invalidate such a record, and this is what
     checks that: the recorded identity still equals the identity of this tree, the
     shared factory's covered digest is still the digest of this tree's own file
-    (``frozen_factory_digest``), the recorded inputs still replay, and the only
-    warning is the engine's working-tree one that every run of this checkout
-    carries.
+    (``frozen_factory_digest``), the recorded inputs still replay, and every
+    warning is an engine-Git advisory (``engine_advisories``) rather than a
+    complaint about the record.
     """
     record = json.loads(LEGACY_RECORD.read_text(encoding="utf-8"))
     assert record["format_version"] == 6, record["format_version"]
@@ -1006,11 +1263,16 @@ def check_legacy() -> None:
         "the frozen record's identity is not this tree's Tetris identity"
     )
     factory = frozen_factory_digest()
+    advisories = engine_advisories()
+    assert advisories, "the verifier's engine-Git advisories are not derivable from its code"
     warnings = runner.verify_run(LEGACY_RECORD)
-    assert all("working-tree" in warning for warning in warnings), warnings
+    assert all(warning in advisories for warning in warnings), (
+        f"the frozen record reported a warning that is not an engine-Git advisory: {warnings}"
+    )
     lines = sum(episode["result"]["lines"] for episode in record["episodes"])
     print(f"# frozen writer's record: {LEGACY_RECORD.name} "
-          f"({len(record['episodes'])} episodes, {lines} lines) verifies")
+          f"({len(record['episodes'])} episodes, {lines} lines) verifies "
+          f"with {len(warnings)} engine-Git advisory warning(s)")
     print(f"# its identity's agent-factory digest {factory} equals this tree's")
 
 

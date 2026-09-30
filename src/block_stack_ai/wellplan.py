@@ -24,7 +24,10 @@ player-visible lookahead. Everything it adds is visible-information only:
 * an explicit **stack-height budget** (:data:`HEIGHT_BUDGET`): the plan builds
   only while the whole stack is below it, and the settled board's height over
   the budget is charged again, so a candidate that pushes the stack past the
-  budget loses to one that does not.
+  budget loses to one that does not. The height is measured over the whole
+  22-row grid rather than the visible field alone, so a column whose cells rest
+  in the two hidden rows above the ceiling counts as over the budget instead of
+  as an empty column.
 * **spend-or-abandon at a self-tracked I-drought bound** (:data:`DROUGHT_BOUND`):
   the plan counts the pieces it has been shown since an I was last visible to it,
   as the current piece or as the preview, and past that bound it stops holding
@@ -183,15 +186,30 @@ def clear_term(lines_cleared: int) -> float:
 
 
 def column_heights(columns: tuple[int, ...]) -> tuple[int, ...]:
-    """The visible-field height of each column, as ``column_features`` reads it."""
+    """The height of each column over the whole stack, hidden rows included.
+
+    ``column_features`` reads the visible field alone, and that is the right
+    measure for the frozen geometry: the engine clears visible rows, and the two
+    hidden rows above the ceiling are a separate buffer it never clears. The
+    plan's budget is not a field term, though. A column whose cells all sit in
+    those hidden rows has reached the ceiling — a piece came to rest above the
+    visible field because nothing below it was free — and reading it as height 0
+    would report an empty column on a topped-out stack: ``holds_well`` would keep
+    building, ``initial_phase`` would never take the SPEND transition and
+    ``plan_value``'s overflow would charge nothing for the state that has already
+    spent the stack. The height is therefore measured from the lowest occupied
+    cell of the whole 22-row grid, which is exactly the value
+    ``column_features`` reports for a column with a visible cell and is above
+    ``HEIGHT`` for a hidden-only column, so the budget and the overflow read that
+    state as over the ceiling.
+    """
     heights = []
     for column in columns:
-        visible = column >> HIDDEN_ROWS
-        if not visible:
+        if not column:
             heights.append(0)
             continue
-        top = (visible & -visible).bit_length() - 1
-        heights.append(HEIGHT - top)
+        lowest = (column & -column).bit_length() - 1
+        heights.append(GRID_ROWS - lowest)
     return tuple(heights)
 
 
@@ -207,7 +225,10 @@ def field_features(columns: tuple[int, ...], well: int = WELL_COLUMN) -> BoardFe
     left out of every field term, so holding four rows of it does not read as
     four holes and does not have to outbid the height terms. Bumpiness is summed
     over adjacent field columns only, so the step down into the well is not
-    counted either.
+    counted either. The heights are :func:`column_heights` — the whole stack,
+    hidden rows included — so a field column resting on the ceiling reads as over
+    the budget; the holes stay the visible field's, because a cell above the
+    ceiling is occupied rather than covered.
     """
     heights = column_heights(columns)
     field_heights = [height for index, height in enumerate(heights) if index != well]
