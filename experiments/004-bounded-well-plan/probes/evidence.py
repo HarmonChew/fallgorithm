@@ -8,20 +8,24 @@ Run each subcommand directly, or ``all`` for every one that needs no argument:
 ``predeclare`` captures the declared objective from the tree as it stands, before
 the ten-seed evaluation is measured; ``check-predeclaration <run.json>`` re-checks
 every claim of that capture against the tree and against the record the
-experiment cites — that record's path, its evaluation configuration and its
-complete ``(agent, seed)`` episode set, not only its timestamp; ``check-record
+experiment cites — that record's path, its evaluation configuration, its complete
+``(agent, seed)`` episode set and its per-episode outcomes, field for field
+against the rows the retained result carries, not only its timestamp; ``check-record
 <result.json>`` re-derives the retained
 result's own claims -- its metrics from its episode rows, its acceptance
 thresholds from Experiment 003's own retained rows and its verdicts from those
-thresholds, its predeclaration block from the capture and the tree, the
+thresholds, its stopping counts and its narrative blocks from the same derivation,
+its predeclaration block from the capture and the tree, the
 agent-factory and dispatcher digests from the modules' own bytes, the coverage of
 each version's identity walk from the tree's own table and Experiment 003's
 regenerated version prose, the objective's mechanism from the model (the reserve
 on a board whose well column is occupied, one composition divergence per phase,
 and the stack height and phase of a board whose cells rest in the engine's hidden
 rows), the baseline block from Experiment 003's retained rows and its own
-configuration, and every reported row set from the configured identity set;
-``reproduce <result.json>`` plays the
+configuration, the comparison of its own rows with every superseded run's retained
+rows, and every reported row set from the configured identity set -- against the
+canonical ``config.json``, which is the authority on what was evaluated, not the
+copy the result embeds; ``reproduce <result.json>`` plays the
 retained configuration again and compares every retained outcome with the fresh
 one, so the retained evidence stays replayable once the temporary run records are
 gone; ``report <run.json>`` prints a saved run's retained metrics; and
@@ -30,6 +34,12 @@ configuration with the rows Experiment 003 published, so the comparison the new
 agent is measured against is re-derived on this tree rather than carried over.
 Both comparisons require the complete configured ``(agent, seed)`` set on each
 side, so a truncated or duplicated run cannot be reported as a reproduction.
+
+Every top-level block the retained result carries is re-derived by ``check-record``
+except the few named as narrative, and the block set itself is asserted, so a
+retained claim that no check derives cannot be added to the record without either
+deriving it or declaring it narrative here.
+
 
 ``all`` runs the checks that need no argument: the capture against the tree, the
 retained result's own claims when the result is retained, and — when this checkout
@@ -67,6 +77,29 @@ FACTORY_MODULE = PROJECT_ROOT / "src" / "block_stack_ai" / "agents.py"
 # the retained fixture are derived against that older shape.
 RUNNER_MODULE = PROJECT_ROOT / "src" / "block_stack_ai" / "runner.py"
 PREDECLARATION = EXPERIMENT / "probes" / "predeclared_objective.json"
+# The retained artifact the ``refactor_no_outcomes_changed`` block is about: the
+# distilled per-episode rows of every ten-seed evaluation run this one superseded.
+# The claim that the re-measurements under corrected code changed no outcome is a
+# comparison, so it is only evidence if the compared rows are retained somewhere
+# other than the record that makes the claim, which is this file.
+SUPERSEDED_ROWS = EXPERIMENT / "probes" / "superseded_run_rows.json"
+# The experiment's canonical configuration: the file the documented
+# ``block-stack-ai run --config`` command executes, and therefore the authority on
+# which agents, seeds and game settings were evaluated. The copy embedded in the
+# retained result is checked against it rather than trusted.
+EXPERIMENT_CONFIG = EXPERIMENT / "config.json"
+# Every top-level block the certified record carries. Each is either re-derived by
+# ``check_record`` or named here as narrative -- prose about the method, the code or
+# the history rather than a claim about the measured numbers, which the blocks it
+# describes carry. The set is asserted against the record, so a claim no check
+# derives cannot be added to the certified result silently.
+RETAINED_BLOCKS = frozenset({
+    "acceptance", "baseline", "conclusion", "configuration", "development",
+    "dispatcher_coverage", "episodes_by_agent_seed", "legacy_verification",
+    "limitations", "metrics", "objective_mechanism", "objective_record",
+    "predeclared_objective", "refactor_no_outcomes_changed", "retained_replay",
+    "status", "stopping",
+})
 # The retained result: the artifact `check-record` certifies, and the one that names
 # the run its predeclaration block cites.
 RESULT_PATH = EXPERIMENT / "result.json"
@@ -74,6 +107,10 @@ RESULT_PATH = EXPERIMENT / "result.json"
 # legacy-verification guarantee is checked by this tree rather than asserted.
 LEGACY_RECORD = EXPERIMENT / "probes" / "legacy_v6_tetris_record.json"
 TETRIS_RESULT = PROJECT_ROOT / "experiments" / "003-tetris-aware-agent" / "result.json"
+# Experiment 003's own canonical configuration: the file the documented
+# ``run --config`` command for that experiment executes, and therefore the authority
+# on the baseline suite this experiment is compared against.
+TETRIS_CONFIG = PROJECT_ROOT / "experiments" / "003-tetris-aware-agent" / "config.json"
 # Experiment 003's own evidence probe, which derives its retained version prose from
 # the writer's constants. It is loaded (never edited) so this experiment's checks can
 # re-derive the constraint Experiment 003's retained evidence puts on the format
@@ -188,13 +225,18 @@ def check_predeclaration(path: Path, result_path: Path | None = None) -> None:
     The record is also tied to the run the retained result cites, because a
     chronology is only evidence about *that* measurement: the check requires
     ``path`` to be the ``cited_record`` the verified result names, its
-    configuration to be the evaluation configuration the result records, and its
-    episodes to be that configuration's complete ``(agent, seed)`` set with no
-    duplicate. Without those three, any later one-seed run -- or a minimal JSON
-    object carrying a timestamp and a copy of the objective -- passed and was
-    reported as the evaluation record, which proved nothing about the ten-seed
-    measurement the capture preceded. A record without the section, or with an
-    identity that is not the capture's, is reported rather than accepted.
+    configuration to be the evaluation configuration the result records -- which is
+    the experiment's canonical ``config.json``, not the copy the result embeds --
+    its episodes to be that configuration's complete ``(agent, seed)`` set with no
+    duplicate, and every per-episode outcome to be the row the result retains for
+    that same identity. Without the last of those, a *different*, later,
+    same-configuration run copied to the required path with a copy of the captured
+    objective was reported as the evaluation record even when its lines, scores,
+    frames, placed pieces, stopping reasons or clear-size histograms differed from
+    the published measurement: the identity set said which games the record held,
+    but nothing said the games were the measured ones. A record without the
+    section, or with an identity that is not the capture's, is reported rather
+    than accepted.
     """
     cited = cited_record_path(result_path)
     assert path.resolve() == cited.resolve(), (
@@ -202,6 +244,8 @@ def check_predeclaration(path: Path, result_path: Path | None = None) -> None:
         f"({cited}), so its chronology relative to the capture proves nothing about the "
         "measured run"
     )
+    retained = json.loads((RESULT_PATH if result_path is None else result_path)
+                          .read_text(encoding="utf-8"))
     configuration = evaluation_configuration(result_path)
     captured = json.loads(PREDECLARATION.read_text(encoding="utf-8"))
     record = json.loads(path.read_text(encoding="utf-8"))
@@ -216,6 +260,16 @@ def check_predeclaration(path: Path, result_path: Path | None = None) -> None:
     rows = rows_by_identity([episode_row(episode) for episode in episodes],
                            f"the cited record {path}")
     check_identity_set(rows, configuration, f"the cited record {path}")
+    retained_rows = rows_by_identity(retained["episodes_by_agent_seed"],
+                                     f"{path.name}'s result rows")
+    check_identity_set(retained_rows, configuration, f"{path.name}'s result rows")
+    differences = reproduction_differences(retained_rows, rows)
+    assert not differences, (
+        "the cited record's per-episode outcomes are not the rows the retained result "
+        "carries for the same (agent, seed) identities, so the capture's chronology is "
+        "not evidence about the measurement this experiment reports:\n  "
+        + "\n  ".join(differences)
+    )
     assert wellplan.weights_record() == captured["objective"], (
         "the declared weights are not the ones the objective's code publishes: "
         f"{wellplan.weights_record()!r} != {captured['objective']!r}"
@@ -390,6 +444,25 @@ def predeclaration_order_line(captured_at: str, cited_created_at: str) -> str:
     )
 
 
+def experiment_003_configuration() -> dict:
+    """Experiment 003's evaluation configuration, from its own canonical config file.
+
+    The baseline this experiment is judged against is Experiment 003's measurement,
+    and the comparison is re-derived from that experiment's retained rows. Those rows
+    belong to the suite its own ``config.json`` states, so the copy embedded in its
+    retained result is compared with that file before either is used: a baseline that
+    drifted from the file its documented run command executes would be compared
+    against a suite nobody can reproduce.
+    """
+    embedded = json.loads(TETRIS_RESULT.read_text(encoding="utf-8"))["configuration"]
+    canonical = json.loads(TETRIS_CONFIG.read_text(encoding="utf-8"))
+    assert embedded == canonical, (
+        f"the configuration embedded in {TETRIS_RESULT.name} is not Experiment 003's "
+        f"canonical {TETRIS_CONFIG.name}:\n  embedded  {embedded}\n  canonical {canonical}"
+    )
+    return canonical
+
+
 def experiment_003_evidence() -> tuple[dict, list[dict]]:
     """Experiment 003's retained record and its rows, validated as the complete set.
 
@@ -397,9 +470,14 @@ def experiment_003_evidence() -> tuple[dict, list[dict]]:
     three acceptance thresholds, the aspirational comparison and the published
     metrics block -- so the artifact and its row set are read and validated once:
     a truncated or duplicated set would otherwise aggregate something that is not
-    Experiment 003's measurement while every check below still passed.
+    Experiment 003's measurement while every check below still passed. Its
+    configuration is the canonical file's, so the rows are the suite that file
+    states.
     """
     record = json.loads(TETRIS_RESULT.read_text(encoding="utf-8"))
+    assert record["configuration"] == experiment_003_configuration(), (
+        "the retained record's configuration is not Experiment 003's canonical one"
+    )
     rows = record["episodes_by_agent_seed"]
     check_identity_set(rows_by_identity(rows, "Experiment 003's retained rows"),
                        record["configuration"], "Experiment 003's retained rows")
@@ -435,10 +513,525 @@ def cited_record_path(result_path: Path | None = None) -> Path:
     return PROJECT_ROOT / retained["predeclared_objective"]["cited_record"]
 
 
+def canonical_configuration() -> dict:
+    """The evaluation configuration this experiment's own config file states.
+
+    ``config.json`` is the artifact the documented
+    ``block-stack-ai run --config experiments/004-bounded-well-plan/config.json``
+    command executes, so it -- not the copy embedded in the retained result -- is
+    the authority on which agents, seeds and game settings were evaluated: a
+    result whose embedded copy drifted from it describes a different suite from
+    the one that command reproduces, however self-consistent the rest of the
+    record is.
+    """
+    return json.loads(EXPERIMENT_CONFIG.read_text(encoding="utf-8"))
+
+
 def evaluation_configuration(result_path: Path | None = None) -> dict:
-    """The evaluation configuration Experiment 004's retained result records."""
+    """The evaluation configuration: the canonical file, bound to the result's copy.
+
+    The result's embedded configuration is compared with the canonical file before
+    either is used, so every check that reads the evaluation's agents, seeds, game
+    settings or frame limit is reading the configuration the run command executes.
+    """
     path = RESULT_PATH if result_path is None else result_path
-    return json.loads(path.read_text(encoding="utf-8"))["configuration"]
+    embedded = json.loads(path.read_text(encoding="utf-8"))["configuration"]
+    canonical = canonical_configuration()
+    assert embedded == canonical, (
+        f"the configuration embedded in {path} is not this experiment's canonical "
+        f"{EXPERIMENT_CONFIG.name}, so the record describes a suite the documented run "
+        f"command would not reproduce:\n  embedded  {embedded}\n  canonical {canonical}"
+    )
+    return canonical
+
+
+# The development seed set the plan's constants were fixed on. It is a
+# declaration -- no code publishes it -- so it is stated here and in notes.md, and
+# what the retained block's check derives is the part of the claim that can be
+# false: that the declared set is disjoint from the evaluated seeds.
+DEVELOPMENT_SEEDS = (1, 3, 5, 7, 9, 15, 17, 19, 21, 23)
+DEVELOPMENT_NOTE = (
+    "the seeds the plan's constants were developed on; they are disjoint from the ten "
+    "evaluation seeds and from Experiment 003's published rows"
+)
+
+
+def development_block(configuration: dict) -> dict:
+    """The ``development`` block, with the disjointness of its seeds checked.
+
+    The development seed set is a declaration -- nothing in the code publishes it --
+    so it is stated here and in notes.md, and what the retained block's check derives
+    is the part of the claim that can be false: that the declared set is disjoint
+    from the evaluated seeds, which are Experiment 003's published ones as well, and
+    that the note is the one written here.
+    """
+    tetris_record, _ = experiment_003_evidence()
+    assert set(configuration["seeds"]) == set(tetris_record["configuration"]["seeds"]), (
+        "the evaluated seeds are not Experiment 003's published ones, so this block's "
+        "claim that the development set is disjoint from those rows is not a claim about "
+        "this configuration"
+    )
+    overlap = sorted(set(DEVELOPMENT_SEEDS) & set(configuration["seeds"]))
+    assert not overlap, (
+        f"the development seed set is not disjoint from the evaluation seeds: {overlap}"
+    )
+    return {"seeds": list(DEVELOPMENT_SEEDS), "note": DEVELOPMENT_NOTE}
+
+
+def rate_parts(plan: dict) -> dict:
+    """The Tetris line rate's own numerator and denominator, written from the metrics.
+
+    The rate is a proportion, so the two numbers it is made of have to be the ones
+    the retained rows aggregate to: the numerator is four times the four-line clears
+    and the denominator is the total lines cleared. A pair of numbers the rows do
+    not give is reported rather than read as the rate's definition.
+    """
+    return {
+        "numerator": f"four-line clears' lines ({plan['tetris_lines']})",
+        "denominator": f"total lines cleared ({plan['lines_total']})",
+    }
+
+
+def stopping_note(configuration: dict, metrics: dict[str, dict]) -> str:
+    """The sentence the retained stopping block has to carry, from its own counts."""
+    frame_limit = configuration["frame_limit"]
+    sides = "; ".join(
+        f"the {agent} agent: {metrics[agent]['games']} games, "
+        f"{metrics[agent]['top_outs']} ended by topping out (game_over) and "
+        f"{metrics[agent]['frame_cap_stops']} stopped at the {frame_limit}-frame cap"
+        for agent in configuration["agents"])
+    return (
+        "the episodes' own stopping reasons, by agent -- " + sides + ". A game that "
+        "stopped at the cap is a truncated measurement and a game that topped out is a "
+        "game outcome, so the line, score and piece totals are read against this count"
+    )
+
+
+def stopping_block(configuration: dict, metrics: dict[str, dict]) -> dict:
+    """The ``stopping`` block, derived from the rows' own stopping reasons.
+
+    Every field is an aggregate of the retained rows -- the counts of each stopping
+    reason and of the episodes the frame cap truncated -- so a block that reports a
+    game as topped out when its row says the cap stopped it, or a frame limit the
+    configuration does not carry, is reported rather than read.
+    """
+    return {
+        "frame_limit": configuration["frame_limit"],
+        "stopping_reasons": {
+            agent: metrics[agent]["stopping_reasons"] for agent in configuration["agents"]},
+        "episodes_stopped_at_the_cap": {
+            agent: metrics[agent]["frame_cap_stops"] for agent in configuration["agents"]},
+        "note": stopping_note(configuration, metrics),
+    }
+
+
+# The per-episode fields the retained replay compares, and the per-agent aggregate
+# it re-derives from the same replay, so the retained block's field list is that
+# set and not a list the block declares for itself.
+REPLAY_FIELDS = list(REPRODUCTION_FIELDS) + ["metrics"]
+RETAINED_REPLAY_COMMAND = (
+    "$PY experiments/004-bounded-well-plan/probes/evidence.py reproduce "
+    "experiments/004-bounded-well-plan/result.json"
+)
+RETAINED_REPLAY_DESCRIPTION = (
+    "parses the retained configuration, rebuilds the agents from the code and plays "
+    "the suite again, so every decision is re-derived rather than replayed from stored "
+    "inputs, then compares every episode outcome and every aggregate metric with the "
+    "retained rows"
+)
+
+
+def replay_result_statement(episodes: int) -> str:
+    """The sentence the retained replay block has to carry, from its own count."""
+    return (
+        "the retained configuration replays to every retained per-episode outcome and "
+        f"every retained metric over the {episodes} configured (agent, seed) episodes, so "
+        "the retained evidence is verifiable in a checkout that no longer holds the "
+        "temporary run record"
+    )
+
+
+def retained_replay_block(episodes: int) -> dict:
+    """The ``retained_replay`` block, derived from the configured row count."""
+    return {
+        "command": RETAINED_REPLAY_COMMAND,
+        "episodes_compared": episodes,
+        "fields_checked": list(REPLAY_FIELDS),
+        "result": replay_result_statement(episodes),
+        "what_it_does": RETAINED_REPLAY_DESCRIPTION,
+    }
+
+
+def capture_subject(record: dict) -> tuple:
+    """The design a capture declares: its module, its rationale section, its identity."""
+    return (record["module_sha256"], record["notes_section_sha256"],
+            tuple(sorted(record["sources"].items())))
+
+
+def check_superseded_captures(paths: list[str], captures: list[dict], capture: dict) -> None:
+    """The listed captures must be a history of distinct designs with one declaration.
+
+    A list of paths is not yet a history: each superseded capture has to describe a
+    design no other listed capture describes -- a copy of one already on the list,
+    whether it is the same path twice or another file with the same subject, is not
+    another predeclaration, and the subject is what says so -- and every one of them
+    has to publish the declared weights and constants and the rationale section the
+    current capture does, because the note beside them claims the re-captures were
+    forced by code changes rather than by a revised objective. Checking only that each
+    differed from the *current* capture accepted a duplicated entry and a capture whose
+    weights had been edited, and the note's count and claim inherited both.
+    """
+    subjects = [capture_subject(earlier) for earlier in captures]
+    assert len(set(subjects)) == len(subjects), (
+        "two superseded captures describe the same subject, so one of them is a copy "
+        "that preceded no design of its own and is being counted as another "
+        "predeclaration"
+    )
+    tampered = [path for path, earlier in zip(paths, captures)
+                if earlier["objective"] != capture["objective"]]
+    assert not tampered, (
+        "a superseded capture did not publish the declared weights and constants this "
+        f"objective declares, so the re-capture was not forced by a code change alone: "
+        f"{tampered}"
+    )
+    revised = [path for path, earlier in zip(paths, captures)
+               if earlier["notes_section_sha256"] != capture["notes_section_sha256"]]
+    assert not revised, (
+        "a superseded capture's rationale-section digest is not this capture's, so the "
+        f"declared rationale was revised between them: {revised}"
+    )
+
+
+def predeclaration_note(capture: dict, superseded: list[str]) -> str:
+    """The predeclaration block's own note, from the capture and what it supersedes.
+
+    The note states how many captures this one supersedes and that none of them
+    published a different weight, constant or rationale. Both are checked from the
+    artifacts rather than asserted beside them, by ``check_superseded_captures`` for
+    the captures it names and by the one-to-one binding of those captures to the
+    superseded runs.
+    """
+    assert superseded, "the block names no superseded capture"
+    return (
+        "the declared objective -- the module, the modules its decisions are computed from, "
+        "and the documented weights, plan constants and rationale -- captured from the "
+        "unmodified tree before the evaluation run; no constant is revised against "
+        "evaluation outcomes. The constants were fixed on a development seed set that "
+        "excludes the ten evaluation seeds (odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23); "
+        "that development is stated in notes.md rather than presented as a pre-existing "
+        f"choice. This capture supersedes the {len(superseded)} earlier ones the block's "
+        "superseded_captures names, one for each run this evaluation superseded and each "
+        "of a different design -- which is where the design every one of them preceded is "
+        "described; every one of them published the same declared weights, constants and "
+        "rationale section, because no change that forced a re-capture touched one"
+    )
+
+
+def identity_coverage_statement(capture: dict) -> str:
+    """The identity-coverage sentence, from the capture's own source mapping."""
+    return (
+        "The capture records the digest of every module the plan's decisions are computed "
+        "from, the same set the run's own objective.sources enumerates: "
+        + ", ".join(sorted(capture["sources"]))
+        + f". {len(capture['sources'])} modules, produced by the runner's own identity walk "
+        "rather than listed by hand; the walk excludes the sibling Tetris objective, and "
+        "each digest is this tree's file at the moment of the capture"
+    )
+
+
+def superseded_run_rows() -> list[dict]:
+    """The retained artifact: the distilled rows of the runs this evaluation superseded.
+
+    ``runs/`` is disposable ignored output, so nothing may depend on a superseded
+    run record still being in the checkout. The experiment convention says to copy
+    any artifact a lasting experiment needs into a retained location, so the rows
+    each superseded record held are retained here -- with the record they came from,
+    its own ``created_at`` and the capture that preceded it -- and the comparison
+    the ``refactor_no_outcomes_changed`` block claims is made against this file.
+    """
+    document = json.loads(SUPERSEDED_ROWS.read_text(encoding="utf-8"))
+    return document["runs"]
+
+
+def _superseded_run_rows_checked() -> list[dict]:
+    """``superseded_run_rows`` with the artifact's presence reported as a failure."""
+    assert SUPERSEDED_ROWS.is_file(), (
+        "the artifact the refactor-no-outcomes-changed comparison is made against is not "
+        f"on this tree: {SUPERSEDED_ROWS}, so the claim that the re-measurements changed "
+        "no outcome is backed by nothing"
+    )
+    return superseded_run_rows()
+
+
+def refactor_statement(runs: list[dict]) -> str:
+    """The sentence the refactor block has to carry, from the runs it compared."""
+    return (
+        "every superseded run's retained rows equal this run's, field for field, so the "
+        "re-measurements taken after the plan's objective module was reorganised, after "
+        "its identity walk was corrected, after its height accounting was corrected and "
+        "after the writer's walk was widened for every agent changed no outcome: "
+        + ", ".join(entry["run"] for entry in runs)
+    )
+
+
+def refactor_evidence(configuration: dict, rows: list[dict], superseded_captures: list[str],
+                      captured_at: str) -> dict:
+    """The ``refactor_no_outcomes_changed`` block, derived by re-making the comparison.
+
+    The block asserts that the evaluation was re-measured under corrected code and
+    that its per-episode outcomes did not move. That is a comparison, so it is only
+    evidence when the rows it compares are retained somewhere other than the record
+    that makes the claim: each superseded run's rows are compared field for field
+    with this evaluation's, each entry's own capture has to be one of the captures
+    the predeclaration block names as superseded, and each superseded run has to
+    have been created before the current capture. A missing artifact, an entry whose
+    rows differ, a block naming a run the artifact does not carry, or one whose
+    ``rows_identical_to_every_superseded_run`` flag is not what the comparison gives
+    is reported rather than read as evidence.
+    """
+    retained = rows_by_identity(rows, "the retained episode rows")
+    entries = _superseded_run_rows_checked()
+    assert entries, f"{SUPERSEDED_ROWS.name} retains no superseded run to compare against"
+    runs = []
+    for entry in entries:
+        where = f"the retained superseded run {entry['run']}"
+        earlier = rows_by_identity(entry["rows"], where)
+        check_identity_set(earlier, configuration, where)
+        differences = reproduction_differences(earlier, retained)
+        assert not differences, (
+            f"the evaluation's per-episode outcomes are not {entry['run']}'s, so the "
+            "re-measurement moved them:\n  " + "\n  ".join(differences)
+        )
+        assert entry["capture"] in superseded_captures, (
+            f"the retained superseded run {entry['run']} names {entry['capture']!r} as "
+            "the capture that preceded it, which is not one of the superseded captures "
+            "the predeclaration block names"
+        )
+        # The capture a run names has to have been written *before that run*: the
+        # pairing is what makes each capture part of this evaluation's history. A
+        # capture whose own timestamp is later than the run it is paired with is
+        # reported rather than read as having preceded it.
+        paired_path = PROJECT_ROOT / entry["capture"]
+        assert paired_path.is_file(), (
+            f"the capture the retained superseded run {entry['run']} names is not on "
+            f"this tree: {entry['capture']}"
+        )
+        paired = json.loads(paired_path.read_text(encoding="utf-8"))
+        assert paired["captured_at"] < entry["created_at"], (
+            f"the capture {entry['capture']} paired with {entry['run']} was written at "
+            f"{paired['captured_at']}, after that run at {entry['created_at']}, so it "
+            "did not precede it"
+        )
+        assert entry["created_at"] < captured_at, (
+            f"the retained superseded run {entry['run']} was created at "
+            f"{entry['created_at']}, after the current capture at {captured_at}, so it "
+            "is not a run this evaluation superseded"
+        )
+        runs.append({"run": entry["run"], "created_at": entry["created_at"],
+                     "capture": entry["capture"]})
+    return {
+        "artifact": str(SUPERSEDED_ROWS.relative_to(PROJECT_ROOT)),
+        "superseded_runs": runs,
+        "rows_identical_to_every_superseded_run": True,
+        "statement": refactor_statement(runs),
+    }
+
+
+def aspiration_note(label: str, achieved: float, reported: float) -> str:
+    """The note beside one aspirational comparison, from its own two numbers.
+
+    The two totals the acceptance criteria report beside their thresholds are a
+    comparison against the frozen lookahead agent, and whether the plan is above or
+    below it is decided by those numbers rather than declared: the note states which
+    way the comparison went, so a record cannot label a shortfall as met or a result
+    as a shortfall.
+    """
+    measured = "mean lines" if label == "mean_lines" else "mean score"
+    return (
+        f"the frozen lookahead agent's {measured} Experiment 003 published; the plan's own "
+        f"{measured} is {'above' if achieved > reported else 'below'} it, so the "
+        "aspirational comparison is "
+        + ("met" if achieved > reported else "reported and not met")
+    )
+
+
+def aspiration_entry(label: str, achieved: float, reported: float) -> dict:
+    """One aspirational comparison entry, from its own two numbers."""
+    return {
+        "achieved": achieved,
+        "reported": reported,
+        "met": achieved > reported,
+        "note": aspiration_note(label, achieved, reported),
+    }
+
+
+def aspiration_verdicts(facts: dict) -> dict[str, bool]:
+    """Which aspirational totals the plan reaches, from the comparison's own columns."""
+    return {label: facts["aspirational"][label]["achieved"]
+            > facts["aspirational"][label]["reported"]
+            for label in ("mean_lines", "mean_score")}
+
+
+def aspiration_clause(facts: dict) -> str:
+    """The conclusion's sentence about the aspirational comparison, from its verdicts."""
+    plan, aspiration = facts["plan"], facts["aspirational"]
+    other = facts["other"]
+    met = aspiration_verdicts(facts)
+    comparison = (
+        f"{plan['lines_mean']} against {aspiration['mean_lines']['reported']} mean lines, "
+        f"{plan['score_mean']} against {aspiration['mean_score']['reported']} mean score"
+    )
+    if all(met.values()):
+        return (f"It also reaches the frozen {other} agent's line and score totals on the "
+                f"same seeds ({comparison}), so the aspirational comparison is met.")
+    if not any(met.values()):
+        return (
+            f"It does not reach the frozen {other} agent's survival on the same seeds "
+            f"({comparison}), so the plan buys Tetris rate with lines rather than adding "
+            "both, and that trade is the experiment's main limitation."
+        )
+    return (f"It compares with the frozen {other} agent measured in the same run "
+            f"({comparison}), reaching it on one of the two totals, so the aspirational "
+            "comparison is partly met.")
+
+
+def _ratio(achieved: float, required: float) -> float:
+    """The multiple of a baseline a value reaches, rounded for the retained prose."""
+    return round(achieved / required, 2)
+
+
+def conclusion_statement(facts: dict) -> str:
+    """The retained conclusion, reconstructed from the derived facts.
+
+    The conclusion is the record's own summary of the measurement, so every number
+    in it is written from the same derivation the acceptance verdicts, the baseline
+    and the mechanism block are re-derived from: a sentence that states a figure the
+    rows do not aggregate to, or a verdict the thresholds do not give, is reported
+    rather than read. Its attribution sentence is derived too -- it is written
+    against the count of composition divergences the ``objective_mechanism`` block
+    actually carries, so the summary cannot claim an attribution the derived
+    evidence does not support.
+    """
+    plan, baseline = facts["plan"], facts["baseline"]
+    capped = plan["frame_cap_stops"]
+    cap_clause = ("no episode stopped at the frame cap" if not capped
+                  else f"{capped} of its episodes stopped at the frame cap")
+    verdict = ("meets all three acceptance thresholds" if facts["passed"]
+               else "does not meet every one of the three acceptance thresholds")
+    return (
+        f"The bounded well plan {verdict} on Experiment 003's identical ten seeds: a "
+        f"Tetris line rate of {plan['tetris_line_rate']} against the required "
+        f"{baseline['tetris_line_rate']} "
+        f"({_ratio(plan['tetris_line_rate'], baseline['tetris_line_rate'])}x the "
+        f"Experiment 003 baseline's rate), {plan['lines_mean']} mean lines against more "
+        f"than {baseline['lines_mean']} ({_ratio(plan['lines_mean'], baseline['lines_mean'])}x) "
+        f"and {plan['score_mean']} mean score against more than {baseline['score_mean']} "
+        f"({_ratio(plan['score_mean'], baseline['score_mean'])}x), with {cap_clause}. Two "
+        "changes to the objective are what move them, and the measurements are attributed "
+        "to both rather than to the plan alone. The plan is a designated well column, an "
+        "explicit stack-height budget, a reserve measured as the rows a vertical I would "
+        "complete above the column's topmost filled cell, and a spend-or-abandon rule at a "
+        "self-tracked I-drought bound. Beside it, the composition scores the current "
+        "placement's whole plan value, where Experiment 003 adds only that placement's "
+        "clear term to the preview's value: the objective_mechanism block derives "
+        f"{len(facts['changed_boards'])} reachable boards on which the two compositions "
+        "select different placements, so the evaluation does not rest on the claim that the "
+        "two compose a current placement alike. " + aspiration_clause(facts) + " The "
+        "verdict is the re-measurement taken after the plan's objective, its identity walk, "
+        "its height accounting and the allocation of its agent to the runner's dispatch "
+        "were corrected: the per-episode rows of every run this one superseded are retained "
+        "and the refactor_no_outcomes_changed block re-makes the comparison against them "
+        "field for field, so the result is one measurement under corrected code rather than "
+        "a revised one."
+    )
+
+
+def limitations_statements(facts: dict) -> list[str]:
+    """The retained limitations, written from the derived facts.
+
+    Each statement is generated from the same derivation the blocks above are
+    re-derived from -- the configuration, the plan's own metrics, the baseline and
+    the aspirational comparison, the stopping counts, the identity coverage and the
+    superseded-run comparison -- so a limitation that contradicts the measurement
+    (a survival figure the aspirational block does not report, a top-out count the
+    rows do not give, an identity the walk does not cover) is reported rather than
+    read as a caveat on a result it does not describe.
+    """
+    configuration = facts["configuration"]
+    game = configuration["game"]
+    plan = facts["plan"]
+    aspiration = facts["aspirational"]
+    superseded = facts["superseded_runs"]
+    capped = plan["frame_cap_stops"]
+    outcomes = (
+        f"All {plan['games']} of the plan's games topped out, so the ten-seed means are "
+        "top-out outcomes rather than truncated games"
+        if capped == 0 else
+        f"{capped} of the plan's {plan['games']} games stopped at the "
+        f"{configuration['frame_limit']}-frame cap and the rest topped out, so the means "
+        "mix truncated and complete games"
+    )
+    return [
+        f"The plan agent was measured only on {game['ruleset']}, {game['mode']}, start "
+        f"level {game['start_level']}, height {game['height']} and a "
+        f"{configuration['frame_limit']}-frame cap, the settings Experiments 002 and 003 "
+        "used. Nothing here measures another ruleset, level or mode, and no live-desktop "
+        "game or whole-game mode was run.",
+        "The plan's constants were fixed on a development seed set that excludes the ten "
+        "evaluation seeds (the development block states it and names the exclusion). That "
+        "is development, not evaluation: the numbers above are the first measurement of "
+        "these constants on the evaluation seeds, and notes.md states the development.",
+        "The plan's advantage over Experiment 003's agent is bounded and specific: it is a "
+        "one-piece, straight-drop, commit-per-piece policy. It does not search, it does not "
+        "know a future piece beyond the visible preview, and it cannot repair a covered "
+        f"cell, so only {plan['clear_sizes']['tetrises']} of its "
+        f"{plan['pieces_placed_total']} placements were four-line clears. A reserve is only "
+        "ever earned through the field: well_reserve counts the rows a vertical I would "
+        "complete above the designated column's topmost filled cell, so a well column "
+        "already filled low down still holds a reserve for the rows above it and the count "
+        "is not restricted to a column open to the floor. The objective_mechanism block "
+        "derives a board of exactly that shape.",
+        "The measurement is not attributable to the explicit plan alone. The objective also "
+        f"composes a current placement differently from Experiment 003's, and "
+        f"{len(facts['changed_boards'])} derived boards -- one per phase -- are boards on "
+        "which the two compositions select different placements, so the claim that they "
+        "compose a current placement alike is not relied on anywhere. A run of Experiment "
+        "003's composition under this plan's phase, budget and drought memory was not "
+        "measured, and any split of the attribution is left to a later experiment.",
+        aspiration_clause(facts),
+        f"{outcomes}. The per-episode rows are retained so both cases are visible.",
+        "The declared-objective identity covers the code that selects which implementation "
+        "is built, as well as the module that builds the agent whose placements a record "
+        "replays. That is why the plan agent is declared in its objective module "
+        f"({facts['plan_module']}) and built by the runner's per-agent dispatch instead of "
+        "being added to the shared agent factory: the factory's source is byte-identical to "
+        "the branch base, so the frozen Experiment 003 record's identity still equals this "
+        "tree's, while a record of either declared agent written now covers the dispatch "
+        "module as well. Experiment 003's retained records are earlier-version records, "
+        "whose walk an older writer emitted, and they keep verifying against that shape.",
+        "This file is a distilled record, not the full run record: the evaluation's own "
+        "run.json is ignored, disposable output holding one input mask per logical frame. "
+        "The evidence is therefore re-derived from the code rather than replayed from "
+        "stored inputs -- retained_replay re-plays the retained configuration and compares "
+        "every outcome and metric -- and the temporary record the predeclaration cites is "
+        "named by that block's cited_record for as long as this checkout keeps it.",
+        "Two declared-objective agents cannot be configured in one suite: a suite record "
+        "carries one objective section. A comparison of tetris and tetris_plan in one run "
+        "is therefore not expressible, and this experiment compares the plan against "
+        "Experiment 003's retained rows and against a re-run of Experiment 003's own "
+        "configuration instead.",
+        "The run's own code and engine versions are recorded in the cited run record, not "
+        "restated here: the record this result names carries them, and this file does not "
+        "keep a second copy that no check could re-derive.",
+        "The plan's height accounting was corrected before this publication, and the "
+        "evaluation was re-measured under the corrected code more than once. The "
+        f"refactor_no_outcomes_changed block retains those runs' rows -- "
+        f"{len(superseded)} of them -- and re-makes the comparison against this run's field "
+        "for field, so the statement that the corrections changed no outcome is derived "
+        "rather than asserted. The corrected reading itself is derived in "
+        "objective_mechanism.hidden_rows_are_stack_height and reached on the engine itself "
+        "by the native integration test named in notes.md, not by the ten-seed measurement.",
+    ]
 
 
 # The level the two mechanism claims below are derived at, and the period its
@@ -916,14 +1509,31 @@ def check_record(path: Path) -> None:
     and those rows -- like Experiment 003's -- have to be the complete configured
     ``(agent, seed)`` set with no duplicate, so the reported means, rates and
     stopping counts cannot drift from the episodes they summarise or stand in for a
-    set that is not the experiment's. The baseline block's published metrics have to
+    set that is not the experiment's. The blocks that aggregate the same rows are
+    re-derived from them rather than read: the stopping counts and their sentence
+    (``stopping_block``), the replay block's own count, field list and sentence
+    (``retained_replay_block``), the rate's numerator and denominator
+    (``rate_parts``), the development set's disjointness (``development_block``) and
+    the comparison of this run's rows against every superseded run's retained rows
+    (``refactor_evidence``), so the claim that the re-measurements under corrected
+    code changed no outcome is made against an artifact that holds the compared rows
+    instead of being declared by the record that makes it. The narrative blocks --
+    the conclusion and the limitations -- are generated from that same derivation
+    (``conclusion_statement``, ``limitations_statements``), so a retained sentence
+    stating a figure the rows do not give is reported too, and the block set itself
+    is asserted against ``RETAINED_BLOCKS`` so a claim no check derives cannot be
+    added silently. The evaluation configuration is the experiment's canonical
+    ``config.json``, which the record's embedded copy is checked against before
+    either is used. The baseline block's published metrics have to
     be Experiment 003's rows' aggregate, and its reproduction block's count, fields,
     source and sentence have to be the ones those artifacts reconstruct, so a
     comparison that was not complete cannot be reported as one. And the cited run
     record has to be the run this result cites — the path, the evaluation
-    configuration and the complete ``(agent, seed)`` episode set, checked by
+    configuration, the complete ``(agent, seed)`` episode set and every per-episode
+    outcome the retained rows carry, checked by
     ``check_predeclaration`` together with its ``created_at`` — when this checkout
-    still retains that temporary run. Finally, the
+    still retains that temporary run; the fresh Experiment 003 run the baseline
+    block names is bound the same way. Finally, the
     coverage bound is derived (``check_dispatcher_bound``): which module selects each
     declared agent's implementation under each version's walk, which modules each
     identity covers — the current writer's Tetris identity among them, which now
@@ -933,6 +1543,19 @@ def check_record(path: Path) -> None:
     is reported if it goes stale.
     """
     retained = json.loads(path.read_text(encoding="utf-8"))
+    # The evaluation configuration is the experiment's canonical config file, and
+    # the copy this record embeds is checked against it before either is used: the
+    # documented ``run --config`` command executes that file, so every check below
+    # reads the configuration the run command would reproduce.
+    configuration = evaluation_configuration(path)
+    # Every top-level block is either re-derived below or named as narrative. The
+    # set is asserted rather than read, so a claim that no check derives cannot be
+    # added to the certified record without writing its derivation -- which is the
+    # shape every review round of this experiment has turned on.
+    assert set(retained) == set(RETAINED_BLOCKS), (
+        "the retained result carries a block that is neither re-derived nor declared "
+        f"narrative: {sorted(set(retained) ^ set(RETAINED_BLOCKS))}"
+    )
     block = retained["predeclared_objective"]
     capture = json.loads(PREDECLARATION.read_text(encoding="utf-8"))
     assert block["capture_order"] == predeclaration_order_line(
@@ -959,6 +1582,10 @@ def check_record(path: Path) -> None:
     assert block["notes_section_sha256"] == capture["notes_section_sha256"]
     assert block["objective"] == capture["objective"]
     assert block["sources"] == capture["sources"]
+    assert block["capture_file"] == str(PREDECLARATION.relative_to(PROJECT_ROOT)), (
+        f"predeclared_objective.capture_file is not this experiment's capture: "
+        f"{block['capture_file']!r}"
+    )
     # The superseded captures the block names have to be on the tree beside the
     # current one, older than it, and of a *different* subject: a copy of the
     # current capture listed as superseded would claim a re-capture that never
@@ -969,6 +1596,7 @@ def check_record(path: Path) -> None:
         "the predeclaration block names no superseded capture beside the current one: "
         f"{superseded!r}"
     )
+    superseded_captures = []
     for path_name in superseded:
         earlier_path = PROJECT_ROOT / path_name
         assert earlier_path.is_file(), (
@@ -987,6 +1615,23 @@ def check_record(path: Path) -> None:
             f"the superseded capture {path_name} describes the current objective, so it "
             "is not a superseded capture of an earlier design"
         )
+        superseded_captures.append(earlier)
+    # The history the block claims is derived rather than read: the captures it lists
+    # must be distinct designs that published this objective's own declaration, and
+    # (below) the retained superseded runs must name exactly them. The block's two
+    # prose fields -- the note and the identity coverage -- are generated from those
+    # artifacts for the same reason.
+    check_superseded_captures(superseded, superseded_captures, capture)
+    assert block["note"] == predeclaration_note(capture, superseded), (
+        "predeclared_objective.note is not the one the capture and the captures it "
+        f"supersedes reconstruct:\n  recorded {block['note']!r}\n  derived  "
+        f"{predeclaration_note(capture, superseded)!r}"
+    )
+    assert block["identity_coverage"] == identity_coverage_statement(capture), (
+        "predeclared_objective.identity_coverage is not the one the capture's own source "
+        f"mapping reconstructs:\n  recorded {block['identity_coverage']!r}\n  derived  "
+        f"{identity_coverage_statement(capture)!r}"
+    )
     assert objective_module_digest() == capture["module_sha256"], (
         "the objective module changed after the predeclaration"
     )
@@ -1013,7 +1658,7 @@ def check_record(path: Path) -> None:
     # would otherwise pass while the predeclaration block beside it still matched
     # its capture, so the record's own claim about the code that chose its
     # placements would contradict the capture it is supposed to be.
-    plan_agent = runner._declared_agents(retained["configuration"]["agents"])[0]
+    plan_agent = runner._declared_agents(configuration["agents"])[0]
     plan_module = runner.DECLARED_OBJECTIVES[plan_agent].module
     objective_section = retained["objective_record"]
     assert objective_section["module"] == plan_module.__name__, (
@@ -1081,13 +1726,52 @@ def check_record(path: Path) -> None:
     # truncated or duplicated set would aggregate something that is not this
     # experiment's measurement.
     by_identity = rows_by_identity(rows, "the retained episode rows")
-    check_identity_set(by_identity, retained["configuration"], "the retained episode rows")
-    for agent in retained["configuration"]["agents"]:
-        assert retained["metrics"][agent] == metrics_of(rows, agent), (
+    check_identity_set(by_identity, configuration, "the retained episode rows")
+    metrics = {agent: metrics_of(rows, agent) for agent in configuration["agents"]}
+    for agent in configuration["agents"]:
+        assert retained["metrics"][agent] == metrics[agent], (
             f"the retained metrics for {agent} are not the aggregate of its own rows"
         )
-    assert retained["retained_replay"]["episodes_compared"] == len(rows), (
-        "the retained replay claims a different number of episodes than the rows carry"
+    # The blocks that aggregate the same rows are each re-derived from those
+    # aggregates and from the configuration: the stopping counts and their sentence,
+    # the replay block's own count, field list and sentence, the rate's numerator and
+    # denominator, the development set's disjointness, and the comparison against
+    # every superseded run's retained rows. A retained number the rows do not give --
+    # a game reported as topped out when its row says the cap stopped it, a rate made
+    # of other lines, a superseded run whose outcomes moved -- is reported here.
+    derived_stopping = stopping_block(configuration, metrics)
+    assert retained["stopping"] == derived_stopping, (
+        "the retained stopping block is not the one the rows' own stopping reasons "
+        f"derive:\n  recorded {retained['stopping']}\n  derived  {derived_stopping}"
+    )
+    derived_replay = retained_replay_block(len(rows))
+    assert retained["retained_replay"] == derived_replay, (
+        "the retained replay block is not the one the configuration and the row count "
+        f"derive:\n  recorded {retained['retained_replay']}\n  derived  {derived_replay}"
+    )
+    derived_development = development_block(configuration)
+    assert retained["development"] == derived_development, (
+        "the retained development block is not the declared development set, or its seeds "
+        f"are not disjoint from the evaluated ones:\n  recorded {retained['development']}"
+        f"\n  derived  {derived_development}"
+    )
+    derived_refactor = refactor_evidence(configuration, rows, superseded,
+                                         block["captured_at"])
+    assert retained["refactor_no_outcomes_changed"] == derived_refactor, (
+        "the retained refactor-no-outcomes-changed block is not the comparison the "
+        "retained superseded-run rows derive:\n  recorded "
+        f"{retained['refactor_no_outcomes_changed']}\n  derived  {derived_refactor}"
+    )
+    # Every superseded run names the capture that preceded it, and every capture the
+    # block lists as superseded is named by exactly one of those runs. Together with
+    # the distinct-subject rule above, that is what makes the capture history a
+    # history: a capture cannot be listed, and the note cannot count it, unless a run
+    # this evaluation actually superseded was made after it.
+    named_by_runs = sorted(entry["capture"] for entry in derived_refactor["superseded_runs"])
+    assert named_by_runs == sorted(superseded), (
+        "the captures the retained superseded runs name are not one-to-one with the "
+        f"captures the block lists as superseded:\n  named by the runs {named_by_runs}"
+        f"\n  listed as superseded {sorted(superseded)}"
     )
     # The acceptance block is derived too: the achieved values are the retained
     # metrics, the thresholds are the baseline Experiment 003 published for the agent
@@ -1097,15 +1781,18 @@ def check_record(path: Path) -> None:
     # nothing — so they are re-derived from Experiment 003's own retained rows, which
     # are validated as the complete configured set before any value is taken from
     # them, and the comparison is re-made rather than read.
-    baseline = baseline_metrics(runner.TETRIS_AGENT)
-    plan = retained["metrics"][plan_agent]
+    tetris_baseline = baseline_metrics(runner.TETRIS_AGENT)
+    plan = metrics[plan_agent]
     acceptance = retained["acceptance"]
     criteria = (
         ("tetris_line_rate", plan["tetris_line_rate"], "required_gte", "gte",
-         baseline["tetris_line_rate"]),
-        ("mean_lines", plan["lines_mean"], "required_gt", "gt", baseline["lines_mean"]),
-        ("mean_score", plan["score_mean"], "required_gt", "gt", baseline["score_mean"]),
+         tetris_baseline["tetris_line_rate"]),
+        ("mean_lines", plan["lines_mean"], "required_gt", "gt",
+         tetris_baseline["lines_mean"]),
+        ("mean_score", plan["score_mean"], "required_gt", "gt",
+         tetris_baseline["score_mean"]),
     )
+    verdicts = []
     for label, achieved, key, comparison, required in criteria:
         assert acceptance[label][key] == required, (
             f"{label}: the retained {key} is {acceptance[label][key]!r}, not the value "
@@ -1119,31 +1806,81 @@ def check_record(path: Path) -> None:
         assert acceptance[label]["met"] is met, (
             f"{label}: the retained verdict is not what {achieved} against {required} gives"
         )
-        assert met, f"the retained metrics no longer meet {label}"
+        verdicts.append(met)
+    # The rate's own numerator and denominator are derived from the plan's metrics as
+    # well: the definition of the rate is the two numbers it is made of, so a record
+    # that states a proportion over other lines is reported rather than read.
+    for field, value in rate_parts(plan).items():
+        assert acceptance["tetris_line_rate"][field] == value, (
+            f"acceptance.tetris_line_rate.{field} is not the rate's own {field} the "
+            f"retained rows derive: {acceptance['tetris_line_rate'][field]!r} != {value!r}"
+        )
+    # The record's own status is the aggregate of those verdicts, so a result that
+    # misses a threshold is retained as a reported miss (`status: failed`) rather
+    # than either hidden or forced to pass by revising a constant.
+    expected_status = "passed" if all(verdicts) else "failed"
+    assert retained["status"] == expected_status, (
+        f"the retained status is {retained['status']!r}, not what the acceptance "
+        f"verdicts give ({expected_status!r})"
+    )
+    if not all(verdicts):
+        print("# a criterion is not met by the retained metrics: status is reported as failed")
     # The aspirational comparison is derived the same way, and both of its columns are
     # bound outside this record: ``achieved`` is the plan agent's own metric, and
     # ``reported`` is the value Experiment 003's retained rows derive for the agent it
     # is compared with -- not this record's own copy of that agent's metrics, so a
     # block that reported a number the baseline does not publish is reported instead
     # of being read as a measurement.
-    others = [name for name in retained["configuration"]["agents"] if name != plan_agent]
+    others = [name for name in configuration["agents"] if name != plan_agent]
     assert len(others) == 1, others
     aspiration = acceptance["aspirational"]
     aspirational_baseline = baseline_metrics(others[0])
     for label, field in (("mean_lines", "lines_mean"), ("mean_score", "score_mean")):
         entry = aspiration[label]
-        assert entry["achieved"] == plan[field], (
-            f"acceptance.aspirational.{label}.achieved is {entry['achieved']!r}, not the "
-            f"plan agent's own {field} ({plan[field]!r})"
+        # The whole entry is derived from the plan's own metric and the baseline's:
+        # the value compared, the value it is compared with, whether the plan is above
+        # or below it, and the note that says which way it went. Nothing in the block
+        # is declared beside those two numbers, so a shortfall cannot be reported as
+        # met, a result as a shortfall, or either column as a number the baseline does
+        # not publish.
+        derived_entry = aspiration_entry(label, plan[field], aspirational_baseline[field])
+        assert entry == derived_entry, (
+            f"acceptance.aspirational.{label} is not the entry its own two columns "
+            f"derive:\n  recorded {entry}\n  derived  {derived_entry}"
         )
-        assert entry["reported"] == aspirational_baseline[field], (
-            f"acceptance.aspirational.{label}.reported is not the {others[0]} {field} "
-            "Experiment 003's retained rows derive"
-        )
-        assert entry["achieved"] <= entry["reported"], (
-            f"acceptance.aspirational.{label} reports an outcome the retained metrics do "
-            "not support"
-        )
+    # The narrative blocks are the record's own summary of the measurement, and the
+    # class every review round of this experiment has found one more member of is a
+    # retained sentence that no check derives. They are therefore generated from the
+    # derivation the blocks above are re-made from -- the plan's own aggregate, the
+    # baseline Experiment 003's retained rows give, the aspirational comparison, the
+    # stopping counts, the objective_mechanism block's own divergences and the
+    # superseded-run comparison -- so a sentence stating a figure the rows do not
+    # give, a threshold that is not the baseline's, or an attribution the derived
+    # evidence does not support is reported instead of read.
+    facts = {
+        "configuration": configuration,
+        "plan_module": plan_module.__name__,
+        "plan": plan,
+        "baseline": tetris_baseline,
+        "other": others[0],
+        "aspirational": aspiration,
+        "changed_boards": retained["objective_mechanism"][
+            "composition_differs_from_experiment_003"],
+        "superseded_runs": retained["refactor_no_outcomes_changed"]["superseded_runs"],
+        "passed": all(verdicts),
+    }
+    derived_conclusion = conclusion_statement(facts)
+    assert retained["conclusion"] == derived_conclusion, (
+        "the retained conclusion is not the one the derived metrics, thresholds, stopping "
+        f"counts and mechanism claims reconstruct:\n  recorded {retained['conclusion']}"
+        f"\n  derived  {derived_conclusion}"
+    )
+    derived_limitations = limitations_statements(facts)
+    assert retained["limitations"] == derived_limitations, (
+        "the retained limitations are not the ones the derived metrics, stopping counts, "
+        "identity coverage and superseded-run comparison reconstruct:\n  recorded "
+        f"{retained['limitations']}\n  derived  {derived_limitations}"
+    )
     # The baseline block's numbers are Experiment 003's published ones, and they are
     # re-derived from the rows Experiment 003 retained -- the same rows ``baseline``
     # replays -- so a stale or copied number there is reported rather than read. The
@@ -1152,8 +1889,8 @@ def check_record(path: Path) -> None:
     tetris_record, tetris_rows = experiment_003_evidence()
     published = retained["baseline"]["published_metrics"]
     assert set(published) == set(tetris_record["configuration"]["agents"]), sorted(published)
-    for agent, metrics in published.items():
-        assert metrics == metrics_of(tetris_rows, agent), (
+    for agent, published_metrics in published.items():
+        assert published_metrics == metrics_of(tetris_rows, agent), (
             f"baseline.published_metrics.{agent} is not the aggregate of Experiment 003's "
             "retained rows"
         )
@@ -1205,6 +1942,22 @@ def check_record(path: Path) -> None:
         print(f"# the cited run {block['cited_record']!r} is not retained in this "
               "checkout (``runs/`` is ignored output); its binding to the evaluation "
               "configuration and episode set is checked where that record is present")
+    # The fresh Experiment 003 run the baseline block names is bound the same way: it
+    # is the record whose rows the reproduction claim compared, so where this checkout
+    # still holds it the comparison is re-made -- the fresh configuration has to be
+    # Experiment 003's and both sides have to be its complete configured episode set
+    # -- rather than the path being read as evidence that a comparison happened.
+    replay_record = PROJECT_ROOT / reproduction["record"]
+    if replay_record.is_file():
+        assert reproduction["record"] == str(replay_record.relative_to(PROJECT_ROOT)), (
+            f"baseline.reproduction.record is not a project-relative path: "
+            f"{reproduction['record']!r}"
+        )
+        baseline(replay_record)
+    else:
+        print(f"# the fresh Experiment 003 run {reproduction['record']!r} is not retained "
+              "in this checkout (``runs/`` is ignored output); the reproduction it backs "
+              "is re-derived by ``probes/evidence.py baseline <record>``")
     print(f"# retained record: {path}")
     print(f"# capture {block['captured_at']} precedes the cited record "
           f"{block['cited_record_created_at']}")
@@ -1284,9 +2037,9 @@ def baseline(path: Path) -> None:
     """
     fresh = json.loads(path.read_text(encoding="utf-8"))
     retained = json.loads(TETRIS_RESULT.read_text(encoding="utf-8"))
-    assert fresh["configuration"] == retained["configuration"], (
+    assert fresh["configuration"] == experiment_003_configuration(), (
         "the fresh run is not Experiment 003's configuration, so it cannot reproduce "
-        f"its rows: {fresh['configuration']} != {retained['configuration']}"
+        f"its rows: {fresh['configuration']}"
     )
     rows = rows_by_identity(retained["episodes_by_agent_seed"],
                             "Experiment 003's retained rows")
@@ -1320,10 +2073,17 @@ def reproduce(path: Path) -> None:
     As in ``baseline``, the claim covers the whole configured identity set: both
     sides are required to carry every ``(agent, seed)`` exactly once, so a
     truncated or duplicated retained row cannot stand in for the set it claims to
-    reproduce.
+    reproduce. The configuration it replays is the experiment's canonical
+    ``config.json``, bound to the copy the record carries, so a replay cannot claim
+    to reproduce a result the documented run command would no longer produce.
     """
     retained = json.loads(path.read_text(encoding="utf-8"))
-    configuration = runner.parse_config(retained["configuration"])
+    # The evaluation configuration is the experiment's canonical config file, and the
+    # copy this result embeds is checked against it before either is used: the
+    # documented ``run --config`` command executes that file, so a replay of the
+    # record's own copy would run a suite the command no longer reproduces -- which is
+    # exactly the drift ``check-record`` reports.
+    configuration = runner.parse_config(evaluation_configuration(path))
     rows = rows_by_identity(retained["episodes_by_agent_seed"],
                             f"{path.name}'s retained rows")
     check_identity_set(rows, retained["configuration"], f"{path.name}'s retained rows")

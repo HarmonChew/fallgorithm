@@ -246,6 +246,51 @@ def test_next_drought_restarts_when_the_preview_is_an_i():
     assert next_drought(4, "T") == 5
 
 
+@pytest.mark.parametrize("drought,next_piece,height,phase", [
+    # Both of holds_well's conditions decide the preview's phase: a preview that is
+    # an I resets the drought, so it keeps building only while the settled stack is
+    # under the budget -- the case a disjunction of the two conditions gets wrong --
+    # and a preview that is not an I builds only while both still hold.
+    (0, "I", 0, BUILD),
+    (0, "I", HEIGHT_BUDGET - 1, BUILD),
+    (0, "I", HEIGHT_BUDGET, SPEND),
+    (0, "I", HEIGHT_BUDGET + 4, SPEND),
+    (0, "T", 0, BUILD),
+    (DROUGHT_BOUND - 2, "T", 0, BUILD),
+    (DROUGHT_BOUND - 1, "T", 0, SPEND),
+    (0, "T", HEIGHT_BUDGET, SPEND),
+])
+def test_the_preview_phase_is_both_of_holds_well_conditions(
+    drought, next_piece, height, phase
+):
+    """The preview's phase is ``initial_phase`` on the board and the advanced drought.
+
+    The criterion the declared objective is judged against requires the objective's
+    own declaration to describe the function that produced the results. The module
+    docstring said the preview is scored in ``BUILD`` when it is an I *or* while the
+    stack is under the budget, which is a disjunction of ``holds_well``'s two
+    conditions and is false about an I preview at or above the budget: the settled
+    stack's height closes the build whatever the preview is, so that board is
+    scored in ``SPEND``. This derives each case from the code and requires the
+    docstring to state both conditions rather than either.
+    """
+    settled = columns_of(stacked([0] * (WIDTH - 1) + [height]))
+    assert stack_height(settled) == height
+    advanced = next_drought(drought, next_piece)
+    assert holds_well(advanced, height) is (phase == BUILD)
+    assert initial_phase(advanced, settled) == phase
+
+    documented = " ".join(wellplan_module.__doc__.split())
+    assert "or while the settled stack" not in documented, (
+        "the module docstring still declares the preview's phase as a disjunction of "
+        "holds_well's conditions, which is false at or above the height budget"
+    )
+    assert "the settled stack is still under the budget" in documented, (
+        "the module docstring does not state the budget condition the preview's phase "
+        "is built from"
+    )
+
+
 def test_build_value_is_the_declared_terms_and_the_budget():
     """The build value of a constructed board is pinned term by term.
 

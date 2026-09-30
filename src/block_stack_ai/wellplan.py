@@ -54,12 +54,17 @@ The two phases are the plan:
   reaches the budget.
 
 The value of a current placement is its own plan value plus the best plan value
-the preview piece can reach on the board it leaves, and the phase of the preview
-is read the same way from the visible preview: it is ``BUILD`` when the preview
-is an I (the piece that completes the reserve) or while the settled stack is
-still under the budget. A current placement whose preview piece has no admissible
-placement has value ``-inf``. Ties keep the first placement in canonical
-enumeration order (orientation ascending, then column ascending).
+the preview piece can reach on the board it leaves, and the preview's phase is
+read the same way from the visible preview: it is ``initial_phase`` on the drought
+the preview advances to and on the board the current placement leaves, which is
+``BUILD`` when *both* of ``holds_well``'s conditions hold there -- the drought is
+still under the bound (always so when the preview is an I, the piece that resets
+it and completes the reserve) *and* the settled stack is still under the budget.
+An I preview at or above the budget is therefore ``SPEND``, not ``BUILD``: the
+budget ends the build whatever the preview is. A current placement whose preview
+piece has no admissible placement has value ``-inf``. Ties keep the first
+placement in canonical enumeration order (orientation ascending, then column
+ascending).
 
 Scoring the current placement's *whole* value is a second change from Experiment
 003, beside the plan, and the experiment's measured result is attributed to both.

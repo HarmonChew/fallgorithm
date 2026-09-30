@@ -3,12 +3,14 @@
     "aspirational": {
       "mean_lines": {
         "achieved": 620.0,
-        "note": "Experiment 002/003's lookahead mean lines, not a required threshold",
+        "met": false,
+        "note": "the frozen lookahead agent's mean lines Experiment 003 published; the plan's own mean lines is below it, so the aspirational comparison is reported and not met",
         "reported": 912.8
       },
       "mean_score": {
         "achieved": 1665036.0,
-        "note": "the same agent's mean score, not a required threshold",
+        "met": false,
+        "note": "the frozen lookahead agent's mean score Experiment 003 published; the plan's own mean score is below it, so the aspirational comparison is reported and not met",
         "reported": 2822959.9
       }
     },
@@ -96,7 +98,6 @@
     "reproduction": {
       "command": "$PY -m block_stack_ai.cli run --config experiments/003-tetris-aware-agent/config.json",
       "episodes_compared": 20,
-      "exit": 0,
       "fields_checked": [
         "lines",
         "score",
@@ -107,12 +108,11 @@
       ],
       "probe": "probes/evidence.py baseline <record> -- every published row field reproduces exactly on this tree",
       "published_rows_source": "experiments/003-tetris-aware-agent/result.json#episodes_by_agent_seed",
-      "record": "runs/20260930T044539821144Z-967579e0/run.json (temporary ignored run output)",
-      "result": "Experiment 003's configuration, replayed on this tree, reproduces every published per-episode row and summary it published: the lookahead side 912.8 mean lines and 2,822,959.9 mean score, the tetris side 349.5 mean lines and 567,266.2 mean score, which are the numbers the acceptance criteria name",
-      "verify": "$PY -m block_stack_ai.cli verify <record> -- exit 0, with the engine working-tree warning"
+      "record": "runs/20260930T065239282035Z-0112066d/run.json",
+      "result": "Experiment 003's configuration, replayed on this tree, reproduces every published per-episode row and summary it published: the lookahead side 912.8 mean lines and 2,822,959.9 mean score, the tetris side 349.5 mean lines and 567,266.2 mean score, which are the numbers the acceptance criteria name"
     }
   },
-  "conclusion": "The bounded well plan meets all three acceptance thresholds on Experiment 003's identical ten seeds: a Tetris line rate of 0.03871 against the required 0.011445 (240 Tetris lines in 6200 lines, 3.38x the Experiment 003 baseline's rate), 620.0 mean lines against more than 349.5 (1.77x) and 1665036.0 mean score against more than 567,266.2 (2.94x), with no episode stopped at the frame cap. Two changes to the objective are what move them, and the measurements are attributed to both rather than to the plan alone. The plan is a designated well column, an explicit stack-height budget, a reserve measured as the rows a vertical I would complete above the column's topmost filled cell, and a spend-or-abandon rule at a self-tracked I-drought bound. Beside it, the composition scores the current placement's whole plan value, where Experiment 003 adds only that placement's clear term to the preview's value: the objective_mechanism block derives one reachable board per phase on which the two compositions select different placements, so the evaluation does not rest on the claim that the two compose a current placement alike. It does not reach the frozen lookahead agent's survival on the same seeds, so the plan buys Tetris rate with lines rather than adding both, and that trade is the experiment's main limitation. The three thresholds are met by the re-measurement taken after the plan's height accounting was corrected, and re-measured again after the objective identity's walk was keyed by the writer's format version and widened to the runner's dispatch for every agent: each re-run's per-episode rows and metrics are identical, so the verdict is the same measurement under corrected code rather than a revised one.",
+  "conclusion": "The bounded well plan meets all three acceptance thresholds on Experiment 003's identical ten seeds: a Tetris line rate of 0.03871 against the required 0.011445 (3.38x the Experiment 003 baseline's rate), 620.0 mean lines against more than 349.5 (1.77x) and 1665036.0 mean score against more than 567266.2 (2.94x), with no episode stopped at the frame cap. Two changes to the objective are what move them, and the measurements are attributed to both rather than to the plan alone. The plan is a designated well column, an explicit stack-height budget, a reserve measured as the rows a vertical I would complete above the column's topmost filled cell, and a spend-or-abandon rule at a self-tracked I-drought bound. Beside it, the composition scores the current placement's whole plan value, where Experiment 003 adds only that placement's clear term to the preview's value: the objective_mechanism block derives 2 reachable boards on which the two compositions select different placements, so the evaluation does not rest on the claim that the two compose a current placement alike. It does not reach the frozen lookahead agent's survival on the same seeds (620.0 against 912.8 mean lines, 1665036.0 against 2822959.9 mean score), so the plan buys Tetris rate with lines rather than adding both, and that trade is the experiment's main limitation. The verdict is the re-measurement taken after the plan's objective, its identity walk, its height accounting and the allocation of its agent to the runner's dispatch were corrected: the per-episode rows of every run this one superseded are retained and the refactor_no_outcomes_changed block re-makes the comparison against them field for field, so the result is one measurement under corrected code rather than a revised one.",
   "configuration": {
     "agents": [
       "lookahead",
@@ -513,22 +513,22 @@
     "check": "probes/evidence.py check-legacy, and probes/evidence.py check-record (which derives both this digest and the agent-factory digest from the tree's bytes and the retained fixture), and tests/test_integration.py::test_a_record_written_by_the_frozen_writer_still_verifies",
     "dispatcher": "block_stack_ai.runner is the module whose dispatch selects which implementation is built, and it is the module every record written now covers: the version-7 writer seeds it for both declared agents, so a Tetris record names the code that selects its implementation as well as a plan record does. Its digest here is derived from this tree's own bytes by `probes/evidence.py check-record` and compared with the `sources` entry the retained result and the capture carry, so the record that reports it cannot name a different dispatch. The version-6 shape is the one Experiment 003's retained evidence recorded: that walk named the shared factory for an agent the factory defines, so the frozen fixture's five-module identity carries no dispatcher entry, and it is compared against that five.",
     "dispatcher_digest": "81a0bfbae21fc1afe0d48187f7a0e158394f5e7520cd4944ba502d8cdd8c4f77",
-    "exit": 0,
     "fixture": "experiments/004-bounded-well-plan/probes/legacy_v6_tetris_record.json",
     "result": "the frozen record's own identity still equals this tree's version-6 Tetris identity, its recorded inputs replay, and every warning is an engine-Git advisory rather than a complaint about the record. Which of those advisories appears is a property of the engine checkout and not of the record -- the fixture records the engine as a working tree at a commit, so a checkout whose engine edits are later committed reports the recorded-vs-current advisory instead -- so the check compares against the verifier's own advisory vocabulary (engine_advisories, derived from runner._engine_warnings by a synthetic engine section that makes both of its advisory branches fire on any checkout) rather than one wording, and tests/test_integration.py::test_the_frozen_record_checks_tolerate_a_committed_engine and ::test_the_frozen_record_checks_tolerate_an_unversioned_engine pin the committed and Git-less engine states. The shared agent factory's source is byte-identical to the branch base, so the digest that record covers is unchanged; the new agent is declared in its objective module and built by the runner's per-agent dispatch instead, so the dispatch is part of the current writer's identity for both agents and not of that frozen version-6 one. A record that configures the plan agent is additionally required to claim a format version at or above the one that introduced it (runner.DECLARED_OBJECTIVES[...].introduced_in): no older writer could have built that agent, so the relabel itself is reported before any section is compared, while the Tetris agent's version-2 compatibility is preserved because its own version-2 writer already built it and wrote no objective.",
     "what_it_is": "a format_version 6 suite record written by the frozen Experiment 003-era writer (git archive of the branch base's src, whose tetris.py hashes to 3d32c1c3..., the digest Experiment 003's retained capture records), so it carries a declared objective section naming the Tetris objective and the source identity of the five modules that computed its placements"
   },
   "limitations": [
-    "The plan agent was measured only on classic_ntsc_extended, endless, start level 18, height 0, the settings Experiments 002 and 003 used. Nothing here measures another ruleset, level or mode, and no live-desktop game or whole-game mode was run.",
-    "The plan's constants were fixed on a development seed set (odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23) that excludes the ten evaluation seeds. That is development, not evaluation: the numbers above are the first measurement of these constants on the evaluation seeds, and notes.md states the development.",
-    "The plan's advantage over Experiment 003's agent is bounded and specific: it is a one-piece, straight-drop, commit-per-piece policy. It does not search, it does not know a future piece beyond the visible preview, and it cannot repair a covered cell. The reserve it holds is therefore often partial: only 60 of its 15857 placements were four-line clears. A reserve is only ever earned through the field: well_reserve counts the rows a vertical I would complete above the designated column's topmost filled cell, so a well column already filled low down still holds a reserve for the rows above it and the count is not restricted to a column open to the floor. The objective_mechanism block derives a board of exactly that shape -- the designated column occupied with well_reserve 1 -- rather than stating the rule in prose.",
-    "The measurement is not attributable to the explicit plan alone. The objective also composes a current placement differently from Experiment 003's: it adds plan_value for that placement -- the field terms, the reserve and the overflow in BUILD, and the entire frozen feature_score in SPEND -- where Experiment 003's tetris_choice adds only clear_term for it and scores the preview's board by its own value. The objective_mechanism block derives one reachable board per phase on which the two compositions select different placements, so the claim that they compose a current placement alike is not relied on anywhere. What was not measured is a run of Experiment 003's composition under this plan's phase, budget and drought memory: that comparison, and any attribution of the measured lines and score between the plan and the composition, is left to a later experiment.",
-    "The plan agent clears fewer lines and scores less than the frozen lookahead agent it runs beside on the same seeds (620.0 against 912.8 mean lines, 1,665,036 against 2,822,959.9 mean score). It preserves the Tetris rate at a cost in survival; the aspirational comparison is reported, not met.",
-    "All ten plan games topped out, so the ten-seed means are top-out outcomes rather than frame-capped games; one lookahead game stopped at the 200000-frame cap instead. The per-episode rows are retained so both cases are visible.",
-    "The declared-objective identity covers the code that selects which implementation is built, as well as the module that builds the agent whose placements a record replays. That is why the plan agent is declared in its objective module (block_stack_ai.wellplan) and built by the runner's per-agent dispatch (runner.DECLARED_OBJECTIVES, runner.build_agent) instead of being added to the shared agent factory (block_stack_ai.agents): the factory's source is byte-identical to the branch base, so the frozen Experiment 003 record's identity still equals this tree's, while a record of either declared agent written now covers the dispatch module (block_stack_ai.runner) and so catches a change to it. Experiment 003's retained records are version-6 records, whose walk named the shared factory for the Tetris agent, so they are compared against exactly the five-module mapping they recorded: the writer's version moved to 7 rather than the shape being edited in place, which is what keeps them verifying. The remaining residue is the format version itself -- a record written now can still claim version 6 and be compared against that version's narrower walk, because the version is the record's own statement about which writer produced it and the version-6 writer's records have to keep verifying -- and what is closed is the coverage of a record written now, which is what the finding asked for. `check-record` re-derives all of this in the `dispatcher_coverage` block rather than asserting it here, and derives both digests (the factory's and the dispatcher's) from those modules' own bytes rather than restating them. See objective_record.shared_module_caveat.",
-    "This file is a distilled record, not the full run record: the evaluation's own run.json is about 17 MB of ignored, disposable output holding one input mask per logical frame. The evidence is therefore re-derived from the code rather than replayed from stored inputs -- retained_replay re-plays the retained configuration and compares every outcome and metric -- and the temporary record the predeclaration cites is named here for as long as this checkout keeps it.",
+    "The plan agent was measured only on classic_ntsc_extended, endless, start level 18, height 0 and a 200000-frame cap, the settings Experiments 002 and 003 used. Nothing here measures another ruleset, level or mode, and no live-desktop game or whole-game mode was run.",
+    "The plan's constants were fixed on a development seed set that excludes the ten evaluation seeds (the development block states it and names the exclusion). That is development, not evaluation: the numbers above are the first measurement of these constants on the evaluation seeds, and notes.md states the development.",
+    "The plan's advantage over Experiment 003's agent is bounded and specific: it is a one-piece, straight-drop, commit-per-piece policy. It does not search, it does not know a future piece beyond the visible preview, and it cannot repair a covered cell, so only 60 of its 15857 placements were four-line clears. A reserve is only ever earned through the field: well_reserve counts the rows a vertical I would complete above the designated column's topmost filled cell, so a well column already filled low down still holds a reserve for the rows above it and the count is not restricted to a column open to the floor. The objective_mechanism block derives a board of exactly that shape.",
+    "The measurement is not attributable to the explicit plan alone. The objective also composes a current placement differently from Experiment 003's, and 2 derived boards -- one per phase -- are boards on which the two compositions select different placements, so the claim that they compose a current placement alike is not relied on anywhere. A run of Experiment 003's composition under this plan's phase, budget and drought memory was not measured, and any split of the attribution is left to a later experiment.",
+    "It does not reach the frozen lookahead agent's survival on the same seeds (620.0 against 912.8 mean lines, 1665036.0 against 2822959.9 mean score), so the plan buys Tetris rate with lines rather than adding both, and that trade is the experiment's main limitation.",
+    "All 10 of the plan's games topped out, so the ten-seed means are top-out outcomes rather than truncated games. The per-episode rows are retained so both cases are visible.",
+    "The declared-objective identity covers the code that selects which implementation is built, as well as the module that builds the agent whose placements a record replays. That is why the plan agent is declared in its objective module (block_stack_ai.wellplan) and built by the runner's per-agent dispatch instead of being added to the shared agent factory: the factory's source is byte-identical to the branch base, so the frozen Experiment 003 record's identity still equals this tree's, while a record of either declared agent written now covers the dispatch module as well. Experiment 003's retained records are earlier-version records, whose walk an older writer emitted, and they keep verifying against that shape.",
+    "This file is a distilled record, not the full run record: the evaluation's own run.json is ignored, disposable output holding one input mask per logical frame. The evidence is therefore re-derived from the code rather than replayed from stored inputs -- retained_replay re-plays the retained configuration and compares every outcome and metric -- and the temporary record the predeclaration cites is named by that block's cited_record for as long as this checkout keeps it.",
     "Two declared-objective agents cannot be configured in one suite: a suite record carries one objective section. A comparison of tetris and tetris_plan in one run is therefore not expressible, and this experiment compares the plan against Experiment 003's retained rows and against a re-run of Experiment 003's own configuration instead.",
-    "The plan's height accounting was corrected after the first publication: a column whose cells rest in the engine's two hidden rows is stack height (22 on the plan's scale, against the frozen visible-field measure of 0) rather than an empty column, so the budget, the SPEND transition and the overflow term read that state correctly. The retained evaluation was re-measured under the corrected code and its per-episode rows and metrics are identical, because no episode of the ten reached that state; the corrected reading is derived in objective_mechanism.hidden_rows_are_stack_height and reached on the engine itself by tests/test_integration.py::test_the_plan_reads_a_native_hidden_stack_as_over_its_budget."
+    "The run's own code and engine versions are recorded in the cited run record, not restated here: the record this result names carries them, and this file does not keep a second copy that no check could re-derive.",
+    "The plan's height accounting was corrected before this publication, and the evaluation was re-measured under the corrected code more than once. The refactor_no_outcomes_changed block retains those runs' rows -- 6 of them -- and re-makes the comparison against this run's field for field, so the statement that the corrections changed no outcome is derived rather than asserted. The corrected reading itself is derived in objective_mechanism.hidden_rows_are_stack_height and reached on the engine itself by the native integration test named in notes.md, not by the ten-seed measurement."
   ],
   "metrics": {
     "lookahead": {
@@ -847,7 +847,7 @@
       "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
       "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
       "block_stack_ai.runner": "81a0bfbae21fc1afe0d48187f7a0e158394f5e7520cd4944ba502d8cdd8c4f77",
-      "block_stack_ai.wellplan": "474beb3e65c5b1526ad8c15f8d33618a777461c102d7ef805ff49c1ba993a36d"
+      "block_stack_ai.wellplan": "91283438e5303ec0e5c99c3abeb3a5597799aba287a0d4ab307715370d95a552"
     },
     "weights": {
       "aggregate_height": -0.5,
@@ -867,14 +867,14 @@
   },
   "predeclared_objective": {
     "capture_file": "experiments/004-bounded-well-plan/probes/predeclared_objective.json",
-    "capture_order": "the capture was written at 2026-09-30T04:40:00.379696+00:00, before the cited record's own created_at 2026-09-30T04:40:00.453026+00:00, and the record's own objective identity is the capture's",
-    "captured_at": "2026-09-30T04:40:00.379696+00:00",
-    "cited_record": "runs/20260930T044258461859Z-332ee653/run.json",
-    "cited_record_created_at": "2026-09-30T04:40:00.453026+00:00",
-    "identity_coverage": "The capture records the digest of every module the plan's decisions are computed from, the same set the run's own objective.sources enumerates: the declaring module (wellplan), the frozen geometry and board model it imports (heuristic, pieces), Experiment 002's reachable-set enumeration it reuses (pathaware), the agent wrapper that hands it the state and the shared factory class it is built from (agents), the game factory whose create_game builds the state every choice reads (engine), and the module whose dispatch decides the plan agent is built by wellplan at all (runner). Seven modules. The walk is the runner's own, not a hand-listed set; it excludes the sibling Tetris objective, and the one package module it never covers is the provenance recorder itself, which cannot record its own load because it installs the recorder. `check-predeclaration` requires the capture to equal the current modules and the identity the run itself wrote, `check-record` re-derives it from the retained result, and the dispatcher's digest is derived from runner's own bytes and compared with both copies.",
+    "capture_order": "the capture was written at 2026-09-30T06:46:42.335337+00:00, before the cited record's own created_at 2026-09-30T06:46:48.710558+00:00, and the record's own objective identity is the capture's",
+    "captured_at": "2026-09-30T06:46:42.335337+00:00",
+    "cited_record": "runs/20260930T064941239339Z-dc40e8da/run.json",
+    "cited_record_created_at": "2026-09-30T06:46:48.710558+00:00",
+    "identity_coverage": "The capture records the digest of every module the plan's decisions are computed from, the same set the run's own objective.sources enumerates: block_stack_ai.agents, block_stack_ai.engine, block_stack_ai.heuristic, block_stack_ai.pathaware, block_stack_ai.pieces, block_stack_ai.runner, block_stack_ai.wellplan. 7 modules, produced by the runner's own identity walk rather than listed by hand; the walk excludes the sibling Tetris objective, and each digest is this tree's file at the moment of the capture",
     "module": "src/block_stack_ai/wellplan.py",
-    "module_sha256": "474beb3e65c5b1526ad8c15f8d33618a777461c102d7ef805ff49c1ba993a36d",
-    "note": "the declared objective -- the module, the modules its decisions are computed from, and the documented weights, plan constants and rationale -- captured from the unmodified tree before the evaluation run; no constant is revised against evaluation outcomes. The constants were fixed on a development seed set that excludes the ten evaluation seeds (odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23); that development is stated in notes.md rather than presented as a pre-existing choice. This capture supersedes five earlier ones, kept beside it: predeclared_objective.pre-explicit-shape.json and predeclared_objective.pre-version-bump.json, whose identities differ from this one only in block_stack_ai.runner's digest and never in a module of the plan's own code -- the version-7 walk keys the second seed by the record's format version and widens it to the dispatch for every agent, and the shared walk's default returned to the version-6 shape so that Experiment 003's probe still derives the identity its capture recorded; predeclared_objective.pre-height-fix.json, taken before the plan's height accounting was corrected so a column resting in the engine's hidden rows counts as stack height rather than as an empty column; predeclared_objective.pre-dispatch.json, whose identity walked the objective module and the wrapper but not the dispatch that selects the agent; and predeclared_objective.pre-agent-move.json, taken before the agent was moved out of the shared factory. Each was valid for the design it preceded, and `check-record` requires each named superseded capture to exist, to predate this one and to describe a different subject.",
+    "module_sha256": "91283438e5303ec0e5c99c3abeb3a5597799aba287a0d4ab307715370d95a552",
+    "note": "the declared objective -- the module, the modules its decisions are computed from, and the documented weights, plan constants and rationale -- captured from the unmodified tree before the evaluation run; no constant is revised against evaluation outcomes. The constants were fixed on a development seed set that excludes the ten evaluation seeds (odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23); that development is stated in notes.md rather than presented as a pre-existing choice. This capture supersedes the 6 earlier ones the block's superseded_captures names, one for each run this evaluation superseded and each of a different design -- which is where the design every one of them preceded is described; every one of them published the same declared weights, constants and rationale section, because no change that forced a re-capture touched one",
     "notes_section": "experiments/004-bounded-well-plan/notes.md#predeclared-objective",
     "notes_section_sha256": "f167d0c90447d830dfba7f9986196fe7bdd2d644801cbef6bbb67a89c6c26c9a",
     "objective": {
@@ -899,25 +899,57 @@
       "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
       "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
       "block_stack_ai.runner": "81a0bfbae21fc1afe0d48187f7a0e158394f5e7520cd4944ba502d8cdd8c4f77",
-      "block_stack_ai.wellplan": "474beb3e65c5b1526ad8c15f8d33618a777461c102d7ef805ff49c1ba993a36d"
+      "block_stack_ai.wellplan": "91283438e5303ec0e5c99c3abeb3a5597799aba287a0d4ab307715370d95a552"
     },
     "superseded_captures": [
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-explicit-shape.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-version-bump.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-height-fix.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-dispatch.json",
-      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-agent-move.json"
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-agent-move.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-preview-docstring.json"
     ]
   },
   "refactor_no_outcomes_changed": {
-    "note": "the plan's objective and the identity walk were revised after the earlier ten-seed runs, the plan's height accounting was corrected after the first publication, and the identity the writer records was then widened for *every* agent under a new format version (7), because the version-6 walk named the shared factory rather than the runner's dispatch for an agent the factory defines -- a change to the dispatch that kept a Tetris record replaying was otherwise invisible to it -- so the evaluation was re-run under a fresh predeclaration each time. The module was first reorganised after the first run (the agent moved from the shared factory into the module that declares the objective, and the runner gained the per-agent dispatch), the walk was then corrected so that the plan's identity covers the module that decides which implementation is built, and the height accounting was then corrected so that a column whose cells rest in the engine's two hidden rows counts as stack height rather than as an empty column. The last revision changes no agent's behaviour: it moves the writer's format version and the walk it keys, so the plan's module set is unchanged and only the recorded digests move. Each re-run's per-episode rows and metrics are identical to the superseded run's, so none of the revisions changed an outcome; `rows_identical_to_the_superseded_run` is re-derived by comparing this file's rows with the previously retained ones before the re-run replaced them.",
-    "rows_identical_to_the_superseded_run": true,
-    "superseded_captures": "the predeclared_objective block names them: predeclared_objective.pre-explicit-shape.json, predeclared_objective.pre-version-bump.json, predeclared_objective.pre-height-fix.json, predeclared_objective.pre-dispatch.json and predeclared_objective.pre-agent-move.json, each kept on the tree beside the current capture"
+    "artifact": "experiments/004-bounded-well-plan/probes/superseded_run_rows.json",
+    "rows_identical_to_every_superseded_run": true,
+    "statement": "every superseded run's retained rows equal this run's, field for field, so the re-measurements taken after the plan's objective module was reorganised, after its identity walk was corrected, after its height accounting was corrected and after the writer's walk was widened for every agent changed no outcome: runs/20260929T171936702109Z-3733d12b/run.json, runs/20260929T174836231811Z-b6c35f6b/run.json, runs/20260930T010141245162Z-edcbfcfe/run.json, runs/20260930T020945782490Z-f908aba9/run.json, runs/20260930T041601202177Z-7bb33021/run.json, runs/20260930T044258461859Z-332ee653/run.json",
+    "superseded_runs": [
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-agent-move.json",
+        "created_at": "2026-09-29T17:16:44.531601+00:00",
+        "run": "runs/20260929T171936702109Z-3733d12b/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-dispatch.json",
+        "created_at": "2026-09-29T17:45:44.432195+00:00",
+        "run": "runs/20260929T174836231811Z-b6c35f6b/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-height-fix.json",
+        "created_at": "2026-09-30T00:58:39.088832+00:00",
+        "run": "runs/20260930T010141245162Z-edcbfcfe/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-version-bump.json",
+        "created_at": "2026-09-30T02:06:49.115337+00:00",
+        "run": "runs/20260930T020945782490Z-f908aba9/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-explicit-shape.json",
+        "created_at": "2026-09-30T04:13:09.910784+00:00",
+        "run": "runs/20260930T041601202177Z-7bb33021/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-preview-docstring.json",
+        "created_at": "2026-09-30T04:40:00.453026+00:00",
+        "run": "runs/20260930T044258461859Z-332ee653/run.json"
+      }
+    ]
   },
   "retained_replay": {
     "command": "$PY experiments/004-bounded-well-plan/probes/evidence.py reproduce experiments/004-bounded-well-plan/result.json",
     "episodes_compared": 20,
-    "exit": 0,
     "fields_checked": [
       "lines",
       "score",
@@ -927,10 +959,9 @@
       "clear_sizes",
       "metrics"
     ],
-    "result": "the retained configuration replays to every retained per-episode outcome and every retained metric, so the retained evidence is verifiable in a checkout that no longer holds the temporary run record: the record itself is about 17 MB of one input mask per logical frame, which runs/ (ignored at any depth) holds and this file's distilled rows stand in for.",
+    "result": "the retained configuration replays to every retained per-episode outcome and every retained metric over the 20 configured (agent, seed) episodes, so the retained evidence is verifiable in a checkout that no longer holds the temporary run record",
     "what_it_does": "parses the retained configuration, rebuilds the agents from the code and plays the suite again, so every decision is re-derived rather than replayed from stored inputs, then compares every episode outcome and every aggregate metric with the retained rows"
   },
-  "run_record": "runs/20260930T044258461859Z-332ee653/run.json (temporary ignored run output: runs/ is ignored at any depth, so the distilled per-episode rows are copied into this file under episodes_by_agent_seed and every reported metric is the aggregate of those rows; `probes/evidence.py check-record` re-derives them)",
   "status": "passed",
   "stopping": {
     "episodes_stopped_at_the_cap": {
@@ -938,7 +969,7 @@
       "tetris_plan": 0
     },
     "frame_limit": 200000,
-    "note": "Every tetris_plan game ended by topping out (game_over): no episode of the plan agent stopped at the frame cap, so its line and score totals are game outcomes and not truncated games. The lookahead agent stopped one of its ten games at the cap, as Experiment 002 and 003 recorded.",
+    "note": "the episodes' own stopping reasons, by agent -- the lookahead agent: 10 games, 9 ended by topping out (game_over) and 1 stopped at the 200000-frame cap; the tetris_plan agent: 10 games, 10 ended by topping out (game_over) and 0 stopped at the 200000-frame cap. A game that stopped at the cap is a truncated measurement and a game that topped out is a game outcome, so the line, score and piece totals are read against this count",
     "stopping_reasons": {
       "lookahead": {
         "frame_limit": 1,
@@ -947,18 +978,6 @@
       "tetris_plan": {
         "game_over": 10
       }
-    }
-  },
-  "versions": {
-    "engine": {
-      "commit": "8ca4158711c2d6339cab1ee8d78aa65bd624c89d",
-      "dirty": true,
-      "kind": "working-tree"
-    },
-    "fallgorithm": {
-      "commit": "05a09c1c7d096fa812be70695aae868c9d54d776",
-      "dirty": true,
-      "kind": "working-tree"
     }
   }
 }
