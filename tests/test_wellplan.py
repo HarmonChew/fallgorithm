@@ -13,6 +13,8 @@ the rows the lock clears.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from block_stack_ai import agents as agents_module
@@ -55,6 +57,21 @@ from block_stack_ai.wellplan import (
 EMPTY_HIDDEN = ((0,) * WIDTH,) * 2
 EMPTY_ROWS = tuple((0,) * WIDTH for _ in range(HEIGHT))
 EMPTY_GRID = board_grid(EMPTY_ROWS, EMPTY_HIDDEN)
+
+# The retained rationale, read here because two of these tests bind its prose to
+# the boundary and the penalty the code actually implements.
+NOTES = (Path(wellplan_module.__file__).resolve().parents[2] / "experiments"
+         / "004-bounded-well-plan" / "notes.md")
+OBJECTIVE_SECTION_START = "<!-- predeclared-objective:start -->"
+OBJECTIVE_SECTION_END = "<!-- predeclared-objective:end -->"
+
+
+def declared_objective_section() -> str:
+    """The retained rationale section, between the markers the probe hashes."""
+    text = NOTES.read_text(encoding="utf-8")
+    start = text.index(OBJECTIVE_SECTION_START)
+    end = text.index(OBJECTIVE_SECTION_END) + len(OBJECTIVE_SECTION_END)
+    return text[start:end]
 
 
 def grid_of(rows: list[list[int]], hidden=EMPTY_HIDDEN):
@@ -477,3 +494,108 @@ def test_plan_agent_counts_the_pieces_it_is_shown_and_restarts_on_an_i(monkeypat
     # T/O and S/Z count up, the L with an I preview restarts, the J/T counts one,
     # and the I itself restarts.
     assert seen == [1, 2, 0, 1, 0]
+
+
+def test_the_plan_spends_at_the_drought_bound_the_prose_states(monkeypatch):
+    """The phase turns over on the bound-th no-I observation, and the prose says so.
+
+    ``holds_well`` is ``drought < DROUGHT_BOUND`` and the agent advances its own
+    count once per spawned piece, so the count reaches the bound on the bound-th
+    consecutive observation without a visible I and the phase *there* is already
+    ``SPEND``. The boundary is therefore read from the code here rather than
+    paraphrased beside it: the agent is driven through consecutive no-I
+    observations, the count it hands the objective and the phase that count puts
+    the board in are recorded, and the transition is required at exactly the
+    observation whose count equals the bound. The retained rationale and the
+    module docstring have to describe that same boundary -- the sentence that said
+    the plan spends only *past* the bound was one observation later than the code
+    -- so a docstring or a rationale row that drifts from the predicate is
+    reported here instead of read as a description of it.
+    """
+    seen: list[int] = []
+    real = wellplan_module.plan_choice
+
+    def recording(grid, piece, next_piece, *, drought, **rest):
+        seen.append(drought)
+        return real(grid, piece, next_piece, drought=drought, **rest)
+
+    monkeypatch.setattr(wellplan_module, "plan_choice", recording)
+    agent = build_agent(PLAN_AGENT, 0)
+    grid = open_well(1)
+    for index in range(DROUGHT_BOUND + 2):
+        agent.act(PlanState(grid, "T", "O", piece_count=index + 1))
+
+    assert seen == list(range(1, DROUGHT_BOUND + 3))
+    phases = [initial_phase(drought, columns_of(grid)) for drought in seen]
+    assert phases[:DROUGHT_BOUND - 1] == [BUILD] * (DROUGHT_BOUND - 1)
+    assert phases[DROUGHT_BOUND - 1] == SPEND
+    assert phases[DROUGHT_BOUND - 1:] == [SPEND] * len(phases[DROUGHT_BOUND - 1:])
+    # The observation the transition lands on is the bound itself, not one later.
+    assert seen[phases.index(SPEND)] == DROUGHT_BOUND
+
+    documented = " ".join(wellplan_module.__doc__.split())
+    assert "at that bound" in documented, (
+        "the module docstring does not state the boundary the predicate implements"
+    )
+    assert "past that bound" not in documented, (
+        "the module docstring says the plan spends only past the bound, which is one "
+        "observation later than holds_well"
+    )
+    section = " ".join(declared_objective_section().split())
+    assert "at that many shown pieces" in section, (
+        "the predeclared rationale row does not state the boundary the predicate "
+        "implements"
+    )
+    assert "past that many shown pieces" not in section, (
+        "the predeclared rationale row says the plan spends only past the bound, which "
+        "is one observation later than holds_well"
+    )
+
+
+def test_overflow_is_a_penalty_inside_the_value_not_a_dominance_rule():
+    """An over-budget placement can still outscore one that stays under the budget.
+
+    ``plan_value`` adds ``overflow`` per row past the budget *inside* the summed
+    value, so the charge is one term among the clear and field terms and can be
+    outweighed. The case is derived from the code rather than asserted: on the
+    seven-row field with an open well, a J has reachable placements that settle
+    over the budget and one that clears a row and stays under it, and the
+    over-budget placement's own ``plan_value`` is the higher of the two -- so the
+    sentence that said it "loses to one that does not" would be false about the
+    objective that produced the results. ``plan_choice`` selects the over-budget
+    placement on the same board, which is the composition the results came from.
+    """
+    grid = open_well(7)
+    columns = columns_of(grid)
+    assert stack_height(columns) == 7 < HEIGHT_BUDGET
+    reachable = pathaware._reachable(columns, "J", pathaware.gravity_period(18), 0)
+
+    def value(pair):
+        placement, settled = pair
+        return plan_value(BUILD, placement.lines_cleared, settled)
+
+    over = [pair for pair in reachable if stack_height(pair[1]) > HEIGHT_BUDGET]
+    under = [pair for pair in reachable if stack_height(pair[1]) <= HEIGHT_BUDGET]
+    assert over and under, "the derived counterexample needs both kinds of candidate"
+    best_over = max(over, key=value)
+    best_under = max(under, key=value)
+    assert stack_height(best_over[1]) > HEIGHT_BUDGET
+    assert stack_height(best_under[1]) <= HEIGHT_BUDGET
+    assert value(best_over) > value(best_under)
+
+    chosen = choose(grid, "J", "O")
+    assert (chosen.orientation, chosen.x) == (best_over[0].orientation, best_over[0].x)
+    settled_chosen = next(settled for placement, settled in reachable
+                          if (placement.orientation, placement.x)
+                          == (chosen.orientation, chosen.x))
+    assert stack_height(settled_chosen) > HEIGHT_BUDGET
+
+    documented = " ".join(wellplan_module.__doc__.split())
+    assert "loses to one that does not" not in documented, (
+        "the module docstring claims the overflow term dominates the placement "
+        "comparison, which the derived counterexample contradicts"
+    )
+    assert "loses value" in documented, (
+        "the module docstring does not describe the overflow term as a penalty inside "
+        "the summed value"
+    )

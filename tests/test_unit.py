@@ -2351,12 +2351,26 @@ def test_the_plan_result_record_rederives_its_metrics_and_capture(tmp_path):
         probe.check_record(path)
 
 
+def _zero_clear_size_bucket(row: dict) -> str:
+    """A clear-size bucket a row counts as zero, for the boolean-for-integer tamper.
+
+    JSON ``false`` compares equal to ``0``, so a bucket counted as zero is the one
+    whose value can be replaced by a boolean and still reproduce under plain
+    equality; a non-zero count would differ from ``False`` whatever the comparison
+    did.
+    """
+    return next(name for name, count in row["clear_sizes"].items() if count == 0)
+
+
 def _tampered_plan_result(record: dict, tamper: str) -> dict:
     """The retained plan result with one named self-declared claim tampered."""
     result = json.loads(json.dumps(record))
     if tamper == "genuine":
         return result
-    if tamper == "rows_identical":
+    if tamper == "boolean_clear_size":
+        row = result["episodes_by_agent_seed"][0]
+        row["clear_sizes"][_zero_clear_size_bucket(row)] = False
+    elif tamper == "rows_identical":
         result["refactor_no_outcomes_changed"][
             "rows_identical_to_every_superseded_run"] = False
     elif tamper == "extra_comparison_claim":
@@ -2402,8 +2416,11 @@ def _tampered_plan_result(record: dict, tamper: str) -> dict:
     ("duplicated_capture", "the same subject"),
     ("unpaired_capture", "not one-to-one"),
     ("changed_weights", "did not publish the declared weights"),
+    ("unretained_rationale", "is not a retained rationale generation"),
     ("capture_after_its_run", "did not precede it"),
     ("superseded_artifact", "so the re-measurement moved them"),
+    ("superseded_boolean_clear_size", "so the re-measurement moved them"),
+    ("boolean_clear_size", "so the re-measurement moved them"),
     ("artifact_absent", "is not on this tree"),
     ("unbacked_block", "neither re-derived nor declared narrative"),
     ("stopping", "the retained stopping block is not the one"),
@@ -2438,7 +2455,9 @@ def test_the_plan_record_rejects_a_claim_no_derivation_backs(
     record = json.loads(retained.read_text(encoding="utf-8"))
     result = (record if tamper in ("superseded_artifact", "artifact_absent",
                                    "duplicated_capture", "unpaired_capture",
-                                   "changed_weights", "capture_after_its_run")
+                                   "changed_weights", "capture_after_its_run",
+                                   "superseded_boolean_clear_size",
+                                   "unretained_rationale")
               else _tampered_plan_result(record, tamper))
     if tamper == "duplicated_capture":
         # The same capture listed twice: two loaded captures with one subject, so one
@@ -2473,6 +2492,22 @@ def test_the_plan_record_rejects_a_claim_no_derivation_backs(
         copy_path.write_text(json.dumps(earlier), encoding="utf-8")
         block["superseded_captures"] = [str(copy_path) if name == original else name
                                         for name in block["superseded_captures"]]
+    elif tamper == "unretained_rationale":
+        # A listed capture whose rationale-section digest names no retained section:
+        # the prose correction to the rationale section changed its digest, so the
+        # history binds each capture to a *retained* generation rather than to the
+        # current text; a digest that names no retained artifact is reported.
+        block = result["predeclared_objective"]
+        original = block["superseded_captures"][0]
+        earlier = json.loads((probe.PROJECT_ROOT / original).read_text(encoding="utf-8"))
+        earlier["notes_section_sha256"] = "0" * 64
+        copy_path = tmp_path / "unretained-rationale-capture.json"
+        copy_path.write_text(json.dumps(earlier), encoding="utf-8")
+        block["superseded_captures"] = [str(copy_path) if name == original else name
+                                        for name in block["superseded_captures"]]
+        block["note"] = probe.predeclaration_note(
+            json.loads(probe.PREDECLARATION.read_text(encoding="utf-8")),
+            block["superseded_captures"])
     elif tamper == "capture_after_its_run":
         # A capture of a superseded run moved to a time *after* the run it is paired
         # with -- still before the current capture, keeping its subject and weights --
@@ -2494,6 +2529,16 @@ def test_the_plan_record_rejects_a_claim_no_derivation_backs(
     if tamper == "superseded_artifact":
         document = json.loads(probe.SUPERSEDED_ROWS.read_text(encoding="utf-8"))
         document["runs"][0]["rows"][0]["score"] += 1
+        artifact = tmp_path / "superseded_run_rows.json"
+        artifact.write_text(json.dumps(document), encoding="utf-8")
+        monkeypatch.setattr(probe, "SUPERSEDED_ROWS", artifact)
+    elif tamper == "superseded_boolean_clear_size":
+        # A clear-size count in the retained artifact replaced by a boolean: JSON
+        # ``false`` equals ``0``, so the artifact still aggregates to the retained
+        # row under plain equality and the comparison has to reject it by type.
+        document = json.loads(probe.SUPERSEDED_ROWS.read_text(encoding="utf-8"))
+        row = document["runs"][0]["rows"][0]
+        row["clear_sizes"][_zero_clear_size_bucket(row)] = False
         artifact = tmp_path / "superseded_run_rows.json"
         artifact.write_text(json.dumps(document), encoding="utf-8")
         monkeypatch.setattr(probe, "SUPERSEDED_ROWS", artifact)
@@ -2625,6 +2670,14 @@ def _tampered_replay(retained: dict, rows: list[dict], tamper: str) -> dict:
         record = _baseline_replay(retained, rows)
         record["episodes"][0]["result"]["lines"] += 1
         return record
+    if tamper == "boolean_clear_size":
+        # A fresh run whose clear-size count is a boolean: the row aggregates to the
+        # retained integer under plain equality, so the reproduction has to reject it
+        # by type rather than certify it.
+        record = _baseline_replay(retained, rows)
+        row = record["episodes"][0]
+        row["clear_sizes"][_zero_clear_size_bucket(row)] = False
+        return record
     raise AssertionError(f"unknown tamper: {tamper}")
 
 
@@ -2634,6 +2687,7 @@ def _tampered_replay(retained: dict, rows: list[dict], tamper: str) -> dict:
     ("duplicated", "twice"),
     ("configuration", "is not Experiment 003's configuration"),
     ("contradicting", "did not reproduce"),
+    ("boolean_clear_size", "did not reproduce"),
 ])
 def test_the_plan_baseline_claim_requires_the_complete_identity_set(
     tmp_path, monkeypatch, tamper, message
@@ -2684,6 +2738,84 @@ def test_the_plan_baseline_requires_the_retained_rows_to_be_the_complete_set(
         patch.setattr(probe, "TETRIS_RESULT", retained_path)
         with pytest.raises(AssertionError, match="not the configured"):
             probe.baseline(path)
+
+
+def test_the_plan_reproduction_comparison_rejects_a_boolean_for_a_number():
+    """An outcome is compared by type as well as by value.
+
+    JSON ``false`` compares equal to ``0`` and ``true`` to ``1``, so a comparison
+    that only tests values certifies a retained row whose clear-size counts are
+    booleans as an exact reproduction of one whose counts are integers -- the
+    aggregate sums the boolean back to zero and every claim above it still passes.
+    Every field of the compared row therefore has to carry the writer's own type,
+    and a mapping its exact keys, before any value is compared; the tampered side
+    is driven here from each direction, and a row whose *both* sides are booleans
+    is rejected too, because the schema -- not the other side -- is the contract.
+    """
+    probe = _load_plan_probe("exp004_plan_typed_outcome_probe")
+    row = {
+        "agent": "tetris_plan", "seed": 2, "lines": 5, "score": 100, "frames": 10,
+        "pieces_placed": 3, "stopping_reason": "game_over",
+        "clear_sizes": {"singles": 1, "doubles": 0, "triples": 0, "tetrises": 0},
+    }
+    key = ("tetris_plan", 2)
+    assert probe.reproduction_differences({key: row}, {key: json.loads(json.dumps(row))}) == []
+
+    for tamper in (
+        lambda tampered: tampered["clear_sizes"].__setitem__("tetrises", False),
+        lambda tampered: tampered["clear_sizes"].__setitem__("doubles", 0.0),
+        lambda tampered: tampered.__setitem__("lines", 5.0),
+        lambda tampered: tampered["clear_sizes"].pop("triples"),
+    ):
+        tampered = json.loads(json.dumps(row))
+        tamper(tampered)
+        assert probe.reproduction_differences({key: tampered}, {key: row}), tamper
+        assert probe.reproduction_differences({key: row}, {key: tampered}), tamper
+
+    boolean_row = json.loads(json.dumps(row))
+    boolean_row["clear_sizes"]["tetrises"] = False
+    assert probe.reproduction_differences({key: boolean_row}, {key: boolean_row}), (
+        "a row whose clear-size counts are booleans on both sides is not the schema the "
+        "writer emits"
+    )
+
+
+def test_the_plan_replay_rejects_a_boolean_for_a_retained_metric(tmp_path, monkeypatch):
+    """The replay's aggregate comparison is type-sensitive too.
+
+    ``reproduce`` compares each agent's replayed aggregate with the retained
+    ``metrics`` mapping, and a mapping comparison with plain equality accepts a JSON
+    boolean wherever the writer recorded a number: ``metrics.tetris_plan.frame_cap_stops``
+    set to ``false`` equals the replayed ``0``, so the documented replay entry point
+    would report that every retained metric reproduces exactly for a type-corrupted
+    record. The suite is stubbed here from the retained rows, so the site is driven
+    without a native run, and the tampered record must be rejected.
+    """
+    probe = _load_plan_probe("exp004_plan_replay_metrics_probe")
+    retained = json.loads(probe.RESULT_PATH.read_text(encoding="utf-8"))
+    rows = retained["episodes_by_agent_seed"]
+    episodes = [
+        {
+            "agent": row["agent"], "seed": row["seed"],
+            "pieces_placed": row["pieces_placed"], "clear_sizes": row["clear_sizes"],
+            "result": {"lines": row["lines"], "score": row["score"],
+                       "frame_count": row["frames"],
+                       "stopping_reason": row["stopping_reason"]},
+        }
+        for row in rows
+    ]
+    monkeypatch.setattr(probe.runner, "run_suite", lambda configuration: episodes)
+
+    path = tmp_path / "result.json"
+    path.write_text(json.dumps(retained), encoding="utf-8")
+    probe.reproduce(path)
+
+    tampered = json.loads(json.dumps(retained))
+    assert tampered["metrics"]["tetris_plan"]["frame_cap_stops"] == 0
+    tampered["metrics"]["tetris_plan"]["frame_cap_stops"] = False
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    with pytest.raises(AssertionError, match="replayed metrics"):
+        probe.reproduce(path)
 
 
 def test_the_plan_mechanism_claims_are_derived_from_the_model(monkeypatch):

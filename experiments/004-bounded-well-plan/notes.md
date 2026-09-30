@@ -115,7 +115,7 @@ them. No constant is revised against evaluation outcomes.
 | `well_column` | 9 | the designated well: one column, fixed for the whole game, at the right edge where it has a single neighbour |
 | `reserve_cap` | 4 | a vertical I fills four rows, so four is the most a reserve can be worth |
 | `height_budget` | 8 | the stack may build one reserve band (four rows) under one full band of field, and no more before the plan spends |
-| `drought_bound` | 9 | the pieces that lay one complete band of the nine-column field (nine columns times four rows, four cells per piece); past that many shown pieces without a visible I the reserve is waiting on nothing |
+| `drought_bound` | 9 | the pieces that lay one complete band of the nine-column field (nine columns times four rows, four cells per piece); at that many shown pieces without a visible I the reserve is waiting on nothing |
 
 The tie-break is Experiment 002's and Experiment 003's: the first highest-valued
 placement in canonical enumeration order, orientation ascending then column
@@ -155,7 +155,14 @@ the objective's count is not restricted to a column that is open to the floor.
 
 **An explicit stack-height budget.** The plan builds only while the whole stack —
 the well column included — stands below `height_budget`, and the settled stack's
-height over the budget is charged again by `overflow`. The height is measured over
+height over the budget is charged again by `overflow`, per row, inside the summed
+value. That is a penalty and not a rule that makes an over-budget candidate lose:
+the charge is one term among the clear, field and reserve terms, so a larger clear
+can outweigh it. The regression
+`tests/test_wellplan.py::test_overflow_is_a_penalty_inside_the_value_not_a_dominance_rule`
+derives a board on which the over-budget placement is the one `plan_choice`
+selects, so the sentence is not read as a stronger claim than the
+arithmetic supports. The height is measured over
 the engine's whole 22-row grid, not the visible field alone: a column whose cells
 rest in the two hidden rows above the ceiling has reached the top of the stack, and
 reading it as an empty column would leave the plan building while `BUILD`'s own
@@ -169,7 +176,7 @@ the ceiling (`test_the_plan_reads_a_native_hidden_stack_as_over_its_budget`).
 
 **Spend-or-abandon at a self-tracked I-drought bound.** The agent counts the
 pieces it has been shown since an I was last visible to it, as the current piece
-or as the preview, and hands that count to the objective. Past `drought_bound`
+or as the preview, and hands that count to the objective. At `drought_bound`
 pieces, or once the stack reaches the budget, the plan leaves `BUILD` and scores
 `SPEND` with the frozen flat-board objective — `heuristic.feature_score` over all
 ten columns, the objective Experiment 002's `lookahead` agent survives on. That is
@@ -203,11 +210,11 @@ composition does not take at all.
 
 ## Results
 
-Measured on 2026-09-30 at fallgorithm `763fd4bc` (working tree, `dirty: true` — the
-committed experiment plus this round's objective-description, reader-side and
-probe changes) with the sibling engine `8ca41587` (working tree), on
+Measured on 2026-09-30 at fallgorithm `70a1c65f` (working tree, `dirty: true` — the
+committed experiment plus this round's objective-description and typed-comparison
+changes) with the sibling engine `8ca41587` (working tree), on
 the ten seeds number 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, start level 18, frame limit
-200000. The run record is `runs/20260930T064941239339Z-dc40e8da/run.json`
+200000. The run record is `runs/20260930T100945820449Z-b0cd2600/run.json`
 (temporary, ignored output); its per-episode rows, its metrics and the objective it
 declared are retained in [`result.json`](result.json), and `verify` replays the
 record from its own recorded inputs (exit 0, with the engine working-tree warning).
@@ -216,7 +223,8 @@ above, so the run that produced these numbers is one whose identity covers the
 dispatch that selected its agent. The evaluation was re-measured after each of the
 corrections this record's history describes — the objective module's
 reorganisation, its identity walk, its height accounting, the widening of the
-writer's walk, and now the preview-phase description below — and every superseded
+writer's walk, the preview-phase description, and now the drought-boundary and
+overflow descriptions below — and every superseded
 run's distilled per-episode rows are retained beside this one in
 `probes/superseded_run_rows.json`, so the claim that the re-measurements changed no
 outcome is *derived*: `check-record` re-makes the comparison field for field against
@@ -278,10 +286,10 @@ branch base, which is what keeps the identity of the record this comparison cite
 and of every record Experiment 003 retained — matching this tree.
 
 **Predeclaration.** `probes/evidence.py predeclare` wrote
-`probes/predeclared_objective.json` at 2026-09-30T06:46:42.335337+00:00, before the
-evaluation record's own `created_at` 2026-09-30T06:46:48.710558+00:00, capturing
-the objective module (`src/block_stack_ai/wellplan.py`, `sha256:91283438…`), the
-marked rationale section of this file (`sha256:f167d0c9…`), the published weights
+`probes/predeclared_objective.json` at 2026-09-30T10:06:36.090130+00:00, before the
+evaluation record's own `created_at` 2026-09-30T10:06:55.923796+00:00, capturing
+the objective module (`src/block_stack_ai/wellplan.py`, `sha256:85d111b2…`), the
+marked rationale section of this file (`sha256:2753d48e…`), the published weights
 and constants, and the identity of the seven modules the plan's choices run
 through — the objective module, the board model, the reachable set, the wrapper and
 its factory, the game factory, and the module whose dispatch selects the plan's
@@ -302,16 +310,19 @@ those thresholds, its stopping counts, its replay block, the rate's numerator an
 denominator, its development set's disjointness, the comparison of its rows with
 every superseded run's retained rows, and the conclusion and limitations sentences
 themselves from that same derivation, its capture order sentence from its own
-timestamps and its named superseded captures from the files on the tree, its
+timestamps and its named superseded captures from the files on the tree — including
+the rationale generation each capture recorded — its
 agent-factory and dispatcher
 digests from those modules' own bytes, its baseline block from Experiment 003's rows
 and its own configuration, its `dispatcher_coverage` block from the version-keyed
 walks and Experiment 003's regenerated version prose, and its reserve, composition
-and height claims from the model rather than from the prose beside them. The set of
-top-level blocks the record carries is asserted against the set of blocks that check
-knows, so a claim no check derives cannot be added to the certified record.
+and height claims from the model rather than from the prose beside them. Every one of
+those comparisons is type- and value-sensitive, so a retained number edited to a
+boolean is reported rather than summed back to the integer it compares equal to. The
+set of top-level blocks the record carries is asserted against the set of blocks that
+check knows, so a claim no check derives cannot be added to the certified record.
 
-The capture has been made seven times, and all six superseded ones are kept beside
+The capture has been made eight times, and all seven superseded ones are kept beside
 it. The first (2026-09-29T17:11:15.420024+00:00) preceded the first ten-seed run
 (`runs/20260929T171936702109Z-3733d12b`); the plan agent was then moved out of the
 shared factory into its objective module (see *What this experiment adds*), so the
@@ -332,28 +343,39 @@ before that evaluation was re-run (`runs/20260930T041601202177Z-7bb33021`); the
 shared walk's default shape then returned to the version-6 walk, so that Experiment
 003's probe still derives the identity its own capture recorded, which changes
 `runner`'s bytes once more, so a sixth capture was taken before that evaluation was
-re-run (`runs/20260930T044258461859Z-332ee653`); and the objective module's own
+re-run (`runs/20260930T044258461859Z-332ee653`); the objective module's own
 description of the preview's phase was corrected to match the code (*The retained
 claims are recomputed from their artifacts*, below), which changes the module a
 plan record hashes, so a seventh capture was taken before the evaluation was
-re-run (`runs/20260930T064941239339Z-dc40e8da`). The
-superseded captures are `probes/predeclared_objective.pre-explicit-shape.json`,
+re-run (`runs/20260930T064941239339Z-dc40e8da`); and the module's description of
+the drought boundary and of the overflow term was then corrected in the same way
+(*The retained descriptions are derived from the code*, below), with the
+predeclared rationale row corrected beside it, which changes both the module a plan
+record hashes and the rationale section the capture hashes, so an eighth capture
+(`2026-09-30T10:06:36.090130+00:00`) was taken before this evaluation was re-run
+(`runs/20260930T100945820449Z-b0cd2600`). The
+superseded captures are `probes/predeclared_objective.pre-boundary-wording.json`,
+`probes/predeclared_objective.pre-preview-docstring.json`,
+`probes/predeclared_objective.pre-explicit-shape.json`,
 `probes/predeclared_objective.pre-version-bump.json`,
 `probes/predeclared_objective.pre-height-fix.json`,
-`probes/predeclared_objective.pre-dispatch.json`,
-`probes/predeclared_objective.pre-agent-move.json` and
-`probes/predeclared_objective.pre-preview-docstring.json`, each valid for the
+`probes/predeclared_objective.pre-dispatch.json` and
+`probes/predeclared_objective.pre-agent-move.json`, each valid for the
 design it preceded; `check-record` requires each to exist, to predate the current
-capture and to describe a different subject. Every re-run's per-episode rows and
-metrics are identical to the run it superseded — the comparison is *derived*, from
-the superseded runs' distilled rows retained in
-`probes/superseded_run_rows.json` and re-made field for field by `check-record`
-(`result.json` → `refactor_no_outcomes_changed`), not asserted — so the
+capture, to describe a different subject and to name a rationale section retained on
+this tree. Every re-run's per-episode rows and metrics are identical to the run it
+superseded — the comparison is *derived*, from the superseded runs' distilled rows
+retained in `probes/superseded_run_rows.json` and re-made field for field by
+`check-record` (`result.json` → `refactor_no_outcomes_changed`), not asserted — so the
 reorganisation, the identity correction, the height correction, the version bump,
-the default-shape change and the description correction changed no outcome, and the
-declared *rationale* section's digest is the same in all seven captures because none
-of the changes touched a declared weight or constant (`check-record` derives that
-too, from the captures themselves).
+the default-shape change, the preview-phase description correction and this round's
+boundary and overflow description corrections changed no outcome. The declared
+*weights and constants* are the same in all eight captures, and each capture's
+rationale-section digest names a retained section: the seven earlier captures name
+`probes/notes_predeclared_objective.pre-boundary-wording.md`, the section as it stood
+before this round's prose correction, and the current capture names the section on
+this tree. That is derived too, from the captures and the retained sections
+themselves (`rationale_generations`).
 
 The correction is what makes the incomplete identity visible: the previous
 publication's plan record, `runs/20260929T174836231811Z-b6c35f6b/run.json`, now
@@ -516,7 +538,7 @@ both were confirmed to fail before the repair. The evaluation was re-measured un
 the corrected code (`runs/20260930T020945782490Z-f908aba9/run.json`); its
 per-episode rows and metrics are identical to the superseded run's — derived from
 the superseded rows retained in `probes/superseded_run_rows.json`, because no
-episode of the ten reached that state — and that comparison is one of the six
+episode of the ten reached that state — and that comparison is one of the seven
 `check-record` re-makes (`result.json` → `refactor_no_outcomes_changed`).
 
 *The legacy-record checks rejected an advisory engine warning.* `check-legacy` and
@@ -776,15 +798,102 @@ derives cannot be added to the certified record without writing its derivation.
 the class from the tampered side, one claim at a time, including both sides of the
 superseded-run comparison, a missing artifact and the two capture-history rules.
 
+**The retained descriptions are derived from the code, and the outcome comparisons
+are typed.** The external review of the previous publication found three defects, each
+reproduced on the pre-fix tree (`git archive 70a1c65f1dc12948b91c391bb504b79e1c8c1938`
+extracted to a temporary directory and driven with the input the new check rejects)
+before it was repaired. All three are the same two shapes the earlier rounds kept
+finding in a new costume: a description the code does not implement, and a comparison
+that accepts a differently-typed value.
+
+*The drought boundary was described one observation later than the predicate.*
+`holds_well` is `drought < DROUGHT_BOUND` and `PlanAgent._choose` advances the count
+once per spawned piece, so the ninth consecutive observation without a visible I
+already scores `SPEND`; the module docstring bullet, the `DROUGHT_BOUND` comment, the
+`holds_well` docstring and the predeclared rationale row said the plan spends only
+*past* the bound. Every occurrence now states the boundary the code implements, and
+`test_the_plan_spends_at_the_drought_bound_the_prose_states` derives it rather than
+restating it: it drives the agent through consecutive no-I observations, records the
+count and the phase each count gives, asserts the transition lands on the observation
+whose count equals the bound, and requires the docstring and the rationale row to
+state that boundary. On the pre-fix tree the derived assertions pass and the
+description assertions fail, which is exactly the disagreement the finding names.
+
+*The overflow term was described as a dominance rule.* The docstring said a candidate
+that pushes the stack past the budget "loses to one that does not", but `plan_value`
+adds `overflow` per row *inside* the summed value, so the charge can be outweighed by
+a larger clear or by the field and reserve terms. The sentence now says the candidate
+loses value rather than the comparison, and
+`test_overflow_is_a_penalty_inside_the_value_not_a_dominance_rule` derives the
+counterexample from the code: on the seven-row field with an open well, the reachable
+J placements that settle over the budget and the one that clears a row and stays
+under it are enumerated, the over-budget placement's own `plan_value` is shown to be
+the higher of the two, and `plan_choice` is shown to select it. The description
+assertion fails on the pre-fix tree.
+
+*The outcome comparison accepted a boolean for a number.* `reproduction_differences`
+compared each field with plain `!=`, and JSON `false` compares equal to `0`, so a
+retained row whose `clear_sizes` counts were booleans reproduced a row of integers
+(`metrics_of` sums the boolean back to zero, so every aggregate above it agreed). The
+comparison now checks the writer's own schema before any value — the type of every
+field, and every clear-size bucket — so a boolean is a difference whichever side
+carries it and a row that is boolean on both sides is rejected too. The same defect
+was swept through every retained-claim comparison in the probe, not only that line:
+`typed_differences` compares a retained value with the derived one by exact type at
+every leaf (mappings key for key, lists element by element) and `check_typed_equal`
+applies it to the metrics, the stopping counts and their sentence, the replay block,
+the development set, the refactor flag, the acceptance and aspirational numbers, the
+baseline's published metrics, the mechanism claims, the dispatcher coverage, the
+predeclaration block, the capture's own fields, and the aggregate each agent's
+replay is compared against (`reproduce`). The regressions drive a
+boolean-for-integer record from the tampered side at each of the three comparison
+sites the review named — the row comparison itself, the superseded-run comparison and
+the Experiment 003 baseline — at the retained record, and at the replay's aggregate
+comparison; `test_the_plan_reproduction_comparison_rejects_a_boolean_for_a_number`
+pins the schema rule directly, and
+`test_the_plan_replay_rejects_a_boolean_for_a_retained_metric` drives the replay site
+with the suite stubbed from the retained rows. Every one of them is accepted on the
+pre-fix tree. The comparisons left as plain equality are the ones whose recorded
+value is a string, a path or the configured identity key set — the module,
+rationale-section, factory and dispatcher digests, the capture's own path, the
+citation's timestamp order and the `(agent, seed)` identities, whose seeds are the
+configured integers — where a boolean cannot coincide with the recorded value;
+every field whose value is a number, a boolean, a mapping or a list is compared by
+`typed_differences` or against the row schema.
+
+*The chain was regenerated, and the rationale-section binding was made a generation.*
+Both code findings edit `wellplan.py`, which `objective_module_digest()` hashes, and
+the rationale row is inside the section the capture hashes, so the predeclaration was
+re-captured (the previous capture is retained as
+`probes/predeclared_objective.pre-boundary-wording.json`) and the ten-seed evaluation
+was re-measured on the identical settings — the same `classic_ntsc_extended`, endless,
+start level 18, `frame_limit` 200000 and seed set. The edits are prose, so the
+re-measurement's per-episode rows equal every superseded run's and
+`refactor_no_outcomes_changed` re-makes that comparison against the retained rows with
+the new run added, rather than the digest being patched or the old capture reused. The
+prose correction also changed the rationale section's digest, which the capture
+history had required every superseded capture to share with the *current* section; the
+pre-correction section is now retained as
+`probes/notes_predeclared_objective.pre-boundary-wording.md` and
+`check_superseded_captures` requires each superseded capture's rationale digest to be
+the digest of a *retained* rationale generation — this tree's current section or a
+section retained beside the captures — so the digest stays bound to an artifact on the
+tree. The equality of the declared *weights and constants* is unchanged, and the
+note's claim was restated to what is checked. That is the one rule this round relaxes
+rather than tightens, and it is relaxed only from "the same rationale text as the
+current capture" to "a rationale text retained on this tree", because a sanctioned
+prose correction to the section would otherwise invalidate every capture in the
+history.
+
 ## Reproduction
 
 ```sh
 PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
-$PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 242 passed
+$PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 250 passed
 $PY -m pytest -q -p no:cacheprovider -m integration            # 37 passed
 # the same selection as the GitHub unit-tests job: no Block Stack checkout beside the
 # worktree and `block_stack` unimportable, e.g. with BLOCK_STACK_ROOT unset and
-# `sys.modules['block_stack'] = None` before pytest.main([...])   # 242 passed
+# `sys.modules['block_stack'] = None` before pytest.main([...])   # 250 passed
 $PY -m block_stack_ai.cli run --config experiments/004-bounded-well-plan/config.json
 $PY -m block_stack_ai.cli verify runs/<run-id>/run.json
 $PY experiments/004-bounded-well-plan/probes/evidence.py check-predeclaration runs/<run-id>/run.json
@@ -854,15 +963,19 @@ $PY experiments/004-bounded-well-plan/probes/evidence.py all
   frozen visible-field measure of 0) rather than an empty column, so the budget,
   the `SPEND` transition and the overflow term read that state correctly. The
   retained evaluation was re-measured under the corrected code, and the objective
-  module's description of the preview's phase was corrected in the same way after
-  this round's review (see *The retained claims are recomputed from their
-  artifacts*); every superseded run's distilled rows are retained beside the result
-  in `probes/superseded_run_rows.json` and `check-record` re-makes the comparison
-  field for field, so the statement that neither correction changed an outcome is
-  derived rather than asserted. The corrected reading itself is derived in
+  module's own descriptions were corrected in the same way after later reviews (see
+  *The retained claims are recomputed from their artifacts* and *The retained
+  descriptions are derived from the code*): the preview's phase, the drought
+  boundary the predicate implements and the overflow term's status as a per-row
+  penalty rather than a dominance rule. Every superseded run's distilled rows are
+  retained beside the result in `probes/superseded_run_rows.json` and `check-record`
+  re-makes the comparison field for field, so the statement that none of those
+  corrections changed an outcome is derived rather than asserted. The corrected
+  readings themselves are derived in
   `objective_mechanism.hidden_rows_are_stack_height` and reached on the engine
   itself by the native integration test named above, not by the ten-seed
-  measurement.
+  measurement, and the boundary and overflow descriptions are pinned by the
+  regressions named in the paragraph above.
 
 ## Conclusion
 
@@ -883,7 +996,8 @@ Tetris rate with better lines and score than Experiment 003, not the aspirationa
 
 The three thresholds are met by the re-measurement taken after the plan's objective,
 its identity walk, its height accounting, the writer's identity walk and the
-objective module's own description were corrected. Every superseded run's distilled
+objective module's own descriptions of its preview phase, drought boundary and
+overflow term were corrected. Every superseded run's distilled
 per-episode rows are retained in `probes/superseded_run_rows.json`, and
 `check-record` re-makes the comparison against them field for field, so the verdict
 is the same measurement under corrected code rather than a revised one — that is

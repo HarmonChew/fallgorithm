@@ -173,7 +173,7 @@ def predeclare() -> None:
     weights = wellplan.weights_record()
     if PREDECLARATION.exists():
         existing = json.loads(PREDECLARATION.read_text(encoding="utf-8"))
-        if existing["objective"] != weights:
+        if typed_differences(existing["objective"], weights, "predeclaration.objective"):
             raise AssertionError(
                 "the declared weights are not the ones the objective's code publishes: "
                 f"{existing['objective']!r} != {weights!r}"
@@ -249,10 +249,10 @@ def check_predeclaration(path: Path, result_path: Path | None = None) -> None:
     configuration = evaluation_configuration(result_path)
     captured = json.loads(PREDECLARATION.read_text(encoding="utf-8"))
     record = json.loads(path.read_text(encoding="utf-8"))
-    assert record.get("configuration") == configuration, (
+    check_typed_equal(record.get("configuration"), configuration, (
         "the cited record's configuration is not the evaluation configuration the "
         f"retained result records: {record.get('configuration')} != {configuration}"
-    )
+    ))
     episodes = record.get("episodes")
     assert isinstance(episodes, list) and episodes, (
         f"the cited record carries no episodes to check: {episodes!r}"
@@ -270,10 +270,10 @@ def check_predeclaration(path: Path, result_path: Path | None = None) -> None:
         "not evidence about the measurement this experiment reports:\n  "
         + "\n  ".join(differences)
     )
-    assert wellplan.weights_record() == captured["objective"], (
+    check_typed_equal(captured["objective"], wellplan.weights_record(), (
         "the declared weights are not the ones the objective's code publishes: "
         f"{wellplan.weights_record()!r} != {captured['objective']!r}"
-    )
+    ))
     assert objective_module_digest() == captured["module_sha256"], (
         "the objective module changed after the predeclaration, so the measured run used "
         "a different objective than the declared one"
@@ -293,15 +293,15 @@ def check_predeclaration(path: Path, result_path: Path | None = None) -> None:
     )
     section = record.get("objective")
     assert isinstance(section, dict), "the cited record carries no objective section"
-    assert section["module"] == wellplan.__name__, (
+    check_typed_equal(section["module"], wellplan.__name__, (
         f"the record's objective is declared by {section['module']!r}, not {wellplan.__name__!r}"
-    )
-    assert section["weights"] == captured["objective"], (
+    ))
+    check_typed_equal(section["weights"], captured["objective"], (
         "the record's declared weights are not the captured ones"
-    )
-    assert section["sources"] == captured["sources"], (
+    ))
+    check_typed_equal(section["sources"], captured["sources"], (
         "the identity the run itself wrote is not the capture's"
-    )
+    ))
     print(f"# predeclaration captured_at: {captured['captured_at']} "
           f"(module sha256 {captured['module_sha256']}, notes section sha256 "
           f"{captured['notes_section_sha256']}, {len(captured['sources'])} identity modules)")
@@ -367,12 +367,137 @@ def metrics_of(rows: list[dict], agent: str) -> dict:
     }
 
 
-# The fields a reproduction compares per episode: the recorded outcome of one
-# game. A retained row and a fresh run-record episode are both reduced to these
-# before any comparison, so a reproduction claim covers exactly the fields the
-# experiment reports and cannot be made from a different set of them.
-REPRODUCTION_FIELDS = ("lines", "score", "frames", "pieces_placed",
-                       "stopping_reason", "clear_sizes")
+# The per-episode outcome a reproduction compares, as the writer's own schema: each
+# field's JSON type, and the clear-size buckets a histogram must carry. JSON ``false``
+# compares equal to ``0`` and ``true`` to ``1``, so a comparison that tests only values
+# certifies a row whose clear-size counts are booleans as a reproduction of one whose
+# counts are integers -- ``metrics_of`` sums the boolean back to zero and every claim
+# aggregated above it still passes. The schema is therefore compared before the values,
+# so a differently-typed value is a difference whichever side of the comparison carries
+# it, and the fields the record's ``fields_checked`` list names are derived from it so
+# the two cannot disagree.
+CLEAR_SIZE_FIELDS = ("singles", "doubles", "triples", "tetrises")
+OUTCOME_TYPES: dict[str, Any] = {
+    "lines": int,
+    "score": int,
+    "frames": int,
+    "pieces_placed": int,
+    "stopping_reason": str,
+    "clear_sizes": {field: int for field in CLEAR_SIZE_FIELDS},
+}
+# The fields a reproduction compares, in report order.
+REPRODUCTION_FIELDS = tuple(OUTCOME_TYPES)
+
+
+def _schema_differences(value: Any, expected: Any, where: str, side: str) -> list[str]:
+    """Differences between a row value and the writer's schema, by type.
+
+    A mapping is checked field by field, so the schema reaches the clear-size counts
+    rather than stopping at the histogram: JSON ``false`` equals ``0``, so a bucket
+    that was recorded as an integer and arrives as a boolean has to be reported here,
+    where the type is compared, and not left to a value comparison that accepts it.
+    """
+    if isinstance(expected, dict):
+        if type(value) is not dict:
+            return [f"{where}: {side} {value!r} is {type(value).__name__}, not the "
+                    "mapping the writer records"]
+        differences = []
+        for key, sub in expected.items():
+            if key not in value:
+                differences.append(f"{where}.{key}: absent from the {side} row")
+            else:
+                differences.extend(
+                    _schema_differences(value[key], sub, f"{where}.{key}", side))
+        return differences
+    if type(value) is not expected:
+        return [f"{where}: {side} {value!r} is {type(value).__name__}, not the "
+                f"{expected.__name__} the writer records"]
+    return []
+
+
+def typed_differences(recorded: Any, derived: Any, where: str) -> list[str]:
+    """Differences between a retained value and the value the tree derives for it.
+
+    The type is compared before the value at every leaf, and every mapping must carry
+    exactly the derived keys: JSON ``false`` equals ``0`` and ``true`` equals ``1``, so
+    plain equality accepts a retained number that was edited to a boolean. This is the
+    rule ``runner._compare_fields`` applies to a run record's own replay; it returns the
+    differences rather than raising, because each caller reports them inside its own
+    claim.
+    """
+    if type(recorded) is not type(derived):
+        return [f"{where}: retained {recorded!r} is {type(recorded).__name__}, derived "
+                f"{derived!r} is {type(derived).__name__}"]
+    if isinstance(derived, dict):
+        differences = []
+        for key in sorted(set(recorded) | set(derived), key=repr):
+            if key not in recorded or key not in derived:
+                differences.append(f"{where}.{key}: present on one side only")
+                continue
+            differences.extend(
+                typed_differences(recorded[key], derived[key], f"{where}.{key}"))
+        return differences
+    if isinstance(derived, list):
+        if len(recorded) != len(derived):
+            return [f"{where}: retained {len(recorded)} entries, derived {len(derived)}"]
+        differences = []
+        for index, (recorded_item, derived_item) in enumerate(zip(recorded, derived)):
+            differences.extend(
+                typed_differences(recorded_item, derived_item, f"{where}[{index}]"))
+        return differences
+    if recorded != derived:
+        return [f"{where}: retained {recorded!r}, derived {derived!r}"]
+    return []
+
+
+def check_typed_equal(recorded: Any, derived: Any, message: str,
+                      where: str = "recorded") -> None:
+    """Assert a retained value equals the derived one *and* carries its types.
+
+    The caller's message is the claim being made; the typed differences are appended
+    to it, so a value that differs only by type -- a boolean where the derivation has
+    a zero, a mapping missing a field -- is reported with the same explanation a value
+    difference gets instead of passing as equal.
+    """
+    differences = typed_differences(recorded, derived, where)
+    assert not differences, message + "\n  " + "\n  ".join(differences)
+
+
+def outcome_differences(recorded: dict, fresh: dict, where: str) -> list[str]:
+    """One compared episode row's differences: schema first, then value.
+
+    A row that does not carry the writer's own schema -- a missing field, a count that
+    is a boolean, a histogram missing a bucket -- is reported as a difference before any
+    value is compared, so the comparison cannot certify a type-corrupted row.
+    """
+    differences = []
+    for field, expected in OUTCOME_TYPES.items():
+        for side, row in (("retained", recorded), ("replayed", fresh)):
+            if field not in row:
+                differences.append(f"{where} {field}: absent from the {side} row")
+            else:
+                differences.extend(
+                    _schema_differences(row[field], expected, f"{where} {field}", side))
+    if differences:
+        return differences
+    for field in REPRODUCTION_FIELDS:
+        if recorded[field] != fresh[field]:
+            differences.append(f"{where} {field}: retained {recorded[field]!r}, "
+                               f"replayed {fresh[field]!r}")
+    return differences
+
+
+def reproduction_differences(recorded: dict, fresh: dict) -> list[str]:
+    """Field-by-field differences over the identities both sides carry.
+
+    Every compared field is checked against the writer's schema before its value, so a
+    row whose clear-size counts are booleans is a difference from one whose counts are
+    integers whichever side carries it, instead of reproducing it as an equal value.
+    """
+    differences = []
+    for key in sorted(set(recorded) & set(fresh), key=repr):
+        differences.extend(outcome_differences(recorded[key], fresh[key], str(key)))
+    return differences
 
 
 def episode_row(episode: dict) -> dict:
@@ -424,17 +549,6 @@ def check_identity_set(by_identity: dict, configuration: dict, where: str) -> No
     )
 
 
-def reproduction_differences(recorded: dict, fresh: dict) -> list[str]:
-    """Field-by-field differences over the identities both sides carry."""
-    differences = []
-    for key in sorted(set(recorded) & set(fresh)):
-        for field in REPRODUCTION_FIELDS:
-            if recorded[key][field] != fresh[key][field]:
-                differences.append(f"{key} {field}: retained {recorded[key][field]!r}, "
-                                   f"replayed {fresh[key][field]!r}")
-    return differences
-
-
 def predeclaration_order_line(captured_at: str, cited_created_at: str) -> str:
     """The order sentence the retained block has to carry, from its own values."""
     return (
@@ -456,10 +570,10 @@ def experiment_003_configuration() -> dict:
     """
     embedded = json.loads(TETRIS_RESULT.read_text(encoding="utf-8"))["configuration"]
     canonical = json.loads(TETRIS_CONFIG.read_text(encoding="utf-8"))
-    assert embedded == canonical, (
+    check_typed_equal(embedded, canonical, (
         f"the configuration embedded in {TETRIS_RESULT.name} is not Experiment 003's "
         f"canonical {TETRIS_CONFIG.name}:\n  embedded  {embedded}\n  canonical {canonical}"
-    )
+    ))
     return canonical
 
 
@@ -475,9 +589,9 @@ def experiment_003_evidence() -> tuple[dict, list[dict]]:
     states.
     """
     record = json.loads(TETRIS_RESULT.read_text(encoding="utf-8"))
-    assert record["configuration"] == experiment_003_configuration(), (
+    check_typed_equal(record["configuration"], experiment_003_configuration(), (
         "the retained record's configuration is not Experiment 003's canonical one"
-    )
+    ))
     rows = record["episodes_by_agent_seed"]
     check_identity_set(rows_by_identity(rows, "Experiment 003's retained rows"),
                        record["configuration"], "Experiment 003's retained rows")
@@ -537,11 +651,11 @@ def evaluation_configuration(result_path: Path | None = None) -> dict:
     path = RESULT_PATH if result_path is None else result_path
     embedded = json.loads(path.read_text(encoding="utf-8"))["configuration"]
     canonical = canonical_configuration()
-    assert embedded == canonical, (
+    check_typed_equal(embedded, canonical, (
         f"the configuration embedded in {path} is not this experiment's canonical "
         f"{EXPERIMENT_CONFIG.name}, so the record describes a suite the documented run "
         f"command would not reproduce:\n  embedded  {embedded}\n  canonical {canonical}"
-    )
+    ))
     return canonical
 
 
@@ -566,11 +680,12 @@ def development_block(configuration: dict) -> dict:
     that the note is the one written here.
     """
     tetris_record, _ = experiment_003_evidence()
-    assert set(configuration["seeds"]) == set(tetris_record["configuration"]["seeds"]), (
+    check_typed_equal(sorted(configuration["seeds"]),
+                      sorted(tetris_record["configuration"]["seeds"]), (
         "the evaluated seeds are not Experiment 003's published ones, so this block's "
         "claim that the development set is disjoint from those rows is not a claim about "
         "this configuration"
-    )
+    ))
     overlap = sorted(set(DEVELOPMENT_SEEDS) & set(configuration["seeds"]))
     assert not overlap, (
         f"the development seed set is not disjoint from the evaluation seeds: {overlap}"
@@ -668,6 +783,23 @@ def capture_subject(record: dict) -> tuple:
             tuple(sorted(record["sources"].items())))
 
 
+def rationale_generations() -> dict[str, str]:
+    """The digest of every retained rationale generation, the current section included.
+
+    A capture records the digest of the declared-objective section, so the section is
+    what the predeclaration history is about. A substance-preserving prose correction
+    to the section changes that digest without changing a weight or a constant, so the
+    pre-correction section is retained beside the captures it belonged to (the
+    ``notes_predeclared_objective.pre-*.md`` files) and every superseded capture's
+    recorded digest is bound to one of these retained generations rather than to the
+    current text alone.
+    """
+    generations = {objective_section_digest(): str(NOTES.relative_to(PROJECT_ROOT))}
+    for path in sorted(EXPERIMENT.glob("probes/notes_predeclared_objective.pre-*.md")):
+        generations[_sha256(path.read_bytes())] = str(path.relative_to(PROJECT_ROOT))
+    return generations
+
+
 def check_superseded_captures(paths: list[str], captures: list[dict], capture: dict) -> None:
     """The listed captures must be a history of distinct designs with one declaration.
 
@@ -675,11 +807,20 @@ def check_superseded_captures(paths: list[str], captures: list[dict], capture: d
     design no other listed capture describes -- a copy of one already on the list,
     whether it is the same path twice or another file with the same subject, is not
     another predeclaration, and the subject is what says so -- and every one of them
-    has to publish the declared weights and constants and the rationale section the
-    current capture does, because the note beside them claims the re-captures were
-    forced by code changes rather than by a revised objective. Checking only that each
-    differed from the *current* capture accepted a duplicated entry and a capture whose
-    weights had been edited, and the note's count and claim inherited both.
+    has to publish the declared weights and constants this objective declares, because
+    the note beside them claims the re-captures were forced by code changes rather than
+    by a revised objective. Checking only that each differed from the *current* capture
+    accepted a duplicated entry and a capture whose weights had been edited, and the
+    note's count and claim inherited both.
+
+    The rationale section is bound the same way but to the *generation* each capture
+    recorded: the section's digest has to be one of the retained rationale generations
+    (``rationale_generations``), which is the current section for a capture that
+    preceded no correction and a retained earlier section for one that did. A capture
+    whose rationale digest names no retained section is reported, so the digest is still
+    bound to an artifact on this tree instead of being compared with the current text
+    alone -- which a sanctioned prose correction to the section would otherwise break
+    for every capture in the history.
     """
     subjects = [capture_subject(earlier) for earlier in captures]
     assert len(set(subjects)) == len(subjects), (
@@ -688,17 +829,19 @@ def check_superseded_captures(paths: list[str], captures: list[dict], capture: d
         "predeclaration"
     )
     tampered = [path for path, earlier in zip(paths, captures)
-                if earlier["objective"] != capture["objective"]]
+                if typed_differences(earlier["objective"], capture["objective"], path)]
     assert not tampered, (
         "a superseded capture did not publish the declared weights and constants this "
         f"objective declares, so the re-capture was not forced by a code change alone: "
         f"{tampered}"
     )
-    revised = [path for path, earlier in zip(paths, captures)
-               if earlier["notes_section_sha256"] != capture["notes_section_sha256"]]
-    assert not revised, (
-        "a superseded capture's rationale-section digest is not this capture's, so the "
-        f"declared rationale was revised between them: {revised}"
+    generations = rationale_generations()
+    unbound = [path for path, earlier in zip(paths, captures)
+               if earlier["notes_section_sha256"] not in generations]
+    assert not unbound, (
+        "a superseded capture's rationale-section digest is not a retained rationale "
+        "generation, so the section it declared is neither this tree's current one nor a "
+        f"section retained beside it: {unbound}"
     )
 
 
@@ -706,10 +849,13 @@ def predeclaration_note(capture: dict, superseded: list[str]) -> str:
     """The predeclaration block's own note, from the capture and what it supersedes.
 
     The note states how many captures this one supersedes and that none of them
-    published a different weight, constant or rationale. Both are checked from the
-    artifacts rather than asserted beside them, by ``check_superseded_captures`` for
-    the captures it names and by the one-to-one binding of those captures to the
-    superseded runs.
+    published a different weight or constant. Both are checked from the artifacts
+    rather than asserted beside them, by ``check_superseded_captures`` for the captures
+    it names and by the one-to-one binding of those captures to the superseded runs.
+    The rationale section is named as a retained generation rather than as this
+    capture's own text, because the prose correction recorded in notes.md changed the
+    section's digest without changing the objective; the digest each capture recorded
+    is still bound to a retained section.
     """
     assert superseded, "the block names no superseded capture"
     return (
@@ -722,8 +868,10 @@ def predeclaration_note(capture: dict, superseded: list[str]) -> str:
         f"choice. This capture supersedes the {len(superseded)} earlier ones the block's "
         "superseded_captures names, one for each run this evaluation superseded and each "
         "of a different design -- which is where the design every one of them preceded is "
-        "described; every one of them published the same declared weights, constants and "
-        "rationale section, because no change that forced a re-capture touched one"
+        "described; every one of them published the same declared weights and constants, "
+        "because no change that forced a re-capture touched one, and each named a "
+        "rationale section retained beside the captures, so a substance-preserving prose "
+        "correction to the section is recorded rather than read as a revised objective"
     )
 
 
@@ -1308,10 +1456,10 @@ def check_mechanism(retained: dict) -> None:
     derived = mechanism_claims()
     reserve = recorded.get("reserve_with_an_occupied_well")
     ours = derived["reserve_with_an_occupied_well"]
-    assert reserve == ours, (
+    check_typed_equal(reserve, ours, (
         "the retained reserve claim is not the one the tree's model derives:\n  "
         f"recorded {reserve}\n  derived  {ours}"
-    )
+    ))
     assert reserve["well_column_mask"] != 0, (
         "the reserve claim's board has an empty well column, so it does not state the "
         "case it exists to state"
@@ -1321,10 +1469,10 @@ def check_mechanism(retained: dict) -> None:
         "exists to state"
     )
     cases = recorded.get("composition_differs_from_experiment_003")
-    assert cases == derived["composition_differs_from_experiment_003"], (
+    check_typed_equal(cases, derived["composition_differs_from_experiment_003"], (
         "the retained composition claims are not the ones the tree's model derives:\n  "
         f"recorded {cases}\n  derived  {derived['composition_differs_from_experiment_003']}"
-    )
+    ))
     for case in cases:
         assert case["plan_choice"] != case["prior_composition_choice"], (
             f"the composition claim for the {case['piece']} does not show a divergence, "
@@ -1332,10 +1480,10 @@ def check_mechanism(retained: dict) -> None:
         )
     budget = recorded.get("hidden_rows_are_stack_height")
     derived_budget = derived["hidden_rows_are_stack_height"]
-    assert budget == derived_budget, (
+    check_typed_equal(budget, derived_budget, (
         "the retained budget claim is not the one the tree's model derives:\n  "
         f"recorded {budget}\n  derived  {derived_budget}"
-    )
+    ))
     assert (budget["stack_height"] > heuristic.HEIGHT
             and budget["visible_field_max_height"] == 0
             and budget["phase"] == wellplan.SPEND), (
@@ -1443,10 +1591,10 @@ def check_dispatcher_bound(retained: dict) -> None:
     """
     derived = dispatcher_bound()
     recorded = retained.get("dispatcher_coverage")
-    assert recorded == derived, (
+    check_typed_equal(recorded, derived, (
         "the retained dispatcher-coverage block is not the one this tree derives:\n  "
         f"recorded {recorded}\n  derived  {derived}"
-    )
+    ))
     assert derived["current_choice_driver"] == {"tetris": "block_stack_ai.runner",
                                                 "tetris_plan": "block_stack_ai.runner"}, derived
     assert derived["version_6_choice_driver"] == {"tetris": "block_stack_ai.agents",
@@ -1558,10 +1706,10 @@ def check_record(path: Path) -> None:
     )
     block = retained["predeclared_objective"]
     capture = json.loads(PREDECLARATION.read_text(encoding="utf-8"))
-    assert block["capture_order"] == predeclaration_order_line(
+    check_typed_equal(block["capture_order"], predeclaration_order_line(
         block["captured_at"], block["cited_record_created_at"]), (
         "capture_order is not the line this block's own two timestamps reconstruct"
-    )
+    ))
     # The sentence says the capture precedes the cited record, so the block's own
     # two timestamps are compared with each other as well: ``predeclaration_order_line``
     # inserts "before" whatever the values are, and the cited record itself is a
@@ -1575,17 +1723,25 @@ def check_record(path: Path) -> None:
         f"timestamps contradict that: captured_at {block['captured_at']} is not before "
         f"cited_record_created_at {block['cited_record_created_at']}"
     )
-    assert block["captured_at"] == capture["captured_at"]
-    assert block["module"] == capture["module"]
-    assert block["module_sha256"] == capture["module_sha256"]
-    assert block["notes_section"] == capture["notes_section"]
-    assert block["notes_section_sha256"] == capture["notes_section_sha256"]
-    assert block["objective"] == capture["objective"]
-    assert block["sources"] == capture["sources"]
-    assert block["capture_file"] == str(PREDECLARATION.relative_to(PROJECT_ROOT)), (
+    check_typed_equal(block["captured_at"], capture["captured_at"],
+                      "predeclared_objective.captured_at is not the capture's")
+    check_typed_equal(block["module"], capture["module"],
+                      "predeclared_objective.module is not the capture's")
+    check_typed_equal(block["module_sha256"], capture["module_sha256"],
+                      "predeclared_objective.module_sha256 is not the capture's")
+    check_typed_equal(block["notes_section"], capture["notes_section"],
+                      "predeclared_objective.notes_section is not the capture's")
+    check_typed_equal(block["notes_section_sha256"], capture["notes_section_sha256"],
+                      "predeclared_objective.notes_section_sha256 is not the capture's")
+    check_typed_equal(block["objective"], capture["objective"],
+                      "predeclared_objective.objective is not the capture's")
+    check_typed_equal(block["sources"], capture["sources"],
+                      "predeclared_objective.sources is not the capture's")
+    check_typed_equal(block["capture_file"],
+                      str(PREDECLARATION.relative_to(PROJECT_ROOT)), (
         f"predeclared_objective.capture_file is not this experiment's capture: "
         f"{block['capture_file']!r}"
-    )
+    ))
     # The superseded captures the block names have to be on the tree beside the
     # current one, older than it, and of a *different* subject: a copy of the
     # current capture listed as superseded would claim a re-capture that never
@@ -1622,26 +1778,27 @@ def check_record(path: Path) -> None:
     # prose fields -- the note and the identity coverage -- are generated from those
     # artifacts for the same reason.
     check_superseded_captures(superseded, superseded_captures, capture)
-    assert block["note"] == predeclaration_note(capture, superseded), (
+    check_typed_equal(block["note"], predeclaration_note(capture, superseded), (
         "predeclared_objective.note is not the one the capture and the captures it "
         f"supersedes reconstruct:\n  recorded {block['note']!r}\n  derived  "
         f"{predeclaration_note(capture, superseded)!r}"
-    )
-    assert block["identity_coverage"] == identity_coverage_statement(capture), (
+    ))
+    check_typed_equal(block["identity_coverage"],
+                      identity_coverage_statement(capture), (
         "predeclared_objective.identity_coverage is not the one the capture's own source "
         f"mapping reconstructs:\n  recorded {block['identity_coverage']!r}\n  derived  "
         f"{identity_coverage_statement(capture)!r}"
-    )
-    assert objective_module_digest() == capture["module_sha256"], (
+    ))
+    check_typed_equal(capture["module_sha256"], objective_module_digest(), (
         "the objective module changed after the predeclaration"
-    )
-    assert objective_section_digest() == capture["notes_section_sha256"], (
+    ))
+    check_typed_equal(capture["notes_section_sha256"], objective_section_digest(), (
         "the declared-objective section of notes.md changed after the predeclaration"
-    )
-    assert current_sources() == capture["sources"], (
+    ))
+    check_typed_equal(capture["sources"], current_sources(), (
         "the modules the objective's decisions are computed from changed after the "
         "predeclaration"
-    )
+    ))
     # The shared factory's digest is derived, not restated: this experiment declares
     # its agent beside its objective and dispatches it from the runner, so the
     # module a frozen Tetris record's identity covers is unchanged on this tree.
@@ -1661,14 +1818,14 @@ def check_record(path: Path) -> None:
     plan_agent = runner._declared_agents(configuration["agents"])[0]
     plan_module = runner.DECLARED_OBJECTIVES[plan_agent].module
     objective_section = retained["objective_record"]
-    assert objective_section["module"] == plan_module.__name__, (
+    check_typed_equal(objective_section["module"], plan_module.__name__, (
         "objective_record.module is not the module the tree's registry selects for "
         f"{plan_agent}: {objective_section['module']!r} != {plan_module.__name__!r}"
-    )
-    assert objective_section["weights"] == plan_module.weights_record(), (
+    ))
+    check_typed_equal(objective_section["weights"], plan_module.weights_record(), (
         "objective_record.weights is not the weights the selected objective publishes: "
         f"{objective_section['weights']} != {plan_module.weights_record()}"
-    )
+    ))
     source_differences = [
         f"{name}: recorded {objective_section['sources'].get(name)!r}, "
         f"captured {digest!r}"
@@ -1684,22 +1841,22 @@ def check_record(path: Path) -> None:
         "objective:\n  " + "\n  ".join(source_differences)
     )
     legacy = retained["legacy_verification"]
-    assert legacy["agent_factory_digest"] == factory, (
+    check_typed_equal(legacy["agent_factory_digest"], factory, (
         "legacy_verification.agent_factory_digest is not the digest of this tree's "
         f"{FACTORY_MODULE.name}: {legacy['agent_factory_digest']} != {factory}"
-    )
-    assert legacy["fixture"] == str(LEGACY_RECORD.relative_to(PROJECT_ROOT)), (
+    ))
+    check_typed_equal(legacy["fixture"], str(LEGACY_RECORD.relative_to(PROJECT_ROOT)), (
         "legacy_verification does not name the retained frozen fixture the digest is "
         f"derived from: {legacy['fixture']}"
-    )
-    assert legacy["dispatcher_digest"] == _sha256(RUNNER_MODULE.read_bytes()), (
+    ))
+    check_typed_equal(legacy["dispatcher_digest"], _sha256(RUNNER_MODULE.read_bytes()), (
         "legacy_verification.dispatcher_digest is not the digest of this tree's "
         f"{RUNNER_MODULE.name}: {legacy['dispatcher_digest']} != "
         f"{_sha256(RUNNER_MODULE.read_bytes())}"
-    )
-    assert block["sources"]["block_stack_ai.agents"] == factory, (
+    ))
+    check_typed_equal(block["sources"]["block_stack_ai.agents"], factory, (
         "predeclared_objective.sources does not carry this tree's agent-factory digest"
-    )
+    ))
     # The dispatcher is the entry these findings turned on, and its presence in the
     # plan's own identity — and in the current writer's Tetris identity — is a
     # property of the tree rather than of the record: the version-6 shape named the
@@ -1729,9 +1886,9 @@ def check_record(path: Path) -> None:
     check_identity_set(by_identity, configuration, "the retained episode rows")
     metrics = {agent: metrics_of(rows, agent) for agent in configuration["agents"]}
     for agent in configuration["agents"]:
-        assert retained["metrics"][agent] == metrics[agent], (
+        check_typed_equal(retained["metrics"][agent], metrics[agent], (
             f"the retained metrics for {agent} are not the aggregate of its own rows"
-        )
+        ))
     # The blocks that aggregate the same rows are each re-derived from those
     # aggregates and from the configuration: the stopping counts and their sentence,
     # the replay block's own count, field list and sentence, the rate's numerator and
@@ -1740,39 +1897,39 @@ def check_record(path: Path) -> None:
     # a game reported as topped out when its row says the cap stopped it, a rate made
     # of other lines, a superseded run whose outcomes moved -- is reported here.
     derived_stopping = stopping_block(configuration, metrics)
-    assert retained["stopping"] == derived_stopping, (
+    check_typed_equal(retained["stopping"], derived_stopping, (
         "the retained stopping block is not the one the rows' own stopping reasons "
         f"derive:\n  recorded {retained['stopping']}\n  derived  {derived_stopping}"
-    )
+    ))
     derived_replay = retained_replay_block(len(rows))
-    assert retained["retained_replay"] == derived_replay, (
+    check_typed_equal(retained["retained_replay"], derived_replay, (
         "the retained replay block is not the one the configuration and the row count "
         f"derive:\n  recorded {retained['retained_replay']}\n  derived  {derived_replay}"
-    )
+    ))
     derived_development = development_block(configuration)
-    assert retained["development"] == derived_development, (
+    check_typed_equal(retained["development"], derived_development, (
         "the retained development block is not the declared development set, or its seeds "
         f"are not disjoint from the evaluated ones:\n  recorded {retained['development']}"
         f"\n  derived  {derived_development}"
-    )
+    ))
     derived_refactor = refactor_evidence(configuration, rows, superseded,
                                          block["captured_at"])
-    assert retained["refactor_no_outcomes_changed"] == derived_refactor, (
+    check_typed_equal(retained["refactor_no_outcomes_changed"], derived_refactor, (
         "the retained refactor-no-outcomes-changed block is not the comparison the "
         "retained superseded-run rows derive:\n  recorded "
         f"{retained['refactor_no_outcomes_changed']}\n  derived  {derived_refactor}"
-    )
+    ))
     # Every superseded run names the capture that preceded it, and every capture the
     # block lists as superseded is named by exactly one of those runs. Together with
     # the distinct-subject rule above, that is what makes the capture history a
     # history: a capture cannot be listed, and the note cannot count it, unless a run
     # this evaluation actually superseded was made after it.
     named_by_runs = sorted(entry["capture"] for entry in derived_refactor["superseded_runs"])
-    assert named_by_runs == sorted(superseded), (
+    check_typed_equal(named_by_runs, sorted(superseded), (
         "the captures the retained superseded runs name are not one-to-one with the "
         f"captures the block lists as superseded:\n  named by the runs {named_by_runs}"
         f"\n  listed as superseded {sorted(superseded)}"
-    )
+    ))
     # The acceptance block is derived too: the achieved values are the retained
     # metrics, the thresholds are the baseline Experiment 003 published for the agent
     # the criteria name, and each verdict is the comparison of the two. Reading the
@@ -1794,15 +1951,15 @@ def check_record(path: Path) -> None:
     )
     verdicts = []
     for label, achieved, key, comparison, required in criteria:
-        assert acceptance[label][key] == required, (
+        check_typed_equal(acceptance[label][key], required, (
             f"{label}: the retained {key} is {acceptance[label][key]!r}, not the value "
             f"Experiment 003's retained rows derive for it ({required!r}), so the verdict "
             "beside it would be issued against a number this record declared for itself"
-        )
+        ))
         met = (achieved >= required) if comparison == "gte" else (achieved > required)
-        assert acceptance[label]["achieved"] == achieved, (
+        check_typed_equal(acceptance[label]["achieved"], achieved, (
             f"{label}: the retained acceptance value is not the retained metric"
-        )
+        ))
         assert acceptance[label]["met"] is met, (
             f"{label}: the retained verdict is not what {achieved} against {required} gives"
         )
@@ -1811,18 +1968,18 @@ def check_record(path: Path) -> None:
     # well: the definition of the rate is the two numbers it is made of, so a record
     # that states a proportion over other lines is reported rather than read.
     for field, value in rate_parts(plan).items():
-        assert acceptance["tetris_line_rate"][field] == value, (
+        check_typed_equal(acceptance["tetris_line_rate"][field], value, (
             f"acceptance.tetris_line_rate.{field} is not the rate's own {field} the "
             f"retained rows derive: {acceptance['tetris_line_rate'][field]!r} != {value!r}"
-        )
+        ))
     # The record's own status is the aggregate of those verdicts, so a result that
     # misses a threshold is retained as a reported miss (`status: failed`) rather
     # than either hidden or forced to pass by revising a constant.
     expected_status = "passed" if all(verdicts) else "failed"
-    assert retained["status"] == expected_status, (
+    check_typed_equal(retained["status"], expected_status, (
         f"the retained status is {retained['status']!r}, not what the acceptance "
         f"verdicts give ({expected_status!r})"
-    )
+    ))
     if not all(verdicts):
         print("# a criterion is not met by the retained metrics: status is reported as failed")
     # The aspirational comparison is derived the same way, and both of its columns are
@@ -1844,10 +2001,10 @@ def check_record(path: Path) -> None:
         # met, a result as a shortfall, or either column as a number the baseline does
         # not publish.
         derived_entry = aspiration_entry(label, plan[field], aspirational_baseline[field])
-        assert entry == derived_entry, (
+        check_typed_equal(entry, derived_entry, (
             f"acceptance.aspirational.{label} is not the entry its own two columns "
             f"derive:\n  recorded {entry}\n  derived  {derived_entry}"
-        )
+        ))
     # The narrative blocks are the record's own summary of the measurement, and the
     # class every review round of this experiment has found one more member of is a
     # retained sentence that no check derives. They are therefore generated from the
@@ -1870,17 +2027,17 @@ def check_record(path: Path) -> None:
         "passed": all(verdicts),
     }
     derived_conclusion = conclusion_statement(facts)
-    assert retained["conclusion"] == derived_conclusion, (
+    check_typed_equal(retained["conclusion"], derived_conclusion, (
         "the retained conclusion is not the one the derived metrics, thresholds, stopping "
         f"counts and mechanism claims reconstruct:\n  recorded {retained['conclusion']}"
         f"\n  derived  {derived_conclusion}"
-    )
+    ))
     derived_limitations = limitations_statements(facts)
-    assert retained["limitations"] == derived_limitations, (
+    check_typed_equal(retained["limitations"], derived_limitations, (
         "the retained limitations are not the ones the derived metrics, stopping counts, "
         "identity coverage and superseded-run comparison reconstruct:\n  recorded "
         f"{retained['limitations']}\n  derived  {derived_limitations}"
-    )
+    ))
     # The baseline block's numbers are Experiment 003's published ones, and they are
     # re-derived from the rows Experiment 003 retained -- the same rows ``baseline``
     # replays -- so a stale or copied number there is reported rather than read. The
@@ -1890,10 +2047,10 @@ def check_record(path: Path) -> None:
     published = retained["baseline"]["published_metrics"]
     assert set(published) == set(tetris_record["configuration"]["agents"]), sorted(published)
     for agent, published_metrics in published.items():
-        assert published_metrics == metrics_of(tetris_rows, agent), (
+        check_typed_equal(published_metrics, metrics_of(tetris_rows, agent), (
             f"baseline.published_metrics.{agent} is not the aggregate of Experiment 003's "
             "retained rows"
-        )
+        ))
     # The reproduction block is the claim that the comparison was complete, so its
     # numbers and sentence are derived from the artifacts rather than read: the
     # count is the configured identity set of Experiment 003's rows, the fields are
@@ -1903,27 +2060,28 @@ def check_record(path: Path) -> None:
     # print after iterating the fresh episodes alone -- is reported here.
     reproduction = retained["baseline"]["reproduction"]
     configured_pairs = len(configured_identities(tetris_record["configuration"]))
-    assert reproduction["episodes_compared"] == len(tetris_rows) == configured_pairs, (
+    assert len(tetris_rows) == configured_pairs
+    check_typed_equal(reproduction["episodes_compared"], len(tetris_rows), (
         "baseline.reproduction.episodes_compared is not the complete configured "
         f"(agent, seed) set of Experiment 003's rows: "
         f"{reproduction['episodes_compared']} against {len(tetris_rows)} rows and "
         f"{configured_pairs} configured pairs"
-    )
-    assert reproduction["fields_checked"] == list(REPRODUCTION_FIELDS), (
+    ))
+    check_typed_equal(reproduction["fields_checked"], list(REPRODUCTION_FIELDS), (
         "baseline.reproduction.fields_checked is not the set of fields the probe "
         f"compares: {reproduction['fields_checked']} != {list(REPRODUCTION_FIELDS)}"
-    )
-    assert reproduction["published_rows_source"] == (
+    ))
+    check_typed_equal(reproduction["published_rows_source"], (
         f"{TETRIS_RESULT.relative_to(PROJECT_ROOT)}#episodes_by_agent_seed"
     ), (
         "baseline.reproduction.published_rows_source does not name the retained rows "
         f"the published metrics are aggregated from: {reproduction['published_rows_source']}"
-    )
-    assert reproduction["result"] == baseline_result_statement(published), (
+    ))
+    check_typed_equal(reproduction["result"], baseline_result_statement(published), (
         "baseline.reproduction.result is not the sentence the published metrics "
         f"reconstruct:\n  recorded {reproduction['result']}\n  derived  "
         f"{baseline_result_statement(published)}"
-    )
+    ))
     # The cited record is the artifact the whole predeclaration rests on, so when this
     # checkout still holds it the full binding is re-derived -- the path the result
     # names, the evaluation configuration, the complete episode set and the captured
@@ -1934,10 +2092,10 @@ def check_record(path: Path) -> None:
     if cited.is_file():
         check_predeclaration(cited, path)
         created_at = json.loads(cited.read_text(encoding="utf-8"))["created_at"]
-        assert created_at == block["cited_record_created_at"], (
+        check_typed_equal(created_at, block["cited_record_created_at"], (
             f"cited_record_created_at is {block['cited_record_created_at']} but the cited "
             f"record was created at {created_at}"
-        )
+        ))
     else:
         print(f"# the cited run {block['cited_record']!r} is not retained in this "
               "checkout (``runs/`` is ignored output); its binding to the evaluation "
@@ -1949,10 +2107,11 @@ def check_record(path: Path) -> None:
     # -- rather than the path being read as evidence that a comparison happened.
     replay_record = PROJECT_ROOT / reproduction["record"]
     if replay_record.is_file():
-        assert reproduction["record"] == str(replay_record.relative_to(PROJECT_ROOT)), (
+        check_typed_equal(reproduction["record"],
+                          str(replay_record.relative_to(PROJECT_ROOT)), (
             f"baseline.reproduction.record is not a project-relative path: "
             f"{reproduction['record']!r}"
-        )
+        ))
         baseline(replay_record)
     else:
         print(f"# the fresh Experiment 003 run {reproduction['record']!r} is not retained "
@@ -2037,10 +2196,10 @@ def baseline(path: Path) -> None:
     """
     fresh = json.loads(path.read_text(encoding="utf-8"))
     retained = json.loads(TETRIS_RESULT.read_text(encoding="utf-8"))
-    assert fresh["configuration"] == experiment_003_configuration(), (
+    check_typed_equal(fresh["configuration"], experiment_003_configuration(), (
         "the fresh run is not Experiment 003's configuration, so it cannot reproduce "
         f"its rows: {fresh['configuration']}"
-    )
+    ))
     rows = rows_by_identity(retained["episodes_by_agent_seed"],
                             "Experiment 003's retained rows")
     check_identity_set(rows, retained["configuration"], "Experiment 003's retained rows")
@@ -2092,8 +2251,16 @@ def reproduce(path: Path) -> None:
     check_identity_set(fresh_rows, retained["configuration"], "the replayed suite")
     differences = reproduction_differences(rows, fresh_rows)
     for agent in configuration.agents:
-        if retained["metrics"][agent] != metrics_of(fresh, agent):
-            differences.append(f"{agent}: the replayed metrics are not the retained ones")
+        # The aggregate is compared by type as well as by value: a retained metric
+        # edited to a boolean equals the replayed zero under plain equality, and this
+        # is the documented replay entry point, so the schema-checked row comparison
+        # above is not enough on its own.
+        differences.extend(
+            f"{agent}: the replayed metrics are not the retained ones -- {difference}"
+            for difference in typed_differences(retained["metrics"][agent],
+                                                metrics_of(fresh, agent),
+                                                f"metrics.{agent}")
+        )
     print(f"# replayed {len(fresh)} episodes of the retained configuration "
           f"({', '.join(configuration.agents)}), the complete configured (agent, seed) set")
     if differences:
@@ -2181,9 +2348,10 @@ def check_legacy() -> None:
     record = json.loads(LEGACY_RECORD.read_text(encoding="utf-8"))
     assert record["format_version"] == runner.WRAPPER_IDENTITY_SUITE_FORMAT_VERSION
     assert record["objective"]["module"] == "block_stack_ai.tetris"
-    assert record["objective"]["sources"] == runner._objective_sources(runner._IDENTITY_CHOICE), (
+    check_typed_equal(record["objective"]["sources"],
+                      runner._objective_sources(runner._IDENTITY_CHOICE), (
         "the frozen record's identity is not this tree's version-6 Tetris identity"
-    )
+    ))
     assert "block_stack_ai.runner" in runner._objective_sources(runner._IDENTITY_DISPATCH), (
         "the current writer's Tetris identity does not cover the runner's dispatch, so a "
         "change to the code that selects its implementation could not be caught"

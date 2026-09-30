@@ -23,14 +23,18 @@ player-visible lookahead. Everything it adds is visible-information only:
   up rather than for an abstract column depth.
 * an explicit **stack-height budget** (:data:`HEIGHT_BUDGET`): the plan builds
   only while the whole stack is below it, and the settled board's height over
-  the budget is charged again, so a candidate that pushes the stack past the
-  budget loses to one that does not. The height is measured over the whole
+  the budget is charged again at ``overflow`` per row: an over-budget candidate
+  loses value inside the summed score, not the comparison, because the charge
+  can be outweighed by a larger clear or by the field and reserve terms it is
+  summed with, and the experiment's evidence derives a board where the
+  over-budget placement is the one the objective selects. The height is measured
+  over the whole
   22-row grid rather than the visible field alone, so a column whose cells rest
   in the two hidden rows above the ceiling counts as over the budget instead of
   as an empty column.
 * **spend-or-abandon at a self-tracked I-drought bound** (:data:`DROUGHT_BOUND`):
   the plan counts the pieces it has been shown since an I was last visible to it,
-  as the current piece or as the preview, and past that bound it stops holding
+  as the current piece or as the preview, and at that bound it stops holding
   the well and scores with the frozen flat-board heuristic instead -- the
   objective Experiment 002's ``lookahead`` agent survives on. The drought is the
   plan's own count of the pieces it was shown; nothing here reads a future piece,
@@ -151,7 +155,7 @@ RESERVE_CAP = 4
 # a band while it holds a band of reserve, and no more.
 HEIGHT_BUDGET = 8
 # The pieces that lay one complete band of the nine-column field (nine columns
-# times four rows, four cells per piece). Past that many shown pieces without a
+# times four rows, four cells per piece). At that many shown pieces without a
 # visible I, the reserve is waiting on nothing.
 DROUGHT_BOUND = 9
 WELL_COLUMN = WIDTH - 1
@@ -281,8 +285,8 @@ def holds_well(drought: int, height: int) -> bool:
     """Whether the plan builds the reserve for one more piece.
 
     The plan holds while the stack is under the stack-height budget and an I has
-    been visible to it within the drought bound. Past either, it spends: the
-    reserve has waited longer than a band takes to lay, or the stack has reached
+    been visible to it within the drought bound. At either bound, it spends: the
+    reserve has waited as long as a band takes to lay, or the stack has reached
     the height the reserve was allowed to cost.
     """
     return drought < DROUGHT_BOUND and height < HEIGHT_BUDGET
