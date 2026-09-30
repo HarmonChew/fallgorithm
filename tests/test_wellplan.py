@@ -211,14 +211,17 @@ def test_well_reserve_is_the_rows_a_vertical_i_would_clear():
 
 
 def test_a_filled_well_column_leaves_no_reserve():
-    """A board whose well column holds cells has no reserve to spend.
+    """These two boards have no reserve, and the field beside the well is why.
 
-    The bottom row of a reachable board is never already complete — the engine
-    clears full rows as they lock — so a nonempty well column means some field
-    column is empty beside it, and that gap is inside the band the I would fill.
-    The reserve is therefore zero whenever the well column is not empty, which is
-    why the plan's own count of the rows it would clear is only ever earned by
-    leaving the designated column open.
+    An I dropped into a well filled to depth 1 or 2 rests on that fill, so the band
+    it fills is rows 1-4 or 2-5; eight columns stand six rows high and the ninth is
+    empty, so no row of that band is complete and the reserve is zero. That is a
+    statement about these boards and not about occupied well columns in general:
+    ``well_reserve`` measures the rows above the column's topmost filled cell, so a
+    well filled low down still holds a reserve when the field below the band is
+    complete, and ``objective_mechanism.reserve_with_an_occupied_well`` derives such
+    a board from a controller-executable sequence (reserve 1 with the well column
+    occupied).
     """
     columns = columns_of(stacked([6] * 8 + [0, 1]))
     assert well_reserve(columns) == 0

@@ -8,10 +8,15 @@ Run each subcommand directly, or ``all`` for every one that needs no argument:
 ``predeclare`` captures the declared objective from the tree as it stands, before
 the ten-seed evaluation is measured; ``check-predeclaration <run.json>`` re-checks
 every claim of that capture against the tree and against the record the
-experiment cites; ``check-record <result.json>`` re-derives the retained
-result's own claims -- its metrics from its episode rows, its predeclaration
-block from the capture and the tree, the agent-factory and dispatcher digests from
-the modules' own bytes, the objective's mechanism from the model (the reserve
+experiment cites — that record's path, its evaluation configuration and its
+complete ``(agent, seed)`` episode set, not only its timestamp; ``check-record
+<result.json>`` re-derives the retained
+result's own claims -- its metrics from its episode rows, its acceptance
+thresholds from Experiment 003's own retained rows and its verdicts from those
+thresholds, its predeclaration block from the capture and the tree, the
+agent-factory and dispatcher digests from the modules' own bytes, the coverage of
+each version's identity walk from the tree's own table and Experiment 003's
+regenerated version prose, the objective's mechanism from the model (the reserve
 on a board whose well column is occupied, one composition divergence per phase,
 and the stack height and phase of a board whose cells rest in the engine's hidden
 rows), the baseline block from Experiment 003's retained rows and its own
@@ -26,10 +31,12 @@ agent is measured against is re-derived on this tree rather than carried over.
 Both comparisons require the complete configured ``(agent, seed)`` set on each
 side, so a truncated or duplicated run cannot be reported as a reproduction.
 
-``all`` runs the checks that need no argument: the capture against the tree, and
-the retained result's own claims when the result is retained. The
-capture-to-run comparison needs the run record the result cites, so it is not
-part of ``all``; ``check-predeclaration <record>`` is.
+``all`` runs the checks that need no argument: the capture against the tree, the
+retained result's own claims when the result is retained, and — when this checkout
+still holds the run the result cites — the capture against that record, which is
+the same comparison ``check-predeclaration <record>`` makes. ``runs/`` is ignored
+output, so a checkout without it is told which claim is then unverifiable instead
+of being passed silently.
 """
 
 from __future__ import annotations
@@ -52,13 +59,17 @@ PLAN_MODULE = PROJECT_ROOT / "src" / "block_stack_ai" / "wellplan.py"
 # module this experiment deliberately leaves untouched: the plan agent is declared
 # beside its objective and dispatched by the runner instead.
 FACTORY_MODULE = PROJECT_ROOT / "src" / "block_stack_ai" / "agents.py"
-# The module whose dispatch selects the plan's agent (``DECLARED_OBJECTIVES`` and
-# ``build_agent``). It is part of the plan's identity because it decides which
+# The module whose dispatch selects which agent is built (``DECLARED_OBJECTIVES`` and
+# ``build_agent``). It is part of the plan's identity, and of every other declared
+# agent's identity under the current format version, because it decides which
 # implementation is built for the configured agent name; the frozen Tetris identity
-# its version 6 writer recorded does not cover it, which is why legacy records and
+# the version-6 writer recorded does not cover it, which is why legacy records and
 # the retained fixture are derived against that older shape.
 RUNNER_MODULE = PROJECT_ROOT / "src" / "block_stack_ai" / "runner.py"
 PREDECLARATION = EXPERIMENT / "probes" / "predeclared_objective.json"
+# The retained result: the artifact `check-record` certifies, and the one that names
+# the run its predeclaration block cites.
+RESULT_PATH = EXPERIMENT / "result.json"
 # A version-6 record written by the frozen Experiment 003-era writer, retained so the
 # legacy-verification guarantee is checked by this tree rather than asserted.
 LEGACY_RECORD = EXPERIMENT / "probes" / "legacy_v6_tetris_record.json"
@@ -104,7 +115,7 @@ def objective_section_digest() -> str:
 
 def current_sources() -> dict[str, str]:
     """The identity of every module the plan's choices are computed from, now."""
-    return runner._objective_sources(agent=runner.PLAN_AGENT)
+    return runner._objective_sources(runner._IDENTITY_DISPATCH, agent=runner.PLAN_AGENT)
 
 
 def predeclare() -> None:
@@ -165,18 +176,46 @@ def predeclare() -> None:
     print(f"# objective: {weights}")
 
 
-def check_predeclaration(path: Path) -> None:
-    """The cited record must postdate the capture, and the objective must be unchanged.
+def check_predeclaration(path: Path, result_path: Path | None = None) -> None:
+    """The cited record must be the evaluation run the retained result names.
 
     Every claim is mechanical: the covered module and the rationale section still
     hash to the captured values, the identity of the modules the objective's
     choices run through still equals the capture, and the cited run record
     postdates the capture and carries that same objective -- its module, its
-    weights and its own source identity. A record without the section, or with an
+    weights and its own source identity.
+
+    The record is also tied to the run the retained result cites, because a
+    chronology is only evidence about *that* measurement: the check requires
+    ``path`` to be the ``cited_record`` the verified result names, its
+    configuration to be the evaluation configuration the result records, and its
+    episodes to be that configuration's complete ``(agent, seed)`` set with no
+    duplicate. Without those three, any later one-seed run -- or a minimal JSON
+    object carrying a timestamp and a copy of the objective -- passed and was
+    reported as the evaluation record, which proved nothing about the ten-seed
+    measurement the capture preceded. A record without the section, or with an
     identity that is not the capture's, is reported rather than accepted.
     """
+    cited = cited_record_path(result_path)
+    assert path.resolve() == cited.resolve(), (
+        f"{path} is not the run record the retained result cites as its evaluation "
+        f"({cited}), so its chronology relative to the capture proves nothing about the "
+        "measured run"
+    )
+    configuration = evaluation_configuration(result_path)
     captured = json.loads(PREDECLARATION.read_text(encoding="utf-8"))
     record = json.loads(path.read_text(encoding="utf-8"))
+    assert record.get("configuration") == configuration, (
+        "the cited record's configuration is not the evaluation configuration the "
+        f"retained result records: {record.get('configuration')} != {configuration}"
+    )
+    episodes = record.get("episodes")
+    assert isinstance(episodes, list) and episodes, (
+        f"the cited record carries no episodes to check: {episodes!r}"
+    )
+    rows = rows_by_identity([episode_row(episode) for episode in episodes],
+                           f"the cited record {path}")
+    check_identity_set(rows, configuration, f"the cited record {path}")
     assert wellplan.weights_record() == captured["objective"], (
         "the declared weights are not the ones the objective's code publishes: "
         f"{wellplan.weights_record()!r} != {captured['objective']!r}"
@@ -212,7 +251,8 @@ def check_predeclaration(path: Path) -> None:
     print(f"# predeclaration captured_at: {captured['captured_at']} "
           f"(module sha256 {captured['module_sha256']}, notes section sha256 "
           f"{captured['notes_section_sha256']}, {len(captured['sources'])} identity modules)")
-    print(f"# evaluation record created_at: {created_at}")
+    print(f"# evaluation record created_at: {created_at} "
+          f"({len(rows)} episodes, the complete configured (agent, seed) set)")
     print(f"# the record's own objective identity equals the capture")
 
 
@@ -348,6 +388,57 @@ def predeclaration_order_line(captured_at: str, cited_created_at: str) -> str:
         f"created_at {cited_created_at}, and the record's own objective identity is "
         "the capture's"
     )
+
+
+def experiment_003_evidence() -> tuple[dict, list[dict]]:
+    """Experiment 003's retained record and its rows, validated as the complete set.
+
+    Every baseline number this experiment is judged against comes from here -- the
+    three acceptance thresholds, the aspirational comparison and the published
+    metrics block -- so the artifact and its row set are read and validated once:
+    a truncated or duplicated set would otherwise aggregate something that is not
+    Experiment 003's measurement while every check below still passed.
+    """
+    record = json.loads(TETRIS_RESULT.read_text(encoding="utf-8"))
+    rows = record["episodes_by_agent_seed"]
+    check_identity_set(rows_by_identity(rows, "Experiment 003's retained rows"),
+                       record["configuration"], "Experiment 003's retained rows")
+    return record, rows
+
+
+def baseline_metrics(agent: str) -> dict:
+    """One baseline agent's metrics, re-derived from Experiment 003's own retained rows.
+
+    The acceptance criteria name Experiment 003's published numbers for its
+    ``tetris`` agent and compare the plan against its ``lookahead`` agent, so both
+    are read from that experiment's rows rather than from a field of the record
+    being certified: a threshold copied from the block that certifies itself with it
+    proves nothing about the baseline it names.
+    """
+    _, rows = experiment_003_evidence()
+    return metrics_of(rows, agent)
+
+
+def cited_record_path(result_path: Path | None = None) -> Path:
+    """The run record Experiment 004's retained result cites as its evaluation.
+
+    The capture is only evidence for a measurement if it preceded *that* record, so
+    the record a check is given is compared against the path the verified result
+    names, rather than being trusted because it postdates the capture and carries a
+    copy of the objective.
+
+    ``result_path`` resolves the module's own ``RESULT_PATH`` at call time, so a
+    caller that points it at another result checks the citation of that artifact.
+    """
+    path = RESULT_PATH if result_path is None else result_path
+    retained = json.loads(path.read_text(encoding="utf-8"))
+    return PROJECT_ROOT / retained["predeclared_objective"]["cited_record"]
+
+
+def evaluation_configuration(result_path: Path | None = None) -> dict:
+    """The evaluation configuration Experiment 004's retained result records."""
+    path = RESULT_PATH if result_path is None else result_path
+    return json.loads(path.read_text(encoding="utf-8"))["configuration"]
 
 
 # The level the two mechanism claims below are derived at, and the period its
@@ -668,32 +759,36 @@ def check_mechanism(retained: dict) -> None:
           f"{budget['stack_height']} and phase {budget['phase']}")
 
 
+def _identity_shape(version: int) -> str | None:
+    """The walk a suite version's writer emitted, as the verifier's own table gives it.
+
+    ``None`` for a version the table does not carry — a constant bumped without a
+    table entry, which the checks below then report rather than raising ``KeyError``.
+    """
+    return runner._SUITE_FORMAT_VERSIONS.get(version, (None, None))[1]
+
+
 def dispatcher_bound() -> dict:
-    """Which agents' identities cover the dispatcher, and what bounds that.
+    """Which agents' identities cover the dispatcher, per version's own walk.
 
     The module that selects which implementation is built is part of an identity as
-    soon as the walk can seed it. For the plan that is `runner`, and it is covered.
-    For the Tetris agent it is `runner` too — every build goes through
-    ``build_agent`` — but the Tetris identity cannot gain it, and both reasons are
-    derived here rather than asserted:
+    soon as the walk can seed it. Every build goes through ``runner.build_agent``, so
+    the dispatch is the driver for *both* declared agents, and the current writer
+    seeds it for both. The version-6 writer seeded the shared factory for an agent
+    the factory defines, so a Tetris record of that version named no code that
+    selected its implementation, and that narrower walk is exactly what the records
+    written under it recorded — the frozen fixture among them. Both facts are derived
+    here rather than asserted, and so is the version keying:
 
-    * Experiment 003's retained capture and the retained frozen fixture record the
-      Tetris identity as exactly the five modules the version-6 writer walked
-      (``agents``, ``heuristic``, ``pathaware``, ``pieces``, ``tetris``). Seeding the
-      dispatcher adds ``runner`` and everything it holds, which is what makes those
-      two artifacts report a difference instead of verifying — so the coverage this
-      experiment adds stops at the agent whose objective module owns it.
-    * The escape that would keep both — a new format version whose shape covers the
-      dispatcher for every agent — is not available either: the writer's current
-      version is what Experiment 003's retained ``record_format_versions`` prose is
-      derived from (``format_versions_line`` in Experiment 003's own probe, executed
-      by the check below), so moving it makes that retained sentence fail a
-      registered unit check.
-
-    Neither alternative is a code choice this experiment may make: both would
-    invalidate retained Experiment 003 evidence, so the residual is that a change to
-    the dispatch which kept a *Tetris* record replaying its inputs is still not
-    caught by that record's source identity.
+    * the walk is selected by the record's own format version
+      (``runner._SUITE_FORMAT_VERSIONS``), so an older record is compared against the
+      identity its writer recorded and a current one against the walk the current
+      writer emits, not against whichever walk happens to be current;
+    * Experiment 003's retained ``record_format_versions`` prose is regenerated from
+      the writer's own constants (``format_versions_line`` in Experiment 003's own
+      probe, executed here), so moving ``SUITE_FORMAT_VERSION`` to introduce the wider
+      shape means that retained sentence has to be regenerated with it — which it is,
+      and this check reports a sentence that names a version the writer no longer has.
     """
     fixture = json.loads(LEGACY_RECORD.read_text(encoding="utf-8"))
     spec = importlib.util.spec_from_file_location("exp003_version_prose_bound", TETRIS_PROBE)
@@ -702,38 +797,56 @@ def dispatcher_bound() -> dict:
     tetris_record = json.loads(TETRIS_RESULT.read_text(encoding="utf-8"))
     sentence = tetris_record["record_format_versions"]["this_round"]
     line = tetris_probe.format_versions_line()
+    current = runner._objective_sources(runner._IDENTITY_DISPATCH)
+    prior = runner._objective_sources(runner._IDENTITY_CHOICE)
     return {
-        "choice_driver": {agent: runner._choice_driver(agent).__name__
-                          for agent in sorted(runner.DECLARED_OBJECTIVES)},
+        "current_choice_driver": {
+            agent: runner._choice_driver(agent, runner._IDENTITY_DISPATCH).__name__
+            for agent in sorted(runner.DECLARED_OBJECTIVES)},
+        "version_6_choice_driver": {
+            agent: runner._choice_driver(agent, runner._IDENTITY_CHOICE).__name__
+            for agent in sorted(runner.DECLARED_OBJECTIVES)
+        },
+        "current_format_version": runner.SUITE_FORMAT_VERSION,
+        "version_6_format_version": runner.WRAPPER_IDENTITY_SUITE_FORMAT_VERSION,
+        "current_identity_shape": _identity_shape(runner.SUITE_FORMAT_VERSION),
+        "version_6_identity_shape": _identity_shape(
+            runner.WRAPPER_IDENTITY_SUITE_FORMAT_VERSION),
         "plan_identity_keys": sorted(current_sources()),
         "plan_identity_covers": "block_stack_ai.runner" in current_sources(),
-        "tetris_identity_keys": sorted(runner._objective_sources()),
-        "tetris_identity_covers": "block_stack_ai.runner" in runner._objective_sources(),
+        "current_tetris_identity_keys": sorted(current),
+        "current_tetris_identity_covers": "block_stack_ai.runner" in current,
+        "version_6_tetris_identity_keys": sorted(prior),
+        "version_6_tetris_identity_covers": "block_stack_ai.runner" in prior,
         "fixture_identity_keys": sorted(fixture["objective"]["sources"]),
         "experiment_003_version_prose_matches": sentence.endswith(line),
         "experiment_003_current_suite_token": f"{runner.SUITE_FORMAT_VERSION} current suite",
         "statement": (
-            "the plan's identity covers block_stack_ai.runner, whose dispatch decides "
-            "that wellplan builds the plan agent; the Tetris identity is the five "
-            "modules its version-6 writer recorded, which Experiment 003's retained "
-            "capture and the retained fixture are compared against, so a change to the "
-            "dispatch that kept a Tetris record replaying is not caught by that "
-            f"record's identity, and the version ({runner.SUITE_FORMAT_VERSION}) that "
-            "would have to move for a wider shape is the one Experiment 003's retained "
-            "record_format_versions prose derives 'current suite' from"
+            "a record written now covers the dispatcher that selects its agent, for the "
+            "Tetris agent and the plan alike: block_stack_ai.runner seeds both walks, "
+            "because runner.build_agent decides which implementation is built for every "
+            "agent name. The version-6 writer seeded the shared factory for the Tetris "
+            "agent instead, so records of that version are compared against the five "
+            "modules they recorded — Experiment 003's capture and the retained fixture "
+            "among them — and the writer's version moved to "
+            f"{runner.SUITE_FORMAT_VERSION} so that shape could widen without editing the "
+            "records written under the old one. Experiment 003's retained "
+            "record_format_versions prose is regenerated from the writer's constants, so "
+            "it names the version the writer now emits"
         ),
     }
 
 
 def check_dispatcher_bound(retained: dict) -> None:
-    """The retained block must be the bound the tree's own artifacts put on coverage.
+    """The retained block must be the coverage this tree's own artifacts derive.
 
     Each element is re-derived: which module selects each declared agent's
-    implementation, which modules the plan's identity and the Tetris identity cover,
-    the keys the frozen fixture records, and the retained prose Experiment 003
-    derives from the writer's current format version. That last one is what rules out
-    the versioned wider shape, and it is re-derived from Experiment 003's own probe
-    rather than restated, so the constraint cannot go stale if those artifacts change.
+    implementation under each version's walk, which modules each shape covers, the
+    keys the frozen fixture records, and the retained prose Experiment 003 derives
+    from the writer's constants. The version keying is checked as well as the
+    coverage, so a shape that stopped following the record's version — the property
+    that makes an older record verify against the walk its writer recorded — is
+    reported rather than read as evidence.
     """
     derived = dispatcher_bound()
     recorded = retained.get("dispatcher_coverage")
@@ -741,24 +854,46 @@ def check_dispatcher_bound(retained: dict) -> None:
         "the retained dispatcher-coverage block is not the one this tree derives:\n  "
         f"recorded {recorded}\n  derived  {derived}"
     )
-    assert derived["choice_driver"] == {"tetris": "block_stack_ai.agents",
-                                        "tetris_plan": "block_stack_ai.runner"}, derived
-    assert derived["plan_identity_covers"] is True and derived["tetris_identity_covers"] is False
-    assert derived["tetris_identity_keys"] == derived["fixture_identity_keys"], derived
+    assert derived["current_choice_driver"] == {"tetris": "block_stack_ai.runner",
+                                                "tetris_plan": "block_stack_ai.runner"}, derived
+    assert derived["version_6_choice_driver"] == {"tetris": "block_stack_ai.agents",
+                                                  "tetris_plan": "block_stack_ai.runner"}, derived
+    assert derived["plan_identity_covers"] is True, derived
+    assert derived["current_tetris_identity_covers"] is True, derived
+    assert derived["version_6_tetris_identity_covers"] is False, derived
+    assert derived["current_format_version"] != derived["version_6_format_version"], derived
+    # The version keys the walk: each version is compared against the shape its own
+    # table entry names, which is what lets an older record verify against the
+    # identity its writer recorded while the current writer emits the wider one.
+    assert derived["current_identity_shape"] == runner._IDENTITY_DISPATCH, derived
+    assert derived["version_6_identity_shape"] == runner._IDENTITY_CHOICE, derived
+    assert _identity_shape(derived["current_format_version"]) == runner._IDENTITY_DISPATCH, \
+        runner._SUITE_FORMAT_VERSIONS
+    assert _identity_shape(derived["version_6_format_version"]) == runner._IDENTITY_CHOICE, \
+        runner._SUITE_FORMAT_VERSIONS
+    assert derived["current_tetris_identity_keys"] == sorted(
+        runner._objective_sources(runner._IDENTITY_DISPATCH, agent=runner.TETRIS_AGENT)), derived
+    assert derived["version_6_tetris_identity_keys"] == sorted(
+        runner._objective_sources(runner._IDENTITY_CHOICE, agent=runner.TETRIS_AGENT)), derived
+    assert derived["version_6_tetris_identity_keys"] == derived["fixture_identity_keys"], derived
     assert derived["experiment_003_version_prose_matches"] is True, derived
     assert derived["experiment_003_current_suite_token"] in json.loads(
         TETRIS_RESULT.read_text(encoding="utf-8")
     )["record_format_versions"]["this_round"], derived
     print(f"# dispatcher coverage: plan {'yes' if derived['plan_identity_covers'] else 'no'}, "
-          f"tetris {'yes' if derived['tetris_identity_covers'] else 'no'} "
-          f"({len(derived['tetris_identity_keys'])} frozen modules); the versioned wider "
-          "shape is ruled out by Experiment 003's retained version prose")
+          f"current Tetris {'yes' if derived['current_tetris_identity_covers'] else 'no'} "
+          f"({len(derived['current_tetris_identity_keys'])} modules), version-6 Tetris "
+          f"{'yes' if derived['version_6_tetris_identity_covers'] else 'no'} "
+          f"({len(derived['version_6_tetris_identity_keys'])} frozen modules); version "
+          f"{derived['current_format_version']} covers the dispatch and Experiment 003's "
+          "retained prose names it")
 
 
 def check_record(path: Path) -> None:
     """The retained result must still be the evidence it claims to be.
 
-    Six things are re-derived rather than trusted. The predeclaration block's
+    Each of its claims is re-derived rather than trusted, against evidence outside
+    the block that states it. The predeclaration block's
     order sentence has to be the one its own two timestamps reconstruct, and the
     block's objective, identity, digests and named superseded captures have to
     equal the capture file, the artifacts it names and the tree as they stand, so a
@@ -785,13 +920,17 @@ def check_record(path: Path) -> None:
     be Experiment 003's rows' aggregate, and its reproduction block's count, fields,
     source and sentence have to be the ones those artifacts reconstruct, so a
     comparison that was not complete cannot be reported as one. And the cited run
-    record's own ``created_at`` has to be the one the
-    block names, when this checkout still retains that temporary run. Finally, the
+    record has to be the run this result cites — the path, the evaluation
+    configuration and the complete ``(agent, seed)`` episode set, checked by
+    ``check_predeclaration`` together with its ``created_at`` — when this checkout
+    still retains that temporary run. Finally, the
     coverage bound is derived (``check_dispatcher_bound``): which module selects each
-    declared agent's implementation, which modules each identity covers, the keys the
-    frozen fixture records, and the fact that Experiment 003's retained version prose
-    is derived from the writer's current format version — the reason the wider shape
-    that would cover the dispatcher for a Tetris record is not available.
+    declared agent's implementation under each version's walk, which modules each
+    identity covers — the current writer's Tetris identity among them, which now
+    covers the runner's dispatch — the keys the frozen fixture records, the version
+    keying of the walk, and the fact that Experiment 003's retained version prose is
+    regenerated from the writer's constants, so the sentence the version bump moved
+    is reported if it goes stale.
     """
     retained = json.loads(path.read_text(encoding="utf-8"))
     block = retained["predeclared_objective"]
@@ -916,22 +1055,24 @@ def check_record(path: Path) -> None:
     assert block["sources"]["block_stack_ai.agents"] == factory, (
         "predeclared_objective.sources does not carry this tree's agent-factory digest"
     )
-    # The dispatcher is the entry the previous findings turned on, and its presence
-    # in the plan's own identity is a property of the tree rather than of the
-    # record: the frozen fixture's Tetris identity is the five modules its version-6
-    # writer recorded and carries no dispatcher entry, while the plan's walk seeds
-    # the module whose dispatch decides which implementation is built.
+    # The dispatcher is the entry these findings turned on, and its presence in the
+    # plan's own identity — and in the current writer's Tetris identity — is a
+    # property of the tree rather than of the record: the version-6 shape named the
+    # shared factory for the Tetris agent and carries no dispatcher entry, which is
+    # why the retained fixture and Experiment 003's capture still verify, while the
+    # current version's walk seeds the module that decides which implementation every
+    # agent is built from.
     assert "block_stack_ai.runner" in current_sources(), (
         "the plan's identity does not cover the dispatcher that selects its agent, so a "
         "change to it could not be caught"
     )
-    assert "block_stack_ai.runner" not in runner._objective_sources(), (
-        "the Tetris identity is no longer the shape its version 6 writer recorded"
+    assert "block_stack_ai.runner" in runner._objective_sources(runner._IDENTITY_DISPATCH), (
+        "the current writer's Tetris identity does not cover the dispatcher that selects "
+        "its implementation"
     )
-    # The residual that bound leaves, re-derived: the Tetris identity stays at the
-    # five modules Experiment 003's retained evidence records, and the versioned
-    # wider shape that would cover the dispatcher for it is ruled out by Experiment
-    # 003's own retained version prose. See ``dispatcher_bound``.
+    assert "block_stack_ai.runner" not in runner._objective_sources(runner._IDENTITY_CHOICE), (
+        "the version-6 Tetris identity is no longer the shape its writer recorded"
+    )
     check_dispatcher_bound(retained)
     check_mechanism(retained)
     rows = retained["episodes_by_agent_seed"]
@@ -949,18 +1090,28 @@ def check_record(path: Path) -> None:
         "the retained replay claims a different number of episodes than the rows carry"
     )
     # The acceptance block is derived too: the achieved values are the retained
-    # metrics and each verdict is the comparison its own threshold states, so a
-    # "met" that its numbers no longer support is reported. The three thresholds
-    # are the ones the experiment was given; the comparison is re-made, not read.
+    # metrics, the thresholds are the baseline Experiment 003 published for the agent
+    # the criteria name, and each verdict is the comparison of the two. Reading the
+    # thresholds from the acceptance block itself only proved that the record beat
+    # numbers it declared for itself — zeroing all three certified a result that met
+    # nothing — so they are re-derived from Experiment 003's own retained rows, which
+    # are validated as the complete configured set before any value is taken from
+    # them, and the comparison is re-made rather than read.
+    baseline = baseline_metrics(runner.TETRIS_AGENT)
     plan = retained["metrics"][plan_agent]
     acceptance = retained["acceptance"]
-    thresholds = (
-        ("tetris_line_rate", plan["tetris_line_rate"],
-         acceptance["tetris_line_rate"]["required_gte"], "gte"),
-        ("mean_lines", plan["lines_mean"], acceptance["mean_lines"]["required_gt"], "gt"),
-        ("mean_score", plan["score_mean"], acceptance["mean_score"]["required_gt"], "gt"),
+    criteria = (
+        ("tetris_line_rate", plan["tetris_line_rate"], "required_gte", "gte",
+         baseline["tetris_line_rate"]),
+        ("mean_lines", plan["lines_mean"], "required_gt", "gt", baseline["lines_mean"]),
+        ("mean_score", plan["score_mean"], "required_gt", "gt", baseline["score_mean"]),
     )
-    for label, achieved, required, comparison in thresholds:
+    for label, achieved, key, comparison, required in criteria:
+        assert acceptance[label][key] == required, (
+            f"{label}: the retained {key} is {acceptance[label][key]!r}, not the value "
+            f"Experiment 003's retained rows derive for it ({required!r}), so the verdict "
+            "beside it would be issued against a number this record declared for itself"
+        )
         met = (achieved >= required) if comparison == "gte" else (achieved > required)
         assert acceptance[label]["achieved"] == achieved, (
             f"{label}: the retained acceptance value is not the retained metric"
@@ -969,23 +1120,25 @@ def check_record(path: Path) -> None:
             f"{label}: the retained verdict is not what {achieved} against {required} gives"
         )
         assert met, f"the retained metrics no longer meet {label}"
-    # The aspirational comparison is derived the same way, and against the other
-    # configured agent rather than against itself: ``achieved`` is the plan agent's
-    # own metric and ``reported`` is the agent it is compared with. A block that
-    # reported the baseline's numbers as the plan's achievement -- which is what a
-    # regeneration that copied the wrong column looks like -- is reported here
-    # instead of being read as a measurement while every other check still passes.
+    # The aspirational comparison is derived the same way, and both of its columns are
+    # bound outside this record: ``achieved`` is the plan agent's own metric, and
+    # ``reported`` is the value Experiment 003's retained rows derive for the agent it
+    # is compared with -- not this record's own copy of that agent's metrics, so a
+    # block that reported a number the baseline does not publish is reported instead
+    # of being read as a measurement.
     others = [name for name in retained["configuration"]["agents"] if name != plan_agent]
     assert len(others) == 1, others
     aspiration = acceptance["aspirational"]
+    aspirational_baseline = baseline_metrics(others[0])
     for label, field in (("mean_lines", "lines_mean"), ("mean_score", "score_mean")):
         entry = aspiration[label]
         assert entry["achieved"] == plan[field], (
             f"acceptance.aspirational.{label}.achieved is {entry['achieved']!r}, not the "
             f"plan agent's own {field} ({plan[field]!r})"
         )
-        assert entry["reported"] == retained["metrics"][others[0]][field], (
-            f"acceptance.aspirational.{label}.reported is not {others[0]}'s {field}"
+        assert entry["reported"] == aspirational_baseline[field], (
+            f"acceptance.aspirational.{label}.reported is not the {others[0]} {field} "
+            "Experiment 003's retained rows derive"
         )
         assert entry["achieved"] <= entry["reported"], (
             f"acceptance.aspirational.{label} reports an outcome the retained metrics do "
@@ -996,15 +1149,7 @@ def check_record(path: Path) -> None:
     # replays -- so a stale or copied number there is reported rather than read. The
     # block is the comparison every acceptance verdict above rests on, which is why
     # it is derived here and not trusted as the prose beside it.
-    tetris_record = json.loads(TETRIS_RESULT.read_text(encoding="utf-8"))
-    tetris_rows = tetris_record["episodes_by_agent_seed"]
-    # Experiment 003's rows are the complete configured identity set, with no
-    # duplicate: every published aggregate below is taken over them, so a
-    # truncated or duplicated set would aggregate something that is not the
-    # experiment's measurement.
-    tetris_by_identity = rows_by_identity(tetris_rows, "Experiment 003's retained rows")
-    check_identity_set(tetris_by_identity, tetris_record["configuration"],
-                       "Experiment 003's retained rows")
+    tetris_record, tetris_rows = experiment_003_evidence()
     published = retained["baseline"]["published_metrics"]
     assert set(published) == set(tetris_record["configuration"]["agents"]), sorted(published)
     for agent, metrics in published.items():
@@ -1042,13 +1187,24 @@ def check_record(path: Path) -> None:
         f"reconstruct:\n  recorded {reproduction['result']}\n  derived  "
         f"{baseline_result_statement(published)}"
     )
-    cited = PROJECT_ROOT / block["cited_record"]
-    if cited.exists():
+    # The cited record is the artifact the whole predeclaration rests on, so when this
+    # checkout still holds it the full binding is re-derived -- the path the result
+    # names, the evaluation configuration, the complete episode set and the captured
+    # objective -- rather than only the timestamp the block quotes. The comparison is
+    # made where that evidence is present; ``runs/`` is ignored output and is not
+    # published, so a checkout without it is told which claim is then unverifiable.
+    cited = cited_record_path(path)
+    if cited.is_file():
+        check_predeclaration(cited, path)
         created_at = json.loads(cited.read_text(encoding="utf-8"))["created_at"]
         assert created_at == block["cited_record_created_at"], (
             f"cited_record_created_at is {block['cited_record_created_at']} but the cited "
             f"record was created at {created_at}"
         )
+    else:
+        print(f"# the cited run {block['cited_record']!r} is not retained in this "
+              "checkout (``runs/`` is ignored output); its binding to the evaluation "
+              "configuration and episode set is checked where that record is present")
     print(f"# retained record: {path}")
     print(f"# capture {block['captured_at']} precedes the cited record "
           f"{block['cited_record_created_at']}")
@@ -1197,7 +1353,9 @@ def frozen_factory_digest() -> str:
     and a record written before the new agent still names this tree's source. The
     digest of the file on this tree, the digest of that module in the identity of
     the version-6 fixture written by the branch base's own writer, and the digest
-    of this tree's Tetris identity therefore have to be one value. Deriving it
+    of this tree's version-6 Tetris identity therefore have to be one value — the
+    version-6 *shape*, because that is the walk the fixture's writer recorded and
+    the shape such a record is still compared against. Deriving it
     from those bytes is what stops a claim written for the superseded design -- the
     agent added *to* the factory -- from passing unexamined.
     """
@@ -1208,9 +1366,9 @@ def frozen_factory_digest() -> str:
         f"the frozen fixture's covered agent-factory digest is not this tree's "
         f"{FACTORY_MODULE.name}: {recorded} != {tree}"
     )
-    identity = runner._objective_sources()["block_stack_ai.agents"]
+    identity = runner._objective_sources(runner._IDENTITY_CHOICE)["block_stack_ai.agents"]
     assert identity == tree, (
-        f"this tree's Tetris identity covers {identity}, not this tree's {tree}"
+        f"this tree's version-6 Tetris identity covers {identity}, not this tree's {tree}"
     )
     return tree
 
@@ -1248,19 +1406,27 @@ def check_legacy() -> None:
     writer — ``git archive`` of its ``src``, whose ``tetris.py`` hashes to the
     digest Experiment 003's retained capture records — so its ``objective``
     section names the Tetris objective and the source identity of the five modules
-    that computed its placements, the shared agent factory among them. Adding an
-    agent to this project must not invalidate such a record, and this is what
-    checks that: the recorded identity still equals the identity of this tree, the
+    that computed its placements, the shared agent factory among them, and it is
+    compared against that version's own walk. Adding an agent to this project, and
+    widening the identity the current writer emits so it covers the runner's
+    dispatch, must not invalidate such a record, and this is what
+    checks that: the recorded identity still equals this tree's version-6 Tetris
+    identity while the current writer's identity covers the dispatch as well
+    (``dispatcher_bound``), the
     shared factory's covered digest is still the digest of this tree's own file
     (``frozen_factory_digest``), the recorded inputs still replay, and every
     warning is an engine-Git advisory (``engine_advisories``) rather than a
     complaint about the record.
     """
     record = json.loads(LEGACY_RECORD.read_text(encoding="utf-8"))
-    assert record["format_version"] == 6, record["format_version"]
+    assert record["format_version"] == runner.WRAPPER_IDENTITY_SUITE_FORMAT_VERSION
     assert record["objective"]["module"] == "block_stack_ai.tetris"
-    assert record["objective"]["sources"] == runner._objective_sources(), (
-        "the frozen record's identity is not this tree's Tetris identity"
+    assert record["objective"]["sources"] == runner._objective_sources(runner._IDENTITY_CHOICE), (
+        "the frozen record's identity is not this tree's version-6 Tetris identity"
+    )
+    assert "block_stack_ai.runner" in runner._objective_sources(runner._IDENTITY_DISPATCH), (
+        "the current writer's Tetris identity does not cover the runner's dispatch, so a "
+        "change to the code that selects its implementation could not be caught"
     )
     factory = frozen_factory_digest()
     advisories = engine_advisories()
@@ -1273,26 +1439,33 @@ def check_legacy() -> None:
     print(f"# frozen writer's record: {LEGACY_RECORD.name} "
           f"({len(record['episodes'])} episodes, {lines} lines) verifies "
           f"with {len(warnings)} engine-Git advisory warning(s)")
-    print(f"# its identity's agent-factory digest {factory} equals this tree's")
+    print(f"# its identity's agent-factory digest {factory} equals this tree's; the current "
+          "writer's Tetris identity covers the runner's dispatch")
 
 
 def all_probes() -> None:
     """The checks that need no argument: the capture against the tree and the result.
 
-    ``check_predeclaration`` compares a *run record* with the capture, so it
-    cannot run here: a configuration's capture is only ever checked against the
-    record of the run it preceded, which is named by the verified result record.
-    ``all`` therefore re-checks the capture and the tree — which ``predeclare``
-    does by refusing to keep a capture whose subject changed — and re-derives the
-    retained result's own claims.
+    ``check_predeclaration`` compares a *run record* with the capture, and the record
+    it must be given is the one the retained result cites, which the result itself
+    names -- so this path runs it whenever that record is still in the checkout, and
+    says which claim is unverifiable when the temporary run output (``runs/``) is not.
+    It re-checks the capture and the tree — which ``predeclare`` does by refusing to
+    keep a capture whose subject changed — and re-derives the retained result's own
+    claims, including the citation's binding to the evaluation configuration and its
+    complete episode set.
     """
     predeclare()
     check_legacy()
-    result = EXPERIMENT / "result.json"
-    if result.exists():
-        check_record(result)
+    if RESULT_PATH.exists():
+        check_record(RESULT_PATH)
+        cited = cited_record_path(RESULT_PATH)
+        if not cited.is_file():
+            print(f"# the cited run {cited.relative_to(PROJECT_ROOT)} is not retained in "
+                  "this checkout; ``check-predeclaration <record>`` takes the record "
+                  "where it is present")
     else:
-        print(f"# {result.name} is not retained yet; the result checks are skipped")
+        print(f"# {RESULT_PATH.name} is not retained yet; the result checks are skipped")
 
 
 def main(argv: list[str]) -> int:

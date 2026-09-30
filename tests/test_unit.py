@@ -1442,7 +1442,7 @@ def test_suite_records_the_objective_of_the_tetris_agent(tmp_path, monkeypatch):
     assert record["objective"] == {
         "module": "block_stack_ai.tetris",
         "weights": tetris_weights_record(),
-        "sources": runner._objective_sources(),
+        "sources": runner._objective_sources(runner._IDENTITY_DISPATCH),
     }
     assert verify_run(path, factory) == []
 
@@ -1491,6 +1491,17 @@ def test_the_objective_identity_is_the_source_of_the_modules_it_runs(tmp_path, m
     path, factory, record = _objective_suite(tmp_path, monkeypatch)
     sources = record["objective"]["sources"]
     assert set(sources) == {
+        "block_stack_ai.tetris",
+        "block_stack_ai.heuristic",
+        "block_stack_ai.pathaware",
+        "block_stack_ai.pieces",
+        "block_stack_ai.agents",
+        # The current walk seeds the dispatch that decides which implementation every
+        # agent is built from, and the package modules its own code reaches.
+        "block_stack_ai.engine",
+        "block_stack_ai.runner",
+    }
+    assert set(runner._objective_sources(runner._IDENTITY_CHOICE)) == {
         "block_stack_ai.tetris",
         "block_stack_ai.heuristic",
         "block_stack_ai.pathaware",
@@ -1635,19 +1646,35 @@ def test_the_two_declared_objectives_keep_separate_identities():
     into the Tetris identity and the Tetris module into the plan's. That would
     make one objective's record fail under an edit to the other's code, which no
     choice of the first ever runs; the walk therefore excludes the other declared
-    objectives. The Tetris identity is the five modules its own version-6 writer
-    recorded — the retained fixture and Experiment 003's capture are compared
-    against that shape — while the plan's identity adds the module that selects its
-    implementation, because that dispatch is the code that decides ``wellplan``
-    builds the agent at all.
+    objectives. The version-6 Tetris identity is the five modules that version's
+    writer recorded — the retained fixture and Experiment 003's capture are compared
+    against that shape — while the current walk names the module that selects each
+    agent's implementation, so the Tetris module itself is covered and the plan's
+    module is not, in either direction.
     """
-    assert "block_stack_ai.wellplan" not in runner._objective_sources()
-    assert "block_stack_ai.tetris" not in runner._objective_sources(agent="tetris_plan")
-    plan_identity = runner._objective_sources(agent="tetris_plan")
+    current_tetris = runner._objective_sources(runner._IDENTITY_DISPATCH)
+    assert "block_stack_ai.wellplan" not in current_tetris
+    assert "block_stack_ai.tetris" not in runner._objective_sources(
+        runner._IDENTITY_DISPATCH, agent="tetris_plan")
+    plan_identity = runner._objective_sources(runner._IDENTITY_DISPATCH, agent="tetris_plan")
     assert "block_stack_ai.runner" in plan_identity
-    assert "block_stack_ai.runner" not in runner._objective_sources()
-    assert runner._choice_driver("tetris_plan") is sys.modules["block_stack_ai.runner"]
-    assert runner._choice_driver("tetris") is agents_module
+    assert runner._choice_driver("tetris_plan", runner._IDENTITY_DISPATCH) is \
+        sys.modules["block_stack_ai.runner"]
+    assert runner._choice_driver("tetris", runner._IDENTITY_DISPATCH) is \
+        sys.modules["block_stack_ai.runner"]
+    # The version-6 walk named the shared factory for the Tetris agent instead, which
+    # is the shape those records are compared against: the writer's own version keys
+    # it, and `_SUITE_FORMAT_VERSIONS` is what the verifier reads.
+    version_6 = runner._objective_sources(runner._IDENTITY_CHOICE)
+    assert "block_stack_ai.runner" not in version_6
+    assert set(version_6) == {"block_stack_ai.tetris", "block_stack_ai.heuristic",
+                              "block_stack_ai.pathaware", "block_stack_ai.pieces",
+                              "block_stack_ai.agents"}
+    assert runner._choice_driver("tetris", runner._IDENTITY_CHOICE) is agents_module
+    assert runner._choice_driver("tetris_plan", runner._IDENTITY_CHOICE) is \
+        sys.modules["block_stack_ai.runner"]
+    assert "block_stack_ai.runner" in current_tetris
+    assert "block_stack_ai.wellplan" not in current_tetris
     # The provenance recorder is the one package module the walk excludes, and it
     # is excluded because it cannot record its own load: it is the module that
     # installs the recorder. Its digest is therefore not part of any identity, and
@@ -1655,7 +1682,7 @@ def test_the_two_declared_objectives_keep_separate_identities():
     # which is what makes the exclusion the honest shape instead of a silent gap.
     recorder = sys.modules["block_stack_ai.sourceidentity"]
     assert recorder.__name__ not in plan_identity
-    assert recorder.__name__ not in runner._objective_sources()
+    assert recorder.__name__ not in current_tetris
     with pytest.raises(VerificationError, match="did not load through the package's own"):
         runner._module_source_digest(recorder, loaded=True)
     assert runner._module_source_digest(recorder, loaded=False) == hashlib.sha256(
@@ -1695,47 +1722,72 @@ def test_a_change_to_the_dispatch_that_kept_the_choices_is_caught(tmp_path, monk
 
 
 def test_the_dispatcher_bound_is_derived_from_the_retained_artifacts(monkeypatch):
-    """The coverage bound is re-derived, including the alternative it rules out.
+    """The version-keyed coverage is re-derived, and its unversioned form ruled out.
 
     The reviewer's finding asked for a wider identity shape that covers the
-    dispatcher for *every* declared agent, which needs a new format version. Two
-    retained artifacts of Experiment 003 stand in the way, and both are derived
-    here rather than asserted: its capture and the frozen fixture record the Tetris
-    identity as the five modules the version-6 writer walked, and its retained
-    ``record_format_versions`` prose is generated from the writer's *current*
-    format version, so moving that constant makes the prose fail the registered
-    check `test_record_derives_the_format_version_prose`. The retained block has to
-    be this derivation, so a stale statement about who covers the dispatcher cannot
-    pass.
+    dispatcher for *every* declared agent, which needs a new format version: the
+    retained artifacts of Experiment 003 — its capture and the frozen fixture —
+    record the Tetris identity as the five modules the version-6 writer walked, so
+    widening the shape in place would stop them verifying. Both halves are derived
+    here rather than asserted: the current walk covers the dispatch for the Tetris
+    agent as well as the plan, the version-6 walk does not, the fixture's keys are
+    the version-6 keys, and Experiment 003's retained ``record_format_versions``
+    prose is generated from the writer's constants and was regenerated when the
+    version moved. The retained block has to be this derivation, so a stale
+    statement about who covers the dispatcher cannot pass.
     """
     probe = _load_plan_probe("exp004_plan_bound_probe")
     derived = probe.dispatcher_bound()
-    assert derived["choice_driver"] == {"tetris": "block_stack_ai.agents",
-                                        "tetris_plan": "block_stack_ai.runner"}
+    assert derived["current_choice_driver"] == {"tetris": "block_stack_ai.runner",
+                                                "tetris_plan": "block_stack_ai.runner"}
+    assert derived["version_6_choice_driver"] == {"tetris": "block_stack_ai.agents",
+                                                  "tetris_plan": "block_stack_ai.runner"}
     assert derived["plan_identity_covers"] is True
-    assert derived["tetris_identity_covers"] is False
-    assert derived["tetris_identity_keys"] == derived["fixture_identity_keys"]
+    assert derived["current_tetris_identity_covers"] is True
+    assert derived["version_6_tetris_identity_covers"] is False
+    assert derived["version_6_format_version"] == 6  # the retained writer's version
+    assert derived["current_format_version"] == runner.SUITE_FORMAT_VERSION
+    assert runner.SUITE_FORMAT_VERSION > derived["version_6_format_version"]
+    assert derived["version_6_tetris_identity_keys"] == derived["fixture_identity_keys"]
+    assert "block_stack_ai.runner" in derived["current_tetris_identity_keys"]
     assert derived["experiment_003_version_prose_matches"] is True
     probe.check_dispatcher_bound({"dispatcher_coverage": derived})
 
     stale = json.loads(json.dumps(derived))
-    stale["tetris_identity_covers"] = True
+    stale["current_tetris_identity_covers"] = False
     with pytest.raises(AssertionError, match="not the one this tree derives"):
         probe.check_dispatcher_bound({"dispatcher_coverage": stale})
 
     stale_statement = json.loads(json.dumps(derived))
     stale_statement["statement"] = (
-        "the Tetris identity covers the dispatcher, so a change to it is caught")
+        "the Tetris identity stays the five modules its version-6 writer recorded, "
+        "so a change to the dispatcher is not caught")
     with pytest.raises(AssertionError, match="not the one this tree derives"):
         probe.check_dispatcher_bound({"dispatcher_coverage": stale_statement})
 
-    # The alternative the finding asks for needs the writer's current version to
-    # move, and that is exactly what Experiment 003's retained prose derives from.
+    # The version keying itself is checked, not only the coverage: the key sets come
+    # from the shape constants, so they do not move, but the recorded table entry does
+    # -- and it is that entry which lets Experiment 003's retained records verify
+    # against their own shape while the current writer emits a wider one.
+    with monkeypatch.context() as patch:
+        patch.setattr(runner, "_SUITE_FORMAT_VERSIONS",
+                      {**runner._SUITE_FORMAT_VERSIONS,
+                       runner.WRAPPER_IDENTITY_SUITE_FORMAT_VERSION:
+                           (True, runner._IDENTITY_DISPATCH)})
+        unversioned = probe.dispatcher_bound()
+        assert unversioned["version_6_identity_shape"] == runner._IDENTITY_DISPATCH
+        assert unversioned["version_6_tetris_identity_keys"] == \
+            derived["version_6_tetris_identity_keys"]
+        with pytest.raises(AssertionError):
+            probe.check_dispatcher_bound({"dispatcher_coverage": unversioned})
+
+    # The retained Experiment 003 sentence is what fails if the constants move
+    # without it: the derivation reports that rather than passing quietly.
     with monkeypatch.context() as patch:
         patch.setattr(runner, "SUITE_FORMAT_VERSION", runner.SUITE_FORMAT_VERSION + 1)
         bumped = probe.dispatcher_bound()
         assert bumped["experiment_003_version_prose_matches"] is False
-        assert bumped["experiment_003_current_suite_token"] == "7 current suite"
+        assert bumped["experiment_003_current_suite_token"] == "8 current suite"
         with pytest.raises(AssertionError):
             probe.check_dispatcher_bound({"dispatcher_coverage": bumped})
 
@@ -1753,6 +1805,16 @@ def test_the_engine_advisory_vocabulary_does_not_depend_on_the_checkout(monkeypa
     checkout. The derivation now makes both of the verifier's advisory branches fire
     whatever this checkout's state is, and the strings it returns are the verifier's
     own.
+
+    This is an unmarked check, so it also has to hold in the engine-independent
+    selection a GitHub runner executes, where no Block Stack checkout sits beside the
+    worktree. ``_engine_warnings`` reads ``git_info(engine_root())``, so the root is
+    pointed at a synthetic path as well as the ``git_info`` result: patching only the
+    latter left the derivation depending on a checkout being present, which failed
+    there with ``Block Stack checkout not found``. The vocabulary is a property of the
+    verifier's own code, not of a checkout, and the engine-dependent step -- re-running
+    the frozen record -- is stubbed out of the aggregate command and run by the
+    integration suite instead.
     """
     probe = _load_plan_probe("exp004_plan_advisory_probe")
     difference = "Engine Git version or dirty status differs from the recorded run."
@@ -1764,6 +1826,8 @@ def test_the_engine_advisory_vocabulary_does_not_depend_on_the_checkout(monkeypa
                   {"commit": "abc123", "dirty": True, "kind": "working-tree"},
                   {"commit": None, "dirty": None, "kind": "unversioned"}):
         with monkeypatch.context() as patch:
+            patch.setattr(runner, "engine_root",
+                          lambda: Path("/synthetic/engine-checkout"))
             patch.setattr(runner, "git_info", lambda root, state=state: dict(state))
             assert probe.engine_advisories() == (difference, working_tree), state
 
@@ -1811,14 +1875,20 @@ def test_the_plan_predeclaration_binds_the_cited_record(tmp_path, monkeypatch):
     """The plan's capture ties the cited record to the code that chose its inputs.
 
     The declaration is captured from the tree before the ten-seed evaluation, and
-    the check re-derives every claim: the declaring module's digest, the
-    rationale section's digest, the identity of the modules the plan's choices are
-    computed from, and the cited record's own objective section — which must be
-    the captured one and must postdate the capture. A record that predates the
-    capture, a record whose identity is not the capture's, a record with no
-    objective section at all, and each covered module changed after the capture
-    are all reported rather than accepted, so the retained evidence cannot be a
-    claim the tree no longer supports.
+    the check re-derives every claim: the declaring module's digest, the rationale
+    section's digest, the identity of the modules the plan's choices are computed
+    from, and the cited record's own objective section — which must be the captured
+    one and must postdate the capture. A record that predates the capture, a record
+    whose identity is not the capture's, a record with no objective section at all,
+    and each covered module changed after the capture are all reported rather than
+    accepted.
+
+    The record is also tied to the run the retained result cites: any later
+    one-seed run, or a minimal JSON object carrying a timestamp and a copy of the
+    objective, used to pass and be reported as the evaluation record, which proved
+    nothing about the ten-seed measurement the capture preceded. Its path, its
+    configuration and its complete ``(agent, seed)`` episode set are therefore
+    required as well, and each is driven with a record that should be rejected.
     """
     probe = _load_plan_probe()
     capture = tmp_path / "predeclared_objective.json"
@@ -1828,18 +1898,80 @@ def test_the_plan_predeclaration_binds_the_cited_record(tmp_path, monkeypatch):
     assert captured["objective"] == wellplan_weights_record()
     assert set(captured["sources"]) == set(runner._objective_sources(agent="tetris_plan"))
 
-    record_path = tmp_path / "run.json"
-    record = {
-        "created_at": "2099-01-01T00:00:00+00:00",
-        "objective": {
-            "module": "block_stack_ai.wellplan",
-            "weights": captured["objective"],
-            "sources": captured["sources"],
+    # The run the capture precedes is the record the result cites. It is produced by
+    # the writer rather than hand-shaped, so its objective section, configuration and
+    # episodes are the ones a real run emits; ``PROJECT_ROOT`` is pointed at the
+    # temporary directory so the citation is resolved the way the retained result
+    # states it, relative to the project root.
+    record_path, factory, record = _objective_suite(
+        tmp_path, monkeypatch, agents=("lookahead", "tetris_plan"))
+    result_path = tmp_path / "result.json"
+    result = {
+        "configuration": record["configuration"],
+        "predeclared_objective": {
+            "cited_record": str(record_path.relative_to(tmp_path)),
         },
     }
-    record_path.write_text(json.dumps(record), encoding="utf-8")
+    result_path.write_text(json.dumps(result), encoding="utf-8")
+    monkeypatch.setattr(probe, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(probe, "RESULT_PATH", result_path)
     probe.check_predeclaration(record_path)
 
+    # An unrelated run — the same configuration replayed later, or another record
+    # altogether — is not the one the result cites, whatever its own timestamps say.
+    unrelated_path, _, _ = _objective_suite(
+        tmp_path, monkeypatch, agents=("lookahead", "tetris_plan"))
+    assert unrelated_path != record_path
+    with pytest.raises(AssertionError,
+                       match="is not the run record the retained result cites"):
+        probe.check_predeclaration(unrelated_path)
+
+    # A record at the cited path whose configuration is not the evaluation
+    # configuration, and one whose episodes are not its complete set, are both
+    # reported: those are what make the chronology evidence about this measurement.
+    one_seed = json.loads(json.dumps(record))
+    one_seed["configuration"]["seeds"] = [1, 3]
+    record_path.write_text(json.dumps(one_seed), encoding="utf-8")
+    with pytest.raises(AssertionError,
+                       match="is not the evaluation configuration the retained result"):
+        probe.check_predeclaration(record_path)
+
+    truncated = json.loads(json.dumps(record))
+    truncated["episodes"].pop()
+    record_path.write_text(json.dumps(truncated), encoding="utf-8")
+    with pytest.raises(AssertionError, match="is not the configured"):
+        probe.check_predeclaration(record_path)
+
+    duplicated = json.loads(json.dumps(record))
+    duplicated["episodes"].append(json.loads(json.dumps(duplicated["episodes"][0])))
+    record_path.write_text(json.dumps(duplicated), encoding="utf-8")
+    with pytest.raises(AssertionError, match="twice"):
+        probe.check_predeclaration(record_path)
+
+    # A minimal object carrying only a timestamp and a copy of the objective — the
+    # shape that used to pass — is rejected on the first structural claim: it does
+    # not carry the evaluation configuration.
+    minimal = {
+        "created_at": "2099-01-01T00:00:00+00:00",
+        "objective": record["objective"],
+    }
+    record_path.write_text(json.dumps(minimal), encoding="utf-8")
+    with pytest.raises(AssertionError,
+                       match="is not the evaluation configuration the retained result"):
+        probe.check_predeclaration(record_path)
+
+    # A record that carries the evaluation configuration but no episodes has no run
+    # for the capture's chronology to be evidence about.
+    config_only = {
+        "created_at": "2099-01-01T00:00:00+00:00",
+        "configuration": record["configuration"],
+        "objective": record["objective"],
+    }
+    record_path.write_text(json.dumps(config_only), encoding="utf-8")
+    with pytest.raises(AssertionError, match="carries no episodes"):
+        probe.check_predeclaration(record_path)
+
+    record_path.write_text(json.dumps(record), encoding="utf-8")
     stale = json.loads(json.dumps(record))
     stale["created_at"] = "2001-01-01T00:00:00+00:00"
     record_path.write_text(json.dumps(stale), encoding="utf-8")
@@ -1853,8 +1985,9 @@ def test_the_plan_predeclaration_binds_the_cited_record(tmp_path, monkeypatch):
     with pytest.raises(AssertionError, match="is not the capture's"):
         probe.check_predeclaration(record_path)
 
-    record_path.write_text(
-        json.dumps({"created_at": "2099-01-01T00:00:00+00:00"}), encoding="utf-8")
+    without_objective = json.loads(json.dumps(record))
+    del without_objective["objective"]
+    record_path.write_text(json.dumps(without_objective), encoding="utf-8")
     with pytest.raises(AssertionError, match="carries no objective section"):
         probe.check_predeclaration(record_path)
 
@@ -1872,19 +2005,22 @@ def test_the_plan_predeclaration_binds_the_cited_record(tmp_path, monkeypatch):
 def test_the_plan_result_record_rederives_its_metrics_and_capture(tmp_path):
     """The retained result's own claims are re-derived, not trusted.
 
-    Four classes of retained claim are checked against evidence outside them: the
-    metrics block has to be the aggregate of the episode rows the same file
+    Every retained claim is checked against evidence outside the block that states
+    it. The metrics block has to be the aggregate of the episode rows the same file
     carries, so a mistyped mean or a rate over the wrong denominator is reported
-    instead of read as a measurement; the predeclaration block's order sentence
-    has to be the one its own two timestamps reconstruct, its objective and
-    identity have to equal the capture and the tree as they stand, and the cited
-    run's ``created_at`` has to be the one it names while this checkout still holds
-    that temporary run; the agent-factory and dispatcher digests the
+    instead of read as a measurement. The acceptance block's three thresholds are
+    the baseline Experiment 003's retained rows derive — re-checked here — and the
+    aspirational comparison's ``reported`` column is that baseline's other agent, so
+    a record cannot certify itself against numbers it declared. The predeclaration
+    block's order sentence has to be the one its own two timestamps reconstruct, its
+    objective and identity have to equal the capture and the tree as they stand, and
+    the cited run's ``created_at`` has to be the one it names while this checkout
+    still holds that temporary run. The agent-factory and dispatcher digests the
     legacy-verification block, the objective section and the capture carry have to
     be the digests of those modules' own bytes on this tree -- the factory's also
     equal to the digest the retained frozen fixture's identity records -- so a
     value written for the superseded design, or one that is not the code that
-    selects the plan's agent, is reported rather than read; and the mechanism block
+    selects the plan's agent, is reported rather than read. And the mechanism block
     has to be what the tree's model derives, so a sentence about the reserve or the
     composition that the code no longer supports is reported.
     """
@@ -1898,6 +2034,20 @@ def test_the_plan_result_record_rederives_its_metrics_and_capture(tmp_path):
     assert record["metrics"]["tetris_plan"]["tetris_line_rate"] >= 0.011445
     assert record["metrics"]["tetris_plan"]["lines_mean"] > 349.5
     assert record["metrics"]["tetris_plan"]["score_mean"] > 567266.2
+
+    # The three thresholds and the aspirational comparison are the baseline
+    # Experiment 003's retained rows derive, not numbers the record declares for
+    # itself: each is asserted here against the derivation, and the tampered cases
+    # below require `check-record` to reject a threshold that is not that value.
+    baseline = probe.baseline_metrics(runner.TETRIS_AGENT)
+    assert record["acceptance"]["tetris_line_rate"]["required_gte"] == \
+        baseline["tetris_line_rate"]
+    assert record["acceptance"]["mean_lines"]["required_gt"] == baseline["lines_mean"]
+    assert record["acceptance"]["mean_score"]["required_gt"] == baseline["score_mean"]
+    assert record["acceptance"]["aspirational"]["mean_lines"]["reported"] == \
+        probe.baseline_metrics("lookahead")["lines_mean"]
+    assert record["acceptance"]["aspirational"]["mean_score"]["reported"] == \
+        probe.baseline_metrics("lookahead")["score_mean"]
 
     mistyped = json.loads(json.dumps(record))
     mistyped["metrics"]["tetris_plan"]["lines_mean"] = 999.0
@@ -1919,16 +2069,39 @@ def test_the_plan_result_record_rederives_its_metrics_and_capture(tmp_path):
     with pytest.raises(AssertionError, match="is not the retained metric"):
         probe.check_record(path)
 
+    # The three thresholds are the values Experiment 003's retained rows derive, so
+    # a record cannot certify itself against numbers it declared: zeroing all three
+    # -- which used to leave `check-record` exiting 0 with every verdict still "met"
+    # -- and moving any one of them are both reported before any verdict is issued.
+    for label, key in (("tetris_line_rate", "required_gte"),
+                       ("mean_lines", "required_gt"),
+                       ("mean_score", "required_gt")):
+        zeroed = json.loads(json.dumps(record))
+        zeroed["acceptance"][label][key] = 0.0
+        path.write_text(json.dumps(zeroed), encoding="utf-8")
+        with pytest.raises(AssertionError,
+                           match=rf"{label}: the retained {key} is 0.0, not the value"):
+            probe.check_record(path)
+
+    moved = json.loads(json.dumps(record))
+    moved["acceptance"]["mean_lines"][
+        "required_gt"] = moved["acceptance"]["mean_lines"]["required_gt"] - 1.0
+    path.write_text(json.dumps(moved), encoding="utf-8")
+    with pytest.raises(AssertionError, match=r"mean_lines: the retained required_gt"):
+        probe.check_record(path)
+
     rejudged = json.loads(json.dumps(record))
     rejudged["acceptance"]["mean_score"]["met"] = False
     path.write_text(json.dumps(rejudged), encoding="utf-8")
     with pytest.raises(AssertionError, match="is not what"):
         probe.check_record(path)
 
-    # The aspirational block is derived too, and against the other configured agent
-    # rather than against itself: a block whose ``achieved`` is the comparison
-    # agent's own number -- what a regeneration that copied the wrong column
-    # produces -- is reported rather than read as the plan's measurement.
+    # The aspirational block is derived too, and both columns are bound outside this
+    # record: ``achieved`` is the plan agent's own metric, and ``reported`` is the
+    # value Experiment 003's retained rows derive for the agent the criteria compare
+    # it with — so a block that copied the comparison agent's number into the plan's
+    # column, or reported a number the baseline does not publish, is reported rather
+    # than read as the plan's measurement.
     aspiration = json.loads(json.dumps(record))
     aspiration["acceptance"]["aspirational"]["mean_lines"]["achieved"] = (
         aspiration["acceptance"]["aspirational"]["mean_lines"]["reported"])
@@ -1939,7 +2112,8 @@ def test_the_plan_result_record_rederives_its_metrics_and_capture(tmp_path):
     misreported = json.loads(json.dumps(record))
     misreported["acceptance"]["aspirational"]["mean_score"]["reported"] = 1.0
     path.write_text(json.dumps(misreported), encoding="utf-8")
-    with pytest.raises(AssertionError, match="reported is not lookahead's score_mean"):
+    with pytest.raises(AssertionError,
+                       match=r"reported is not the lookahead score_mean Experiment 003's"):
         probe.check_record(path)
 
     # The baseline block is derived from Experiment 003's own retained rows, so a
@@ -2554,12 +2728,19 @@ def test_the_version_5_identity_stops_before_the_wrapper(tmp_path, monkeypatch):
     objective, which cannot reach the wrapper that drives it, so that version's
     records are compared with that shape — a record carrying the wrapper's digest
     under that version is a section no writer emitted, and is reported. The
-    current writer records the wrapper, so the record it emits is the same shape
-    plus that module, and deleting the module from it is reported too.
+    version-6 and version-7 writers record the wrapper, so the walk of those
+    versions is the version-5 shape plus the modules that decide which
+    implementation is built: the shared factory for the agent the factory defines
+    under version 6, and the runner's dispatch under version 7. Each version is
+    compared against its own shape, so deleting a module that shape carries is a
+    deleted key rather than an accepted narrower one.
     """
     path, factory, record = _objective_suite(tmp_path, monkeypatch)
     outward = runner._objective_sources(runner._IDENTITY_OUTWARD)
-    assert set(outward) == set(record["objective"]["sources"]) - {"block_stack_ai.agents"}
+    version_6 = runner._objective_sources(runner._IDENTITY_CHOICE)
+    assert set(outward) == set(version_6) - {"block_stack_ai.agents"}
+    assert set(version_6) == set(record["objective"]["sources"]) - {
+        "block_stack_ai.engine", "block_stack_ai.runner"}
 
     prior = json.loads(json.dumps(record))
     prior["format_version"] = runner.OUTWARD_IDENTITY_SUITE_FORMAT_VERSION
@@ -2589,6 +2770,69 @@ def test_the_version_5_identity_stops_before_the_wrapper(tmp_path, monkeypatch):
         match=r"do not match \['block_stack_ai\.agents',",
     ):
         verify_run(path, factory)
+
+
+def test_a_current_tetris_record_covers_the_dispatcher_and_cannot_shed_it(
+    tmp_path, monkeypatch
+):
+    """The finding: a current Tetris record's identity covers the dispatch.
+
+    ``run_suite`` builds every agent through ``runner.build_agent``, so the
+    dispatch is the code that decides which implementation a record's placements
+    came from. The version-6 walk named the shared factory for an agent the factory
+    defines, which left the dispatch out of a Tetris record, and a change to the
+    dispatch that still replayed the recorded inputs was invisible to it. The
+    current walk seeds the dispatch for every agent, so the same change is reported
+    — and because the walk is keyed by the record's own version, a current record
+    cannot shed the coverage by claiming the version whose shape stopped short of
+    it: the recorded seven-module identity does not equal that version's five.
+    """
+    path, factory, record = _objective_suite(tmp_path, monkeypatch)
+    runner_digest = hashlib.sha256(Path(runner.__file__).read_bytes()).hexdigest()
+    assert record["objective"]["sources"]["block_stack_ai.runner"] == runner_digest
+    assert verify_run(path, factory) == []
+
+    mutated = tmp_path / "runner-changed.py"
+    mutated.write_bytes(Path(runner.__file__).read_bytes() + b"\n# dispatch changed\n")
+    with monkeypatch.context() as patch:
+        patch.setattr(runner, "__file__", str(mutated))
+        with pytest.raises(
+            VerificationError,
+            match=r"objective\.sources\.block_stack_ai\.runner: recorded "
+                  rf"'{runner_digest}', replayed '[0-9a-f]{{64}}'",
+        ):
+            verify_run(path, factory)
+
+    # Relabelling to the version whose walk stopped at the shared factory does not
+    # strip the dispatcher: that version's shape is five modules, and the record
+    # carries seven, so the relabel is reported as a difference.
+    relabelled = json.loads(json.dumps(record))
+    relabelled["format_version"] = runner.WRAPPER_IDENTITY_SUITE_FORMAT_VERSION
+    path.write_text(json.dumps(relabelled), encoding="utf-8")
+    with pytest.raises(VerificationError, match=r"objective\.sources"):
+        verify_run(path, factory)
+
+    # The two shapes are nested: the version-6 walk is the current one minus the
+    # modules that name the dispatcher. A record *rewritten* into the version-6
+    # shape is therefore indistinguishable from one that writer emitted, and it is
+    # accepted for the same reason Experiment 003's retained records are — the
+    # format version is the record's own claim about which writer produced it, and
+    # the version-6 writer's records have to keep verifying. What the wider shape
+    # closes is the coverage of a record written now, which is what the finding asks
+    # for; deleting the keys while *keeping* the version is the edit that is caught,
+    # because the recorded identity then equals neither shape.
+    assert set(runner._objective_sources(runner._IDENTITY_CHOICE)) < set(
+        record["objective"]["sources"])
+    shedded = json.loads(json.dumps(relabelled))
+    for name in ("block_stack_ai.runner", "block_stack_ai.engine"):
+        del shedded["objective"]["sources"][name]
+    assert shedded["objective"]["sources"] == runner._objective_sources(
+        runner._IDENTITY_CHOICE)
+
+    # The unedited record still verifies, so the identity rejects the relabel and
+    # nothing else.
+    path.write_text(json.dumps(record), encoding="utf-8")
+    assert verify_run(path, factory) == []
 
 
 def test_objective_identity_is_required_at_the_current_version_and_optional_before(

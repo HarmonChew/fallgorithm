@@ -39,17 +39,22 @@ lines and scoring more, on Experiment 003's identical ten seeds and game setting
 * **A generalised objective section in the run record.** `runner.py` used to
   hard-wire the declared-objective section to `block_stack_ai.tetris`; it now
   resolves the objective of whichever agent the configuration selects, from the
-  registry above. The section's name, shape and version are unchanged, so every
-  record written before it keeps verifying; the identity walk seeds the selected
-  agent's objective module and the module that selects its implementation — the
-  shared factory for an agent it defines, or `runner`'s dispatch
-  (`runner.DECLARED_OBJECTIVES`, `runner.build_agent`) for an agent whose
-  objective module owns it — and excludes the other agents' objective modules,
+  registry above. The section's name and shape are unchanged, so every
+  record written before it keeps verifying; the identity walk is keyed by the
+  record's own format version, and the version-7 writer — the one this experiment's
+  records are written by — seeds the selected agent's objective module and the
+  module that decides which implementation is built, `runner`'s dispatch
+  (`runner.DECLARED_OBJECTIVES`, `runner.build_agent`), which builds *every* agent.
+  The version-6 writer seeded the shared factory for an agent the factory defines,
+  and version-6 records are compared against that walk, because they recorded it.
+  The walk excludes the other agents' objective modules,
   both in the walk and in the partial-reload check, which no longer reports a
   stale reference held by a module that computes a *different* agent's choices. A
-  plan record's identity therefore covers the code that decides *which*
+  record written now therefore covers the code that decides *which*
   implementation is built, so a change to the dispatch that happens to replay the
-  recorded inputs is reported instead of certifying the record. A record carries
+  recorded inputs is reported instead of certifying the record — for the Tetris
+  agent as well as for the plan, which is what the version-6 walk left out. A
+  record carries
   one such section, so a configuration naming two declared-objective agents is
   refused at parse time rather than recorded ambiguously. Which version's
   requirements apply is not the record's to choose either: the writer that first
@@ -194,21 +199,23 @@ composition does not take at all.
 
 ## Results
 
-Measured on 2026-09-30 at fallgorithm `ea8f7db8` (working tree, `dirty: true` — the
-committed experiment plus the verification, height-accounting, prose and probe
-changes of this repair) with the sibling engine `8ca41587` (working tree), on the
-ten seeds number 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, start level 18, frame limit
-200000. The run record is `runs/20260930T020945782490Z-f908aba9/run.json`
+Measured on 2026-09-30 at fallgorithm `05a09c1c` (working tree, `dirty: true` — the
+committed experiment plus the version-keyed identity, reader-side check, prose and
+probe changes of this repair) with the sibling engine `8ca41587` (working tree), on
+the ten seeds number 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, start level 18, frame limit
+200000. The run record is `runs/20260930T044258461859Z-332ee653/run.json`
 (temporary, ignored output); its per-episode rows, its metrics and the objective it
 declared are retained in [`result.json`](result.json), and `verify` replays the
 record from its own recorded inputs (exit 0, with the engine working-tree warning).
 The declared objective's identity in that record is the seven-module one described
 above, so the run that produced these numbers is one whose identity covers the
 dispatch that selected its agent. The evaluation was re-measured after the plan's
-height accounting was corrected (see *The verification surface and the height
-accounting*, below); its per-episode rows and metrics are identical to the
-superseded run's, so the numbers below are the same measurement under corrected
-code rather than a revised one.
+height accounting was corrected, and again after the writer's identity walk was
+keyed by the format version and widened to the dispatch for every agent (see *The
+verification surface and the height accounting* and *The version-keyed identity and
+the reader-side checks*, below); each re-run's per-episode rows and metrics are
+identical to the superseded run's, so the numbers below are the same measurement
+under corrected code rather than a revised one.
 
 | Agent | Tetris line rate | Tetris lines / lines | Mean lines | Mean score | Mean frames | Pieces placed | Stopping |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -232,7 +239,7 @@ measured in the same run, keeps 1.47x the plan's lines (912.8 against 620.0) and
 1.70x its score. The plan buys Tetris rate with survival, not on top of it.
 
 **Secondary metrics.** 0.378 Tetrises per 100 placed pieces, against the baseline's
-0.110 and `lookahead`'s 0.009. The clear-size histograms are retained per agent and
+0.11 and `lookahead`'s 0.009. The clear-size histograms are retained per agent and
 per seed in `result.json`; the plan's totals are 4509 singles, 568 doubles, 105
 triples and 60 Tetrises.
 
@@ -245,7 +252,7 @@ lines, and the strongest (seed 14) cleared 1304; the per-seed rows are in
 
 **Baseline reproduction.** Experiment 003's own configuration, re-run on this tree
 (`$PY -m block_stack_ai.cli run --config experiments/003-tetris-aware-agent/config.json`,
-record `runs/20260930T020906802373Z-c4b7cb3d/run.json`, `verify` exit 0), reproduces
+record `runs/20260930T044539821144Z-967579e0/run.json`, `verify` exit 0), reproduces
 every published per-episode row field by field — lines, score, frames,
 `pieces_placed`, stopping reason and clear-size histogram, for all 20 episodes —
 and reproduces its published summary (912.8 mean lines / 2,822,959.9 mean score for
@@ -254,34 +261,41 @@ mechanical form of that comparison, and it makes its claim only for the complete
 configured `(agent, seed)` set: the fresh run's configuration has to be Experiment
 003's, and both sides have to carry every one of the 20 pairs exactly once, so a
 truncated comparison or a duplicated key is reported instead of printed as a
-reproduction. That re-run is a version-6 record of the *Tetris* agent, so its
-identity is the five modules that agent's writer recorded and carries no dispatcher
-entry; the frozen objective, its agent, its weights and its results are unchanged,
-and so is the shared agent factory that builds that agent: its source is
-byte-identical to the branch base, which is what keeps the identity of the record
-this comparison cites — and of every record Experiment 003 retained — matching
-this tree.
+reproduction. That re-run is a current (version-7) record of the *Tetris* agent,
+whose identity is seeded from the dispatch that builds it; Experiment 003's
+retained records are version-6 records and keep verifying against that version's
+five-module walk, which is the shape their own writer recorded. The frozen
+objective, its agent, its weights and its results are unchanged, and so is the
+shared agent factory that builds that agent: its source is byte-identical to the
+branch base, which is what keeps the identity of the record this comparison cites —
+and of every record Experiment 003 retained — matching this tree.
 
 **Predeclaration.** `probes/evidence.py predeclare` wrote
-`probes/predeclared_objective.json` at 2026-09-30T02:06:32.477792+00:00, before the
-evaluation record's own `created_at` 2026-09-30T02:06:49.115337+00:00, capturing
+`probes/predeclared_objective.json` at 2026-09-30T04:40:00.379696+00:00, before the
+evaluation record's own `created_at` 2026-09-30T04:40:00.453026+00:00, capturing
 the objective module (`src/block_stack_ai/wellplan.py`, `sha256:474beb3e…`), the
 marked rationale section of this file (`sha256:f167d0c9…`), the published weights
 and constants, and the identity of the seven modules the plan's choices run
 through — the objective module, the board model, the reachable set, the wrapper and
 its factory, the game factory, and the module whose dispatch selects the plan's
 implementation. `probes/evidence.py check-predeclaration <record>` re-checks all of
-it against the tree and against the identity the run itself wrote,
-`probes/evidence.py check-legacy` re-verifies the frozen writer's retained record,
-and `probes/evidence.py check-record result.json` re-derives the retained record's
-claims — its metrics and its complete `(agent, seed)` row set, its acceptance
-verdicts from its thresholds, its capture order sentence from its own timestamps
-and its named superseded captures from the files on the tree, its agent-factory and
-dispatcher digests from those modules' own bytes, its baseline block from
-Experiment 003's rows and its own configuration, and its reserve, composition and
-height claims from the model rather than from the prose beside them.
+it against the tree, against the identity the run itself wrote, and against the run
+the retained result cites — the record's path is the `cited_record` the result
+names, and its configuration and its complete `(agent, seed)` episode set have to
+be the evaluation's, so a later one-seed run or a minimal object carrying a
+timestamp and a copy of the objective is rejected rather than reported as the
+evaluation record. `probes/evidence.py check-legacy` re-verifies the frozen writer's
+retained record, and `probes/evidence.py check-record result.json` re-derives the
+retained record's claims — its metrics and its complete `(agent, seed)` row set, its
+acceptance thresholds from Experiment 003's own retained rows and its verdicts from
+those thresholds, its capture order sentence from its own timestamps and its named
+superseded captures from the files on the tree, its agent-factory and dispatcher
+digests from those modules' own bytes, its baseline block from Experiment 003's rows
+and its own configuration, its `dispatcher_coverage` block from the version-keyed
+walks and Experiment 003's regenerated version prose, and its reserve, composition
+and height claims from the model rather than from the prose beside them.
 
-The capture has been made four times, and all three superseded ones are kept beside
+The capture has been made six times, and all five superseded ones are kept beside
 it. The first (2026-09-29T17:11:15.420024+00:00) preceded the first ten-seed run
 (`runs/20260929T171936702109Z-3733d12b`); the plan agent was then moved out of the
 shared factory into its objective module (see *What this experiment adds*), so the
@@ -291,19 +305,30 @@ objective module's source changed and a second capture
 that a plan record covers the module that decides which implementation is built
 (*The dispatch is part of the plan's identity*, above), which changes the declared
 identity itself, so a third capture was taken before the evaluation was re-run
-(`runs/20260930T010141245162Z-edcbfcfe`); and the plan's height accounting was then
+(`runs/20260930T010141245162Z-edcbfcfe`); the plan's height accounting was then
 corrected (*The verification surface and the height accounting*, below), which
-changes the objective module's source, so a fourth capture was taken before this
-evaluation was re-run (`runs/20260930T020945782490Z-f908aba9`). The superseded
-captures are `probes/predeclared_objective.pre-height-fix.json`,
+changes the objective module's source, so a fourth capture was taken before that
+evaluation was re-run (`runs/20260930T020945782490Z-f908aba9`); and the identity the
+writer records was then widened for every agent under the new format version 7
+(*The version-keyed identity and the reader-side checks*, below), which changes
+`runner`'s own bytes — the second seed of the walk — so a fifth capture was taken
+before that evaluation was re-run (`runs/20260930T041601202177Z-7bb33021`); and the
+shared walk's default shape then returned to the version-6 walk, so that Experiment
+003's probe still derives the identity its own capture recorded, which changes
+`runner`'s bytes once more, so a sixth capture was taken before this evaluation was
+re-run (`runs/20260930T044258461859Z-332ee653`). The
+superseded captures are `probes/predeclared_objective.pre-explicit-shape.json`,
+`probes/predeclared_objective.pre-version-bump.json`,
+`probes/predeclared_objective.pre-height-fix.json`,
 `probes/predeclared_objective.pre-dispatch.json` and
 `probes/predeclared_objective.pre-agent-move.json`, each valid for the design it
 preceded; `check-record` requires each to exist, to predate the current capture and
 to describe a different subject. Every re-run's per-episode rows and metrics are
 identical to the run it superseded (`result.json` records that comparison), so the
-reorganisation, the identity correction and the height correction changed no
-outcome, and the declared *rationale* section's digest is the same in all four
-captures because none of the changes touched a declared weight or constant.
+reorganisation, the identity correction, the height correction, the version bump and
+the default-shape change changed no outcome, and the declared *rationale* section's
+digest is the same in all six captures because none of the changes touched a
+declared weight or constant.
 
 The correction is what makes the incomplete identity visible: the previous
 publication's plan record, `runs/20260929T174836231811Z-b6c35f6b/run.json`, now
@@ -314,24 +339,26 @@ identity is incomplete for the code that chose its placements, which is exactly
 what the reviewer's finding said was uncovered.
 
 **Frozen records still verify.** A record's identity covers, among other modules,
-the one that selects which implementation is built. For Experiment 003's records
-that module is the shared agent factory, `block_stack_ai/agents.py`, and its source
-is byte-identical to the branch base — the digest in the retained fixture's
-identity, `2b24e1b2…`, is the digest of this tree's file. Nothing this experiment
-adds touches it: the plan agent is declared in its objective module and the runner
-dispatches to it, so the factory keeps building exactly the agents its frozen
-source defines.
+the one that selects which implementation is built. For a record written now that
+module is the runner's dispatch, which builds every agent; for Experiment 003's
+records it is the shared agent factory, `block_stack_ai/agents.py`, because that is
+the module the version-6 walk named for an agent the factory defines — and its
+source is byte-identical to the branch base, so the digest in the retained
+fixture's identity, `2b24e1b2…`, is the digest of this tree's file. Nothing this
+experiment adds touches it: the plan agent is declared in its objective module and
+the runner dispatches to it, so the factory keeps building exactly the agents its
+frozen source defines.
 
 That is checked rather than asserted.
 [`probes/legacy_v6_tetris_record.json`](probes/legacy_v6_tetris_record.json) is a
 version-6 suite record written by the frozen writer itself — `git archive` of the
 branch base's `src`, whose `tetris.py` hashes to the digest Experiment 003's
 retained capture records (`3d32c1c3…`) — and `probes/evidence.py check-legacy`
-verifies it against this tree: its recorded identity equals this tree's Tetris
-identity, its recorded inputs replay, and every warning is an engine-Git advisory
-rather than a complaint about the record. Which of those advisories appears is a
-property of the engine checkout and not of the record — the fixture records the
-engine as a working tree at a commit, so a checkout whose engine edits are later
+verifies it against this tree: its recorded identity equals this tree's *version-6*
+Tetris identity, its recorded inputs replay, and every warning is an engine-Git
+advisory rather than a complaint about the record. Which of those advisories appears
+is a property of the engine checkout and not of the record — the fixture records
+the engine as a working tree at a commit, so a checkout whose engine edits are later
 committed reports the recorded-vs-current advisory instead — so the check compares
 against the verifier's own advisory vocabulary (`engine_advisories`, derived from
 `runner._engine_warnings`) rather than one wording, and
@@ -340,45 +367,65 @@ pins both states. The integration suite runs the same check, and
 `probes/evidence.py check-record result.json` derives the same factory digest from
 this tree's bytes and compares it with the retained fixture's identity and the
 result's own claims, so the statement cannot go stale. The rest of the
-compatibility surface is unchanged too: the record formats keep their dispatch and
-their optional sections (versions 1, 2, 3, 4, 5 and 6), the frozen objective's
-module, weights and formula are untouched, and every published row of Experiment
+compatibility surface is unchanged too: the record formats keep their dispatch,
+their optional sections and their version-keyed identity walks (versions 1, 2, 3,
+4, 5, 6 and 7 — the writer's version moved to 7 for the walk that seeds the
+dispatch, *The version-keyed identity and the reader-side checks*, below), the
+frozen objective's module, weights and formula are untouched, and every published
+row of Experiment
 003 reproduces here — *Baseline reproduction*, above.
 
-**The dispatch is part of the plan's identity.** No record used to name the module
-that decides *which* implementation is built: for the plan both identity seeds were
+**The dispatch is part of an identity.** No record used to name the module that
+decides *which* implementation is built: for the plan both identity seeds were
 `wellplan`, so `runner.build_agent` and `runner.DECLARED_OBJECTIVES` — the code
 that routes `tetris_plan` to `wellplan` at all — appeared in no `sources` mapping,
 and a change there that still replayed the recorded inputs would have been
-certified. The walk now seeds the module that selects the implementation: the
-shared factory for an agent it defines, and `runner`'s dispatch for an agent whose
-objective module owns it. The plan's identity is therefore `wellplan`, `agents`,
-`heuristic`, `pathaware`, `pieces`, `engine` and `runner` — seven modules, produced
-by the walk rather than listed by hand — and that is the identity the capture
-records and the retained record carries; `probes/evidence.py check-record` derives
-the runner's digest from this tree's own bytes and compares it with both copies.
-The Tetris identity keeps the five modules its version 6 writer recorded, because
-the retained fixture and Experiment 003's capture are compared against exactly that
-mapping and adding the dispatch to it would invalidate both. The dispatcher's
-coverage is therefore the plan's: a change to `runner.build_agent` that kept a
-*Tetris* record replaying would still go unreported, which is the residue of a
-shape frozen by Experiment 003's retained evidence rather than a claim that the
-dispatch is irrelevant to that agent.
+certified. The walk now seeds the module that selects the implementation, and the
+*record's format version* says which walk its writer emitted
+(`runner._SUITE_FORMAT_VERSIONS`, `runner._IDENTITY_OUTWARD`,
+`runner._IDENTITY_CHOICE`, `runner._IDENTITY_DISPATCH`): the version-5 writer
+walked outward from the objective module alone, the version-6 writer named the
+shared factory for an agent the factory defines and the dispatch only for an agent
+whose objective module owns it, and the version-7 writer — this experiment's current
+one — seeds the dispatch for *every* agent, because `runner.build_agent` is what
+decides every agent's implementation. The plan's identity is therefore `wellplan`,
+`agents`, `heuristic`, `pathaware`, `pieces`, `engine` and `runner` — seven modules,
+produced by the walk rather than listed by hand — and that is the identity the
+capture records and the retained record carries; a Tetris record written now carries
+the same walk with `tetris` in place of `wellplan`, so a change to
+`runner.build_agent` that kept a *Tetris* record replaying is reported too.
+`probes/evidence.py check-record` derives the runner's digest from this tree's own
+bytes and compares it with both copies.
 
-The wider shape the external review asked for — one that covers the dispatcher for
-*every* declared agent — is ruled out by the same retained evidence, and that is
-checked rather than argued. Adding the dispatcher to the Tetris identity in place
-would move it off the five modules Experiment 003's `probes/predeclared_objective.json`
-and `probes/legacy_v6_tetris_record.json` record, so `check-predeclaration` and
-`check-legacy` would report them; and a new format version whose shape covers the
-dispatcher for both agents would move the writer's current version, which is what
-Experiment 003's retained `record_format_versions` prose is generated from —
-`probes/evidence.py check-record` re-derives both facts (`dispatcher_bound`), and
+That coverage needed a new format version rather than an edit in place, and the
+reason is derived rather than argued. Experiment 003's retained capture and the
+retained version-6 fixture record the Tetris identity as the five modules the
+version-6 writer walked — `agents`, `heuristic`, `pathaware`, `pieces`, `tetris` —
+so seeding the dispatch for that agent under version 6 would move the mapping those
+two artifacts carry and `check-predeclaration` and `check-legacy` would report them.
+The shape is therefore keyed by the record's own `format_version`: version 6 records
+are compared against the version-6 walk they recorded, and records written now
+against the dispatch-seeded walk. Moving the writer's version in turn moves the
+constant Experiment 003's retained `record_format_versions` prose is generated
+from (`format_versions_line` in Experiment 003's own probe), so that retained
+sentence was regenerated by Experiment 003's own generator, and its version map's
+entry for version 6 was corrected from "the current writer" to the version-6 writer,
+with an entry added for 7 — prose only: no weight, constant, code, capture, fixture,
+measurement or published row of Experiment 003 changed.
+`probes/evidence.py check-record` re-derives all of it (`dispatcher_bound`,
+`check_dispatcher_bound`), and
 `tests/test_unit.py::test_the_dispatcher_bound_is_derived_from_the_retained_artifacts`
-shows the second by bumping the constant and watching Experiment 003's own
-derivation stop matching. So this experiment covers the dispatch for the agent this
-design adds and states the residual for the other, rather than trading a retained
-verification for it.
+drives the tampered side: a block that claims the version-6 shape covers the
+dispatch, a table entry that stops keying the walk, and a bumped constant whose
+retained prose was not regenerated are each reported.
+
+What remains is the version claim itself. A record written now can still *say* it
+was written by the version-6 writer and be compared against that version's narrower
+walk — the version is the record's own statement about which writer produced it, and
+the version-6 writer's records have to keep verifying — so what is closed is the
+coverage of a record written now, which is what the finding asked for. That residue
+is stated in `result.json`'s limitations and in the `dispatcher_coverage` block
+rather than left implicit.
 
 The partial-reload check skips the other declared objectives' modules, exactly as
 the walk does: a module that computes a *different* agent's choices is not part of
@@ -483,12 +530,96 @@ timestamps chronologically as well. Both are covered by negative tests: a trunca
 source mapping, changed weights, a different module, and a contradicted timestamp
 order are each reported.
 
+**The version-keyed identity and the reader-side checks.** The external review of
+the previous publication found three defects in this experiment's own identity and
+verification code, and the supervisor reported a CI regression beside them. Each was
+reproduced on the pre-fix tree before it was repaired: `git archive
+05a09c1c7d096fa812be70695aae868c9d54d776` extracted to a temporary directory, then
+driven with the tampered input each new check rejects. All four were accepted there
+and are reported here.
+
+*The Tetris identity stopped one dispatch layer short.* `run_suite` builds every
+agent through `runner.build_agent`, but the identity walk seeded its second module
+from the shared factory for an agent the factory defines, so `block_stack_ai.runner`
+— the code that decides which implementation is built — appeared in no *Tetris*
+record's identity. On the pre-fix tree a real `tetris` suite record carries exactly
+`agents`, `heuristic`, `pathaware`, `pieces` and `tetris`, and `verify` on that
+record returns only the engine's advisory after `runner`'s own file is changed —
+the dispatch edit a record's source identity is supposed to catch is invisible. The
+repair is the version-keyed walk described under *The dispatch is part of an
+identity*: the writer's version moved to 7, that version's walk seeds the dispatch
+for every agent, and versions 1–6 keep the walk their writers recorded. It is
+driven from the record side by
+`tests/test_unit.py::test_a_current_tetris_record_covers_the_dispatcher_and_cannot_shed_it`:
+the same record with `runner`'s bytes changed is reported, and a record relabelled
+to version 6 while still carrying the seven-module mapping is reported too. That
+test also pins what the version key cannot distinguish — a record *rewritten* into
+the version-6 shape — as the accepted backward-compatibility cost, because the
+version-6 writer's records have to keep verifying.
+
+*The acceptance thresholds were read from the block they certified.* `check_record`
+took `required_gte`/`required_gt` from the retained `acceptance` block itself, so it
+only proved that the record beat numbers it declared for itself. On the pre-fix
+tree, setting all three to `0.0` leaves `check-record` exiting 0 with every verdict
+still `met`. The three thresholds are now required to equal the values re-derived
+from Experiment 003's retained `tetris` rows before any verdict is issued, and the
+aspirational comparison's `reported` column is bound to that baseline's `lookahead`
+metric rather than to this record's own copy of it. The regression is parameterized
+over the three thresholds (zeroed and moved) in
+`test_the_plan_result_record_rederives_its_metrics_and_capture`, which also asserts
+the retained thresholds equal the derivation.
+
+*The predeclaration check was not tied to the evaluation run.* `check_predeclaration`
+only required the supplied JSON to postdate the capture and to carry a copy of the
+objective, so on the pre-fix tree an unrelated later one-seed record — a minimal
+object, in fact, with the evaluation configuration absent and an empty episode list
+— passed and was reported as the evaluation record. The check now requires the path
+to be the `cited_record` the retained result names, the record's configuration to be
+the evaluation configuration that result records, and its episodes to be that
+configuration's complete `(agent, seed)` set with no duplicate; `check-record` runs
+the same binding whenever this checkout still holds the cited run.
+`tests/test_unit.py::test_the_plan_predeclaration_binds_the_cited_record` drives
+each of the four rejections (wrong path, wrong configuration, truncated episode set,
+duplicated episode) plus the minimal object that used to pass.
+
+*The unmarked unit selection depended on an engine checkout.* The GitHub `unit-tests`
+job runs the `not integration` selection with no Block Stack build and no checkout
+beside the worktree, and it failed on the previous head while the local run on the
+same tree passed. The failing check was
+`tests/test_unit.py::test_the_engine_advisory_vocabulary_does_not_depend_on_the_checkout`:
+`engine_advisories` reads `runner._engine_warnings`, which calls
+`git_info(engine_root())`, and the check stubbed only `git_info`, so it required a
+checkout to exist. On the pre-fix tree, with `block_stack` unimportable and no
+`BLOCK_STACK_ROOT` set, that check fails with `EngineError: Block Stack checkout not
+found`; with the same environment on the repaired tree the whole selection passes
+(211 passed, 37 deselected). The check now points `engine_root` at a synthetic path
+as well, which makes its own name true; the one engine-dependent step of the
+aggregate probe (`check_legacy`, which replays the frozen record) remains stubbed
+out of the unit selection and is run by the integration suite.
+
+*The default walk stayed the one Experiment 003's evidence recorded.* The version
+keying is explicit at every path that means a particular writer — the writer passes
+`runner._IDENTITY_DISPATCH`, the verifier passes the shape the record's own version
+keys, and this experiment's probes and tests pass the shape they mean — while
+`runner._objective_sources` keeps the version-6 walk as its default, because that is
+what a caller that predates the keying means by "the Tetris objective's identity".
+Experiment 003's own probe is such a caller: its `_objective_module_digests()` is
+`_objective_sources()`, and its retained capture records exactly the five-module
+walk of the version-6 writer. With the default left there,
+`experiments/003-tetris-aware-agent/probes/evidence.py predeclaration-record` still
+reports `failures: 0` on this tree and its derived identity still equals its
+capture; a default of the dispatch walk would have made that check report the
+capture as changed for a record whose identity and replay are unchanged.
+
 ## Reproduction
 
 ```sh
 PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
-$PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 210 passed
+$PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 211 passed
 $PY -m pytest -q -p no:cacheprovider -m integration            # 37 passed
+# the same selection as the GitHub unit-tests job: no Block Stack checkout beside the
+# worktree and `block_stack` unimportable, e.g. with BLOCK_STACK_ROOT unset and
+# `sys.modules['block_stack'] = None` before pytest.main([...])   # 211 passed
 $PY -m block_stack_ai.cli run --config experiments/004-bounded-well-plan/config.json
 $PY -m block_stack_ai.cli verify runs/<run-id>/run.json
 $PY experiments/004-bounded-well-plan/probes/evidence.py check-predeclaration runs/<run-id>/run.json
@@ -522,12 +653,20 @@ $PY experiments/004-bounded-well-plan/probes/evidence.py all
 * Every plan game topped out, so the ten-seed means are top-out outcomes; the
   per-seed rows are retained so the spread is visible.
 * The declared-objective identity covers the module that builds the agent whose
-  placements a record replays. That is why the plan agent is declared in its
-  objective module and built by the runner's dispatch rather than added to the
-  shared factory, and why the partial-reload check skips the other objectives'
-  modules: both choices exist to keep the identity of the records written before
-  this experiment — Experiment 003's included — matching this tree. *Frozen records
-  still verify*, above, states and checks that.
+  placements a record replays, and the module that decides which implementation is
+  built. That is why the plan agent is declared in its objective module and built by
+  the runner's dispatch rather than added to the shared factory, and why the
+  partial-reload check skips the other objectives' modules: both choices exist to
+  keep the identity of the records written before this experiment — Experiment
+  003's included — matching this tree. Records written now cover the dispatch for
+  *both* declared agents, under the format version 7 walk; Experiment 003's records
+  are version-6 records and are compared against the five-module walk their own
+  writer recorded. The residue is the version claim itself: a record written now can
+  still claim version 6 and be compared against that narrower walk, because the
+  version is the record's own statement about which writer produced it and the
+  version-6 writer's records have to keep verifying. *Frozen records still verify*
+  and *The version-keyed identity and the reader-side checks*, above, state and
+  check both.
 * The retained `result.json` is a distilled record, not the full run record: the
   evaluation's own `run.json` holds one input mask per logical frame and is about
   17 MB of ignored, disposable output. The retained evidence is therefore
@@ -537,7 +676,7 @@ $PY experiments/004-bounded-well-plan/probes/evidence.py all
   `probes/evidence.py check-record` re-derives the metrics from the retained rows —
   and the temporary record the predeclaration cites is named in `result.json` for
   as long as this checkout keeps it.
-* A version-6 record carries one `objective` section, so a suite cannot configure
+* A suite record carries one `objective` section, so a suite cannot configure
   both `tetris` and `tetris_plan`. This experiment therefore compares against
   Experiment 003's retained rows and against a re-run of its own configuration,
   not against a same-run baseline.

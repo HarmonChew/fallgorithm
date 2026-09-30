@@ -95,8 +95,9 @@ it configures an agent that declares an objective of its own — `tetris` or
 `tetris_plan` today, whichever one the configuration selects — that agent's
 declared objective — the module that
 declares it, the weights it publishes and the source identity of every module
-its decisions run through, the agent wrapper that hands it the state included —
-which `verify` compares as it compares
+its decisions run through, the agent wrapper that hands it the state included and
+the module that decides which implementation is built — which `verify` compares
+as it compares
 the heuristic mapping, so a record cannot verify under a different objective
 merely because the change preserved its replayed choices. That identity is the
 source the run loaded: the package's own loader reads each module's source once,
@@ -106,14 +107,18 @@ an edited file can make a record name code that did not run. An edit that lands
 after a module is imported is therefore reported by `verify` rather than
 certified, because the file its identity names no longer holds the bytes that
 were loaded. A record's
-`format_version` says which sections its writer always recorded: versions 1 and 2
+`format_version` says which sections its writer always recorded and which walk
+produced that identity: versions 1 and 2
 are the older formats, whose sections may be absent; version 3 is the current
 scripted format, version 4 is the prior suite format, whose writer recorded the
 declared objective without the source identity its successor adds, version 5 is
 the suite format whose identity stopped at the modules the objective's own code
-reaches and therefore missed the wrapper that drives it, and version 6 is the
-current suite format, which records that identity with the wrapper. A version 3,
-4, 5 or 6
+reaches and therefore missed the wrapper that drives it, version 6 records that
+identity with the wrapper but names the shared factory as the builder of an agent
+the factory defines, and version 7 is the current suite format, whose identity is
+seeded from the runner's dispatch that builds every agent, so a Tetris record
+covers the code that selects its implementation too. A version 3,
+4, 5, 6 or 7
 record must carry the placed-piece count, the clear-size histogram and — for a
 suite that configures an agent with its own declared objective — that objective.
 That is why the version is compared rather than the absence: a section deleted

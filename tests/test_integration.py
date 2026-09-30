@@ -36,6 +36,7 @@ from block_stack_ai.runner import (
     LEGACY_SUITE_FORMAT_VERSION,
     PRIOR_SUITE_FORMAT_VERSION,
     SUITE_FORMAT_VERSION,
+    WRAPPER_IDENTITY_SUITE_FORMAT_VERSION,
     FORMAT_VERSION,
     VerificationError,
     load_config,
@@ -777,15 +778,25 @@ def test_a_record_written_by_the_frozen_writer_still_verifies():
     is still the digest on this tree, and its recorded inputs replay because the
     frozen agent's behaviour is unchanged — the fixture's ten seeds' worth of
     Experiment 003 rows are re-derived in the experiment's own ``baseline`` check.
+    The identity is compared against the walk *that version's* writer recorded —
+    the version-6 shape, which names the shared factory for an agent the factory
+    defines — while a record written now is compared against the version-7 walk,
+    which seeds the runner's dispatch that builds every agent.
     """
     legacy = (PROJECT_ROOT / "experiments" / "004-bounded-well-plan" / "probes"
               / "legacy_v6_tetris_record.json")
     record = json.loads(legacy.read_text(encoding="utf-8"))
-    assert record["format_version"] == SUITE_FORMAT_VERSION
+    assert record["format_version"] == WRAPPER_IDENTITY_SUITE_FORMAT_VERSION == 6
+    assert record["format_version"] < SUITE_FORMAT_VERSION
     assert record["objective"]["module"] == "block_stack_ai.tetris"
-    assert record["objective"]["sources"] == runner._objective_sources()
-    assert runner._objective_sources()["block_stack_ai.agents"] == hashlib.sha256(
+    identity = runner._objective_sources(runner._IDENTITY_CHOICE)
+    assert record["objective"]["sources"] == identity
+    assert identity["block_stack_ai.agents"] == hashlib.sha256(
         Path(sys.modules["block_stack_ai.agents"].__file__).read_bytes()).hexdigest()
+    # The coverage the version-6 walk lacks and the current one has: the dispatch
+    # that decides which implementation is built for every agent.
+    assert "block_stack_ai.runner" not in identity
+    assert "block_stack_ai.runner" in runner._objective_sources(runner._IDENTITY_DISPATCH)
     assert sum(episode["result"]["lines"] for episode in record["episodes"]) > 0
     # The verifier's only warnings are the engine-Git advisories, and they describe
     # this checkout's engine state rather than the record: which of them appears
@@ -910,7 +921,7 @@ def test_suite_record_with_the_tetris_agent_declares_its_objective(tmp_path: Pat
     assert record["format_version"] == SUITE_FORMAT_VERSION
     assert record["objective"] == {
         "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
-        "sources": runner._objective_sources(),
+        "sources": runner._objective_sources(runner._IDENTITY_DISPATCH),
     }
     verify_run(path)
 

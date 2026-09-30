@@ -180,7 +180,7 @@ def test_live_tetris_session_records_the_objective_and_verifies(tmp_path):
     record = json.loads(records[0].read_text(encoding="utf-8"))
     assert record["objective"] == {
         "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
-        "sources": runner._objective_sources(),
+        "sources": runner._objective_sources(runner._IDENTITY_DISPATCH),
     }
     assert sorted(record["summary"]) == ["tetris"]
     verify_run(records[0])
@@ -204,7 +204,8 @@ def test_live_tetris_session_snapshots_the_objective_at_begin(tmp_path, monkeypa
     module = sys.modules["block_stack_ai.tetris"]
     original_path = Path(module.__file__)
     original_bytes = original_path.read_bytes()
-    original_digest = runner._objective_sources()["block_stack_ai.tetris"]
+    original_digest = runner._objective_sources(
+        runner._IDENTITY_DISPATCH)["block_stack_ai.tetris"]
     session = LiveSession(config, tmp_path / "runs")
     try:
         # The second game is a live restart (`R`) after the edit.
