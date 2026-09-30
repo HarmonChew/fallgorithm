@@ -41,12 +41,17 @@ lines and scoring more, on Experiment 003's identical ten seeds and game setting
   resolves the objective of whichever agent the configuration selects, from the
   registry above. The section's name, shape and version are unchanged, so every
   record written before it keeps verifying; the identity walk seeds the selected
-  agent's objective module and the module that builds it, and excludes the other
-  agents' objective modules — both in the walk and in the partial-reload check,
-  which no longer reports a stale reference held by a module that computes a
-  *different* agent's choices. A record carries one such section, so a
-  configuration naming two declared-objective agents is refused at parse time
-  rather than recorded ambiguously.
+  agent's objective module and the module that selects its implementation — the
+  shared factory for an agent it defines, or `runner`'s dispatch
+  (`runner.DECLARED_OBJECTIVES`, `runner.build_agent`) for an agent whose
+  objective module owns it — and excludes the other agents' objective modules,
+  both in the walk and in the partial-reload check, which no longer reports a
+  stale reference held by a module that computes a *different* agent's choices. A
+  plan record's identity therefore covers the code that decides *which*
+  implementation is built, so a change to the dispatch that happens to replay the
+  recorded inputs is reported instead of certifying the record. A record carries
+  one such section, so a configuration naming two declared-objective agents is
+  refused at parse time rather than recorded ambiguously.
 
 ## Method
 
@@ -118,12 +123,21 @@ dropped into the well would clear on the settled board right now, capped at four
 That measure is computed by settling the I with the same column model the rest of
 the experiment uses, so it is the clear itself and not an abstract column depth.
 
-**One structural fact drives the plan.** A reachable board never has an already
-complete row — the engine clears full rows as they lock — so a nonempty well
-column means some field column is empty beside it, and the reserve is zero whenever
-the well column is not empty. The plan's own count of the rows it would clear is
-therefore only ever earned by leaving the designated column open, and a well that
-has been filled is worth nothing until the field's rows complete and clear again.
+**How the reserve is actually earned.** A reachable board never has an already
+complete row — the engine clears a full row as it locks — but that says nothing
+about the rows *above* the designated column's topmost filled cell, which is the
+band a vertical I fills when it comes to rest on that cell. `well_reserve` counts
+the rows the I completes there, so it is **not** zero merely because the well
+column is occupied: the field can be complete in every other column at those rows
+while the well column itself holds a filled cell lower down. The retained evidence
+derives that case rather than asserting it (`result.json` →
+`objective_mechanism`): a controller-executable sequence of ten placements reaches
+a board whose well column is occupied (mask 1572864, its topmost filled cell in
+row 19) and on which `well_reserve` is 1 — the I fills rows 15-18 and completes
+one of them. What a filled well changes is the band the reserve is measured over —
+the four rows above the column's topmost filled cell, not the four rows at the
+floor — so a well filled low down still holds a reserve for the rows above it, and
+the objective's count is not restricted to a column that is open to the floor.
 
 **An explicit stack-height budget.** The plan builds only while the whole stack —
 the well column included — stands below `height_budget`, and the settled stack's
@@ -138,22 +152,40 @@ ten columns, the objective Experiment 002's `lookahead` agent survives on. That 
 how it gives the well back: the frozen score clears rows eagerly, which is the one
 thing `BUILD` will not do.
 
-**Composition.** The value of a current placement is its own settled-board value
-plus the best value the preview piece can reach on the board it leaves, exactly as
-Experiment 003's objective composes them; the preview's phase is read from the
-visible preview, so an I in the preview restarts the drought one piece early and
-lets the plan keep the well for the piece that will complete it. A current
-placement whose preview piece has no admissible placement has value `-inf`.
+**Composition — a second change from Experiment 003.** The value of a current
+placement is its own plan value plus the best plan value the preview piece can
+reach on the board it leaves; the preview's phase is read from the visible
+preview, so an I in the preview restarts the drought one piece early and lets the
+plan keep the well for the piece that will complete it. A current placement whose
+preview piece has no admissible placement has value `-inf`.
+
+That composition is **not** Experiment 003's, and the measured result is
+attributed to the plan and to this change together, not to the plan alone.
+Experiment 003's objective adds only the current placement's clear term
+(`tetris.clear_term`) to the preview's value, so its current board is judged by the
+clear it makes; this objective adds `plan_value` for the same placement — the field
+terms, the reserve and the overflow in `BUILD`, and the entire frozen
+`feature_score` in `SPEND` — so its current board is judged as a board.
+`result.json`'s `objective_mechanism` block records one reachable board per phase
+on which the two compositions select different placements, derived through
+`pathaware` and `wellplan` rather than restated: in `BUILD` the plan selects the L
+in column 8 for a one-line clear while a clear-term-only composition selects the L
+in column 2 for none, and in `SPEND` the plan takes a one-line clear the other
+composition does not take at all.
 
 ## Results
 
-Measured on 2026-09-29 at fallgorithm `92c1a7d8` (working tree, `dirty: true`) with the
-sibling engine `8ca41587` (working tree), on the ten seeds
+Measured on 2026-09-30 at fallgorithm `4140ad6d` (working tree, `dirty: true` — the
+committed experiment plus the identity, prose and probe changes of this repair) with
+the sibling engine `8ca41587` (working tree), on the ten seeds
 number 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, start level 18, frame limit 200000. The run
-record is `runs/20260929T174836231811Z-b6c35f6b/run.json` (temporary, ignored
+record is `runs/20260930T010141245162Z-edcbfcfe/run.json` (temporary, ignored
 output); its per-episode rows, its metrics and the objective it declared are
 retained in [`result.json`](result.json), and `verify` replays the record from its
-own recorded inputs (exit 0, with the engine working-tree warning).
+own recorded inputs (exit 0, with the engine working-tree warning). The declared
+objective's identity in that record is the seven-module one described above, so the
+run that produced these numbers is one whose identity covers the dispatch that
+selected its agent.
 
 | Agent | Tetris line rate | Tetris lines / lines | Mean lines | Mean score | Mean frames | Pieces placed | Stopping |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -190,54 +222,73 @@ lines, and the strongest (seed 14) cleared 1304; the per-seed rows are in
 
 **Baseline reproduction.** Experiment 003's own configuration, re-run on this tree
 (`$PY -m block_stack_ai.cli run --config experiments/003-tetris-aware-agent/config.json`,
-record `runs/20260929T175719166170Z-9f13435c/run.json`, `verify` exit 0), reproduces
+record `runs/20260930T010647636520Z-6c8252b6/run.json`, `verify` exit 0), reproduces
 every published per-episode row field by field — lines, score, frames,
 `pieces_placed`, stopping reason and clear-size histogram, for all 20 episodes —
 and reproduces its published summary (912.8 mean lines / 2,822,959.9 mean score for
 `lookahead`, 349.5 / 567,266.2 for `tetris`). `probes/evidence.py baseline` is the
-mechanical form of that comparison. The frozen objective, its agent, its weights
+mechanical form of that comparison. That re-run is a version-6 record of the
+*Tetris* agent, so its identity is the five modules that agent's writer recorded and
+carries no dispatcher entry; the frozen objective, its agent, its weights
 and its results are unchanged, and so is the shared agent factory that builds that
 agent: its source is byte-identical to the branch base, which is what keeps the
 identity of the record this comparison cites — and of every record Experiment 003
 retained — matching this tree.
 
 **Predeclaration.** `probes/evidence.py predeclare` wrote
-`probes/predeclared_objective.json` at 2026-09-29T17:45:37.951959+00:00, before the
-evaluation record's own `created_at` 2026-09-29T17:45:44.432195+00:00, capturing
-the objective module (`src/block_stack_ai/wellplan.py`, `sha256:a8f1d19d…`), the
+`probes/predeclared_objective.json` at 2026-09-30T00:55:20.631059+00:00, before the
+evaluation record's own `created_at` 2026-09-30T00:58:39.088832+00:00, capturing
+the objective module (`src/block_stack_ai/wellplan.py`, `sha256:0f740233…`), the
 marked rationale section of this file (`sha256:f167d0c9…`), the published weights
-and constants, and the identity of the five modules the plan's choices run
-through. `probes/evidence.py check-predeclaration <record>` re-checks all of it
-against the tree and against the identity the run itself wrote,
+and constants, and the identity of the seven modules the plan's choices run
+through — the objective module, the board model, the reachable set, the wrapper and
+its factory, the game factory, and the module whose dispatch selects the plan's
+implementation. `probes/evidence.py check-predeclaration <record>` re-checks all of
+it against the tree and against the identity the run itself wrote,
 `probes/evidence.py check-legacy` re-verifies the frozen writer's retained record,
-and `probes/evidence.py check-record result.json` re-derives the retained
-record's claims — its metrics from its episode rows, its acceptance verdicts from
-its thresholds, its capture order sentence from its own timestamps, and its
-digests against the tree, the agent-factory digest it reports among them, derived
-from the factory's own bytes and from the retained fixture's identity rather than
-restated.
+and `probes/evidence.py check-record result.json` re-derives the retained record's
+claims — its metrics from its episode rows, its acceptance verdicts from its
+thresholds, its capture order sentence from its own timestamps and its named
+superseded captures from the files on the tree, its agent-factory and dispatcher
+digests from those modules' own bytes, and its reserve and composition claims from
+the model rather than from the prose beside them.
 
-The capture was made twice, and the superseded one is kept beside it as
-`probes/predeclared_objective.pre-agent-move.json`. The first capture
-(2026-09-29T17:11:15.420024+00:00) preceded the first ten-seed run
-(`runs/20260929T171936702109Z-3733d12b`), which was valid at the time; the plan
-agent was then moved out of the shared factory into its objective module (see
-*What this experiment adds*), so the objective module's source changed and a fresh
-capture was taken before the evaluation was re-run
-(`runs/20260929T174836231811Z-b6c35f6b`). The re-run's per-episode rows and metrics
-are identical to the superseded run's — `result.json` records that comparison —
-so the reorganisation changed no outcome, and the declared *rationale* section's
-digest is the same in both captures because the module move touched no declared
-weight or constant.
+The capture has been made three times, and both superseded ones are kept beside it.
+The first (2026-09-29T17:11:15.420024+00:00) preceded the first ten-seed run
+(`runs/20260929T171936702109Z-3733d12b`); the plan agent was then moved out of the
+shared factory into its objective module (see *What this experiment adds*), so the
+objective module's source changed and a second capture
+(`2026-09-29T17:45:37.951959+00:00`) was taken before the evaluation was re-run
+(`runs/20260929T174836231811Z-b6c35f6b`); and the identity walk was then corrected
+so that a plan record covers the module that decides which implementation is built
+(*The dispatch is part of the plan's identity*, above), which changes the declared
+identity itself, so a third capture was taken before this evaluation was re-run
+(`runs/20260930T010141245162Z-edcbfcfe`). The superseded captures are
+`probes/predeclared_objective.pre-agent-move.json` and
+`probes/predeclared_objective.pre-dispatch.json`, each valid for the design it
+preceded; `check-record` requires each to exist, to predate the current capture and
+to describe a different subject. Every re-run's per-episode rows and metrics are
+identical to the run it superseded (`result.json` records that comparison), so the
+reorganisation and the identity correction changed no outcome, and the declared
+*rationale* section's digest is the same in all three captures because none of the
+changes touched a declared weight or constant.
+
+The correction is what makes the incomplete identity visible: the previous
+publication's plan record, `runs/20260929T174836231811Z-b6c35f6b/run.json`, now
+fails `verify` — “Recorded objective.sources keys […] do not match […]” — because
+its `sources` lacked `block_stack_ai.runner` and `block_stack_ai.engine`. That is
+the intended behaviour of a corrected identity, not a regression: the record's own
+identity is incomplete for the code that chose its placements, which is exactly
+what the reviewer's finding said was uncovered.
 
 **Frozen records still verify.** A record's identity covers, among other modules,
-the module that builds the agent that chose its placements. For Experiment 003's
-records that module is the shared agent factory, `block_stack_ai/agents.py`, and
-its source is byte-identical to the branch base — the digest in the retained
-fixture's identity, `2b24e1b2…`, is the digest of this tree's file. Nothing this
-experiment adds touches it: the plan agent is declared in its objective module and
-the runner dispatches to it, so the factory keeps building exactly the agents its
-frozen source defines.
+the one that selects which implementation is built. For Experiment 003's records
+that module is the shared agent factory, `block_stack_ai/agents.py`, and its source
+is byte-identical to the branch base — the digest in the retained fixture's
+identity, `2b24e1b2…`, is the digest of this tree's file. Nothing this experiment
+adds touches it: the plan agent is declared in its objective module and the runner
+dispatches to it, so the factory keeps building exactly the agents its frozen
+source defines.
 
 That is checked rather than asserted.
 [`probes/legacy_v6_tetris_record.json`](probes/legacy_v6_tetris_record.json) is a
@@ -255,18 +306,48 @@ their optional sections (versions 1, 2, 3, 4, 5 and 6), the frozen objective's
 module, weights and formula are untouched, and every published row of Experiment
 003 reproduces here — *Baseline reproduction*, above.
 
-Two things about the generalised section are worth stating precisely. The identity
-walk seeds the selected agent's objective module *and* the module that builds it,
-so the plan's identity covers `wellplan`, `agents`, `heuristic`, `pathaware` and
-`pieces` — the plan agent subclasses the same placement controller, so a change to
-that controller still moves the plan's identity. And the partial-reload check skips
-the other declared objectives' modules, exactly as the walk does: a module that
-computes a *different* agent's choices is not part of this record's code path, so a
-reference it holds into this closure no longer makes this record name code that
-will not run. Both Experiment 003 counterexamples — the objective module reloaded
-alone, and the factory's module reloaded alone — are still refused, because in each
-case the stale reference is held by a module the identity covers or by the factory
-itself.
+**The dispatch is part of the plan's identity.** No record used to name the module
+that decides *which* implementation is built: for the plan both identity seeds were
+`wellplan`, so `runner.build_agent` and `runner.DECLARED_OBJECTIVES` — the code
+that routes `tetris_plan` to `wellplan` at all — appeared in no `sources` mapping,
+and a change there that still replayed the recorded inputs would have been
+certified. The walk now seeds the module that selects the implementation: the
+shared factory for an agent it defines, and `runner`'s dispatch for an agent whose
+objective module owns it. The plan's identity is therefore `wellplan`, `agents`,
+`heuristic`, `pathaware`, `pieces`, `engine` and `runner` — seven modules, produced
+by the walk rather than listed by hand — and that is the identity the capture
+records and the retained record carries; `probes/evidence.py check-record` derives
+the runner's digest from this tree's own bytes and compares it with both copies.
+The Tetris identity keeps the five modules its version 6 writer recorded, because
+the retained fixture and Experiment 003's capture are compared against exactly that
+mapping and adding the dispatch to it would invalidate both. The dispatcher's
+coverage is therefore the plan's: a change to `runner.build_agent` that kept a
+*Tetris* record replaying would still go unreported, which is the residue of a
+shape frozen by Experiment 003's retained evidence rather than a claim that the
+dispatch is irrelevant to that agent.
+
+The wider shape the external review asked for — one that covers the dispatcher for
+*every* declared agent — is ruled out by the same retained evidence, and that is
+checked rather than argued. Adding the dispatcher to the Tetris identity in place
+would move it off the five modules Experiment 003's `probes/predeclared_objective.json`
+and `probes/legacy_v6_tetris_record.json` record, so `check-predeclaration` and
+`check-legacy` would report them; and a new format version whose shape covers the
+dispatcher for both agents would move the writer's current version, which is what
+Experiment 003's retained `record_format_versions` prose is generated from —
+`probes/evidence.py check-record` re-derives both facts (`dispatcher_bound`), and
+`tests/test_unit.py::test_the_dispatcher_bound_is_derived_from_the_retained_artifacts`
+shows the second by bumping the constant and watching Experiment 003's own
+derivation stop matching. So this experiment covers the dispatch for the agent this
+design adds and states the residual for the other, rather than trading a retained
+verification for it.
+
+The partial-reload check skips the other declared objectives' modules, exactly as
+the walk does: a module that computes a *different* agent's choices is not part of
+this record's code path, so a reference it holds into this closure no longer makes
+this record name code that will not run. Both Experiment 003 counterexamples — the
+objective module reloaded alone, and the factory's module reloaded alone — are
+still refused, because in each case the stale reference is held by a module the
+identity covers or by the factory itself.
 
 ## Reproduction
 
@@ -295,8 +376,12 @@ $PY experiments/004-bounded-well-plan/probes/evidence.py all
 * The agent is a one-piece, straight-drop, commit-per-piece policy: it does not
   search, it knows only the visible preview, and it cannot repair a covered cell.
   Its reserve is therefore often partial — 60 of its 15857 placements were
-  four-line clears — and the plan only ever earns a reserve while the designated
-  column is open.
+  four-line clears — and it is only ever earned through the field: `well_reserve`
+  counts the rows a vertical I would complete above the designated column's
+  topmost filled cell, so a well already filled low down still holds a reserve for
+  the rows above it, and the objective's count is not restricted to a column that
+  is open to the floor (the derived case in `objective_mechanism` is exactly that
+  board).
 * It does not match the frozen `lookahead` agent's survival (620.0 against 912.8
   mean lines). The rate is preserved, the lines and score improve on Experiment
   003, and the aspirational comparison is not met.
@@ -326,13 +411,17 @@ $PY experiments/004-bounded-well-plan/probes/evidence.py all
 ## Conclusion
 
 The bounded well plan meets all three acceptance thresholds on Experiment 003's
-identical ten seeds, and it does so through the explicit plan rather than through a
-re-weighted version of Experiment 003's objective: a designated well column, a
-stack-height budget, a reserve measured as the rows a vertical I would actually
-clear, and a spend-or-abandon rule at a self-tracked I-drought bound. The reserve
-is what the objective is measured on, and the abandon phase is what keeps the
-stack from growing while the plan waits. The cost is survival: the plan clears
-fewer lines than the frozen `lookahead` agent on the same seeds, so the result is a
-preserved Tetris rate with better lines and score than Experiment 003, not the
-aspirational 912.8 mean lines.
+identical ten seeds. Two changes to the objective produce that, and the result is
+attributed to both rather than to the plan alone: the explicit plan — a designated
+well column, a stack-height budget, a reserve measured as the rows a vertical I
+would actually clear above the column's topmost filled cell, and a spend-or-abandon
+rule at a self-tracked I-drought bound — and a composition that scores the current
+placement's whole plan value, where Experiment 003 scores only its clear term (the
+derived `objective_mechanism` block records one reachable board per phase on which
+the two compositions select different placements). The reserve is what the
+objective is measured on, and the abandon phase is what keeps the stack from
+growing while the plan waits. The cost is survival: the plan clears fewer lines
+than the frozen `lookahead` agent on the same seeds, so the result is a preserved
+Tetris rate with better lines and score than Experiment 003, not the aspirational
+912.8 mean lines.
 

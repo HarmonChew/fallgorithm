@@ -1526,12 +1526,20 @@ def test_suite_records_the_objective_of_the_configured_agent(tmp_path, monkeypat
         "weights": wellplan_weights_record(),
         "sources": runner._objective_sources(agent="tetris_plan"),
     }
+    # The plan's identity covers the objective module, the frozen board model and
+    # reachable set it calls, the wrapper that drives it, and the module that
+    # selects its implementation — the runner's dispatch, whose ``build_agent`` and
+    # ``DECLARED_OBJECTIVES`` decide that ``wellplan`` builds this agent at all.
+    # The walk from that module also reaches the game factory it holds, which is
+    # the code that creates the state every choice reads.
     assert set(record["objective"]["sources"]) == {
         "block_stack_ai.wellplan",
         "block_stack_ai.heuristic",
         "block_stack_ai.pathaware",
         "block_stack_ai.pieces",
         "block_stack_ai.agents",
+        "block_stack_ai.engine",
+        "block_stack_ai.runner",
     }
     assert verify_run(path, factory) == []
 
@@ -1564,12 +1572,109 @@ def test_the_two_declared_objectives_keep_separate_identities():
     into the Tetris identity and the Tetris module into the plan's. That would
     make one objective's record fail under an edit to the other's code, which no
     choice of the first ever runs; the walk therefore excludes the other declared
-    objectives, and each identity is the five modules its own agent runs through.
+    objectives. The Tetris identity is the five modules its own version-6 writer
+    recorded — the retained fixture and Experiment 003's capture are compared
+    against that shape — while the plan's identity adds the module that selects its
+    implementation, because that dispatch is the code that decides ``wellplan``
+    builds the agent at all.
     """
     assert "block_stack_ai.wellplan" not in runner._objective_sources()
     assert "block_stack_ai.tetris" not in runner._objective_sources(agent="tetris_plan")
+    plan_identity = runner._objective_sources(agent="tetris_plan")
+    assert "block_stack_ai.runner" in plan_identity
+    assert "block_stack_ai.runner" not in runner._objective_sources()
+    assert runner._choice_driver("tetris_plan") is sys.modules["block_stack_ai.runner"]
+    assert runner._choice_driver("tetris") is agents_module
+    # The provenance recorder is the one package module the walk excludes, and it
+    # is excluded because it cannot record its own load: it is the module that
+    # installs the recorder. Its digest is therefore not part of any identity, and
+    # the writer's view of it is unavailable rather than a later read of the file —
+    # which is what makes the exclusion the honest shape instead of a silent gap.
+    recorder = sys.modules["block_stack_ai.sourceidentity"]
+    assert recorder.__name__ not in plan_identity
+    assert recorder.__name__ not in runner._objective_sources()
+    with pytest.raises(VerificationError, match="did not load through the package's own"):
+        runner._module_source_digest(recorder, loaded=True)
+    assert runner._module_source_digest(recorder, loaded=False) == hashlib.sha256(
+        Path(recorder.__file__).read_bytes()).hexdigest()
     assert runner._declared_agents(("lookahead", "tetris_plan")) == ("tetris_plan",)
     assert runner._declared_agents(("greedy", "random")) == ()
+
+
+def test_a_change_to_the_dispatch_that_kept_the_choices_is_caught(tmp_path, monkeypatch):
+    """The module that selects the plan's implementation is part of its identity.
+
+    The reviewer's finding: the walk seeded the objective module and the module
+    that *builds* the agent, so for the plan those two seeds were the same module
+    and the runner's dispatch — the code that decides ``tetris_plan`` is built by
+    ``wellplan`` at all — appeared in no record's identity. A change there that
+    happened to replay the same inputs was therefore invisible. The plan's identity
+    now covers that module, so the same record with the dispatcher's bytes changed
+    is reported, while the unchanged module leaves the record verifying with only
+    the engine's working-tree warning.
+    """
+    path, factory, record = _objective_suite(
+        tmp_path, monkeypatch, agents=("lookahead", "tetris_plan"))
+    runner_digest = hashlib.sha256(Path(runner.__file__).read_bytes()).hexdigest()
+    assert record["objective"]["sources"]["block_stack_ai.runner"] == runner_digest
+    assert verify_run(path, factory) == []
+
+    mutated = tmp_path / "runner-changed.py"
+    mutated.write_bytes(Path(runner.__file__).read_bytes() + b"\n# dispatch changed\n")
+    with monkeypatch.context() as patch:
+        patch.setattr(runner, "__file__", str(mutated))
+        with pytest.raises(
+            VerificationError,
+            match=r"objective\.sources\.block_stack_ai\.runner: recorded "
+                  rf"'{runner_digest}', replayed '[0-9a-f]{{64}}'",
+        ):
+            verify_run(path, factory)
+
+
+def test_the_dispatcher_bound_is_derived_from_the_retained_artifacts(monkeypatch):
+    """The coverage bound is re-derived, including the alternative it rules out.
+
+    The reviewer's finding asked for a wider identity shape that covers the
+    dispatcher for *every* declared agent, which needs a new format version. Two
+    retained artifacts of Experiment 003 stand in the way, and both are derived
+    here rather than asserted: its capture and the frozen fixture record the Tetris
+    identity as the five modules the version-6 writer walked, and its retained
+    ``record_format_versions`` prose is generated from the writer's *current*
+    format version, so moving that constant makes the prose fail the registered
+    check `test_record_derives_the_format_version_prose`. The retained block has to
+    be this derivation, so a stale statement about who covers the dispatcher cannot
+    pass.
+    """
+    probe = _load_plan_probe("exp004_plan_bound_probe")
+    derived = probe.dispatcher_bound()
+    assert derived["choice_driver"] == {"tetris": "block_stack_ai.agents",
+                                        "tetris_plan": "block_stack_ai.runner"}
+    assert derived["plan_identity_covers"] is True
+    assert derived["tetris_identity_covers"] is False
+    assert derived["tetris_identity_keys"] == derived["fixture_identity_keys"]
+    assert derived["experiment_003_version_prose_matches"] is True
+    probe.check_dispatcher_bound({"dispatcher_coverage": derived})
+
+    stale = json.loads(json.dumps(derived))
+    stale["tetris_identity_covers"] = True
+    with pytest.raises(AssertionError, match="not the one this tree derives"):
+        probe.check_dispatcher_bound({"dispatcher_coverage": stale})
+
+    stale_statement = json.loads(json.dumps(derived))
+    stale_statement["statement"] = (
+        "the Tetris identity covers the dispatcher, so a change to it is caught")
+    with pytest.raises(AssertionError, match="not the one this tree derives"):
+        probe.check_dispatcher_bound({"dispatcher_coverage": stale_statement})
+
+    # The alternative the finding asks for needs the writer's current version to
+    # move, and that is exactly what Experiment 003's retained prose derives from.
+    with monkeypatch.context() as patch:
+        patch.setattr(runner, "SUITE_FORMAT_VERSION", runner.SUITE_FORMAT_VERSION + 1)
+        bumped = probe.dispatcher_bound()
+        assert bumped["experiment_003_version_prose_matches"] is False
+        assert bumped["experiment_003_current_suite_token"] == "7 current suite"
+        with pytest.raises(AssertionError):
+            probe.check_dispatcher_bound({"dispatcher_coverage": bumped})
 
 
 def test_a_suite_configures_at_most_one_declared_objective(tmp_path, monkeypatch):
@@ -1676,18 +1781,21 @@ def test_the_plan_predeclaration_binds_the_cited_record(tmp_path, monkeypatch):
 def test_the_plan_result_record_rederives_its_metrics_and_capture(tmp_path):
     """The retained result's own claims are re-derived, not trusted.
 
-    Three classes of retained claim are checked against evidence outside them: the
+    Four classes of retained claim are checked against evidence outside them: the
     metrics block has to be the aggregate of the episode rows the same file
     carries, so a mistyped mean or a rate over the wrong denominator is reported
     instead of read as a measurement; the predeclaration block's order sentence
     has to be the one its own two timestamps reconstruct, its objective and
     identity have to equal the capture and the tree as they stand, and the cited
     run's ``created_at`` has to be the one it names while this checkout still holds
-    that temporary run; and the agent-factory digest the legacy-verification
-    block, the objective section and the capture carry has to be the digest of the
-    factory module's bytes on this tree and of that module in the retained frozen
-    fixture's identity, so a value written for the superseded design -- the plan
-    agent added to the shared factory -- is reported rather than read.
+    that temporary run; the agent-factory and dispatcher digests the
+    legacy-verification block, the objective section and the capture carry have to
+    be the digests of those modules' own bytes on this tree -- the factory's also
+    equal to the digest the retained frozen fixture's identity records -- so a
+    value written for the superseded design, or one that is not the code that
+    selects the plan's agent, is reported rather than read; and the mechanism block
+    has to be what the tree's model derives, so a sentence about the reserve or the
+    composition that the code no longer supports is reported.
     """
     probe = _load_plan_probe("exp004_plan_record_probe")
     retained = (engine.PROJECT_ROOT / "experiments" / "004-bounded-well-plan"
@@ -1726,6 +1834,31 @@ def test_the_plan_result_record_rederives_its_metrics_and_capture(tmp_path):
     with pytest.raises(AssertionError, match="is not what"):
         probe.check_record(path)
 
+    # The aspirational block is derived too, and against the other configured agent
+    # rather than against itself: a block whose ``achieved`` is the comparison
+    # agent's own number -- what a regeneration that copied the wrong column
+    # produces -- is reported rather than read as the plan's measurement.
+    aspiration = json.loads(json.dumps(record))
+    aspiration["acceptance"]["aspirational"]["mean_lines"]["achieved"] = (
+        aspiration["acceptance"]["aspirational"]["mean_lines"]["reported"])
+    path.write_text(json.dumps(aspiration), encoding="utf-8")
+    with pytest.raises(AssertionError, match="not the plan agent's own lines_mean"):
+        probe.check_record(path)
+
+    misreported = json.loads(json.dumps(record))
+    misreported["acceptance"]["aspirational"]["mean_score"]["reported"] = 1.0
+    path.write_text(json.dumps(misreported), encoding="utf-8")
+    with pytest.raises(AssertionError, match="reported is not lookahead's score_mean"):
+        probe.check_record(path)
+
+    # The baseline block is derived from Experiment 003's own retained rows, so a
+    # number that is not their aggregate is reported as well.
+    stale_baseline = json.loads(json.dumps(record))
+    stale_baseline["baseline"]["published_metrics"]["tetris"]["lines_mean"] = 1.0
+    path.write_text(json.dumps(stale_baseline), encoding="utf-8")
+    with pytest.raises(AssertionError, match="is not the aggregate of Experiment 003's"):
+        probe.check_record(path)
+
     miscounted = json.loads(json.dumps(record))
     miscounted["retained_replay"]["episodes_compared"] = 19
     path.write_text(json.dumps(miscounted), encoding="utf-8")
@@ -1760,6 +1893,127 @@ def test_the_plan_result_record_rederives_its_metrics_and_capture(tmp_path):
     path.write_text(json.dumps(stale_objective), encoding="utf-8")
     with pytest.raises(AssertionError, match="agent-factory digest"):
         probe.check_record(path)
+
+    # The dispatcher's digest is derived the same way: the plan's identity covers
+    # the runner's own bytes, so a value that is not them is reported.
+    stale_runner = json.loads(json.dumps(record))
+    stale_runner["objective_record"]["sources"]["block_stack_ai.runner"] = "0" * 64
+    path.write_text(json.dumps(stale_runner), encoding="utf-8")
+    with pytest.raises(AssertionError, match="dispatcher digest"):
+        probe.check_record(path)
+
+    # The mechanism block is derived from the model too, so a contradicting number
+    # or a stale sentence about the objective's behaviour is reported rather than
+    # read as evidence.
+    stale_reserve = json.loads(json.dumps(record))
+    stale_reserve["objective_mechanism"]["reserve_with_an_occupied_well"]["well_reserve"] = 0
+    path.write_text(json.dumps(stale_reserve), encoding="utf-8")
+    with pytest.raises(AssertionError, match="not the one the tree's model derives"):
+        probe.check_record(path)
+
+    stale_composition = json.loads(json.dumps(record))
+    contradiction = stale_composition["objective_mechanism"][
+        "composition_differs_from_experiment_003"][0]["statement"]
+    assert "clear_term alone" in contradiction
+    stale_composition["objective_mechanism"][
+        "composition_differs_from_experiment_003"][0]["statement"] = (
+            "the plan composes a current placement exactly as Experiment 003's "
+            "objective composes them")
+    path.write_text(json.dumps(stale_composition), encoding="utf-8")
+    with pytest.raises(AssertionError, match="not the ones the tree's model derives"):
+        probe.check_record(path)
+
+    # The superseded captures are part of the ordering story too: the block has to
+    # name captures that are on the tree beside the current one, older than it and
+    # of a different subject, so the re-capture it claims can be checked from the
+    # artifacts rather than believed.
+    unlisted = json.loads(json.dumps(record))
+    unlisted["predeclared_objective"]["superseded_captures"] = []
+    path.write_text(json.dumps(unlisted), encoding="utf-8")
+    with pytest.raises(AssertionError, match="names no superseded capture"):
+        probe.check_record(path)
+
+    missing_capture = json.loads(json.dumps(record))
+    missing_capture["predeclared_objective"]["superseded_captures"].append(
+        "experiments/004-bounded-well-plan/probes/not-retained.json")
+    path.write_text(json.dumps(missing_capture), encoding="utf-8")
+    with pytest.raises(AssertionError, match="is not on this tree"):
+        probe.check_record(path)
+
+    self_superseded = json.loads(json.dumps(record))
+    self_superseded["predeclared_objective"]["superseded_captures"].append(
+        self_superseded["predeclared_objective"]["capture_file"])
+    path.write_text(json.dumps(self_superseded), encoding="utf-8")
+    with pytest.raises(AssertionError, match="lists the current capture as superseded"):
+        probe.check_record(path)
+
+
+def test_the_plan_mechanism_claims_are_derived_from_the_model(monkeypatch):
+    """The retained prose about the objective's behaviour is derived, not restated.
+
+    Two retained claims of this experiment were written from the design and were
+    false about the code. The reserve claim said a nonempty designated well column
+    makes the reserve zero; a controller-executable sequence reaches a board whose
+    well column is occupied and whose reserve is one, because the I fills the rows
+    *above* the column's topmost filled cell. The composition claim said the plan
+    composes a current placement "exactly as Experiment 003's objective composes
+    them"; the plan adds the current placement's whole value where Experiment 003
+    adds only its clear term, and the two select different placements on reachable
+    boards in both phases. Both are now derived through ``pathaware`` and
+    ``wellplan`` from recorded, executable placement sequences, so a retained copy
+    that no longer matches the derivation — a contradicting number, a stale
+    sentence or a degenerate case that shows nothing — is reported.
+    """
+    probe = _load_plan_probe("exp004_plan_mechanism_probe")
+    derived = probe.mechanism_claims()
+    reserve = derived["reserve_with_an_occupied_well"]
+    assert reserve["well_column_mask"] != 0 and reserve["well_reserve"] > 0
+    assert tuple(reserve["columns"]) == probe.board_from_sequence(reserve["sequence"])
+    assert reserve["well_column_topmost_filled_row"] is not None
+    for case in derived["composition_differs_from_experiment_003"]:
+        assert case["plan_choice"] != case["prior_composition_choice"]
+        assert tuple(case["columns"]) == probe.board_from_sequence(case["sequence"])
+    probe.check_mechanism({"objective_mechanism": derived})
+
+    contradicted = json.loads(json.dumps(derived))
+    contradicted["reserve_with_an_occupied_well"]["well_reserve"] = 0
+    with pytest.raises(AssertionError, match="not the one the tree's model derives"):
+        probe.check_mechanism({"objective_mechanism": contradicted})
+
+    stale_sentence = json.loads(json.dumps(derived))
+    stale_sentence["reserve_with_an_occupied_well"]["statement"] = (
+        "the reserve is zero whenever the well column is not empty")
+    with pytest.raises(AssertionError, match="not the one the tree's model derives"):
+        probe.check_mechanism({"objective_mechanism": stale_sentence})
+
+    composed_alike = json.loads(json.dumps(derived))
+    case = composed_alike["composition_differs_from_experiment_003"][0]
+    case["prior_composition_choice"] = case["plan_choice"]
+    with pytest.raises(AssertionError, match="not the ones the tree's model derives"):
+        probe.check_mechanism({"objective_mechanism": composed_alike})
+
+    missing = json.loads(json.dumps(derived))
+    del missing["composition_differs_from_experiment_003"]
+    assert missing != derived
+    with pytest.raises(AssertionError, match="not the ones the tree's model derives"):
+        probe.check_mechanism({"objective_mechanism": missing})
+
+    # The sentinels hold the derivation itself: a sequence that leaves the well
+    # column empty, or a case both compositions agree on, cannot be the evidence
+    # for the sentence it is paired with, so it is reported rather than read as a
+    # weaker form of the claim.
+    with monkeypatch.context() as patch:
+        patch.setattr(probe, "RESERVE_SEQUENCE", (("I", 1, 4),))
+        with pytest.raises(AssertionError, match="empty well column"):
+            probe.check_mechanism({"objective_mechanism": probe.mechanism_claims()})
+    with monkeypatch.context() as patch:
+        patch.setattr(probe, "COMPOSITION_CASES", (
+            {"phase": "build", "sequence": (), "piece": "I", "next_piece": "I"},
+        ))
+        with pytest.raises(AssertionError, match="does not show a divergence"):
+            probe.check_mechanism({"objective_mechanism": probe.mechanism_claims()})
+    # The unpatched derivation still passes after both sentinel checks.
+    probe.check_mechanism({"objective_mechanism": probe.mechanism_claims()})
 
 
 def test_the_plan_probe_aggregate_command_runs_without_arguments(monkeypatch, capsys):

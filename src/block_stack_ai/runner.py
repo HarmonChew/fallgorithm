@@ -92,7 +92,15 @@ agent wrapper that hands the objective its state included: the wrapper imports
 the objective rather than the other way round, so an identity walked outward
 from the objective alone could not reach it, and a wrapper change that kept the
 replayed choices was certified. A version 5 record is compared against that
-older shape, which is the identity its writer recorded.
+older shape, which is the identity its writer recorded. Beside the wrapper, the
+walk covers the module that selects which implementation is built: the shared
+agent factory for an agent it defines, or the runner's dispatch for an agent a
+declared objective owns, because a change there can build a different
+implementation for the same agent name while still replaying the recorded
+inputs. The Tetris agent's seed set stays the one its version 6 writer recorded
+— the retained fixture and Experiment 003's capture are compared against it — so
+that coverage extends to the agent whose objective module owns it, which is the
+one this design introduces.
 
 The section is keyed by the agent, not by one hard-wired objective: the module
 it names is the one that declares the configured agent's objective, whichever
@@ -146,9 +154,14 @@ SUITE_FORMAT_VERSION = 6  # a suite, which always records the sections and the i
 # the walk that produces it. ``_IDENTITY_OUTWARD`` is the modules the module that
 # declares the objective reaches: itself, and the package modules its own code
 # calls. ``_IDENTITY_CHOICE`` adds the agent wrapper that produces the choices —
-# the class whose ``_choose`` hands the objective its state and the factory that
-# selects it — because the wrapper imports the objective, so no walk outward from
-# the objective can reach it.
+# the class whose ``_choose`` hands the objective its state — and the module that
+# selects which implementation is built: the shared agent factory for an agent it
+# defines itself, or the runner's dispatch for an agent a declared objective owns.
+# The wrapper imports the objective, so no walk outward from the objective can
+# reach the wrapper, and the selection runs before any choice exists, so the
+# objective's own namespace cannot reach it either. The Tetris agent's seed set is
+# the one its version 6 writer recorded, because seeded records (the retained
+# version 6 fixture and Experiment 003's capture) are compared against it.
 _IDENTITY_OUTWARD = "outward"
 _IDENTITY_CHOICE = "choice"
 # What each suite version's own writer always emitted, as ``(sections,
@@ -205,6 +218,15 @@ _OBJECTIVE_SOURCES_FIELD = "sources"
 # Every package module belongs to this namespace; the objective's modules are
 # discovered from its own namespace rather than hand-listed.
 _PACKAGE_PREFIX = f"{__package__}."
+# The package modules that are never part of a choice's identity, by name. The
+# provenance recorder is the one: it fixes every other module's digest as it
+# loads, so it computes no placement, and it cannot record its own load because
+# it is the module that installs the recorder — a record that named it could
+# never be written. Its absence is not a gap in the identity of a *choice*: no
+# choice reads a byte of it. A module that merely failed to load through the
+# recorder still raises (``_module_source_digest``), so this excludes the
+# recorder alone rather than papering over a missing digest.
+_IDENTITY_EXCLUDED_MODULES = frozenset({f"{__package__}.sourceidentity"})
 
 # The agents whose choices a separately declared objective computes: for each
 # one, the module that declares its weights and formula, and — when its objective
@@ -757,20 +779,42 @@ def _choice_walk_seeds(agent: str) -> list[ModuleType]:
     parameter it reads and executes the placement it returns, and it imports the
     objective rather than the other way round, so a walk outward from the
     objective can never reach it. It is found from the code instead of
-    hand-listed: the factory the runner builds agents with is what selects the
-    wrapper, so the walk starts from the module that defines that factory, and
-    the class the factory returns is reached from there like any other name that
-    module's code holds. A wrapper moved to another module is followed there, and
-    a module that stops producing choices drops out of the walk by itself.
+    hand-listed: the selection that decides which implementation is built is what
+    picks the wrapper, so the walk starts from the module that makes that
+    selection, and the class it returns is reached from there like any other name
+    that module's code holds. A wrapper moved to another module is followed
+    there, and a module that stops producing choices drops out of the walk by
+    itself.
 
     Both seeds are selected by the agent name: the objective module is the one
     that declares *this* agent's objective, and the driver is the module that
-    builds the agent — the shared factory for the agents it defines, or the
-    objective module that owns its agent — so a suite that configures the well
-    plan walks the plan's own code.
+    selects the implementation — the shared agent factory for an agent it defines
+    (`create_agent` chooses among the classes it holds), or the runner's dispatch
+    for an agent a declared objective owns (`build_agent` and
+    `DECLARED_OBJECTIVES` decide that the objective's module builds it at all, and
+    the objective module is already the first seed, so naming it twice named
+    nothing else). A record of the well plan therefore covers the dispatch that
+    selects its agent, and the Tetris agent's seed set is the one its version 6
+    writer recorded, which is what keeps the records written before this
+    experiment verifying.
     """
-    objective, owner = DECLARED_OBJECTIVES[agent]
-    return [objective, owner or sys.modules[create_agent.__module__]]
+    objective = DECLARED_OBJECTIVES[agent][0]
+    return [objective, _choice_driver(agent)]
+
+
+def _choice_driver(agent: str) -> ModuleType:
+    """The package module that selects which implementation builds this agent.
+
+    An agent the shared factory defines is selected there, by the ``create_agent``
+    branch that returns its class. An agent a declared objective owns is selected
+    by the runner's dispatch, which reads ``DECLARED_OBJECTIVES`` and routes the
+    build to the objective's module; that dispatch is code the choice runs through
+    in exactly the same way, because a change to it can build a different
+    implementation for the same agent name.
+    """
+    if DECLARED_OBJECTIVES[agent][1] is None:
+        return sys.modules[create_agent.__module__]
+    return sys.modules[build_agent.__module__]
 
 
 def _sibling_objective_modules(agent: str) -> set[int]:
@@ -827,12 +871,16 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE, *, agent: str = TETRIS_AGE
     imports, and Experiment 002's reachable-set enumeration it reuses — and the
     agent wrapper that drives it: the class whose ``_choose`` supplies the state
     (the board, the current and preview pieces, the level, the ruleset and the
-    mode) and the factory that selects that class. Hashing only the declaring
+    mode), the factory that selects that class, and the module that decides which
+    implementation is built at all — the runner's dispatch, for an agent whose
+    objective module owns it (``_choice_driver``). Hashing only the declaring
     module would leave the same hole one level deeper — a helper's change alters
     every value the objective computes while the declaring module's own text is
     unchanged — so the closure is walked from the objective's own namespace and
     from the wrapper's, instead of being hand-listed, and a module that stops
-    being used drops out of it by itself.
+    being used drops out of it by itself. A change to the dispatch that still
+    replays the recorded inputs is caught by the same walk, because the dispatch
+    module is one of the seeds and its bytes are hashed with the rest.
 
     ``agent`` selects which objective that is: the walk is seeded from the module
     that declares *that* agent's objective, so the identity follows the
@@ -858,7 +906,8 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE, *, agent: str = TETRIS_AGE
     sources: dict[str, str] = {}
     while pending:
         module = pending.pop()
-        if id(module) in excluded or module.__name__ in sources:
+        if (id(module) in excluded or module.__name__ in sources
+                or module.__name__ in _IDENTITY_EXCLUDED_MODULES):
             continue
         sources[module.__name__] = _module_source_digest(module, loaded=loaded)
         for name, value in vars(module).items():

@@ -50,14 +50,26 @@ The two phases are the plan:
   eagerly, which is how it gives the well back when the I is late or the stack
   reaches the budget.
 
-The value of a current placement is its own settled-board value plus the best
-value the preview piece can reach on the board it leaves, exactly as Experiment
-003's objective composes them, and the phase of the preview is read the same way
-from the visible preview: it is ``BUILD`` when the preview is an I (the piece
-that completes the reserve) or while the settled stack is still under the budget.
-A current placement whose preview piece has no admissible placement has value
-``-inf``. Ties keep the first placement in canonical enumeration order
-(orientation ascending, then column ascending).
+The value of a current placement is its own plan value plus the best plan value
+the preview piece can reach on the board it leaves, and the phase of the preview
+is read the same way from the visible preview: it is ``BUILD`` when the preview
+is an I (the piece that completes the reserve) or while the settled stack is
+still under the budget. A current placement whose preview piece has no admissible
+placement has value ``-inf``. Ties keep the first placement in canonical
+enumeration order (orientation ascending, then column ascending).
+
+Scoring the current placement's *whole* value is a second change from Experiment
+003, beside the plan, and the experiment's measured result is attributed to both.
+Experiment 003's objective adds only the current placement's clear term
+(``clear_term``) to the preview's value, so its current board is judged by the
+clear it makes and by nothing else; this objective adds :func:`plan_value` for
+the same placement, which is the field terms, the reserve and the overflow in
+``BUILD`` and the entire frozen :func:`~block_stack_ai.heuristic.feature_score`
+in ``SPEND``. The two are therefore not the same function of a current board even
+where the plan's phase, budget and drought memory are held equal, and the
+difference moves the chosen placement on reachable boards: the experiment's
+retained evidence derives one such board in each phase rather than asserting that
+the compositions agree.
 
 The reachable-set enumeration is Experiment 002's own
 :func:`block_stack_ai.pathaware._reachable`, reused rather than re-derived so the
