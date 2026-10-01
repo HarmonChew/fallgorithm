@@ -1,16 +1,26 @@
 from __future__ import annotations
 
+import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import random
 import subprocess
+import sys
 
 import pytest
 
 from block_stack_ai.agents import DOWN, create_agent
 from block_stack_ai.engine import PROJECT_ROOT, create_game, engine_executable
 from block_stack_ai.replay import export_replay
-from block_stack_ai.heuristic import SPAWN_ORIGIN_Y, WIDTH, board_grid, enumerate_placements, settle
+from block_stack_ai import wellplan
+from block_stack_ai.heuristic import (
+    SPAWN_ORIGIN_Y,
+    WIDTH,
+    board_grid,
+    enumerate_placements,
+    settle,
+)
 from block_stack_ai.pathaware import (
     grid_columns,
     plan_mask,
@@ -24,6 +34,7 @@ from block_stack_ai.runner import (
     LEGACY_SUITE_FORMAT_VERSION,
     PRIOR_SUITE_FORMAT_VERSION,
     SUITE_FORMAT_VERSION,
+    WRAPPER_IDENTITY_SUITE_FORMAT_VERSION,
     FORMAT_VERSION,
     VerificationError,
     load_config,
@@ -33,6 +44,7 @@ from block_stack_ai.runner import (
     verify_run,
 )
 from block_stack_ai.tetris import weights_record as tetris_weights_record
+from block_stack_ai.wellplan import weights_record as wellplan_weights_record
 
 
 pytestmark = pytest.mark.integration
@@ -40,6 +52,17 @@ CONFIG = PROJECT_ROOT / "experiments" / "000-connection" / "config.json"
 SUITE_CONFIG = PROJECT_ROOT / "experiments" / "001-greedy-heuristic" / "config.json"
 LOOKAHEAD_CONFIG = PROJECT_ROOT / "experiments" / "002-path-aware-lookahead" / "config.json"
 TETRIS_CONFIG = PROJECT_ROOT / "experiments" / "003-tetris-aware-agent" / "config.json"
+PLAN_CONFIG = PROJECT_ROOT / "experiments" / "004-bounded-well-plan" / "config.json"
+
+
+def _plan_probe(name="exp004_plan_probe"):
+    """The 004 probe file, loaded from the experiment so its checks can be driven."""
+    path = (PROJECT_ROOT / "experiments" / "004-bounded-well-plan" / "probes"
+            / "evidence.py")
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_create_read_and_advance_exact_frames():
@@ -657,6 +680,245 @@ def test_tetris_agent_clears_four_rows_on_a_ready_native_well():
         assert all(cell == 0 for row in settled[2:] for cell in row)
 
 
+def test_plan_agent_clears_four_rows_on_a_ready_native_well():
+    """The plan's reserve is a real four-row clear on the engine.
+
+    Four full rows under columns 0-8 and an empty column 9: the reserve the plan
+    measures on this board is four, so its own choice for an I is the vertical
+    drop into the designated well, and the engine's per-step clear result must be
+    the four lines that reserve claims.
+    """
+    suite = load_config(SUITE_CONFIG)
+    configuration = {**suite.game, "seed": 1}
+    rows = [[0] * WIDTH for _ in range(20)]
+    for row in range(16, 20):
+        for column in range(WIDTH - 1):
+            rows[row][column] = 1
+
+    with create_game(**configuration) as game:
+        game.set_board(rows)
+        game.set_piece("I", x=5, y=0)
+        agent = runner.build_agent("tetris_plan", configuration["seed"])
+        events = None
+        for _ in range(2000):
+            state, events = game.step(agent.act(game.state))
+            if events.locked:
+                break
+        else:
+            raise AssertionError("the placed I never locked")
+        assert events.lines_cleared == 4
+        assert not events.game_over
+        assert game.state.lines == 4
+        settled = board_grid(game.state.board, game.state.hidden_rows)
+        assert all(cell == 0 for row in settled[2:] for cell in row)
+
+
+def test_the_plan_ignores_a_native_hidden_stack_and_reads_the_rendered_field():
+    """The engine's hidden buffer is not part of the plan's observation.
+
+    ``_spawn_template(seed_hidden=True)`` locks an O above the ceiling, so the
+    engine really holds cells in the two hidden rows while the rendered field is
+    empty. The shared controller hands every agent a grid containing both; the plan
+    rebuilds its observation from ``state.board`` alone
+    (``wellplan.visible_grid``), and its features read the visible field, so the
+    buffer cannot reach a height, a phase or a choice. The plan therefore reads the
+    board a player sees — empty, under the budget and in BUILD — and executes the
+    placement that observation names, while the whole-grid observation the base
+    class builds is a different grid the plan does not use.
+    """
+    suite = load_config(SUITE_CONFIG)
+    configuration = {**suite.game, "seed": 1}
+    template, _ = _spawn_template(configuration, [[0] * WIDTH for _ in range(20)], False,
+                                  seed_hidden=True)
+    with template:
+        whole = board_grid(template.state.board, template.state.hidden_rows)
+        assert all(cell == 0 for row in whole[2:] for cell in row)
+        assert whole[0][8:10] == (1, 1) and whole[1][8:10] == (1, 1)
+        observed = wellplan.visible_grid(template.state.board)
+        assert observed != whole
+        assert all(cell == 0 for row in observed for cell in row)
+        columns = grid_columns(observed)
+        assert wellplan.stack_height(columns) == 0
+        assert wellplan.holds_well(0, wellplan.stack_height(columns))
+        assert wellplan.initial_phase(0, columns) == wellplan.BUILD
+        agent = runner.build_agent("tetris_plan", configuration["seed"])
+        agent.act(template.state)
+        expected = wellplan.plan_choice(
+            observed, template.state.current_piece, template.state.next_piece,
+            drought=agent._drought, level=template.state.level,
+            lines=template.state.lines, start_level=template.state.start_level,
+            first_delay_remaining=template.state.first_delay_remaining,
+            ruleset=template.state.ruleset, mode=template.state.mode)
+        assert expected is not None
+        assert (agent._placement.orientation, agent._placement.x) == \
+            (expected.orientation, expected.x)
+
+
+def test_suite_record_with_the_plan_agent_runs_and_verifies(tmp_path: Path):
+    """The plan agent plays, records its histogram, and declares its own objective."""
+    raw = json.loads(PLAN_CONFIG.read_text(encoding="utf-8"))
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps({**raw, "frame_limit": 400, "seeds": [2], "agents": ["tetris_plan"]}),
+        encoding="utf-8",
+    )
+    path = run_and_save(config_path, tmp_path / "runs")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["format_version"] == SUITE_FORMAT_VERSION
+    assert sorted(record["summary"]) == ["tetris_plan"]
+    episode = record["episodes"][0]
+    assert (episode["clear_sizes"]["singles"]
+            + 2 * episode["clear_sizes"]["doubles"]
+            + 3 * episode["clear_sizes"]["triples"]
+            + 4 * episode["clear_sizes"]["tetrises"]) == episode["result"]["lines"]
+    assert record["objective"] == {
+        "module": "block_stack_ai.wellplan", "weights": wellplan_weights_record(),
+        "sources": runner._objective_sources(agent="tetris_plan"),
+    }
+    verify_run(path)
+
+
+def test_a_record_written_by_the_frozen_writer_still_verifies():
+    """The identity of a record written before this experiment still matches here.
+
+    The fixture is a version-6 suite record written by the frozen Experiment 003
+    tree's own writer (``git archive`` of the branch base's ``src``, whose
+    ``tetris.py`` hashes to the digest Experiment 003's retained capture records),
+    and its ``objective`` section names the Tetris objective and the source
+    identity of the five modules that computed its placements. Adding an agent
+    must not invalidate such a record: the shared agent factory keeps dispatching
+    exactly the agents its frozen source defined, so the digest that record covers
+    is still the digest on this tree, and its recorded inputs replay because the
+    frozen agent's behaviour is unchanged — the fixture's ten seeds' worth of
+    Experiment 003 rows are re-derived in the experiment's own ``baseline`` check.
+    The identity is compared against the walk *that version's* writer recorded —
+    the version-6 shape, which names the shared factory for an agent the factory
+    defines — while a record written now is compared against the version-7 walk,
+    which seeds the runner's dispatch that builds every agent.
+    """
+    legacy = (PROJECT_ROOT / "experiments" / "004-bounded-well-plan" / "probes"
+              / "legacy_v6_tetris_record.json")
+    record = json.loads(legacy.read_text(encoding="utf-8"))
+    assert record["format_version"] == WRAPPER_IDENTITY_SUITE_FORMAT_VERSION == 6
+    assert record["format_version"] < SUITE_FORMAT_VERSION
+    assert record["objective"]["module"] == "block_stack_ai.tetris"
+    identity = runner._objective_sources(runner._IDENTITY_CHOICE)
+    assert record["objective"]["sources"] == identity
+    assert identity["block_stack_ai.agents"] == hashlib.sha256(
+        Path(sys.modules["block_stack_ai.agents"].__file__).read_bytes()).hexdigest()
+    # The coverage the version-6 walk lacks and the current one has: the dispatch
+    # that decides which implementation is built for every agent.
+    assert "block_stack_ai.runner" not in identity
+    assert "block_stack_ai.runner" in runner._objective_sources(runner._IDENTITY_DISPATCH)
+    assert sum(episode["result"]["lines"] for episode in record["episodes"]) > 0
+    # The verifier's only warnings are the engine-Git advisories, and they describe
+    # this checkout's engine state rather than the record: which of them appears
+    # changes when the engine's own working-tree edits are committed, while the
+    # record, its replay and its identity are unchanged. Comparing against the
+    # verifier's own advisory vocabulary (``probe.engine_advisories``) rather than
+    # one wording keeps the check about the record instead of about the engine's
+    # dirty flag.
+    advisories = _plan_probe("exp004_plan_legacy_probe").engine_advisories()
+    assert advisories
+    warnings = verify_run(legacy)
+    assert all(warning in advisories for warning in warnings), warnings
+
+
+def test_the_frozen_record_checks_tolerate_a_committed_engine(monkeypatch):
+    """The legacy checks read the verifier's advisories, not one engine state.
+
+    The fixture records the engine as a working tree at a specific commit, so a
+    checkout whose engine edits are committed — or whose engine has no Git metadata
+    at all — reports different engine advisories than this one does. That is a
+    property of the engine checkout and not of the record: the identity still
+    matches this tree and the recorded inputs still replay. Requiring the
+    working-tree wording specifically made the frozen-record checks fail on those
+    states, so they now compare against the verifier's own advisory vocabulary and
+    this test pins the states the old wording rejected.
+    """
+    probe = _plan_probe("exp004_plan_committed_engine_probe")
+    committed = {"commit": "0" * 40, "dirty": False, "kind": "committed"}
+    with monkeypatch.context() as patch:
+        patch.setattr(runner, "git_info", lambda root: dict(committed))
+        probe.check_legacy()
+        warnings = verify_run(probe.LEGACY_RECORD)
+    assert warnings and all(
+        warning in probe.engine_advisories() for warning in warnings), warnings
+    # The state this guards: the committed engine reports the recorded-vs-current
+    # advisory, which the old wording requirement rejected.
+    assert not all("working-tree" in warning for warning in warnings)
+
+
+def test_the_frozen_record_checks_tolerate_an_unversioned_engine(monkeypatch):
+    """The advisory vocabulary is derived independently of this checkout's Git state.
+
+    An engine checkout with no Git metadata records ``commit`` and ``dirty`` as
+    ``None``, so a vocabulary derived from a synthetic section of ``None`` values
+    matched that state and dropped the recorded-vs-current advisory — and the frozen
+    fixture, which records a commit and a dirty flag, then reported a warning the
+    vocabulary did not contain. The derivation now makes both of the verifier's
+    advisory branches fire whatever the checkout is, and this pins the state that
+    broke it.
+    """
+    probe = _plan_probe("exp004_plan_unversioned_engine_probe")
+    unversioned = {"commit": None, "dirty": None, "kind": "unversioned"}
+    with monkeypatch.context() as patch:
+        patch.setattr(runner, "git_info", lambda root: dict(unversioned))
+        advisories = probe.engine_advisories()
+        assert len(advisories) == 2, advisories
+        probe.check_legacy()
+        warnings = verify_run(probe.LEGACY_RECORD)
+    assert warnings and all(warning in advisories for warning in warnings), warnings
+
+
+def test_the_plan_probe_aggregate_command_checks_the_native_fixture():
+    """The documented aggregate probe command runs end to end, native steps included.
+
+    ``probes/evidence.py all`` is what the experiment's notes tell a reader to run.
+    Its native step re-verifies the frozen writer's retained record, so the
+    command is exercised here with that step real rather than stubbed; the
+    engine-independent wiring of the same command is checked by the unit suite.
+    """
+    probe = _plan_probe("exp004_plan_probe_integration")
+    probe.all_probes()
+    assert probe.main([]) == 0
+    assert probe.main(["check-legacy"]) == 0
+
+
+def test_the_plan_baseline_gate_accepts_a_genuine_replayable_record():
+    """Verification gates the supplied record on replayability, not on identity.
+
+    ``baseline`` replays the record it is given with ``runner.verify_run`` before it
+    compares any rows. The frozen writer's retained fixture is a genuine record of
+    this tree's engine -- its recorded inputs replay -- so it has to pass that gate
+    and be refused only for the configuration it records, which is not Experiment
+    003's. A record with real replay evidence is therefore not rejected by the gate,
+    while the copied-rows file the unit suite drives is rejected by it.
+    """
+    probe = _plan_probe("exp004_plan_baseline_genuine_probe")
+    with pytest.raises(AssertionError, match="not Experiment 003's configuration"):
+        probe.baseline(probe.LEGACY_RECORD)
+
+
+def test_the_plan_engine_fingerprint_rederives_from_the_registered_checkout():
+    """The manifest is re-derived from the dependency where that checkout is readable.
+
+    The engine-dependency block and the limitation beside it are derived from the
+    manifest, and the manifest here has to be the registered Block Stack checkout
+    itself: every source file's digest, the commit and the dirty flag are recomputed
+    from the dependency, so the disclosure cannot be a hand-written list that names a
+    checkout nobody used.
+    """
+    probe = _plan_probe("exp004_plan_engine_fingerprint_probe")
+    root = probe.readable_engine_root()
+    assert root is not None, "the integration selection requires the Block Stack checkout"
+    manifest = probe.check_engine_manifest()
+    live = probe.engine.git_info(root)
+    assert probe.engine_source_files(root) == manifest["files"]
+    assert (manifest["commit"], manifest["dirty"], manifest["kind"]) == (
+        live["commit"], live["dirty"], live["kind"])
+
+
 def test_suite_record_with_the_tetris_agent_runs_and_verifies(tmp_path: Path):
     """The new agent plays a suite episode, records its clear sizes, and replays."""
     raw = json.loads(TETRIS_CONFIG.read_text(encoding="utf-8"))
@@ -706,7 +968,7 @@ def test_suite_record_with_the_tetris_agent_declares_its_objective(tmp_path: Pat
     assert record["format_version"] == SUITE_FORMAT_VERSION
     assert record["objective"] == {
         "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
-        "sources": runner._objective_sources(),
+        "sources": runner._objective_sources(runner._IDENTITY_DISPATCH),
     }
     verify_run(path)
 

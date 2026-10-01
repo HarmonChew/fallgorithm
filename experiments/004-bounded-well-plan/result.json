@@ -1,0 +1,1030 @@
+{
+  "acceptance": {
+    "aspirational": {
+      "mean_lines": {
+        "achieved": 620.0,
+        "met": false,
+        "note": "the frozen lookahead agent's mean lines Experiment 003 published; the plan's own mean lines is below it, so the aspirational comparison is reported and not met",
+        "reported": 912.8
+      },
+      "mean_score": {
+        "achieved": 1665036.0,
+        "met": false,
+        "note": "the frozen lookahead agent's mean score Experiment 003 published; the plan's own mean score is below it, so the aspirational comparison is reported and not met",
+        "reported": 2822959.9
+      }
+    },
+    "mean_lines": {
+      "achieved": 620.0,
+      "met": true,
+      "required_gt": 349.5
+    },
+    "mean_score": {
+      "achieved": 1665036.0,
+      "met": true,
+      "required_gt": 567266.2
+    },
+    "tetris_line_rate": {
+      "achieved": 0.03871,
+      "denominator": "total lines cleared (6200)",
+      "met": true,
+      "numerator": "four-line clears' lines (240)",
+      "required_gte": 0.011445
+    }
+  },
+  "baseline": {
+    "experiment": "003-tetris-aware-agent",
+    "note": "The Tetris agent shares the reachable set, the board model and the agent factory with the new plan agent, so this reproduction is the check that none of them moved. No weight, formula or behaviour of Experiment 003's objective was modified. The re-run is a current (version-7) record of the Tetris agent, whose identity is seeded from the runner's dispatch that builds it; Experiment 003's retained records are version-6 records and keep verifying against that version's five-module walk, which is the shape their own writer recorded.",
+    "published_metrics": {
+      "lookahead": {
+        "clear_sizes": {
+          "doubles": 918,
+          "singles": 7179,
+          "tetrises": 2,
+          "triples": 35
+        },
+        "frame_cap_stops": 1,
+        "frames_max": 200000,
+        "frames_mean": 92024.9,
+        "games": 10,
+        "lines_max": 2137,
+        "lines_mean": 912.8,
+        "lines_min": 254,
+        "lines_total": 9128,
+        "pieces_placed_mean": 2314.4,
+        "pieces_placed_total": 23144,
+        "score_max": 10334568,
+        "score_mean": 2822959.9,
+        "score_min": 256671,
+        "stopping_reasons": {
+          "frame_limit": 1,
+          "game_over": 9
+        },
+        "tetris_line_rate": 0.000876,
+        "tetris_lines": 8,
+        "tetrises_per_100_placed_pieces": 0.009,
+        "top_outs": 9
+      },
+      "tetris": {
+        "clear_sizes": {
+          "doubles": 476,
+          "singles": 2278,
+          "tetrises": 10,
+          "triples": 75
+        },
+        "frame_cap_stops": 0,
+        "frames_max": 81516,
+        "frames_mean": 40209.0,
+        "games": 10,
+        "lines_max": 827,
+        "lines_mean": 349.5,
+        "lines_min": 50,
+        "lines_total": 3495,
+        "pieces_placed_mean": 910.1,
+        "pieces_placed_total": 9101,
+        "score_max": 1973340,
+        "score_mean": 567266.2,
+        "score_min": 69095,
+        "stopping_reasons": {
+          "game_over": 10
+        },
+        "tetris_line_rate": 0.011445,
+        "tetris_lines": 40,
+        "tetrises_per_100_placed_pieces": 0.11,
+        "top_outs": 10
+      }
+    },
+    "reproduction": {
+      "command": "$PY -m block_stack_ai.cli run --config experiments/003-tetris-aware-agent/config.json",
+      "episodes_compared": 20,
+      "fields_checked": [
+        "lines",
+        "score",
+        "frames",
+        "pieces_placed",
+        "stopping_reason",
+        "clear_sizes"
+      ],
+      "probe": "probes/evidence.py baseline <record> -- verifies the record with runner.verify_run, then requires every published row field to reproduce exactly on this tree",
+      "published_rows_source": "experiments/003-tetris-aware-agent/result.json#episodes_by_agent_seed",
+      "record": "runs/20260930T065239282035Z-0112066d/run.json",
+      "result": "Experiment 003's configuration, replayed on this tree, reproduces every published per-episode row and summary it published: the lookahead side 912.8 mean lines and 2,822,959.9 mean score, the tetris side 349.5 mean lines and 567,266.2 mean score, which are the numbers the acceptance criteria name"
+    }
+  },
+  "conclusion": "The bounded well plan meets all three acceptance thresholds on Experiment 003's identical ten seeds: a Tetris line rate of 0.03871 against the required 0.011445 (3.38x the Experiment 003 baseline's rate), 620.0 mean lines against more than 349.5 (1.77x) and 1665036.0 mean score against more than 567266.2 (2.94x), with no episode stopped at the frame cap. Two changes to the objective are what move them, and the measurements are attributed to both rather than to the plan alone. The plan is a designated well column, an explicit stack-height budget, a reserve measured as the rows a vertical I would complete above the column's topmost filled cell, and a spend-or-abandon rule at a self-tracked I-drought bound. Beside it, the composition scores the current placement's whole plan value, where Experiment 003 adds only that placement's clear term to the preview's value: the objective_mechanism block derives 2 reachable boards on which the two compositions select different placements, so the evaluation does not rest on the claim that the two compose a current placement alike. It does not reach the frozen lookahead agent's survival on the same seeds (620.0 against 912.8 mean lines, 1665036.0 against 2822959.9 mean score), so the plan buys Tetris rate with lines rather than adding both, and that trade is the experiment's main limitation. The verdict is the re-measurement taken after the plan's objective, its identity walk, its visible-information observation (the earlier height accounting that read the engine's hidden rows is reversed) and the allocation of its agent to the runner's dispatch were corrected: the per-episode rows of every run this one superseded are retained and the refactor_no_outcomes_changed block re-makes the comparison against them field for field, so the result is one measurement under corrected code rather than a revised one.",
+  "configuration": {
+    "agents": [
+      "lookahead",
+      "tetris_plan"
+    ],
+    "frame_limit": 200000,
+    "game": {
+      "height": 0,
+      "mode": "endless",
+      "ruleset": "classic_ntsc_extended",
+      "start_level": 18
+    },
+    "seeds": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      20
+    ]
+  },
+  "development": {
+    "note": "the declaration of the seed set the plan's constants were chosen on. It is a declaration only: no development configuration, no candidate values, no per-candidate outcomes and no selection record is retained here, so neither the tuning procedure nor the claim that no evaluation outcome informed a constant is derivable from this repository. The one part of the declaration a retained check re-derives is that the declared set is disjoint from the ten evaluation seeds, which are Experiment 003's published ones",
+    "seeds": [
+      1,
+      3,
+      5,
+      7,
+      9,
+      15,
+      17,
+      19,
+      21,
+      23
+    ]
+  },
+  "dispatcher_coverage": {
+    "current_choice_driver": {
+      "tetris": "block_stack_ai.runner",
+      "tetris_plan": "block_stack_ai.runner"
+    },
+    "current_format_version": 7,
+    "current_identity_shape": "dispatch",
+    "current_tetris_identity_covers": true,
+    "current_tetris_identity_keys": [
+      "block_stack_ai.agents",
+      "block_stack_ai.engine",
+      "block_stack_ai.heuristic",
+      "block_stack_ai.pathaware",
+      "block_stack_ai.pieces",
+      "block_stack_ai.runner",
+      "block_stack_ai.tetris"
+    ],
+    "experiment_003_current_suite_token": "7 current suite",
+    "experiment_003_version_prose_matches": true,
+    "fixture_identity_keys": [
+      "block_stack_ai.agents",
+      "block_stack_ai.heuristic",
+      "block_stack_ai.pathaware",
+      "block_stack_ai.pieces",
+      "block_stack_ai.tetris"
+    ],
+    "plan_identity_covers": true,
+    "plan_identity_keys": [
+      "block_stack_ai.agents",
+      "block_stack_ai.engine",
+      "block_stack_ai.heuristic",
+      "block_stack_ai.pathaware",
+      "block_stack_ai.pieces",
+      "block_stack_ai.runner",
+      "block_stack_ai.wellplan"
+    ],
+    "statement": "a record written now covers the dispatcher that selects its agent, for the Tetris agent and the plan alike: block_stack_ai.runner seeds both walks, because runner.build_agent decides which implementation is built for every agent name. The version-6 writer seeded the shared factory for the Tetris agent instead, so records of that version are compared against the five modules they recorded \u2014 Experiment 003's capture and the retained fixture among them \u2014 and the writer's version moved to 7 so that shape could widen without editing the records written under the old one. Experiment 003's retained record_format_versions prose is regenerated from the writer's constants, so it names the version the writer now emits",
+    "version_6_choice_driver": {
+      "tetris": "block_stack_ai.agents",
+      "tetris_plan": "block_stack_ai.runner"
+    },
+    "version_6_format_version": 6,
+    "version_6_identity_shape": "choice",
+    "version_6_tetris_identity_covers": false,
+    "version_6_tetris_identity_keys": [
+      "block_stack_ai.agents",
+      "block_stack_ai.heuristic",
+      "block_stack_ai.pathaware",
+      "block_stack_ai.pieces",
+      "block_stack_ai.tetris"
+    ]
+  },
+  "engine_dependency": {
+    "combined_sha256": "ad99d375b2af46cadb32f6fb7592cbf6cd7050ee93fc7a6f120bc28f6817b15e",
+    "commit": "8ca4158711c2d6339cab1ee8d78aa65bd624c89d",
+    "dirty": true,
+    "engine_root": "/home/harmon-chew/projects/code/block-stack",
+    "file_count": 37,
+    "kind": "working-tree",
+    "manifest": "experiments/004-bounded-well-plan/probes/engine_fingerprint.json",
+    "statement": "the reported rows reproduce only with this Block Stack working tree, which is a read-only registered dependency whose uncommitted local changes cannot be exported and are not retained here. The block identifies it -- the commit, the dirty flag and the digest of every source file, listed in the manifest -- and claims neither a reconstruction of the engine nor a clean reproducible-dependency CI"
+  },
+  "episodes_by_agent_seed": [
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 56,
+        "singles": 420,
+        "tetrises": 0,
+        "triples": 5
+      },
+      "frames": 59916,
+      "lines": 547,
+      "pieces_placed": 1404,
+      "score": 854880,
+      "seed": 2,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 41,
+        "singles": 399,
+        "tetrises": 0,
+        "triples": 0
+      },
+      "frames": 54559,
+      "lines": 481,
+      "pieces_placed": 1238,
+      "score": 656489,
+      "seed": 4,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 27,
+        "singles": 194,
+        "tetrises": 0,
+        "triples": 2
+      },
+      "frames": 33940,
+      "lines": 254,
+      "pieces_placed": 669,
+      "score": 256671,
+      "seed": 6,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 35,
+        "singles": 286,
+        "tetrises": 0,
+        "triples": 0
+      },
+      "frames": 42572,
+      "lines": 356,
+      "pieces_placed": 924,
+      "score": 405490,
+      "seed": 8,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 102,
+        "singles": 708,
+        "tetrises": 1,
+        "triples": 2
+      },
+      "frames": 93066,
+      "lines": 922,
+      "pieces_placed": 2341,
+      "score": 2171991,
+      "seed": 10,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 126,
+        "singles": 1082,
+        "tetrises": 0,
+        "triples": 4
+      },
+      "frames": 131805,
+      "lines": 1346,
+      "pieces_placed": 3400,
+      "score": 4272028,
+      "seed": 12,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 156,
+        "singles": 1169,
+        "tetrises": 1,
+        "triples": 10
+      },
+      "frames": 143005,
+      "lines": 1515,
+      "pieces_placed": 3820,
+      "score": 5602465,
+      "seed": 14,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 43,
+        "singles": 338,
+        "tetrises": 0,
+        "triples": 3
+      },
+      "frames": 50218,
+      "lines": 433,
+      "pieces_placed": 1119,
+      "score": 573143,
+      "seed": 16,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 209,
+        "singles": 1695,
+        "tetrises": 0,
+        "triples": 8
+      },
+      "frames": 200000,
+      "lines": 2137,
+      "pieces_placed": 5353,
+      "score": 10334568,
+      "seed": 18,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 123,
+        "singles": 888,
+        "tetrises": 0,
+        "triples": 1
+      },
+      "frames": 111168,
+      "lines": 1137,
+      "pieces_placed": 2876,
+      "score": 3101874,
+      "seed": 20,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 76,
+        "singles": 619,
+        "tetrises": 9,
+        "triples": 9
+      },
+      "frames": 84257,
+      "lines": 834,
+      "pieces_placed": 2120,
+      "score": 2339959,
+      "seed": 2,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 49,
+        "singles": 330,
+        "tetrises": 4,
+        "triples": 5
+      },
+      "frames": 51885,
+      "lines": 459,
+      "pieces_placed": 1184,
+      "score": 807025,
+      "seed": 4,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 46,
+        "singles": 418,
+        "tetrises": 5,
+        "triples": 10
+      },
+      "frames": 60895,
+      "lines": 560,
+      "pieces_placed": 1436,
+      "score": 1179384,
+      "seed": 6,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 39,
+        "singles": 273,
+        "tetrises": 1,
+        "triples": 6
+      },
+      "frames": 44158,
+      "lines": 373,
+      "pieces_placed": 969,
+      "score": 507596,
+      "seed": 8,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 52,
+        "singles": 351,
+        "tetrises": 5,
+        "triples": 11
+      },
+      "frames": 55188,
+      "lines": 508,
+      "pieces_placed": 1304,
+      "score": 948332,
+      "seed": 10,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 39,
+        "singles": 289,
+        "tetrises": 4,
+        "triples": 9
+      },
+      "frames": 46911,
+      "lines": 410,
+      "pieces_placed": 1060,
+      "score": 633260,
+      "seed": 12,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 116,
+        "singles": 939,
+        "tetrises": 16,
+        "triples": 23
+      },
+      "frames": 125476,
+      "lines": 1304,
+      "pieces_placed": 3297,
+      "score": 5400745,
+      "seed": 14,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 36,
+        "singles": 288,
+        "tetrises": 2,
+        "triples": 4
+      },
+      "frames": 45325,
+      "lines": 380,
+      "pieces_placed": 985,
+      "score": 552562,
+      "seed": 16,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 18,
+        "singles": 185,
+        "tetrises": 3,
+        "triples": 7
+      },
+      "frames": 33193,
+      "lines": 254,
+      "pieces_placed": 671,
+      "score": 331362,
+      "seed": 18,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 97,
+        "singles": 817,
+        "tetrises": 11,
+        "triples": 21
+      },
+      "frames": 108419,
+      "lines": 1118,
+      "pieces_placed": 2831,
+      "score": 3950135,
+      "seed": 20,
+      "stopping_reason": "game_over"
+    }
+  ],
+  "legacy_verification": {
+    "agent_factory_digest": "2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329",
+    "also_preserved": "the record formats keep their dispatch and their optional sections and their version-keyed identity walks (versions 1, 2, 3, 4, 5, 6 and 7 -- the writer's version moved to 7 for the dispatch-seeded walk), the frozen objective's module, weights and formula are untouched, the frozen version-6 fixture and Experiment 003's retained capture still verify at the version-6 shape their writers recorded, the identity walk and the partial-reload check skip the other declared objectives' modules, a record cannot claim a format version older than the one that introduced the agent it configures, and every published row of Experiment 003 reproduces on this tree (block 'baseline')",
+    "check": "probes/evidence.py check-legacy, and probes/evidence.py check-record (which derives both this digest and the agent-factory digest from the tree's bytes and the retained fixture), and tests/test_integration.py::test_a_record_written_by_the_frozen_writer_still_verifies",
+    "dispatcher": "block_stack_ai.runner is the module whose dispatch selects which implementation is built, and it is the module every record written now covers: the version-7 writer seeds it for both declared agents, so a Tetris record names the code that selects its implementation as well as a plan record does. Its digest here is derived from this tree's own bytes by `probes/evidence.py check-record` and compared with the `sources` entry the retained result and the capture carry, so the record that reports it cannot name a different dispatch. The version-6 shape is the one Experiment 003's retained evidence recorded: that walk named the shared factory for an agent the factory defines, so the frozen fixture's five-module identity carries no dispatcher entry, and it is compared against that five.",
+    "dispatcher_digest": "81a0bfbae21fc1afe0d48187f7a0e158394f5e7520cd4944ba502d8cdd8c4f77",
+    "fixture": "experiments/004-bounded-well-plan/probes/legacy_v6_tetris_record.json",
+    "result": "the frozen record's own identity still equals this tree's version-6 Tetris identity, its recorded inputs replay, and every warning is an engine-Git advisory rather than a complaint about the record. Which of those advisories appears is a property of the engine checkout and not of the record -- the fixture records the engine as a working tree at a commit, so a checkout whose engine edits are later committed reports the recorded-vs-current advisory instead -- so the check compares against the verifier's own advisory vocabulary (engine_advisories, derived from runner._engine_warnings by a synthetic engine section that makes both of its advisory branches fire on any checkout) rather than one wording, and tests/test_integration.py::test_the_frozen_record_checks_tolerate_a_committed_engine and ::test_the_frozen_record_checks_tolerate_an_unversioned_engine pin the committed and Git-less engine states. The shared agent factory's source is byte-identical to the branch base, so the digest that record covers is unchanged; the new agent is declared in its objective module and built by the runner's per-agent dispatch instead, so the dispatch is part of the current writer's identity for both agents and not of that frozen version-6 one. A record that configures the plan agent is additionally required to claim a format version at or above the one that introduced it (runner.DECLARED_OBJECTIVES[...].introduced_in): no older writer could have built that agent, so the relabel itself is reported before any section is compared, while the Tetris agent's version-2 compatibility is preserved because its own version-2 writer already built it and wrote no objective.",
+    "what_it_is": "a format_version 6 suite record written by the frozen Experiment 003-era writer (git archive of the branch base's src, whose tetris.py hashes to 3d32c1c3..., the digest Experiment 003's retained capture records), so it carries a declared objective section naming the Tetris objective and the source identity of the five modules that computed its placements"
+  },
+  "limitations": [
+    "The plan agent was measured only on classic_ntsc_extended, endless, start level 18, height 0 and a 200000-frame cap, the settings Experiments 002 and 003 used. Nothing here measures another ruleset, level or mode, and no live-desktop game or whole-game mode was run.",
+    "The plan's constants are read only from its objective module, and the development seed set the constants were chosen on is disjoint from the ten evaluation seeds (the development block states that declaration). The development itself is not retained: no development configuration, candidate values, per-candidate outcomes or selection record is kept, so the tuning step is stated by the author of the constants and is not auditable from this repository.",
+    "The plan's advantage over Experiment 003's agent is bounded and specific: it is a one-piece, straight-drop, commit-per-piece policy. It does not search, it does not know a future piece beyond the visible preview, and it cannot repair a covered cell, so only 60 of its 15857 placements were four-line clears. A reserve is only ever earned through the field: well_reserve counts the rows a vertical I would complete above the designated column's topmost filled cell, so a well column already filled low down still holds a reserve for the rows above it and the count is not restricted to a column open to the floor. The objective_mechanism block derives a board of exactly that shape.",
+    "The measurement is not attributable to the explicit plan alone. The objective also composes a current placement differently from Experiment 003's, and 2 derived boards -- one per phase -- are boards on which the two compositions select different placements, so the claim that they compose a current placement alike is not relied on anywhere. A run of Experiment 003's composition under this plan's phase, budget and drought memory was not measured, and any split of the attribution is left to a later experiment.",
+    "It does not reach the frozen lookahead agent's survival on the same seeds (620.0 against 912.8 mean lines, 1665036.0 against 2822959.9 mean score), so the plan buys Tetris rate with lines rather than adding both, and that trade is the experiment's main limitation.",
+    "All 10 of the plan's games topped out, so the ten-seed means are top-out outcomes rather than truncated games. The per-episode rows are retained so both cases are visible.",
+    "The declared-objective identity covers the code that selects which implementation is built, as well as the module that builds the agent whose placements a record replays. That is why the plan agent is declared in its objective module (block_stack_ai.wellplan) and built by the runner's per-agent dispatch instead of being added to the shared agent factory: the factory's source is byte-identical to the branch base, so the frozen Experiment 003 record's identity still equals this tree's, while a record of either declared agent written now covers the dispatch module as well. Experiment 003's retained records are earlier-version records, whose walk an older writer emitted, and they keep verifying against that shape.",
+    "This file is a distilled record, not the full run record: the evaluation's own run.json is ignored, disposable output holding one input mask per logical frame. The evidence is therefore re-derived from the code rather than replayed from stored inputs -- retained_replay re-plays the retained configuration and compares every outcome and metric -- and the temporary record the predeclaration cites is named by that block's cited_record for as long as this checkout keeps it.",
+    "Two declared-objective agents cannot be configured in one suite: a suite record carries one objective section. A comparison of tetris and tetris_plan in one run is therefore not expressible, and this experiment compares the plan against Experiment 003's retained rows and against a re-run of Experiment 003's own configuration instead.",
+    "The reported rows reproduce only with the Block Stack working tree the cited run record names: engine commit 8ca4158711c2d6339cab1ee8d78aa65bd624c89d, dirty: true, kind: working-tree. That working tree is not retained in this repository and its uncommitted local changes cannot be exported, so the native behaviour behind these rows cannot be reconstructed from a clean checkout of this project. The dependency is at least identified: 37 source files of that checkout and their sha256 digests are recorded in experiments/004-bounded-well-plan/probes/engine_fingerprint.json (combined sha256 ad99d375b2af46cadb32f6fb7592cbf6cd7050ee93fc7a6f120bc28f6817b15e), together with the commit and dirty flag above. No claim of reconstructability and no claim of clean reproducible-dependency CI is made anywhere in this record; the code and engine versions themselves stay where the writer put them, in the cited run record.",
+    "The plan's information policy is visible-information-only, and that guarantee is enforced by the code rather than stated: the plan's observation is the rendered field with the engine's two hidden rows erased (wellplan.visible_grid), and column_heights, field_features and well_reserve read that field alone, so a board's cells above the ceiling cannot reach a height, a phase, a reserve or a choice. Two boards that differ only above the ceiling are one board to the plan; the guarantee is derived in objective_mechanism.visible_only_observation and pinned by tests/test_wellplan.py::test_every_plan_feature_is_a_function_of_the_rendered_field and test_the_plan_agent_executes_the_same_choice_on_a_ceiled_board, both reproduced failing against git archive 1c50ee6d of this branch before the repair, and reached on the engine itself by the native integration test named in notes.md. The evaluation was re-measured under the corrected code more than once -- the earlier height accounting deliberately read the hidden rows and that reading is reversed here -- and the refactor_no_outcomes_changed block retains those runs' rows -- 12 of them -- and re-makes the comparison against this run's field for field, so the statement that the corrections changed no outcome is derived rather than asserted."
+  ],
+  "metrics": {
+    "lookahead": {
+      "clear_sizes": {
+        "doubles": 918,
+        "singles": 7179,
+        "tetrises": 2,
+        "triples": 35
+      },
+      "frame_cap_stops": 1,
+      "frames_max": 200000,
+      "frames_mean": 92024.9,
+      "games": 10,
+      "lines_max": 2137,
+      "lines_mean": 912.8,
+      "lines_min": 254,
+      "lines_total": 9128,
+      "pieces_placed_mean": 2314.4,
+      "pieces_placed_total": 23144,
+      "score_max": 10334568,
+      "score_mean": 2822959.9,
+      "score_min": 256671,
+      "stopping_reasons": {
+        "frame_limit": 1,
+        "game_over": 9
+      },
+      "tetris_line_rate": 0.000876,
+      "tetris_lines": 8,
+      "tetrises_per_100_placed_pieces": 0.009,
+      "top_outs": 9
+    },
+    "tetris_plan": {
+      "clear_sizes": {
+        "doubles": 568,
+        "singles": 4509,
+        "tetrises": 60,
+        "triples": 105
+      },
+      "frame_cap_stops": 0,
+      "frames_max": 125476,
+      "frames_mean": 65570.7,
+      "games": 10,
+      "lines_max": 1304,
+      "lines_mean": 620.0,
+      "lines_min": 254,
+      "lines_total": 6200,
+      "pieces_placed_mean": 1585.7,
+      "pieces_placed_total": 15857,
+      "score_max": 5400745,
+      "score_mean": 1665036.0,
+      "score_min": 331362,
+      "stopping_reasons": {
+        "game_over": 10
+      },
+      "tetris_line_rate": 0.03871,
+      "tetris_lines": 240,
+      "tetrises_per_100_placed_pieces": 0.378,
+      "top_outs": 10
+    }
+  },
+  "objective_mechanism": {
+    "composition_differs_from_experiment_003": [
+      {
+        "columns": [
+          327680,
+          2064384,
+          3407872,
+          262144,
+          3932160,
+          3932160,
+          4128768,
+          3145728,
+          0,
+          0
+        ],
+        "drought": 0,
+        "level": 18,
+        "lines": 0,
+        "next_piece": "L",
+        "phase": "build",
+        "piece": "L",
+        "plan_choice": [
+          0,
+          8
+        ],
+        "plan_choice_lines_cleared": 1,
+        "prior_composition_choice": [
+          1,
+          2
+        ],
+        "prior_composition_lines_cleared": 0,
+        "sequence": [
+          [
+            "I",
+            1,
+            4
+          ],
+          [
+            "S",
+            1,
+            1
+          ],
+          [
+            "I",
+            1,
+            5
+          ],
+          [
+            "O",
+            0,
+            7
+          ],
+          [
+            "I",
+            0,
+            2
+          ],
+          [
+            "I",
+            1,
+            6
+          ],
+          [
+            "T",
+            1,
+            1
+          ]
+        ],
+        "statement": "on a reachable board in BUILD the plan's composition selects (0, 8) (clearing 1 row(s)) for the L with L shown, while a current-placement term of clear_term alone selects (1, 2) (clearing 0 row(s))"
+      },
+      {
+        "columns": [
+          3940352,
+          4169728,
+          1892352,
+          3153920,
+          1048576,
+          1048576,
+          3145728,
+          3145728,
+          0,
+          0
+        ],
+        "drought": 0,
+        "level": 18,
+        "lines": 0,
+        "next_piece": "O",
+        "phase": "spend",
+        "piece": "O",
+        "plan_choice": [
+          0,
+          9
+        ],
+        "plan_choice_lines_cleared": 1,
+        "prior_composition_choice": [
+          0,
+          5
+        ],
+        "prior_composition_lines_cleared": 0,
+        "sequence": [
+          [
+            "T",
+            3,
+            1
+          ],
+          [
+            "I",
+            1,
+            0
+          ],
+          [
+            "S",
+            1,
+            1
+          ],
+          [
+            "O",
+            0,
+            7
+          ],
+          [
+            "L",
+            0,
+            4
+          ],
+          [
+            "Z",
+            1,
+            1
+          ],
+          [
+            "I",
+            0,
+            2
+          ]
+        ],
+        "statement": "on a reachable board in SPEND the plan's composition selects (0, 9) (clearing 1 row(s)) for the O with O shown, while a current-placement term of clear_term alone selects (0, 5) (clearing 0 row(s))"
+      }
+    ],
+    "reserve_with_an_occupied_well": {
+      "columns": [
+        114688,
+        98304,
+        2342912,
+        4128768,
+        3211264,
+        2195456,
+        983040,
+        4030464,
+        4128768,
+        1572864
+      ],
+      "level": 18,
+      "sequence": [
+        [
+          "O",
+          0,
+          8
+        ],
+        [
+          "S",
+          1,
+          8
+        ],
+        [
+          "I",
+          0,
+          4
+        ],
+        [
+          "L",
+          3,
+          3
+        ],
+        [
+          "O",
+          0,
+          7
+        ],
+        [
+          "S",
+          1,
+          7
+        ],
+        [
+          "S",
+          1,
+          5
+        ],
+        [
+          "S",
+          0,
+          3
+        ],
+        [
+          "J",
+          1,
+          2
+        ],
+        [
+          "T",
+          3,
+          0
+        ]
+      ],
+      "statement": "the designated well column (column 9) is occupied (mask 1572864) and well_reserve on that board is 1: the reserve is the rows a vertical I completes above the column's topmost filled cell, so it is not zero merely because the column is not empty",
+      "well_column": 9,
+      "well_column_mask": 1572864,
+      "well_column_topmost_filled_row": 19,
+      "well_reserve": 1
+    },
+    "visible_only_observation": {
+      "ceiled_columns": [
+        3932163,
+        3932163,
+        3932163,
+        3932163,
+        3932163,
+        3932163,
+        3932163,
+        3932163,
+        3932163,
+        3
+      ],
+      "columns_differ_only_above_the_ceiling": true,
+      "hidden_rows": 2,
+      "observation_erases_the_buffer": true,
+      "phase_ceiled": "build",
+      "phase_rendered": "build",
+      "plan_value_ceiled": 2.0,
+      "plan_value_rendered": 2.0,
+      "rendered_columns": [
+        3932160,
+        3932160,
+        3932160,
+        3932160,
+        3932160,
+        3932160,
+        3932160,
+        3932160,
+        3932160,
+        0
+      ],
+      "reserve_ceiled": 4,
+      "reserve_rendered": 4,
+      "stack_height_ceiled": 4,
+      "stack_height_rendered": 4,
+      "statement": "the engine's 2 hidden rows are not part of the plan's observation: two boards whose columns differ only above the ceiling give one height (4), one phase (BUILD), one reserve (4) and one plan value (2.0), and the plan's observation of the rendered field erases the buffer",
+      "well_column": 9
+    }
+  },
+  "objective_record": {
+    "module": "block_stack_ai.wellplan",
+    "sources": {
+      "block_stack_ai.agents": "2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329",
+      "block_stack_ai.engine": "6c6ababa0e527053892a5a77fecf58e7c5079473f6c0c51647c38c6fab0ac60b",
+      "block_stack_ai.heuristic": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
+      "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
+      "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
+      "block_stack_ai.runner": "81a0bfbae21fc1afe0d48187f7a0e158394f5e7520cd4944ba502d8cdd8c4f77",
+      "block_stack_ai.wellplan": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7"
+    },
+    "weights": {
+      "aggregate_height": -0.5,
+      "bumpiness": -0.5,
+      "drought_bound": 9,
+      "height_budget": 8,
+      "holes": -2.0,
+      "max_height": -1.0,
+      "overflow": -2.0,
+      "premature_clear": -1.0,
+      "reserve": 6.0,
+      "reserve_cap": 4,
+      "tetrises": 8.0,
+      "tie_break": "first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending",
+      "well_column": 9
+    }
+  },
+  "predeclared_objective": {
+    "capture_file": "experiments/004-bounded-well-plan/probes/predeclared_objective.json",
+    "capture_order": "the capture was written at 2026-10-01T10:29:20.102116+00:00, before the cited record's own created_at 2026-10-01T10:29:29.296449+00:00, and the record's own objective identity is the capture's",
+    "captured_at": "2026-10-01T10:29:20.102116+00:00",
+    "cited_record": "runs/20261001T103223460978Z-b332bb8a/run.json",
+    "cited_record_created_at": "2026-10-01T10:29:29.296449+00:00",
+    "identity_coverage": "The capture records the digest of every module the plan's decisions are computed from, the same set the run's own objective.sources enumerates: block_stack_ai.agents, block_stack_ai.engine, block_stack_ai.heuristic, block_stack_ai.pathaware, block_stack_ai.pieces, block_stack_ai.runner, block_stack_ai.wellplan. 7 modules, produced by the runner's own identity walk rather than listed by hand; the walk excludes the sibling Tetris objective, and each digest is this tree's file at the moment of the capture",
+    "module": "src/block_stack_ai/wellplan.py",
+    "module_sha256": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7",
+    "note": "the declared objective -- the module, the modules its decisions are computed from, and the documented weights, plan constants and rationale -- captured from the unmodified tree before the evaluation run; no constant is revised against evaluation outcomes. The development seed set the constants were chosen on (odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23, disjoint from the ten evaluation seeds) is a declaration in notes.md and not retained evidence: no development run, candidate values or outcomes are kept, so the tuning step is stated and not auditable from this repository. This capture supersedes the 12 earlier ones the block's superseded_captures names, one for each run this evaluation superseded and each of a different design -- which is where the design every one of them preceded is described; every one of them published the same declared weights and constants, because no change that forced a re-capture touched one, and each named a rationale section retained beside the captures, so a substance-preserving prose correction to the section is recorded rather than read as a revised objective",
+    "notes_section": "experiments/004-bounded-well-plan/notes.md#predeclared-objective",
+    "notes_section_sha256": "c8b657b453d7c71dd58bae212a0cdb9eead75ab9feee5ec1ea8a18068099bb2f",
+    "objective": {
+      "aggregate_height": -0.5,
+      "bumpiness": -0.5,
+      "drought_bound": 9,
+      "height_budget": 8,
+      "holes": -2.0,
+      "max_height": -1.0,
+      "overflow": -2.0,
+      "premature_clear": -1.0,
+      "reserve": 6.0,
+      "reserve_cap": 4,
+      "tetrises": 8.0,
+      "tie_break": "first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending",
+      "well_column": 9
+    },
+    "sources": {
+      "block_stack_ai.agents": "2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329",
+      "block_stack_ai.engine": "6c6ababa0e527053892a5a77fecf58e7c5079473f6c0c51647c38c6fab0ac60b",
+      "block_stack_ai.heuristic": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
+      "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
+      "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
+      "block_stack_ai.runner": "81a0bfbae21fc1afe0d48187f7a0e158394f5e7520cd4944ba502d8cdd8c4f77",
+      "block_stack_ai.wellplan": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7"
+    },
+    "superseded_captures": [
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-agent-move.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-boundary-wording.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-budget-wording.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-dispatch.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-drought-unit.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-explicit-shape.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-height-fix.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-hidden-rows.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-piece-counter.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-preview-docstring.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-summed-wording.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-version-bump.json"
+    ]
+  },
+  "refactor_no_outcomes_changed": {
+    "artifact": "experiments/004-bounded-well-plan/probes/superseded_run_rows.json",
+    "rows_identical_to_every_superseded_run": true,
+    "statement": "every superseded run's retained rows equal this run's, field for field, so each re-measurement this evaluation superseded -- every correction this record's history describes, the last being the visible-information observation that replaced the earlier height accounting's read of the engine's hidden rows -- changed no outcome: runs/20260929T171936702109Z-3733d12b/run.json, runs/20260929T174836231811Z-b6c35f6b/run.json, runs/20260930T010141245162Z-edcbfcfe/run.json, runs/20260930T020945782490Z-f908aba9/run.json, runs/20260930T041601202177Z-7bb33021/run.json, runs/20260930T044258461859Z-332ee653/run.json, runs/20260930T064941239339Z-dc40e8da/run.json, runs/20260930T100945820449Z-b0cd2600/run.json, runs/20261001T001038850583Z-949815c9/run.json, runs/20261001T020629406583Z-80e5bbc7/run.json, runs/20261001T101009486155Z-0462108b/run.json, runs/20261001T102558815871Z-904a2e61/run.json",
+    "superseded_runs": [
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-agent-move.json",
+        "created_at": "2026-09-29T17:16:44.531601+00:00",
+        "run": "runs/20260929T171936702109Z-3733d12b/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-dispatch.json",
+        "created_at": "2026-09-29T17:45:44.432195+00:00",
+        "run": "runs/20260929T174836231811Z-b6c35f6b/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-height-fix.json",
+        "created_at": "2026-09-30T00:58:39.088832+00:00",
+        "run": "runs/20260930T010141245162Z-edcbfcfe/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-version-bump.json",
+        "created_at": "2026-09-30T02:06:49.115337+00:00",
+        "run": "runs/20260930T020945782490Z-f908aba9/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-explicit-shape.json",
+        "created_at": "2026-09-30T04:13:09.910784+00:00",
+        "run": "runs/20260930T041601202177Z-7bb33021/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-preview-docstring.json",
+        "created_at": "2026-09-30T04:40:00.453026+00:00",
+        "run": "runs/20260930T044258461859Z-332ee653/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-boundary-wording.json",
+        "created_at": "2026-09-30T06:46:48.710558+00:00",
+        "run": "runs/20260930T064941239339Z-dc40e8da/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-piece-counter.json",
+        "created_at": "2026-09-30T10:06:55.923796+00:00",
+        "run": "runs/20260930T100945820449Z-b0cd2600/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-drought-unit.json",
+        "created_at": "2026-10-01T00:07:48.031741+00:00",
+        "run": "runs/20261001T001038850583Z-949815c9/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-hidden-rows.json",
+        "created_at": "2026-10-01T02:03:38.206026+00:00",
+        "run": "runs/20261001T020629406583Z-80e5bbc7/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-summed-wording.json",
+        "created_at": "2026-10-01T10:07:15.850593+00:00",
+        "run": "runs/20261001T101009486155Z-0462108b/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-budget-wording.json",
+        "created_at": "2026-10-01T10:23:05.766790+00:00",
+        "run": "runs/20261001T102558815871Z-904a2e61/run.json"
+      }
+    ]
+  },
+  "retained_replay": {
+    "command": "$PY experiments/004-bounded-well-plan/probes/evidence.py reproduce experiments/004-bounded-well-plan/result.json",
+    "episodes_compared": 20,
+    "fields_checked": [
+      "lines",
+      "score",
+      "frames",
+      "pieces_placed",
+      "stopping_reason",
+      "clear_sizes",
+      "metrics"
+    ],
+    "result": "the retained configuration replays to every retained per-episode outcome and every retained metric over the 20 configured (agent, seed) episodes, so the retained evidence is verifiable in a checkout that no longer holds the temporary run record",
+    "what_it_does": "parses the retained configuration, rebuilds the agents from the code and plays the suite again, so every decision is re-derived rather than replayed from stored inputs, then compares every episode outcome and every aggregate metric with the retained rows"
+  },
+  "status": "passed",
+  "stopping": {
+    "episodes_stopped_at_the_cap": {
+      "lookahead": 1,
+      "tetris_plan": 0
+    },
+    "frame_limit": 200000,
+    "note": "the episodes' own stopping reasons, by agent -- the lookahead agent: 10 games, 9 ended by topping out (game_over) and 1 stopped at the 200000-frame cap; the tetris_plan agent: 10 games, 10 ended by topping out (game_over) and 0 stopped at the 200000-frame cap. A game that stopped at the cap is a truncated measurement and a game that topped out is a game outcome, so the line, score and piece totals are read against this count",
+    "stopping_reasons": {
+      "lookahead": {
+        "frame_limit": 1,
+        "game_over": 9
+      },
+      "tetris_plan": {
+        "game_over": 10
+      }
+    }
+  }
+}

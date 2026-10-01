@@ -5,18 +5,24 @@ Versions 1 (one scripted episode) and 2 (a suite of placement-agent episodes ove
 fixed seeds) are the older formats of each shape: the verifier accepts the
 placed-piece count, the clear-size histogram and the declared objective absent
 there and compares each one when present. Versions 3 (a
-scripted episode), 4, 5 and 6 (suites) are written after them and must carry every
-section their writer emits — the placed-piece count, the clear-size histogram,
-and, for a suite that uses the Tetris agent, that agent's declared objective.
+scripted episode), 4, 5, 6 and 7 (suites) are written after them and must carry
+every section their writer emits — the placed-piece count, the clear-size
+histogram, and, for a suite that selects an agent with its own declared
+objective, that agent's declared objective.
 Version 4's writer recorded that objective without the source identity its
 successor adds, so version 4 records require everything except the identity;
 version 5's writer recorded the identity as the modules the objective's own code
-reaches, which cannot include the agent wrapper that drives it, and version 6
-records the wrapper beside them. The numbers are reused rather than a schema
+reaches, which cannot include the agent wrapper that drives it; version 6 records
+the wrapper beside them, but names the shared factory rather than the runner's
+dispatch as the builder of an agent the factory defines, so a Tetris record of
+that version does not cover the code that selects its implementation; and version
+7 records the dispatch for every agent, which is the code that decides which
+implementation is built. The numbers are reused rather than a schema
 history — the base commit's writer emitted the placed-piece count at versions 1
 and 2, and an earlier writer wrote the same numbers without it — so a version
-says which sections the verifier must require: a legacy version's may be absent
-and are compared when present, and only the current version's must be present.
+says which sections the verifier must require and which walk produced the
+identity: a legacy version's sections may be absent and are compared when
+present, and only the current version's must be present.
 
 The version is the marker that makes the two cases distinguishable, because
 absence alone cannot tell a record that predates a section from a current record
@@ -40,7 +46,7 @@ field existed carry the legacy ``pieces`` key instead, which held
 ``state.piece_count``; the replay compares it against that counter so those
 records keep verifying under their original semantics. A record that carries
 neither key is older still and keeps verifying at a legacy version; a version 3,
-4, 5 or 6 record must carry ``pieces_placed``, because that is the key its writer
+4, 5, 6 or 7 record must carry ``pieces_placed``, because that is the key its writer
 emits and its absence there is a deleted section rather than an older record. The
 per-agent summary reports the key the record as a whole carries, read from every
 episode: one writer emits one shape for a whole record, so a record whose first
@@ -56,7 +62,7 @@ a ``result`` object's keys to equal the replay's exactly, so a new key there
 would invalidate every record written before it. Like the piece count a legacy
 record may omit it — a record that carries neither the field nor the entry in its
 summary is older and keeps verifying — and a present one is compared with the
-same type-and-key rules as the mandatory sections. In a version 3, 4, 5 or 6
+same type-and-key rules as the mandatory sections. In a version 3, 4, 5, 6 or 7
 record the histogram is required: a scripted episode carries it, and a suite
 carries it on every episode and every agent summary. Presence is all-or-nothing
 in a legacy suite too: every episode and every agent summary in one record
@@ -69,33 +75,52 @@ summarises carry it, so a legacy record's summary re-derives without it and
 matches the summary that record already carries, which Experiment 002's own
 replay probe compares directly.
 
-A suite that uses the Tetris agent records that agent's declared objective as
-``objective``: the module that declares it, the mapping its ``weights_record()``
-returns and the source identity of the modules the objective's decisions are
-computed from, mirroring the ``heuristic`` section beside it. The frozen
-heuristic mapping is written for every suite because every placement agent scores
-through it, and the Tetris agent's choices come from a second, separately
-declared objective instead; without the section a tetris suite verifies under
-whatever objective is current whenever the change happens to preserve its
-replayed choices. The identity closes the case the weights cannot: they are
-constants, so a formula change that leaves them alone changes every value the
-objective computes while the weights still compare equal, and the recorded
-choices only catch it when the change happens to move one of them. A version 5
-or 6 suite that uses the agent must carry the identity, because its writer always
-emits it; the version 4 writer emitted the objective without it and the
-version 2 writer emitted no objective at all, so those records keep verifying —
-the runs of this experiment written by both writers do — and a present identity
-is compared with the same type-and-key rules in every case. The identity names
-every module whose code produces a choice, the agent wrapper that hands the
-objective its state included: the wrapper imports the objective rather than the
-other way round, so an identity walked outward from the objective alone could not
-reach it, and a wrapper change that kept the replayed choices was certified. A
-version 5 record is compared against that older shape, which is the identity its
-writer recorded.
+A suite whose configuration includes an agent with a separately declared
+objective records that objective as ``objective``: the module that declares it,
+the mapping its ``weights_record()`` returns and the source identity of the
+modules its decisions are computed from, mirroring the ``heuristic`` section
+beside it. The frozen heuristic mapping is written for every suite because every
+placement agent scores through it; an agent whose choices come from a second,
+separately declared objective instead is named by this section, and without it
+such a suite verifies under whatever objective is current whenever the change
+happens to preserve its replayed choices. The identity closes the case the
+weights cannot: they are constants, so a formula change that leaves them alone
+changes every value the objective computes while the weights still compare
+equal, and the recorded choices only catch it when the change happens to move
+one of them. A version 5 or 6 suite that uses such an agent must carry the
+identity, because its writer always emits it; the version 4 writer emitted the
+objective without it and the version 2 writer emitted no objective at all, so
+those records keep verifying — the runs of Experiment 003 written by both
+writers do — and a present identity is compared with the same type-and-key rules
+in every case. The identity names every module whose code produces a choice, the
+agent wrapper that hands the objective its state included: the wrapper imports
+the objective rather than the other way round, so an identity walked outward
+from the objective alone could not reach it, and a wrapper change that kept the
+replayed choices was certified. A version 5 record is compared against that
+older shape, which is the identity its writer recorded. Beside the wrapper, the
+walk covers the module that selects which implementation is built. From version 7
+that module is the runner's dispatch for every agent, because ``build_agent`` is
+what decides every agent's implementation — a change there can build a different
+implementation for the same agent name while still replaying the recorded inputs,
+whether or not the objective's own module owns the agent. The version-6 writer
+named the shared factory for an agent the factory defines instead, which left the
+dispatch out of a Tetris record while it still selected that agent, so those
+records are compared against the walk their own writer recorded:
+the retained fixture and Experiment 003's capture are the version-6 shape,
+and the current writer's Tetris identity covers the dispatch as well.
+
+The section is keyed by the agent, not by one hard-wired objective: the module
+it names is the one that declares the configured agent's objective, whichever
+agent the suite selects, and the walk that produces the identity starts from
+that module. A suite configures at most one such agent, because a suite record
+carries exactly one ``objective`` section; ``_parse_suite_config``
+rejects a configuration that names two rather than writing a record whose
+sections could not be told apart.
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import hashlib
@@ -107,13 +132,15 @@ from types import ModuleType
 from typing import Any, Callable
 from uuid import uuid4
 
-from . import tetris
+from . import tetris, wellplan
 from .agents import (
-    AGENT_NAMES, TETRIS_AGENT, ScriptedAgent, Segment, create_agent, parse_script,
+    AGENT_NAMES as FACTORY_AGENT_NAMES, TETRIS_AGENT, ScriptedAgent, Segment, create_agent,
+    parse_script,
 )
 from .engine import PROJECT_ROOT, create_game, engine_root, git_info
 from .heuristic import weights_record
 from .sourceidentity import loaded_source_digest
+from .wellplan import PLAN_AGENT
 
 
 LEGACY_FORMAT_VERSION = 1  # a scripted episode written before the new sections
@@ -129,16 +156,35 @@ PRIOR_SUITE_FORMAT_VERSION = 4
 # a wrapper change that preserved the replayed choices was certified. Superseded
 # by SUITE_FORMAT_VERSION.
 OUTWARD_IDENTITY_SUITE_FORMAT_VERSION = 5
-SUITE_FORMAT_VERSION = 6  # a suite, which always records the sections and the identity
-# The two shapes the objective's source identity has been written in, named for
-# the walk that produces it. ``_IDENTITY_OUTWARD`` is the modules the module that
+# A suite whose identity covered the objective, the wrapper and the module that
+# *builds* the agent, but seeded that last module from the shared factory for an
+# agent the factory defines. The runner's dispatch decides which implementation
+# every agent is built from — it routes an agent a declared objective owns to that
+# objective's module and every other agent to the shared factory — so a Tetris
+# record of this version named no code that selects its implementation, and a
+# change to the dispatch that still replayed the recorded inputs was invisible to
+# it. Superseded by SUITE_FORMAT_VERSION.
+WRAPPER_IDENTITY_SUITE_FORMAT_VERSION = 6
+SUITE_FORMAT_VERSION = 7  # a suite, which always records the sections and the identity
+# The shapes the objective's source identity has been written in, named for the
+# walk that produces it. ``_IDENTITY_OUTWARD`` is the modules the module that
 # declares the objective reaches: itself, and the package modules its own code
 # calls. ``_IDENTITY_CHOICE`` adds the agent wrapper that produces the choices —
-# the class whose ``_choose`` hands the objective its state and the factory that
-# selects it — because the wrapper imports the objective, so no walk outward from
-# the objective can reach it.
+# the class whose ``_choose`` hands the objective its state — and the module that
+# builds the agent, seeded from the shared agent factory for an agent it defines
+# itself and from the runner's dispatch for an agent a declared objective owns.
+# ``_IDENTITY_DISPATCH`` seeds that second module from the dispatch for *every*
+# agent, which is the code that decides which implementation is built at all: the
+# wrapper imports the objective, so no walk outward from the objective can reach
+# the wrapper, and the dispatch runs before any choice exists, so the objective's
+# own namespace cannot reach it either; for an agent the factory defines, seeding
+# the factory instead left the dispatch out while it still selected the agent.
+# Each shape is keyed by the format version whose writer emitted it, so the records
+# written under a narrower walk — Experiment 003's capture and the retained
+# version 6 fixture among them — keep verifying against the walk they recorded.
 _IDENTITY_OUTWARD = "outward"
 _IDENTITY_CHOICE = "choice"
+_IDENTITY_DISPATCH = "dispatch"
 # What each suite version's own writer always emitted, as ``(sections,
 # identity)``: the placed-piece count, the clear-size histogram and the declared
 # objective, then the objective's source identity inside that objective. Inferring
@@ -152,11 +198,17 @@ _IDENTITY_CHOICE = "choice"
 # that version's identity covered, or ``None`` for a version whose writer emitted
 # none — an identity such a record carries anyway is an edit, and is compared
 # against the current shape, because no writer ever emitted another one there.
+# What a version's writer emitted is only half of what a record can be asked for:
+# the version is also a claim about which writer wrote it, so a record that
+# configures an agent no writer of that version could build is an edit rather
+# than a legacy record, and is reported by ``_check_declared_agent_versions``
+# before this table's requirements are applied.
 _SUITE_FORMAT_VERSIONS = {
     LEGACY_SUITE_FORMAT_VERSION: (False, None),
     PRIOR_SUITE_FORMAT_VERSION: (True, None),
     OUTWARD_IDENTITY_SUITE_FORMAT_VERSION: (True, _IDENTITY_OUTWARD),
-    SUITE_FORMAT_VERSION: (True, _IDENTITY_CHOICE),
+    WRAPPER_IDENTITY_SUITE_FORMAT_VERSION: (True, _IDENTITY_CHOICE),
+    SUITE_FORMAT_VERSION: (True, _IDENTITY_DISPATCH),
 }
 _SCRIPTED_FORMAT_VERSIONS = {LEGACY_FORMAT_VERSION: False, FORMAT_VERSION: True}
 _EVENT_FIELDS = (
@@ -176,9 +228,13 @@ _CLEAR_SIZES_FIELD = "clear_sizes"
 _PIECES_PLACED_FIELD = "pieces_placed"
 _LEGACY_PIECES_FIELD = "pieces"
 _PIECE_FIELDS = (_PIECES_PLACED_FIELD, _LEGACY_PIECES_FIELD)
-# The declared objective of the one agent that does not score through the frozen
-# heuristic mapping. The section names the module that declares it, so the
-# mapping cannot be read as the heuristic's own.
+# The declared objective of the agents that do not score through the frozen
+# heuristic mapping, keyed by agent name. The section names the module that
+# declares the configured agent's objective, so the mapping cannot be read as
+# the heuristic's own and is not hard-wired to one agent: the module, its
+# weights and the identity of the code behind its choices all come from this
+# entry. A record carries one ``objective`` section, so a suite configures at
+# most one of these agents.
 _OBJECTIVE_FIELD = "objective"
 # The objective's semantic identity, beside its weights: the sha256 of the source
 # of every package module its decisions are computed from. The weights are
@@ -189,6 +245,92 @@ _OBJECTIVE_SOURCES_FIELD = "sources"
 # Every package module belongs to this namespace; the objective's modules are
 # discovered from its own namespace rather than hand-listed.
 _PACKAGE_PREFIX = f"{__package__}."
+# The package modules that are never part of a choice's identity, by name. The
+# provenance recorder is the one: it fixes every other module's digest as it
+# loads, so it computes no placement, and it cannot record its own load because
+# it is the module that installs the recorder — a record that named it could
+# never be written. Its absence is not a gap in the identity of a *choice*: no
+# choice reads a byte of it. A module that merely failed to load through the
+# recorder still raises (``_module_source_digest``), so this excludes the
+# recorder alone rather than papering over a missing digest.
+_IDENTITY_EXCLUDED_MODULES = frozenset({f"{__package__}.sourceidentity"})
+
+@dataclass(frozen=True)
+class DeclaredObjective:
+    """One agent's declared objective, and the writer version that introduced it.
+
+    ``module`` declares the objective's weights and formula, ``owner`` is the
+    module that builds the agent when the objective's own module does (``None``
+    when the shared agent factory does), and ``introduced_in`` is the suite
+    format version whose writer first made the agent configurable. The last is a
+    property of the agent, not of the writer that runs now: it is what stops a
+    record from claiming a version that never knew the agent it configures, which
+    would otherwise decide the objective section's required-ness — and the
+    identity's — by the version the record itself chose.
+    """
+
+    module: ModuleType
+    owner: ModuleType | None
+    introduced_in: int
+
+
+# The agents whose choices a separately declared objective computes: for each
+# one, the module that declares its weights and formula, and — when its objective
+# module also owns the agent — the module that builds it. ``None`` means the
+# shared agent factory defines it, and that factory's own module drives it.
+# Registering an agent here is what makes a suite that configures it record, and
+# verify, its objective.
+DECLARED_OBJECTIVES: dict[str, DeclaredObjective] = {
+    # The version-2 writer already built the Tetris agent: Experiment 003's early
+    # rounds wrote such suites, before the objective section existed, so a
+    # version-2 record of a Tetris suite legitimately carries no objective. The
+    # plan agent is declared beside the objective that computes its choices and
+    # was added by the writer that emits version 6, which always records the
+    # objective, the identity behind it and the dispatch that builds the agent —
+    # no older version's writer ever emitted one, so a record that claims an older
+    # version while configuring the plan is an edit, not a legacy record. The
+    # version is the writer's version when the agent was introduced, not the
+    # writer's current one: a later writer that moves ``SUITE_FORMAT_VERSION`` —
+    # the version-7 writer did, to record the identity the dispatch-seeded walk
+    # produces — keeps verifying the records the version-6 writer emitted.
+    TETRIS_AGENT: DeclaredObjective(tetris, None, LEGACY_SUITE_FORMAT_VERSION),
+    PLAN_AGENT: DeclaredObjective(wellplan, wellplan, 6),
+}
+# Every agent a suite may configure: the shared factory's own, then the agents a
+# declared objective owns. The runner is the registry the configuration is
+# validated against, so an agent that lives beside its objective is still a
+# first-class agent name here.
+AGENT_NAMES = FACTORY_AGENT_NAMES + (PLAN_AGENT,)
+
+
+def _declared_agents(names: Iterable[str]) -> tuple[str, ...]:
+    """The distinct agents in ``names`` whose choices a declared objective computes.
+
+    Each name is reported once: a suite may configure the same agent twice — its
+    episodes repeat in the configured order, which the writer and the verifier
+    both carry — and a repeated agent still declares one objective. What a record
+    cannot carry is two *different* declared objectives.
+    """
+    return tuple(name for name in dict.fromkeys(names) if name in DECLARED_OBJECTIVES)
+
+
+def build_agent(name: str, seed: int) -> Any:
+    """Build the agent a suite names; the random stream is seeded by its factory.
+
+    The shared factory builds the agents declared in its own module. An agent a
+    declared objective owns is built by that objective's module instead, which is
+    what keeps the shared factory's source — and therefore its digest in a frozen
+    record's identity — fixed while a new agent is added: the factory's bytes are
+    covered by every record of every agent it dispatches, so an agent added to it
+    would invalidate them all. Each agent is still built by exactly one factory,
+    and the name is validated here, before either factory sees it.
+    """
+    if name not in AGENT_NAMES:
+        raise ValueError(f"unknown agent: {name!r}")
+    objective = DECLARED_OBJECTIVES.get(name)
+    if objective is not None and objective.owner is not None:
+        return objective.owner.build_agent(name, seed)
+    return create_agent(name, seed)
 
 
 class VerificationError(RuntimeError):
@@ -271,6 +413,16 @@ def _parse_suite_config(value: dict[str, Any]) -> SuiteConfig:
     for agent in agents:
         if agent not in AGENT_NAMES:
             raise ValueError(f"agents must be chosen from {', '.join(AGENT_NAMES)}")
+    declared = _declared_agents(agents)
+    if len(declared) > 1:
+        # A record carries one ``objective`` section, which names the module
+        # that declares the configured agent's objective. Two such agents would
+        # need two sections of a shape the version-6 writer does not emit, so
+        # the configuration is refused here rather than recorded ambiguously.
+        raise ValueError(
+            "a suite configures at most one agent with its own objective: "
+            f"{', '.join(declared)}"
+        )
     return SuiteConfig(_parse_game(value["game"], with_seed=False),
                        _parse_frame_limit(value["frame_limit"]), tuple(seeds), tuple(agents))
 
@@ -480,7 +632,7 @@ def run_suite(config: SuiteConfig, game_factory: Callable[..., Any] = create_gam
     episodes = []
     for name in config.agents:
         for seed in config.seeds:
-            agent = create_agent(name, seed)
+            agent = build_agent(name, seed)
             episode = _play({**config.game, "seed": seed}, config.frame_limit, agent, game_factory)
             episodes.append({"agent": name, "seed": seed, **_persisted(episode)})
     return episodes
@@ -672,7 +824,7 @@ def _compare_summary(recorded: Any, replayed: dict[str, Any], where: str,
     return differences
 
 
-def _choice_walk_seeds() -> list[ModuleType]:
+def _choice_walk_seeds(agent: str, shape: str = _IDENTITY_CHOICE) -> list[ModuleType]:
     """The package modules a choice's code starts from: the objective and its driver.
 
     The module that declares the objective is only half of the code a placement
@@ -680,13 +832,73 @@ def _choice_walk_seeds() -> list[ModuleType]:
     parameter it reads and executes the placement it returns, and it imports the
     objective rather than the other way round, so a walk outward from the
     objective can never reach it. It is found from the code instead of
-    hand-listed: the factory the runner builds agents with is what selects the
-    wrapper, so the walk starts from the module that defines that factory, and
-    the class the factory returns is reached from there like any other name that
-    module's code holds. A wrapper moved to another module is followed there, and
-    a module that stops producing choices drops out of the walk by itself.
+    hand-listed: the selection that decides which implementation is built is what
+    picks the wrapper, so the walk starts from the module that makes that
+    selection, and the class it returns is reached from there like any other name
+    that module's code holds. A wrapper moved to another module is followed
+    there, and a module that stops producing choices drops out of the walk by
+    itself.
+
+    Both seeds are selected by the agent name: the objective module is the one
+    that declares *this* agent's objective, and the driver is the module that
+    selects the implementation for the shape's walk (``_choice_driver``). A record
+    of the well plan therefore covers the dispatch that selects its agent, and so
+    does a current record of every other agent: the dispatch builds them all.
+
+    ``shape`` names which walk the caller means, and the walk of a record's own
+    version is the one its writer emitted: ``_IDENTITY_OUTWARD`` stops at the
+    objective's own namespace, ``_IDENTITY_CHOICE`` adds the wrapper and the
+    module the version-6 writer named as its builder, and ``_IDENTITY_DISPATCH``
+    names the dispatch for every agent, which is what decides which
+    implementation is built. The default is ``_IDENTITY_CHOICE``, the shape
+    callers that predate the version keying mean (``_objective_sources``); a
+    caller that means the walk the current writer emits passes
+    ``_IDENTITY_DISPATCH``.
     """
-    return [tetris, sys.modules[create_agent.__module__]]
+    seeds = [DECLARED_OBJECTIVES[agent].module]
+    if shape == _IDENTITY_OUTWARD:
+        return seeds
+    return seeds + [_choice_driver(agent, shape)]
+
+
+def _choice_driver(agent: str, shape: str = _IDENTITY_CHOICE) -> ModuleType:
+    """The package module that selects which implementation builds this agent.
+
+    ``_IDENTITY_DISPATCH`` — the walk the current writer emits — is the runner's
+    dispatch for every agent: ``build_agent`` reads ``DECLARED_OBJECTIVES`` and
+    routes an agent a declared objective owns to that objective's module, and
+    every other agent to the shared factory. That dispatch is the code that
+    decides which implementation is built, whichever agent the record names, so a
+    change to it is code the choice runs through whether or not the objective's
+    own module owns the agent.
+
+    ``_IDENTITY_CHOICE`` — the walk the version-6 writer emitted — is the module
+    that writer named as the builder: an agent the shared factory defines was
+    seeded from the factory, because the factory's ``create_agent`` is the branch
+    that returns its class, and an agent a declared objective owns from the
+    dispatch, because the factory never builds that one. Records of that version
+    are compared against that walk, which is the identity their writer recorded,
+    and it is the default here for the same reason it is the default of
+    ``_objective_sources``.
+    """
+    if shape == _IDENTITY_DISPATCH or DECLARED_OBJECTIVES[agent].owner is not None:
+        return sys.modules[build_agent.__module__]
+    return sys.modules[create_agent.__module__]
+
+
+def _sibling_objective_modules(agent: str) -> set[int]:
+    """The other agents' objective modules, which this agent's identity excludes.
+
+    The shared factory imports every objective module, so a walk from the
+    wrapper would otherwise swallow its siblings' sources: a Tetris record would
+    be invalidated by an edit to the well plan, whose code no Tetris choice ever
+    runs. Excluding them also states the invariant the registration relies on —
+    a declared objective does not compute its choices with another agent's
+    objective module — because a sibling reached *from the seed objective's own
+    namespace* would be dropped as well.
+    """
+    return {id(DECLARED_OBJECTIVES[name].module) for name in DECLARED_OBJECTIVES
+            if name != agent}
 
 
 def _module_source_digest(module: ModuleType, *, loaded: bool) -> str:
@@ -720,7 +932,7 @@ def _module_source_digest(module: ModuleType, *, loaded: bool) -> str:
     return hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest()
 
 
-def _objective_sources(shape: str = _IDENTITY_CHOICE, *,
+def _objective_sources(shape: str = _IDENTITY_CHOICE, *, agent: str = TETRIS_AGENT,
                        loaded: bool = False) -> dict[str, str]:
     """sha256 of the source of every package module the objective's choices run.
 
@@ -729,29 +941,52 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE, *,
     imports, and Experiment 002's reachable-set enumeration it reuses — and the
     agent wrapper that drives it: the class whose ``_choose`` supplies the state
     (the board, the current and preview pieces, the level, the ruleset and the
-    mode) and the factory that selects that class. Hashing only the declaring
-    module would leave the same hole one level deeper — a helper's change alters
-    every value the objective computes while the declaring module's own text is
-    unchanged — so the closure is walked from the objective's own namespace and
-    from the wrapper's, instead of being hand-listed, and a module that stops
-    being used drops out of it by itself.
+    mode), the module that decides which implementation is built, and the factory
+    that selects that class. Hashing only the declaring module would leave the
+    same hole one level deeper — a helper's change alters every value the
+    objective computes while the declaring module's own text is unchanged — so the
+    closure is walked from the objective's own namespace and from the wrapper's,
+    instead of being hand-listed, and a module that stops being used drops out of
+    it by itself. A change to the dispatch that still replays the recorded inputs
+    is caught by the same walk, because the dispatch module is one of the seeds of
+    the current shape and its bytes are hashed with the rest.
 
-    ``shape`` names which of those walks a caller means. ``_IDENTITY_CHOICE`` is
-    the current one, above. ``_IDENTITY_OUTWARD`` is the shape the version-5
-    writer emitted, which stops at what the objective's own namespace reaches and
-    therefore misses the wrapper: a record of that version is compared against
-    that shape, because it is the identity its writer recorded.
+    ``agent`` selects which objective that is: the walk is seeded from the module
+    that declares *that* agent's objective, so the identity follows the
+    configuration rather than one hard-wired agent. The other agents' objective
+    modules are excluded (``_sibling_objective_modules``), because the shared
+    factory imports them all and none of them computes this agent's choices.
+
+    ``shape`` names which of those walks a caller means. ``_IDENTITY_DISPATCH`` is
+    the current one, above: the dispatch that builds every agent is a seed, so a
+    record of any agent covers the code that selects its implementation.
+    ``_IDENTITY_CHOICE`` is the shape the version-6 writer emitted, which named the
+    shared factory for an agent the factory defines and the dispatch only for an
+    agent a declared objective owns; ``_IDENTITY_OUTWARD`` is the shape the
+    version-5 writer emitted, which stops at what the objective's own namespace
+    reaches and therefore misses the wrapper. A record of either version is
+    compared against that shape, because it is the identity its writer recorded.
+
+    The default is the version-6 shape, and deliberately so: it is what callers
+    that predate the version keying mean by "the Tetris objective's identity" —
+    Experiment 003's own probe among them, whose retained capture recorded exactly
+    that walk, so leaving the default there keeps that evidence checkable without
+    editing it. A caller that means the walk the current writer emits passes
+    ``_IDENTITY_DISPATCH``; the writer and the verifier both do.
 
     ``loaded`` selects which of the two views above each digest is: the writer's
     loaded identity, or the verifier's tree. One function serves both so the
     closure cannot drift between the two — both enumerate the same modules — and
     only the bytes each digest is taken over differ.
     """
-    pending = [tetris] if shape == _IDENTITY_OUTWARD else _choice_walk_seeds()
+    seeds = _choice_walk_seeds(agent, shape)
+    excluded = _sibling_objective_modules(agent)
+    pending = list(seeds)
     sources: dict[str, str] = {}
     while pending:
         module = pending.pop()
-        if module.__name__ in sources:
+        if (id(module) in excluded or module.__name__ in sources
+                or module.__name__ in _IDENTITY_EXCLUDED_MODULES):
             continue
         sources[module.__name__] = _module_source_digest(module, loaded=loaded)
         for name, value in vars(module).items():
@@ -770,7 +1005,7 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE, *,
     return {name: sources[name] for name in sorted(sources)}
 
 
-def _stale_loaded_references(sources: dict[str, str]) -> list[str]:
+def _stale_loaded_references(sources: dict[str, str], agent: str = TETRIS_AGENT) -> list[str]:
     """Cross-module references a partial reload left pointing at replaced code.
 
     A module that imports a name from another module binds the *object*, not the
@@ -793,15 +1028,23 @@ def _stale_loaded_references(sources: dict[str, str]) -> list[str]:
     the identity is not reported: only the code the recorded identity claims to
     describe has to be the code that runs.
 
+    The other declared objectives' modules are skipped, exactly as the walk skips
+    them: a module that computes a *different* agent's choices is not part of this
+    record's code path, so a reference it holds into this closure — the one it
+    holds to this closure's code because its own agent runs on it — cannot make
+    this record name code that will not run. It is scanned for its own agent's
+    records, where it is not skipped.
+
     Returns the references that no longer appear anywhere in the namespace of the
     module they were defined in, as ``module.attribute (defined in module)``.
     """
+    excluded = _sibling_objective_modules(agent)
     stale = []
     for name in sorted(sys.modules):
         if not name.startswith(_PACKAGE_PREFIX):
             continue
         holding = sys.modules[name]
-        if not isinstance(holding, ModuleType):
+        if id(holding) in excluded or not isinstance(holding, ModuleType):
             continue
         for attribute, value in vars(holding).items():
             if attribute.startswith("__") and attribute.endswith("__"):
@@ -814,7 +1057,8 @@ def _stale_loaded_references(sources: dict[str, str]) -> list[str]:
     return stale
 
 
-def _loaded_objective_sources(shape: str = _IDENTITY_CHOICE) -> dict[str, str]:
+def _loaded_objective_sources(shape: str = _IDENTITY_CHOICE, *,
+                              agent: str = TETRIS_AGENT) -> dict[str, str]:
     """The loaded identity of the objective's closure, read at this moment.
 
     Every writer records this before the run's first choice, including at each
@@ -844,8 +1088,8 @@ def _loaded_objective_sources(shape: str = _IDENTITY_CHOICE) -> dict[str, str]:
     reloads the modules that import it too, and then the closure is consistent
     again.
     """
-    sources = _objective_sources(shape, loaded=True)
-    stale = _stale_loaded_references(sources)
+    sources = _objective_sources(shape, agent=agent, loaded=True)
+    stale = _stale_loaded_references(sources, agent)
     if stale:
         raise VerificationError(
             "The loaded modules a choice runs through are inconsistent: "
@@ -861,71 +1105,133 @@ def _loaded_objective_sources(shape: str = _IDENTITY_CHOICE) -> dict[str, str]:
 
 
 def _objective_record(config: SuiteConfig, *, loaded: bool = False,
-                      shape: str = _IDENTITY_CHOICE) -> dict[str, Any] | None:
-    """The declared objective a suite record must carry, or ``None`` without the agent.
+                      shape: str = _IDENTITY_DISPATCH) -> dict[str, Any] | None:
+    """The declared objective a suite record must carry, or ``None`` without one.
 
     The ``heuristic`` mapping is written for every suite because every placement
-    agent scores through it; the Tetris agent's choices come from a second,
-    separately declared objective, so a suite that uses it records that objective
-    too: the module that declares it, the weights its ``weights_record()``
-    publishes, and the source identity of the modules its decisions are computed
-    from. A suite without the agent has no such objective to record. A writer
+    agent scores through it; an agent whose choices come from a second,
+    separately declared objective instead is named here: the module that declares
+    *that* agent's objective — the one the configuration selects, not a fixed
+    one — the weights its ``weights_record()`` publishes, and the source identity
+    of the modules its decisions are computed from. A suite whose agents all
+    score through the frozen mapping has no such objective to record. A writer
     passes ``loaded=True`` so the identity is the code the interpreter loaded as
     of the moment the record is built — the run's own construction — through
     ``_loaded_objective_sources``; the verifier leaves it ``False`` so the
     identity is compared against the files on the tree now, and passes the
-    ``shape`` the record's own version's writer emitted, because a version-5
-    record's identity stops at what the objective's own namespace reaches.
+    ``shape`` the record's own version's writer emitted, because a version-6
+    record's identity names the shared factory instead of the dispatch for an
+    agent the factory defines, and a version-5 record's stops at what the
+    objective's own namespace reaches.
     """
-    if TETRIS_AGENT not in config.agents:
+    agent = _declared_agent(config)
+    if agent is None:
         return None
+    module = DECLARED_OBJECTIVES[agent].module
     return {
-        "module": tetris.__name__,
-        "weights": tetris.weights_record(),
-        _OBJECTIVE_SOURCES_FIELD: (_loaded_objective_sources(shape) if loaded
-                                   else _objective_sources(shape)),
+        "module": module.__name__,
+        "weights": module.weights_record(),
+        _OBJECTIVE_SOURCES_FIELD: (_loaded_objective_sources(shape, agent=agent) if loaded
+                                   else _objective_sources(shape, agent=agent)),
     }
 
 
+def _declared_agent(config: SuiteConfig) -> str | None:
+    """The one configured agent whose choices its own objective computes, if any.
+
+    A record carries one ``objective`` section, and ``_parse_suite_config``
+    refuses a configuration that names two such agents, so more than one here is
+    a configuration no writer could have produced and is reported rather than
+    resolved by picking one.
+    """
+    agents = _declared_agents(config.agents)
+    if not agents:
+        return None
+    if len(agents) > 1:
+        raise VerificationError(
+            "the configuration names more than one agent with its own objective "
+            f"({', '.join(agents)}), which no record format carries"
+        )
+    return agents[0]
+
+
 def _objective_section(config: SuiteConfig, *, loaded: bool = False) -> dict[str, Any]:
-    """The record entry that declares a suite's Tetris objective, if it has one."""
+    """The record entry that declares a suite's objective of its own, if it has one."""
     objective = _objective_record(config, loaded=loaded)
     return {} if objective is None else {_OBJECTIVE_FIELD: objective}
+
+
+def _check_declared_agent_versions(config: SuiteConfig, version: int, path: Path) -> None:
+    """A record cannot claim a version whose writer never knew the agent it configures.
+
+    The section requirements are read from the record's own format version, so a
+    record could otherwise be relabelled to a version before the objective section
+    existed and verified with its objective — and, one version later, the identity
+    behind it and the dispatch that builds the agent — all dropped. The agent
+    names a suite may configure are not version-gated, so nothing else notices:
+    the verifier would compare the record against whatever objective is current
+    while the record's own text claims the older writer chose it. The version is a
+    claim about the writer, and the writer that first made an agent configurable
+    is a property of that agent (``DeclaredObjective.introduced_in``), not of the
+    version the record carries. The Tetris agent predates the objective section —
+    the version-2 writer already built it, so its version-2 records legitimately
+    carry no objective — while the plan agent was introduced by the version-6
+    writer, which always records it; a record that configures the plan below
+    version 6 is therefore an edit, not a record of an older writer, and is
+    reported before any section is compared.
+    """
+    for agent in _declared_agents(config.agents):
+        introduced = DECLARED_OBJECTIVES[agent].introduced_in
+        if version < introduced:
+            raise VerificationError(
+                f"Recorded format_version {version} in {path} predates the agent it "
+                f"configures: {agent} was introduced by the writer that emits version "
+                f"{introduced}"
+            )
 
 
 def _compare_objective(record: dict[str, Any], config: SuiteConfig,
                        required: bool, identity_shape: str | None) -> list[str]:
     """Differences for the declared-objective section of a suite record.
 
-    A suite that uses the Tetris agent records the module, the weights and the
-    source identity of the objective that chose its placements, so a record
-    cannot keep verifying under a different objective merely because the changed
-    weights or the changed formula happen to preserve the replayed choices: the
-    weight mapping is compared value for value, and the identity is compared
-    against the source of the modules the objective's code runs. The section is
-    required at the current version, whose writer always emits it for such a
-    suite: a record of that version which lacks it had the section deleted, and
-    accepting that would verify the record under whatever objective is current —
-    exactly the hole the section closes. The identity inside it is gated the same
-    way, because the writer that emitted the prior version recorded no identity
-    and the writer that emitted the legacy version recorded no section at all;
-    both keep verifying, and a present identity is compared in every case. A
-    section in a record whose configuration has no Tetris agent is a difference
-    too, because no writer emits one.
+    A suite that selects an agent with its own objective records the module, the
+    weights and the source identity of the objective that chose its placements,
+    so a record cannot keep verifying under a different objective merely because
+    the changed weights or the changed formula happen to preserve the replayed
+    choices: the weight mapping is compared value for value, the identity is
+    compared against the source of the modules the objective's code runs, and the
+    module name is compared too, so a record of a Tetris suite cannot verify
+    against the well plan's objective even if that objective happened to publish
+    the same weights. The section is required at the current version, whose
+    writer always emits it for such a suite: a record of that version which lacks
+    it had the section deleted, and accepting that would verify the record under
+    whatever objective is current — exactly the hole the section closes. The
+    identity inside it is gated the same way, because the writer that emitted the
+    prior version recorded no identity and the writer that emitted the legacy
+    version recorded no section at all; both keep verifying, and a present
+    identity is compared in every case. A section in a record whose configuration
+    declares no objective of its own is a difference too, because no writer emits
+    one.
+
+    Which version's requirements apply is not the record's to choose: the writer
+    that could have configured the agent it names is a property of that agent, and
+    ``_check_declared_agent_versions`` reports a record below it before this
+    comparison runs, so a record cannot be relabelled out of the section — or, one
+    version later, out of the identity inside it.
 
     ``identity_shape`` is the shape the record's own version's writer emitted, as
     the version table gives it: the modules the objective's own code reaches, or
-    those plus the agent wrapper that drives it. A version whose writer emitted no
-    identity at all gives ``None``, and the record is compared against the current
-    shape, because an identity such a record carries is an edit and no writer ever
-    emitted another shape under that version.
+    those plus the agent wrapper and the module that builds the agent. A version
+    whose writer emitted no identity at all gives ``None``, and the record is
+    compared against the current shape, because an identity such a record carries
+    is an edit and no writer ever emitted another shape under that version.
     """
-    expected = _objective_record(config, shape=identity_shape or _IDENTITY_CHOICE)
+    expected = _objective_record(config, shape=identity_shape or _IDENTITY_DISPATCH)
     if expected is None:
         if _OBJECTIVE_FIELD in record:
             return [
-                f"{_OBJECTIVE_FIELD}: the configuration has no Tetris agent, so the "
-                "record must not declare an objective"
+                f"{_OBJECTIVE_FIELD}: the configuration declares no agent whose choices "
+                "an objective of its own computes, so the record must not declare one"
             ]
         return []
     if _OBJECTIVE_FIELD not in record:
@@ -933,7 +1239,7 @@ def _compare_objective(record: dict[str, Any], config: SuiteConfig,
             return []
         return [
             f"{_OBJECTIVE_FIELD}: absent, but a record of this format version declares the "
-            "objective of the Tetris agent whose placements it replayed"
+            "objective of the agent whose placements it replayed"
         ]
     recorded = record[_OBJECTIVE_FIELD]
     if not isinstance(recorded, dict):
@@ -971,12 +1277,12 @@ def run_and_save(
     if isinstance(config, SuiteConfig):
         record["format_version"] = SUITE_FORMAT_VERSION
         record["heuristic"] = weights_record()
-        # A suite that uses the Tetris agent declares its objective beside the
-        # frozen heuristic mapping, so the record names the weights that chose
-        # its placements and the source identity the interpreter had loaded when
-        # this run was built — read here, before the first choice, and re-read at
-        # nothing later: a covered module the process reloads after this point
-        # cannot have chosen the inputs already recorded.
+        # A suite that selects an agent with its own objective declares that
+        # objective beside the frozen heuristic mapping, so the record names the
+        # weights that chose its placements and the source identity the
+        # interpreter had loaded when this run was built — read here, before the
+        # first choice, and re-read at nothing later: a covered module the process
+        # reloads after this point cannot have chosen the inputs already recorded.
         record.update(_objective_section(config, loaded=True))
         episodes = run_suite(config, game_factory)
         record["episodes"] = episodes
@@ -1109,8 +1415,9 @@ def _verify_scripted(record: dict[str, Any], path: Path, sections_required: bool
     return warnings
 
 
-def _verify_suite(record: dict[str, Any], path: Path, sections_required: bool,
-                  identity_shape: str | None, game_factory: Callable[..., Any]) -> list[str]:
+def _verify_suite(record: dict[str, Any], path: Path, version: int,
+                  game_factory: Callable[..., Any]) -> list[str]:
+    sections_required, identity_shape = _SUITE_FORMAT_VERSIONS[version]
     recorded_engine, configuration = _record_sections(record, path)
     # ``weights_record()`` carries the writer's float weights and the tie-break
     # string, so the same type-and-key comparison the episodes and summary get
@@ -1130,6 +1437,7 @@ def _verify_suite(record: dict[str, Any], path: Path, sections_required: bool,
         raise VerificationError(f"Malformed run record in {path}: {error}") from error
     if not isinstance(config, SuiteConfig):
         raise VerificationError(f"Malformed run record in {path}: not a suite configuration")
+    _check_declared_agent_versions(config, version, path)
     objective_differences = _compare_objective(record, config, sections_required,
                                                identity_shape)
     if objective_differences:
@@ -1176,7 +1484,7 @@ def _verify_suite(record: dict[str, Any], path: Path, sections_required: bool,
             )
         name, seed = identity
         actual = _play({**config.game, "seed": seed}, config.frame_limit,
-                       create_agent(name, seed), game_factory)
+                       build_agent(name, seed), game_factory)
         differences = []
         if episode.get("initial_state_hash") != actual["initial_state_hash"]:
             differences.append(
@@ -1230,6 +1538,5 @@ def verify_run(path: Path, game_factory: Callable[..., Any] = create_game) -> li
     if version in _SCRIPTED_FORMAT_VERSIONS:
         return _verify_scripted(record, path, _SCRIPTED_FORMAT_VERSIONS[version], game_factory)
     if version in _SUITE_FORMAT_VERSIONS:
-        sections_required, identity_shape = _SUITE_FORMAT_VERSIONS[version]
-        return _verify_suite(record, path, sections_required, identity_shape, game_factory)
+        return _verify_suite(record, path, version, game_factory)
     raise VerificationError(f"Unsupported run record format in {path}")

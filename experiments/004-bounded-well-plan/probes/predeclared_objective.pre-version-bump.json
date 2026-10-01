@@ -1,0 +1,32 @@
+{
+  "captured_at": "2026-09-30T02:06:32.477792+00:00",
+  "module": "src/block_stack_ai/wellplan.py",
+  "module_sha256": "474beb3e65c5b1526ad8c15f8d33618a777461c102d7ef805ff49c1ba993a36d",
+  "note": "the declared objective -- the module, the modules its decisions are computed from, and the documented weights, plan constants and rationale -- captured from the unmodified tree before the evaluation run; no constant is revised against evaluation outcomes",
+  "notes_section": "experiments/004-bounded-well-plan/notes.md#predeclared-objective",
+  "notes_section_sha256": "f167d0c90447d830dfba7f9986196fe7bdd2d644801cbef6bbb67a89c6c26c9a",
+  "objective": {
+    "aggregate_height": -0.5,
+    "bumpiness": -0.5,
+    "drought_bound": 9,
+    "height_budget": 8,
+    "holes": -2.0,
+    "max_height": -1.0,
+    "overflow": -2.0,
+    "premature_clear": -1.0,
+    "reserve": 6.0,
+    "reserve_cap": 4,
+    "tetrises": 8.0,
+    "tie_break": "first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending",
+    "well_column": 9
+  },
+  "sources": {
+    "block_stack_ai.agents": "2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329",
+    "block_stack_ai.engine": "6c6ababa0e527053892a5a77fecf58e7c5079473f6c0c51647c38c6fab0ac60b",
+    "block_stack_ai.heuristic": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
+    "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
+    "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
+    "block_stack_ai.runner": "b8bc2b025454c7ad5f276c667d1d67336c36807ca27b814a7d9455ab934a3cac",
+    "block_stack_ai.wellplan": "474beb3e65c5b1526ad8c15f8d33618a777461c102d7ef805ff49c1ba993a36d"
+  }
+}
