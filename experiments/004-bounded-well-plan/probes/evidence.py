@@ -965,7 +965,7 @@ def refactor_statement(runs: list[dict]) -> str:
         "every superseded run's retained rows equal this run's, field for field, so each "
         "re-measurement this evaluation superseded -- every correction this record's "
         "history describes, the last being the predeclared rationale's account of the "
-        "engine's piece counter -- changed no outcome: "
+        "drought counter's unit -- changed no outcome: "
         + ", ".join(entry["run"] for entry in runs)
     )
 

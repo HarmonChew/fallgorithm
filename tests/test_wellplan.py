@@ -534,7 +534,7 @@ def test_the_plan_spends_at_the_drought_bound_the_prose_states(monkeypatch):
     assert seen[phases.index(SPEND)] == DROUGHT_BOUND
 
     documented = " ".join(wellplan_module.__doc__.split())
-    assert "at that bound" in documented, (
+    assert "bound-th" in documented, (
         "the module docstring does not state the boundary the predicate implements"
     )
     assert "past that bound" not in documented, (
@@ -542,14 +542,95 @@ def test_the_plan_spends_at_the_drought_bound_the_prose_states(monkeypatch):
         "observation later than holds_well"
     )
     section = " ".join(declared_objective_section().split())
-    assert "at that many shown pieces" in section, (
+    assert "on the bound-th spawned piece without a visible I" in section, (
         "the predeclared rationale row does not state the boundary the predicate "
         "implements"
     )
-    assert "past that many shown pieces" not in section, (
+    assert "past the bound" not in section, (
         "the predeclared rationale row says the plan spends only past the bound, which "
         "is one observation later than holds_well"
     )
+
+
+def test_the_drought_counter_counts_spawned_pieces_and_the_prose_says_so(monkeypatch):
+    """The drought is a per-spawn count, and every restatement uses that unit.
+
+    ``PlanAgent._choose`` advances the counter once per spawn observation, from the
+    piece it places and the visible preview, so after ``k`` consecutive
+    observations without a visible I the counter is ``k`` while ``k + 1`` piece
+    instances have been shown -- the preview of one observation is the current
+    piece of the next. The bound is therefore *not* the number of pieces the plan
+    has been shown: it is reached on the bound-th observation, by which time one
+    more piece instance has been exposed than the counter reports. The arithmetic
+    is read from the code rather than from the prose beside it: the agent is driven
+    through consecutive no-I observations, the count it hands the objective is
+    recorded, the observation the phase first turns ``SPEND`` on is required to be
+    the bound-th, and each retained restatement is required to count in the
+    counter's own unit -- spawned pieces -- rather than the pieces the plan has
+    been shown, which is the off-by-one description this derives against.
+    """
+    seen: list[int] = []
+    real = wellplan_module.plan_choice
+
+    def recording(grid, piece, next_piece, *, drought, **rest):
+        seen.append(drought)
+        return real(grid, piece, next_piece, drought=drought, **rest)
+
+    monkeypatch.setattr(wellplan_module, "plan_choice", recording)
+    agent = build_agent(PLAN_AGENT, 0)
+    grid = open_well(1)
+    # One observation per piece placed; the i-th shows the i-th piece as current
+    # and the (i + 1)-th as the preview, so it exposes i + 1 piece instances.
+    pieces = ["T", "S", "L", "J", "O", "Z"] * 3
+    observations = DROUGHT_BOUND + 2
+    for index in range(observations):
+        agent.act(PlanState(grid, pieces[index], pieces[index + 1], piece_count=index + 1))
+
+    # One increment per spawn observation: the counter is a per-spawn count.
+    assert seen == list(range(1, observations + 1))
+    phases = [initial_phase(drought, columns_of(grid)) for drought in seen]
+    first_spend = phases.index(SPEND)
+    assert seen[first_spend] == DROUGHT_BOUND
+    # The bound-th observation has shown one more piece instance than the counter
+    # reports -- the count is spawn observations, not distinct pieces shown.
+    exposures = first_spend + 2
+    assert exposures == DROUGHT_BOUND + 1
+    assert exposures == seen[first_spend] + 1
+
+    source = Path(wellplan_module.__file__).read_text(encoding="utf-8").splitlines()
+    constant = next(i for i, line in enumerate(source)
+                    if line.startswith("DROUGHT_BOUND = "))
+    comment_start = constant
+    while comment_start and source[comment_start - 1].startswith("#"):
+        comment_start -= 1
+    comment = " ".join(line.lstrip("#").strip() for line in source[comment_start:constant])
+    row = next(line for line in declared_objective_section().splitlines()
+               if line.startswith("| `drought_bound` |"))
+    sites = {
+        "module docstring": " ".join(wellplan_module.__doc__.split()),
+        "DROUGHT_BOUND comment": " ".join(comment.split()),
+        "holds_well docstring": " ".join(holds_well.__doc__.split()),
+        "PlanAgent docstring": " ".join(PlanAgent.__doc__.split()),
+        "predeclared rationale": " ".join(declared_objective_section().split()),
+        "drought_bound row": " ".join(row.split()),
+    }
+    for where, text in sites.items():
+        assert "spawned piece" in text, (
+            f"{where} does not count the drought in the per-spawn unit _choose "
+            "implements; the counter advances once per spawned piece"
+        )
+        for stale in ("shown piece", "pieces it has been shown", "pieces it was shown"):
+            assert stale not in text, (
+                f"{where} counts the pieces the plan has been shown, which is one more "
+                f"than the per-spawn counter ({seen[first_spend]} spawn observations, "
+                f"{exposures} piece instances at the bound)"
+            )
+    # The sites that state the boundary state it in the same per-spawn unit.
+    for where in ("module docstring", "DROUGHT_BOUND comment", "holds_well docstring",
+                  "predeclared rationale", "drought_bound row"):
+        assert "bound-th" in sites[where], (
+            f"{where} does not state the bound-th spawned piece the predicate turns on"
+        )
 
 
 def test_the_plan_reads_the_engine_piece_counter_through_the_inherited_act(monkeypatch):

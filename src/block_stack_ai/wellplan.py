@@ -33,11 +33,13 @@ player-visible lookahead. Everything it adds is visible-information only:
   in the two hidden rows above the ceiling counts as over the budget instead of
   as an empty column.
 * **spend-or-abandon at a self-tracked I-drought bound** (:data:`DROUGHT_BOUND`):
-  the plan counts the pieces it has been shown since an I was last visible to it,
-  as the current piece or as the preview, and at that bound it stops holding
+  the counter advances once per spawned piece -- one observation per piece the
+  agent places, from that piece and the visible preview it is shown with -- and an
+  I in either place resets it, so it counts the pieces the agent has spawned since
+  an I was last visible to it. On the bound-th such observation it stops holding
   the well and scores with the frozen flat-board heuristic instead -- the
   objective Experiment 002's ``lookahead`` agent survives on. The drought is the
-  plan's own count of the pieces it was shown; nothing here reads a future piece,
+  plan's own count of its spawned pieces; nothing here reads a future piece,
   an RNG stream or an engine counter.
 
 The two phases are the plan:
@@ -155,8 +157,9 @@ RESERVE_CAP = 4
 # a band while it holds a band of reserve, and no more.
 HEIGHT_BUDGET = 8
 # The pieces that lay one complete band of the nine-column field (nine columns
-# times four rows, four cells per piece). At that many shown pieces without a
-# visible I, the reserve is waiting on nothing.
+# times four rows, four cells per piece). The counter advances once per spawned
+# piece, so on the bound-th spawned piece without a visible I the reserve is
+# waiting on nothing.
 DROUGHT_BOUND = 9
 WELL_COLUMN = WIDTH - 1
 # The plan's two phases: hold the well, or spend it and clear eagerly.
@@ -285,9 +288,10 @@ def holds_well(drought: int, height: int) -> bool:
     """Whether the plan builds the reserve for one more piece.
 
     The plan holds while the stack is under the stack-height budget and an I has
-    been visible to it within the drought bound. At either bound, it spends: the
-    reserve has waited as long as a band takes to lay, or the stack has reached
-    the height the reserve was allowed to cost.
+    been visible to it within the drought bound -- the bound-th spawned piece
+    without one ends the hold. At either bound, it spends: the reserve has waited
+    as long as a band takes to lay, or the stack has reached the height the
+    reserve was allowed to cost.
     """
     return drought < DROUGHT_BOUND and height < HEIGHT_BUDGET
 
@@ -380,8 +384,10 @@ class PlanAgent(PlacementAgent):
 
     The candidate set and the one piece of preview lookahead are the ones
     Experiment 002's and 003's agents use; what this agent adds is the plan's own
-    memory: it counts the pieces it has been shown since an I was last visible to
-    it, as the current piece or as the preview, and hands that count to the
+    memory: the counter advances once per spawned piece -- one observation per
+    piece the agent places, from that piece and the visible preview it is shown
+    with -- and an I in either place resets it, so it counts the pieces the agent
+    has spawned since an I was last visible to it. It hands that count to the
     objective. Every other input is the state the engine reports, so the plan
     sees only what a player sees.
     """

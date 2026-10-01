@@ -1,10 +1,10 @@
 {
-  "captured_at": "2026-10-01T02:03:23.017207+00:00",
+  "captured_at": "2026-10-01T00:07:38.503859+00:00",
   "module": "src/block_stack_ai/wellplan.py",
-  "module_sha256": "d6e5d49e658f01371170173458eb2c28f752643c99d85317d243c9e821d5c904",
+  "module_sha256": "85d111b2d964ba2418295c1b24dba75eb918b75cb2f54bf6b8c7114a4735c68a",
   "note": "the declared objective -- the module, the modules its decisions are computed from, and the documented weights, plan constants and rationale -- captured from the unmodified tree before the evaluation run; no constant is revised against evaluation outcomes",
   "notes_section": "experiments/004-bounded-well-plan/notes.md#predeclared-objective",
-  "notes_section_sha256": "51089c20689490f2827da93500737239fea0d0cc143f711e0362847ed029714f",
+  "notes_section_sha256": "f638baa3031bf0223d2ab5dd2e9ba5a9ec65c949d2954f379e575cc05beb2083",
   "objective": {
     "aggregate_height": -0.5,
     "bumpiness": -0.5,
@@ -27,6 +27,6 @@
     "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
     "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
     "block_stack_ai.runner": "81a0bfbae21fc1afe0d48187f7a0e158394f5e7520cd4944ba502d8cdd8c4f77",
-    "block_stack_ai.wellplan": "d6e5d49e658f01371170173458eb2c28f752643c99d85317d243c9e821d5c904"
+    "block_stack_ai.wellplan": "85d111b2d964ba2418295c1b24dba75eb918b75cb2f54bf6b8c7114a4735c68a"
   }
 }

@@ -2456,6 +2456,313 @@
         }
       ],
       "run": "runs/20260930T100945820449Z-b0cd2600/run.json"
+    },
+    {
+      "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-drought-unit.json",
+      "created_at": "2026-10-01T00:07:48.031741+00:00",
+      "rows": [
+        {
+          "agent": "lookahead",
+          "clear_sizes": {
+            "doubles": 56,
+            "singles": 420,
+            "tetrises": 0,
+            "triples": 5
+          },
+          "frames": 59916,
+          "lines": 547,
+          "pieces_placed": 1404,
+          "score": 854880,
+          "seed": 2,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "lookahead",
+          "clear_sizes": {
+            "doubles": 41,
+            "singles": 399,
+            "tetrises": 0,
+            "triples": 0
+          },
+          "frames": 54559,
+          "lines": 481,
+          "pieces_placed": 1238,
+          "score": 656489,
+          "seed": 4,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "lookahead",
+          "clear_sizes": {
+            "doubles": 27,
+            "singles": 194,
+            "tetrises": 0,
+            "triples": 2
+          },
+          "frames": 33940,
+          "lines": 254,
+          "pieces_placed": 669,
+          "score": 256671,
+          "seed": 6,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "lookahead",
+          "clear_sizes": {
+            "doubles": 35,
+            "singles": 286,
+            "tetrises": 0,
+            "triples": 0
+          },
+          "frames": 42572,
+          "lines": 356,
+          "pieces_placed": 924,
+          "score": 405490,
+          "seed": 8,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "lookahead",
+          "clear_sizes": {
+            "doubles": 102,
+            "singles": 708,
+            "tetrises": 1,
+            "triples": 2
+          },
+          "frames": 93066,
+          "lines": 922,
+          "pieces_placed": 2341,
+          "score": 2171991,
+          "seed": 10,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "lookahead",
+          "clear_sizes": {
+            "doubles": 126,
+            "singles": 1082,
+            "tetrises": 0,
+            "triples": 4
+          },
+          "frames": 131805,
+          "lines": 1346,
+          "pieces_placed": 3400,
+          "score": 4272028,
+          "seed": 12,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "lookahead",
+          "clear_sizes": {
+            "doubles": 156,
+            "singles": 1169,
+            "tetrises": 1,
+            "triples": 10
+          },
+          "frames": 143005,
+          "lines": 1515,
+          "pieces_placed": 3820,
+          "score": 5602465,
+          "seed": 14,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "lookahead",
+          "clear_sizes": {
+            "doubles": 43,
+            "singles": 338,
+            "tetrises": 0,
+            "triples": 3
+          },
+          "frames": 50218,
+          "lines": 433,
+          "pieces_placed": 1119,
+          "score": 573143,
+          "seed": 16,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "lookahead",
+          "clear_sizes": {
+            "doubles": 209,
+            "singles": 1695,
+            "tetrises": 0,
+            "triples": 8
+          },
+          "frames": 200000,
+          "lines": 2137,
+          "pieces_placed": 5353,
+          "score": 10334568,
+          "seed": 18,
+          "stopping_reason": "frame_limit"
+        },
+        {
+          "agent": "lookahead",
+          "clear_sizes": {
+            "doubles": 123,
+            "singles": 888,
+            "tetrises": 0,
+            "triples": 1
+          },
+          "frames": 111168,
+          "lines": 1137,
+          "pieces_placed": 2876,
+          "score": 3101874,
+          "seed": 20,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "tetris_plan",
+          "clear_sizes": {
+            "doubles": 76,
+            "singles": 619,
+            "tetrises": 9,
+            "triples": 9
+          },
+          "frames": 84257,
+          "lines": 834,
+          "pieces_placed": 2120,
+          "score": 2339959,
+          "seed": 2,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "tetris_plan",
+          "clear_sizes": {
+            "doubles": 49,
+            "singles": 330,
+            "tetrises": 4,
+            "triples": 5
+          },
+          "frames": 51885,
+          "lines": 459,
+          "pieces_placed": 1184,
+          "score": 807025,
+          "seed": 4,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "tetris_plan",
+          "clear_sizes": {
+            "doubles": 46,
+            "singles": 418,
+            "tetrises": 5,
+            "triples": 10
+          },
+          "frames": 60895,
+          "lines": 560,
+          "pieces_placed": 1436,
+          "score": 1179384,
+          "seed": 6,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "tetris_plan",
+          "clear_sizes": {
+            "doubles": 39,
+            "singles": 273,
+            "tetrises": 1,
+            "triples": 6
+          },
+          "frames": 44158,
+          "lines": 373,
+          "pieces_placed": 969,
+          "score": 507596,
+          "seed": 8,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "tetris_plan",
+          "clear_sizes": {
+            "doubles": 52,
+            "singles": 351,
+            "tetrises": 5,
+            "triples": 11
+          },
+          "frames": 55188,
+          "lines": 508,
+          "pieces_placed": 1304,
+          "score": 948332,
+          "seed": 10,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "tetris_plan",
+          "clear_sizes": {
+            "doubles": 39,
+            "singles": 289,
+            "tetrises": 4,
+            "triples": 9
+          },
+          "frames": 46911,
+          "lines": 410,
+          "pieces_placed": 1060,
+          "score": 633260,
+          "seed": 12,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "tetris_plan",
+          "clear_sizes": {
+            "doubles": 116,
+            "singles": 939,
+            "tetrises": 16,
+            "triples": 23
+          },
+          "frames": 125476,
+          "lines": 1304,
+          "pieces_placed": 3297,
+          "score": 5400745,
+          "seed": 14,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "tetris_plan",
+          "clear_sizes": {
+            "doubles": 36,
+            "singles": 288,
+            "tetrises": 2,
+            "triples": 4
+          },
+          "frames": 45325,
+          "lines": 380,
+          "pieces_placed": 985,
+          "score": 552562,
+          "seed": 16,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "tetris_plan",
+          "clear_sizes": {
+            "doubles": 18,
+            "singles": 185,
+            "tetrises": 3,
+            "triples": 7
+          },
+          "frames": 33193,
+          "lines": 254,
+          "pieces_placed": 671,
+          "score": 331362,
+          "seed": 18,
+          "stopping_reason": "game_over"
+        },
+        {
+          "agent": "tetris_plan",
+          "clear_sizes": {
+            "doubles": 97,
+            "singles": 817,
+            "tetrises": 11,
+            "triples": 21
+          },
+          "frames": 108419,
+          "lines": 1118,
+          "pieces_placed": 2831,
+          "score": 3950135,
+          "seed": 20,
+          "stopping_reason": "game_over"
+        }
+      ],
+      "run": "runs/20261001T001038850583Z-949815c9/run.json"
     }
   ],
   "what_it_is": "the distilled per-episode rows of every ten-seed evaluation run the retained result supersedes, copied out of the ignored run records they came from (runs/ is disposable output), so the refactor_no_outcomes_changed comparison is made against a retained artifact rather than against a run directory a later checkout need not have"

@@ -25,7 +25,7 @@ lines and scoring more, on Experiment 003's identical ten seeds and game setting
   `tetris` agents use — the placements the shared frame controller can actually
   execute from the engine's native spawn state — with one piece of player-visible
   preview lookahead. What it adds is a memory of its own: how many pieces it has
-  been shown since an I was last visible to it.
+  spawned since an I was last visible to it.
 * **`src/block_stack_ai/wellplan.py`**, which declares that plan's objective,
   weights, constants *and* the agent that drives it, in one place. Experiment
   003's `src/block_stack_ai/tetris.py`, its weights, its formula, its agent and
@@ -122,7 +122,7 @@ them. No constant is revised against evaluation outcomes.
 | `well_column` | 9 | the designated well: one column, fixed for the whole game, at the right edge where it has a single neighbour |
 | `reserve_cap` | 4 | a vertical I fills four rows, so four is the most a reserve can be worth |
 | `height_budget` | 8 | the stack may build one reserve band (four rows) under one full band of field, and no more before the plan spends |
-| `drought_bound` | 9 | the pieces that lay one complete band of the nine-column field (nine columns times four rows, four cells per piece); at that many shown pieces without a visible I the reserve is waiting on nothing |
+| `drought_bound` | 9 | the pieces that lay one complete band of the nine-column field (nine columns times four rows, four cells per piece); the counter advances once per spawned piece, so on the bound-th spawned piece without a visible I the reserve is waiting on nothing |
 
 The tie-break is Experiment 002's and Experiment 003's: the first highest-valued
 placement in canonical enumeration order, orientation ascending then column
@@ -131,7 +131,7 @@ ascending.
 The plan reads only what a player sees: the engine's board, the current piece, the
 player-visible preview, the level, the line count, the start level, the
 first-piece delay, the engine's own piece counter, and its own count of the pieces
-it has been shown. It reads no future piece and no RNG stream. The counter is the
+it has spawned. It reads no future piece and no RNG stream. The counter is the
 one exception to "only what the plan itself counts": `PlanAgent` inherits
 `PlacementAgent.act`, which picks one placement per spawned piece by comparing
 `state.piece_count` with the count it last saw, and the plan overrides only
@@ -187,10 +187,13 @@ plan's height is 22, so `stack_height` is 22 and the phase is `SPEND`. The nativ
 integration suite reaches the same state on the engine itself by locking an O above
 the ceiling (`test_the_plan_reads_a_native_hidden_stack_as_over_its_budget`).
 
-**Spend-or-abandon at a self-tracked I-drought bound.** The agent counts the
-pieces it has been shown since an I was last visible to it, as the current piece
-or as the preview, and hands that count to the objective. At `drought_bound`
-pieces, or once the stack reaches the budget, the plan leaves `BUILD` and scores
+**Spend-or-abandon at a self-tracked I-drought bound.** The counter advances once
+per spawned piece — one observation per piece the agent places, from that piece
+and the visible preview it is shown with — and an I in either place resets it, so
+it counts the pieces the agent has spawned since an I was last visible to it. The
+agent hands that count to the objective. On the `drought_bound`-th consecutive
+spawned piece without a visible I, or once the stack reaches the budget, the plan
+leaves `BUILD` and scores
 `SPEND` with the frozen flat-board objective — `heuristic.feature_score` over all
 ten columns, the objective Experiment 002's `lookahead` agent survives on. That is
 how it gives the well back: the frozen score clears rows eagerly, which is the one
@@ -223,11 +226,11 @@ composition does not take at all.
 
 ## Results
 
-Measured on 2026-10-01 at fallgorithm `45477728` (working tree, `dirty: true` — the
+Measured on 2026-10-01 at fallgorithm `9e8e9f8c` (working tree, `dirty: true` — the
 committed experiment plus this round's evidence, disclosure and predeclaration
 changes) with the sibling engine `8ca41587` (working tree), on
 the ten seeds number 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, start level 18, frame limit
-200000. The run record is `runs/20261001T001038850583Z-949815c9/run.json`
+200000. The run record is `runs/20261001T020629406583Z-80e5bbc7/run.json`
 (temporary, ignored output); its per-episode rows, its metrics and the objective it
 declared are retained in [`result.json`](result.json), and `verify` replays the
 record from its own recorded inputs (exit 0, with the engine working-tree warning).
@@ -239,8 +242,9 @@ limitation — and the engine's own code is not reconstructable from this reposi
 The evaluation was re-measured after each of the
 corrections this record's history describes — the objective module's
 reorganisation, its identity walk, its height accounting, the widening of the
-writer's walk, the preview-phase, drought-boundary and overflow descriptions, and
-now the predeclared rationale's account of the engine's piece counter — and every
+writer's walk, the preview-phase, drought-boundary and overflow descriptions, the
+predeclared rationale's account of the engine's piece counter, and now the drought
+counter's unit — and every
 superseded
 run's distilled per-episode rows are retained beside this one in
 `probes/superseded_run_rows.json`, so the claim that the re-measurements changed no
@@ -306,10 +310,10 @@ branch base, which is what keeps the identity of the record this comparison cite
 and of every record Experiment 003 retained — matching this tree.
 
 **Predeclaration.** `probes/evidence.py predeclare` wrote
-`probes/predeclared_objective.json` at 2026-10-01T00:07:38.503859+00:00, before the
-evaluation record's own `created_at` 2026-10-01T00:07:48.031741+00:00, capturing
-the objective module (`src/block_stack_ai/wellplan.py`, `sha256:85d111b2…`), the
-marked rationale section of this file (`sha256:f638baa3…`), the published weights
+`probes/predeclared_objective.json` at 2026-10-01T02:03:23.017207+00:00, before the
+evaluation record's own `created_at` 2026-10-01T02:03:38.206026+00:00, capturing
+the objective module (`src/block_stack_ai/wellplan.py`, `sha256:d6e5d49e…`), the
+marked rationale section of this file (`sha256:51089c20…`), the published weights
 and constants, and the identity of the seven modules the plan's choices run
 through — the objective module, the board model, the reachable set, the wrapper and
 its factory, the game factory, and the module whose dispatch selects the plan's
@@ -347,7 +351,7 @@ boolean is reported rather than summed back to the integer it compares equal to.
 set of top-level blocks the record carries is asserted against the set of blocks that
 check knows, so a claim no check derives cannot be added to the certified record.
 
-The capture has been made nine times, and all eight superseded ones are kept beside
+The capture has been made ten times, and all nine superseded ones are kept beside
 it. The first (2026-09-29T17:11:15.420024+00:00) preceded the first ten-seed run
 (`runs/20260929T171936702109Z-3733d12b`); the plan agent was then moved out of the
 shared factory into its objective module (see *What this experiment adds*), so the
@@ -378,13 +382,19 @@ the drought boundary and of the overflow term was then corrected in the same way
 predeclared rationale row corrected beside it, which changes both the module a plan
 record hashes and the rationale section the capture hashes, so an eighth capture
 (`2026-09-30T10:06:36.090130+00:00`) was taken before the evaluation was re-run
-(`runs/20260930T100945820449Z-b0cd2600`); and the predeclared rationale's account of
+(`runs/20260930T100945820449Z-b0cd2600`); the predeclared rationale's account of
 what the plan reads was then corrected — it said the plan reads no engine counter,
 while the `act` it inherits keys its once-per-piece detection on the engine's piece
 counter — which changes the rationale section the capture hashes, so a ninth capture
-(`2026-10-01T00:07:38.503859+00:00`) was taken before this evaluation was re-run
-(`runs/20261001T001038850583Z-949815c9`). The
-superseded captures are `probes/predeclared_objective.pre-piece-counter.json`,
+(`2026-10-01T00:07:38.503859+00:00`) was taken before the evaluation was re-run
+(`runs/20261001T001038850583Z-949815c9`); and the drought counter's unit was then
+corrected — the module's own descriptions and the rationale row counted the pieces
+the plan has been *shown*, one more than the per-spawn counter — which changes both
+the module a plan record hashes and the rationale section the capture hashes, so a
+tenth capture (`2026-10-01T02:03:23.017207+00:00`) was taken before this evaluation
+was re-run (`runs/20261001T020629406583Z-80e5bbc7`). The
+superseded captures are `probes/predeclared_objective.pre-drought-unit.json`,
+`probes/predeclared_objective.pre-piece-counter.json`,
 `probes/predeclared_objective.pre-boundary-wording.json`,
 `probes/predeclared_objective.pre-preview-docstring.json`,
 `probes/predeclared_objective.pre-explicit-shape.json`,
@@ -400,13 +410,16 @@ retained in `probes/superseded_run_rows.json` and re-made field for field by
 `check-record` (`result.json` → `refactor_no_outcomes_changed`), not asserted — so the
 reorganisation, the identity correction, the height correction, the version bump,
 the default-shape change, the preview-phase description correction, the boundary and
-overflow description corrections and this round's piece-counter correction changed no
+overflow description corrections, the piece-counter correction and this round's
+drought-unit correction changed no
 outcome. The declared
-*weights and constants* are the same in all nine captures, and each capture's
+*weights and constants* are the same in all ten captures, and each capture's
 rationale-section digest names a retained section: the seven oldest captures name
 `probes/notes_predeclared_objective.pre-boundary-wording.md`, the section as it stood
 before the boundary-wording prose correction, the eighth names
 `probes/notes_predeclared_objective.pre-piece-counter.md`, the section as it stood
+before the piece-counter correction, the ninth names
+`probes/notes_predeclared_objective.pre-drought-unit.md`, the section as it stood
 before this round's correction, and the current capture names the section on this
 tree. That is derived too, from the captures and the retained sections
 themselves (`rationale_generations`).
@@ -939,15 +952,19 @@ history.
 
 *The comparisons were swept for type and structure.* `reproduction_differences` compared the intersection of the two row mappings and its values with plain equality; it now reports an identity present on one side only and keeps the per-field schema check, so two structurally different records cannot certify each other as a reproduction, and it is driven from the tampered side by `test_the_plan_reproduction_comparison_rejects_a_structurally_different_record`. The identity fields themselves are checked before they become keys — a retained `seed` edited from the integer `2` to the float `2.0`, or to a boolean, built the configured key and was never compared, so `rows_by_identity` now requires an agent name and an integer seed, the rule `runner._verify_suite` already applies to a record's own episodes, and `check-record` and `reproduce` both reject a mistyped identity. The baseline's new half is compared the same way. And one history rule was widened rather than the claim: `check-record` required a superseded capture to differ from the current one in its module digest *or* its identity, which a rationale-section-only correction does not change, so a capture is now compared by its whole subject — module, rationale section and identity, the same subject `check_superseded_captures` uses to keep the listed captures distinct. That is the one rule relaxed this round, and only to the shape the rationale-generation rule already accepts.
 
+**A later review of this publication found the drought counter's unit misstated, and the same derive-don't-restate rule was applied to it.** The finding was verified on the published tree and reproduced against `git archive 9e8e9f8cc1d8ae2298bd0d309883ed41646d8e24`.
+
+*The drought counter's unit was one piece ahead of the executed counter.* The module docstring bullet, the `DROUGHT_BOUND` comment, the `holds_well` and `PlanAgent` docstrings, the predeclared rationale's Spend-or-abandon paragraph and its `drought_bound` row all counted "the pieces it has been shown ... as the current piece or as the preview", and the `drought_bound = 9` row justified the value as "at that many shown pieces". `PlanAgent._choose` advances the counter once per spawn observation — one increment per piece placed — and each observation shows the current piece *and* the next preview, so after `k` consecutive no-I observations the counter is `k` while `k + 1` piece instances have been shown: the prose was one piece ahead of the code, and the "shown pieces" justification for the bound was off by one against it. The counter and its measured results are the source of truth; every restatement now counts *spawned pieces*, the unit the code implements, and the `drought_bound` row states the bound in the same unit ("on the bound-th spawned piece without a visible I"). `test_the_drought_counter_counts_spawned_pieces_and_the_prose_says_so` derives the unit and the boundary rather than restating a sentence: it drives the agent through consecutive no-I observations, records the count it hands the objective, requires the phase to first turn `SPEND` on the observation whose count equals `DROUGHT_BOUND`, computes the piece instances exposed by then from the code's own per-observation exposure (`DROUGHT_BOUND + 1`), and requires every retained restatement to count in the per-spawn unit and to state the bound in it. On the pre-fix tree the derived arithmetic passes and the unit assertions fail, which is the disagreement the finding names. The correction is prose only, so the whole identity chain was regenerated — a tenth capture (`2026-10-01T02:03:23.017207+00:00`) before the re-measured ten-seed run (`runs/20261001T020629406583Z-80e5bbc7`), the pre-correction rationale section retained as `probes/notes_predeclared_objective.pre-drought-unit.md` and the superseded capture as `probes/predeclared_objective.pre-drought-unit.json` — and the re-measured rows are identical to the run they supersede, so no outcome moved.
+
 ## Reproduction
 
 ```sh
 PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
-$PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 260 passed
+$PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 261 passed
 $PY -m pytest -q -p no:cacheprovider -m integration            # 39 passed
 # the same selection as the GitHub unit-tests job: no Block Stack checkout beside the
 # worktree and `block_stack` unimportable, e.g. with BLOCK_STACK_ROOT unset and
-# `sys.modules['block_stack'] = None` before pytest.main([...])   # 260 passed
+# `sys.modules['block_stack'] = None` before pytest.main([...])   # 261 passed
 $PY -m block_stack_ai.cli run --config experiments/004-bounded-well-plan/config.json
 $PY -m block_stack_ai.cli verify runs/<run-id>/run.json
 $PY experiments/004-bounded-well-plan/probes/evidence.py check-predeclaration runs/<run-id>/run.json
@@ -1036,17 +1053,18 @@ $PY experiments/004-bounded-well-plan/probes/evidence.py all
   *The retained claims are recomputed from their artifacts* and *The retained
   descriptions are derived from the code*): the preview's phase, the drought
   boundary the predicate implements, the overflow term's status as a per-row
-  penalty rather than a dominance rule, and this round's account of what the plan
+  penalty rather than a dominance rule, the account of what the plan
   reads — the engine's own piece counter, which the `act` it inherits keys its
-  once-per-piece detection on. Every superseded run's distilled rows are
+  once-per-piece detection on — and this round's counter unit, spawned pieces
+  rather than the pieces the plan has been shown. Every superseded run's distilled rows are
   retained beside the result in `probes/superseded_run_rows.json` and `check-record`
   re-makes the comparison field for field, so the statement that none of those
   corrections changed an outcome is derived rather than asserted. The corrected
   readings themselves are derived in
   `objective_mechanism.hidden_rows_are_stack_height` and reached on the engine
   itself by the native integration test named above, not by the ten-seed
-  measurement, and the boundary and overflow descriptions are pinned by the
-  regressions named in the paragraph above.
+  measurement, and the boundary, overflow and counter-unit descriptions are pinned
+  by the regressions named in the paragraph above.
 
 ## Conclusion
 
@@ -1067,8 +1085,9 @@ Tetris rate with better lines and score than Experiment 003, not the aspirationa
 
 The three thresholds are met by the re-measurement taken after the plan's objective,
 its identity walk, its height accounting, the writer's identity walk, the
-objective module's own descriptions of its preview phase, drought boundary and
-overflow term, and the predeclared rationale's account of the engine's piece counter
+objective module's own descriptions of its preview phase, drought boundary,
+overflow term and drought-counter unit, and the predeclared rationale's account of
+the engine's piece counter
 were corrected. Every superseded run's distilled
 per-episode rows are retained in `probes/superseded_run_rows.json`, and
 `check-record` re-makes the comparison against them field for field, so the verdict
