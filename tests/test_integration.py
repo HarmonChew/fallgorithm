@@ -15,8 +15,6 @@ from block_stack_ai.engine import PROJECT_ROOT, create_game, engine_executable
 from block_stack_ai.replay import export_replay
 from block_stack_ai import wellplan
 from block_stack_ai.heuristic import (
-    GRID_ROWS,
-    HEIGHT,
     SPAWN_ORIGIN_Y,
     WIDTH,
     board_grid,
@@ -715,30 +713,45 @@ def test_plan_agent_clears_four_rows_on_a_ready_native_well():
         assert all(cell == 0 for row in settled[2:] for cell in row)
 
 
-def test_the_plan_reads_a_native_hidden_stack_as_over_its_budget():
-    """A column above the ceiling is stack height to the plan, on the engine's rows.
+def test_the_plan_ignores_a_native_hidden_stack_and_reads_the_rendered_field():
+    """The engine's hidden buffer is not part of the plan's observation.
 
-    The engine's hidden buffer is real stack: the suite's own ``seed_hidden``
-    template locks an O above the ceiling, so columns 8 and 9 hold cells in the
-    hidden rows while the visible board is empty. Reading heights from the visible
-    field alone made that state look like an empty board, which left
-    ``holds_well`` true and the SPEND transition unreachable on a topped-out
-    stack; the plan's height is measured from the lowest occupied cell of the
-    whole grid, so the phase it reads here is the one the engine's state is in.
+    ``_spawn_template(seed_hidden=True)`` locks an O above the ceiling, so the
+    engine really holds cells in the two hidden rows while the rendered field is
+    empty. The shared controller hands every agent a grid containing both; the plan
+    rebuilds its observation from ``state.board`` alone
+    (``wellplan.visible_grid``), and its features read the visible field, so the
+    buffer cannot reach a height, a phase or a choice. The plan therefore reads the
+    board a player sees — empty, under the budget and in BUILD — and executes the
+    placement that observation names, while the whole-grid observation the base
+    class builds is a different grid the plan does not use.
     """
     suite = load_config(SUITE_CONFIG)
     configuration = {**suite.game, "seed": 1}
     template, _ = _spawn_template(configuration, [[0] * WIDTH for _ in range(20)], False,
                                   seed_hidden=True)
     with template:
-        grid = board_grid(template.state.board, template.state.hidden_rows)
-        assert all(cell == 0 for row in grid[2:] for cell in row)
-        assert grid[0][8:10] == (1, 1) and grid[1][8:10] == (1, 1)
-        columns = grid_columns(grid)
-        assert wellplan.stack_height(columns) == GRID_ROWS
-        assert wellplan.stack_height(columns) > HEIGHT
-        assert not wellplan.holds_well(0, wellplan.stack_height(columns))
-        assert wellplan.initial_phase(0, columns) == wellplan.SPEND
+        whole = board_grid(template.state.board, template.state.hidden_rows)
+        assert all(cell == 0 for row in whole[2:] for cell in row)
+        assert whole[0][8:10] == (1, 1) and whole[1][8:10] == (1, 1)
+        observed = wellplan.visible_grid(template.state.board)
+        assert observed != whole
+        assert all(cell == 0 for row in observed for cell in row)
+        columns = grid_columns(observed)
+        assert wellplan.stack_height(columns) == 0
+        assert wellplan.holds_well(0, wellplan.stack_height(columns))
+        assert wellplan.initial_phase(0, columns) == wellplan.BUILD
+        agent = runner.build_agent("tetris_plan", configuration["seed"])
+        agent.act(template.state)
+        expected = wellplan.plan_choice(
+            observed, template.state.current_piece, template.state.next_piece,
+            drought=agent._drought, level=template.state.level,
+            lines=template.state.lines, start_level=template.state.start_level,
+            first_delay_remaining=template.state.first_delay_remaining,
+            ruleset=template.state.ruleset, mode=template.state.mode)
+        assert expected is not None
+        assert (agent._placement.orientation, agent._placement.x) == \
+            (expected.orientation, expected.x)
 
 
 def test_suite_record_with_the_plan_agent_runs_and_verifies(tmp_path: Path):

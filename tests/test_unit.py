@@ -3087,27 +3087,33 @@ def test_the_plan_mechanism_claims_are_derived_from_the_model(monkeypatch):
         with pytest.raises(AssertionError, match="does not show a divergence"):
             probe.check_mechanism({"objective_mechanism": probe.mechanism_claims()})
 
-    # The budget claim is the third of the class: a copy that no longer matches the
-    # model, or one whose board does not rest above the ceiling, is reported rather
-    # than read as evidence for the sentence it is paired with.
-    stale_budget = json.loads(json.dumps(derived))
-    stale_budget["hidden_rows_are_stack_height"]["stack_height"] = 0
+    # The observation claim is the third of the class: a copy that no longer matches
+    # the model, or one whose boards do not differ only above the ceiling, is
+    # reported rather than read as evidence for the sentence it is paired with.
+    observation = derived["visible_only_observation"]
+    assert observation["columns_differ_only_above_the_ceiling"]
+    assert observation["observation_erases_the_buffer"]
+    assert observation["stack_height_ceiled"] == observation["stack_height_rendered"]
+    assert observation["phase_ceiled"] == observation["phase_rendered"]
+    assert observation["reserve_ceiled"] == observation["reserve_rendered"]
+    assert observation["plan_value_ceiled"] == observation["plan_value_rendered"]
+    stale_observation = json.loads(json.dumps(derived))
+    stale_observation["visible_only_observation"]["stack_height_ceiled"] = (
+        observation["stack_height_rendered"] + 1)
     with pytest.raises(AssertionError, match="not the one the tree's model derives"):
-        probe.check_mechanism({"objective_mechanism": stale_budget})
+        probe.check_mechanism({"objective_mechanism": stale_observation})
 
-    original_budget_claim = probe.budget_claim
+    original_observation_claim = probe.observation_claim
 
-    def empty_board_budget():
-        claim = original_budget_claim()
-        claim.update(columns=[0] * probe.heuristic.WIDTH,
-                     column_heights=[0] * probe.heuristic.WIDTH,
-                     stack_height=0, visible_field_max_height=0,
-                     holds_well=True, phase=probe.wellplan.BUILD,
-                     statement="an empty board keeps building")
+    def same_board_observation():
+        claim = original_observation_claim()
+        claim.update(ceiled_columns=claim["rendered_columns"],
+                     columns_differ_only_above_the_ceiling=False,
+                     statement="the two boards are the same board")
         return claim
 
     with monkeypatch.context() as patch:
-        patch.setattr(probe, "budget_claim", empty_board_budget)
+        patch.setattr(probe, "observation_claim", same_board_observation)
         with pytest.raises(AssertionError, match="does not state the case"):
             probe.check_mechanism({"objective_mechanism": probe.mechanism_claims()})
 

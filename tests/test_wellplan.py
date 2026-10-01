@@ -22,7 +22,6 @@ from block_stack_ai import pathaware, runner
 from block_stack_ai import wellplan as wellplan_module
 from block_stack_ai.agents import DOWN, PlacementAgent
 from block_stack_ai.heuristic import (
-    GRID_ROWS,
     HEIGHT,
     HIDDEN_ROWS,
     WIDTH,
@@ -143,12 +142,12 @@ def test_clear_term_rewards_only_the_four_line_clear():
 
 
 def test_column_heights_and_stack_height_read_the_frozen_features():
-    """Where a column holds a visible cell, the plan's height is the frozen one.
+    """The plan's heights are the frozen visible-field ones, column for column.
 
-    ``column_features`` measures the visible field alone; the plan measures the
-    whole stack, so the two agree exactly on every column with a visible cell and
-    differ only where a column's cells all rest above the ceiling — the case the
-    next test pins.
+    ``column_features`` measures the visible field alone and the plan's observation
+    is that same field (:func:`wellplan.visible_grid`), so the plan's height for a
+    column is exactly the frozen height: the two agree on every column, and the
+    field terms exclude the well while the stack height includes it.
     """
     for heights in ([0] * 10, list(range(0, 10)), [20] * 10, [4] * 9 + [0], [3, 1, 4, 1, 5, 9, 2, 6, 5, 3]):
         columns = columns_of(stacked(heights))
@@ -160,27 +159,63 @@ def test_column_heights_and_stack_height_read_the_frozen_features():
         assert field.aggregate_height == sum(heights[:WELL_COLUMN])
 
 
-def test_a_column_resting_in_the_hidden_rows_is_over_the_budget():
-    """Cells above the ceiling are stack height, not an empty column.
+def test_every_plan_feature_is_a_function_of_the_rendered_field():
+    """Two boards that differ only above the ceiling are one board to the plan.
 
-    The engine's two hidden rows are part of the stack: a piece comes to rest
-    there when nothing below it is free, which the native integration test reaches
-    by locking an O above the ceiling. Reading such a column as height 0 would
-    leave the plan building on a topped-out stack — ``holds_well`` true, the SPEND
-    transition unreachable and the overflow term zero — so the height is measured
-    from the lowest occupied cell of the whole 22-row grid. The frozen field
-    measure still reports nothing there, which is the reading this replaces.
+    ``state.board`` is the twenty rows a player sees and ``state.hidden_rows`` is
+    the two-row buffer the engine keeps above the ceiling. The plan's observation
+    is the rendered field alone (``wellplan.visible_grid``), and every feature it
+    scores is computed from that observation, so a cell the engine holds above the
+    ceiling cannot reach the height, the phase, the reserve or the plan value. The
+    check drives the plan's own functions on the two column sets -- built from
+    ``heuristic``'s constants rather than hand-written -- and on the whole-grid
+    observation the shared controller builds, where the same board really is a
+    different plan state because the shared reachability model reads the buffer.
     """
-    hidden_only = (1, 2) + (0,) * (WIDTH - 2)
-    heights = column_heights(hidden_only)
-    assert heights[:2] == (GRID_ROWS, GRID_ROWS - 1)
-    assert heights[2:] == (0,) * (WIDTH - 2)
-    assert stack_height(hidden_only) == GRID_ROWS
-    assert column_features(hidden_only).max_height == 0
-    assert not holds_well(0, stack_height(hidden_only))
-    assert initial_phase(0, hidden_only) == SPEND
-    assert plan_value(BUILD, 0, hidden_only) < 0.0 == plan_value(
-        BUILD, 0, columns_of(EMPTY_GRID))
+    rendered = open_well(RESERVE_CAP)
+    visible_rows = rendered[HIDDEN_ROWS:]
+    ceiled = board_grid(visible_rows, tuple((1,) * WIDTH for _ in range(HIDDEN_ROWS)))
+    shown, whole = grid_columns(rendered), grid_columns(ceiled)
+    # The two observations differ only in the hidden rows.
+    assert shown != whole
+    assert all((shown[index] ^ whole[index]) >> HIDDEN_ROWS == 0 for index in range(WIDTH))
+    # Every feature the plan scores is the same on both.
+    assert column_heights(shown) == column_heights(whole)
+    assert stack_height(shown) == stack_height(whole) < HEIGHT_BUDGET
+    assert initial_phase(0, shown) == initial_phase(0, whole) == BUILD
+    assert well_reserve(shown) == well_reserve(whole) == RESERVE_CAP
+    assert plan_value(BUILD, 0, shown) == plan_value(BUILD, 0, whole)
+    assert plan_value(SPEND, 0, shown) == plan_value(SPEND, 0, whole)
+    # The tamper is real: the base controller hands every agent a grid built from
+    # ``state.board`` *and* ``state.hidden_rows``, so the two states are different
+    # arguments to ``_choose`` even though they are one board to a player. The
+    # plan's observation erases the buffer, so the two boards are one grid.
+    assert board_grid(visible_rows, ceiled[:HIDDEN_ROWS]) != rendered
+    assert wellplan_module.visible_grid(visible_rows) == rendered
+    assert all(cell == 0 for row in wellplan_module.visible_grid(
+        visible_rows)[:HIDDEN_ROWS] for cell in row)
+
+
+def test_the_plan_agent_executes_the_same_choice_on_a_ceiled_board():
+    """The controller the plan drives follows its rendered-field choice alone.
+
+    ``PlacementAgent.act`` hands every agent a grid built from ``state.board``
+    *and* ``state.hidden_rows``; ``PlanAgent`` discards it and rebuilds the
+    observation from ``state.board``. The two states below differ only in the
+    hidden buffer, so an agent that kept the inherited observation would move its
+    choice with the buffer -- which is what the pre-fix code did -- while the plan
+    emits the same masks and executes the same placement on both.
+    """
+    rendered = open_well(RESERVE_CAP)
+    shown = PlanState(rendered, "L", "L", piece_count=3)
+    ceiled = PlanState(rendered, "L", "L", piece_count=3)
+    ceiled.hidden_rows = tuple((1,) * WIDTH for _ in range(HIDDEN_ROWS))
+    left, right = build_agent(PLAN_AGENT, 2), build_agent(PLAN_AGENT, 2)
+    left_masks = [left.act(shown) for _ in range(24)]
+    right_masks = [right.act(ceiled) for _ in range(24)]
+    assert left_masks == right_masks
+    assert left._placement == right._placement
+    assert left._placement is not None
 
 
 def test_field_features_leave_the_designated_well_out_of_every_field_term():

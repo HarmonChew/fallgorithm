@@ -20,8 +20,8 @@ agent-factory and dispatcher digests from the modules' own bytes, the coverage o
 each version's identity walk from the tree's own table and Experiment 003's
 regenerated version prose, the objective's mechanism from the model (the reserve
 on a board whose well column is occupied, one composition divergence per phase,
-and the stack height and phase of a board whose cells rest in the engine's hidden
-rows), the baseline block from Experiment 003's retained rows and its own
+and the observation invariance of two boards that differ only above the ceiling),
+the baseline block from Experiment 003's retained rows and its own
 configuration, the comparison of its own rows with every superseded run's retained
 rows, and every reported row set from the configured identity set -- against the
 canonical ``config.json``, which is the authority on what was evaluated, not the
@@ -964,8 +964,9 @@ def refactor_statement(runs: list[dict]) -> str:
     return (
         "every superseded run's retained rows equal this run's, field for field, so each "
         "re-measurement this evaluation superseded -- every correction this record's "
-        "history describes, the last being the predeclared rationale's account of the "
-        "drought counter's unit -- changed no outcome: "
+        "history describes, the last being the visible-information observation that "
+        "replaced the earlier height accounting's read of the engine's hidden rows -- "
+        "changed no outcome: "
         + ", ".join(entry["run"] for entry in runs)
     )
 
@@ -1134,11 +1135,12 @@ def conclusion_statement(facts: dict) -> str:
         "select different placements, so the evaluation does not rest on the claim that the "
         "two compose a current placement alike. " + aspiration_clause(facts) + " The "
         "verdict is the re-measurement taken after the plan's objective, its identity walk, "
-        "its height accounting and the allocation of its agent to the runner's dispatch "
-        "were corrected: the per-episode rows of every run this one superseded are retained "
-        "and the refactor_no_outcomes_changed block re-makes the comparison against them "
-        "field for field, so the result is one measurement under corrected code rather than "
-        "a revised one."
+        "its visible-information observation (the earlier height accounting that read the "
+        "engine's hidden rows is reversed) and the allocation of its agent to the runner's "
+        "dispatch were corrected: the per-episode rows of every run this one superseded are "
+        "retained and the refactor_no_outcomes_changed block re-makes the comparison "
+        "against them field for field, so the result is one measurement under corrected "
+        "code rather than a revised one."
     )
 
 
@@ -1231,14 +1233,24 @@ def limitations_statements(facts: dict) -> list[str]:
         "claim of reconstructability and no claim of clean reproducible-dependency CI is "
         "made anywhere in this record; the code and engine versions themselves stay where "
         "the writer put them, in the cited run record.",
-        "The plan's height accounting was corrected before this publication, and the "
-        "evaluation was re-measured under the corrected code more than once. The "
+        "The plan's information policy is visible-information-only, and that guarantee is "
+        "enforced by the code rather than stated: the plan's observation is the rendered "
+        "field with the engine's two hidden rows erased (wellplan.visible_grid), and "
+        "column_heights, field_features and well_reserve read that field alone, so a "
+        "board's cells above the ceiling cannot reach a height, a phase, a reserve or a "
+        "choice. Two boards that differ only above the ceiling are one board to the plan; "
+        "the guarantee is derived in objective_mechanism.visible_only_observation and "
+        "pinned by tests/test_wellplan.py::test_every_plan_feature_is_a_function_of_the_rendered_field "
+        "and test_the_plan_agent_executes_the_same_choice_on_a_ceiled_board, both "
+        "reproduced failing against git archive 1c50ee6d of this branch before the repair, "
+        "and reached on the engine itself by the native integration test named in "
+        "notes.md. The evaluation was re-measured under the corrected code more than once "
+        "-- the earlier height accounting deliberately read the hidden rows and that "
+        "reading is reversed here -- and the "
         f"refactor_no_outcomes_changed block retains those runs' rows -- "
         f"{len(superseded)} of them -- and re-makes the comparison against this run's field "
         "for field, so the statement that the corrections changed no outcome is derived "
-        "rather than asserted. The corrected reading itself is derived in "
-        "objective_mechanism.hidden_rows_are_stack_height and reached on the engine itself "
-        "by the native integration test named in notes.md, not by the ten-seed measurement.",
+        "rather than asserted.",
     ]
 
 
@@ -1429,50 +1441,60 @@ def composition_statement(claim: dict) -> str:
     )
 
 
-def budget_claim() -> dict:
-    """The derived budget claim: cells above the ceiling are stack height.
+def observation_claim() -> dict:
+    """The derived observation claim: the hidden rows never reach a feature or a choice.
 
-    The reading this experiment's earlier retained result carried measured each
-    column from the visible field alone, so a column whose cells all rest in the
-    engine's two hidden rows read as height 0 — an empty column on a stack that has
-    already reached the ceiling — and the whole-stack budget never ended the build
-    there: ``holds_well`` stayed true, ``initial_phase`` could not take the SPEND
-    transition and the overflow term charged nothing. The engine really reaches
-    that state: the native integration test locks an O above the ceiling and leaves
-    both hidden rows occupied with the visible board empty
-    (``_spawn_template(seed_hidden=True)``). The claim is derived from the plan's
-    own functions on the column masks that state produces, so the retained prose
-    about the budget is read from the model instead of restated.
+    The plan's observation is the rendered field alone (``wellplan.visible_grid``),
+    and ``column_heights``, ``field_features`` and ``well_reserve`` read the visible
+    field, so two engine boards that differ only above the ceiling are one board to
+    the plan. The claim is derived from the plan's own functions on the two column
+    sets rather than restated: the ceiled board's columns differ from the rendered
+    board's only in the hidden rows, and the height, the phase, the reserve and the
+    plan value are the same on both. A re-introduced hidden-row read would move the
+    ceiled values away from the rendered ones and this derivation with them, which is
+    what the retained claim is checked against.
     """
-    columns = (tuple(1 << row for row in range(heuristic.HIDDEN_ROWS))
-               + (0,) * (heuristic.WIDTH - heuristic.HIDDEN_ROWS))
-    height = wellplan.stack_height(columns)
+    rows = [[0] * heuristic.WIDTH for _ in range(heuristic.HEIGHT)]
+    for column in range(wellplan.WELL_COLUMN):
+        for row in range(heuristic.HEIGHT - wellplan.RESERVE_CAP, heuristic.HEIGHT):
+            rows[row][column] = 1
+    visible_rows = tuple(tuple(row) for row in rows)
+    rendered = heuristic.board_grid(
+        visible_rows, tuple((0,) * heuristic.WIDTH for _ in range(heuristic.HIDDEN_ROWS)))
+    ceiled = heuristic.board_grid(
+        visible_rows, tuple((1,) * heuristic.WIDTH for _ in range(heuristic.HIDDEN_ROWS)))
+    shown, whole = pathaware.grid_columns(rendered), pathaware.grid_columns(ceiled)
     claim = {
-        "columns": list(columns),
         "hidden_rows": heuristic.HIDDEN_ROWS,
-        "column_heights": list(wellplan.column_heights(columns)),
-        "visible_field_max_height": heuristic.board_features(
-            tuple(tuple((columns[column] >> row) & 1
-                        for column in range(heuristic.WIDTH))
-                  for row in range(heuristic.GRID_ROWS))).max_height,
-        "stack_height": height,
-        "holds_well": wellplan.holds_well(CLAIM_DROUGHT, height),
-        "phase": wellplan.initial_phase(CLAIM_DROUGHT, columns),
-        "build_value": round(wellplan.plan_value(wellplan.BUILD, 0, columns), 3),
+        "well_column": wellplan.WELL_COLUMN,
+        "rendered_columns": list(shown),
+        "ceiled_columns": list(whole),
+        "columns_differ_only_above_the_ceiling": all(
+            (shown[index] ^ whole[index]) >> heuristic.HIDDEN_ROWS == 0
+            for index in range(heuristic.WIDTH)),
+        "observation_erases_the_buffer": wellplan.visible_grid(visible_rows) == rendered,
+        "stack_height_rendered": wellplan.stack_height(shown),
+        "stack_height_ceiled": wellplan.stack_height(whole),
+        "phase_rendered": wellplan.initial_phase(CLAIM_DROUGHT, shown),
+        "phase_ceiled": wellplan.initial_phase(CLAIM_DROUGHT, whole),
+        "reserve_rendered": wellplan.well_reserve(shown),
+        "reserve_ceiled": wellplan.well_reserve(whole),
+        "plan_value_rendered": round(wellplan.plan_value(wellplan.BUILD, 0, shown), 3),
+        "plan_value_ceiled": round(wellplan.plan_value(wellplan.BUILD, 0, whole), 3),
     }
-    claim["statement"] = budget_statement(claim)
+    claim["statement"] = observation_statement(claim)
     return claim
 
 
-def budget_statement(claim: dict) -> str:
-    """The sentence a derived budget claim has to carry."""
+def observation_statement(claim: dict) -> str:
+    """The sentence a derived observation claim has to carry."""
     return (
-        f"a column whose cells all rest in the {claim['hidden_rows']} hidden rows above "
-        f"the ceiling has height {claim['column_heights'][0]} while the frozen visible "
-        f"field reads {claim['visible_field_max_height']}, so stack_height is "
-        f"{claim['stack_height']} and the plan's phase on that board is "
-        f"{claim['phase'].upper()}: cells above the ceiling are stack height, not an "
-        "empty column"
+        f"the engine's {claim['hidden_rows']} hidden rows are not part of the plan's "
+        "observation: two boards whose columns differ only above the ceiling give one "
+        f"height ({claim['stack_height_rendered']}), one phase "
+        f"({claim['phase_rendered'].upper()}), one reserve ({claim['reserve_rendered']}) "
+        f"and one plan value ({claim['plan_value_rendered']}), and the plan's "
+        "observation of the rendered field erases the buffer"
     )
 
 
@@ -1485,7 +1507,7 @@ def mechanism_claims() -> dict:
         "composition_differs_from_experiment_003": [
             composition_claim(case) for case in COMPOSITION_CASES
         ],
-        "hidden_rows_are_stack_height": budget_claim(),
+        "visible_only_observation": observation_claim(),
     }
 
 
@@ -1502,11 +1524,11 @@ def check_mechanism(retained: dict) -> None:
     derivation field for field — including its generated sentence — so a
     contradicted or stale copy is reported rather than read as evidence.
 
-    The budget claim is the third, and the same class: it was written from a
-    visible-field reading of the heights and was false about a column resting in
-    the engine's hidden rows, which read as height 0 on a stack already at the
-    ceiling. It is re-derived from the plan's own functions on the column masks
-    that state produces.
+    The observation claim is the third, and the same class: it is the guarantee the
+    predeclared rationale makes about the plan's information, and it is true only if
+    the code enforces it. It is re-derived from the plan's own functions on two
+    boards that differ only above the ceiling, so a re-introduced hidden-row read
+    moves the derivation and the retained copy is reported.
     """
     recorded = retained.get("objective_mechanism")
     assert isinstance(recorded, dict), (
@@ -1538,26 +1560,32 @@ def check_mechanism(retained: dict) -> None:
             f"the composition claim for the {case['piece']} does not show a divergence, "
             "so it does not state the case it exists to state"
         )
-    budget = recorded.get("hidden_rows_are_stack_height")
-    derived_budget = derived["hidden_rows_are_stack_height"]
-    check_typed_equal(budget, derived_budget, (
-        "the retained budget claim is not the one the tree's model derives:\n  "
-        f"recorded {budget}\n  derived  {derived_budget}"
+    observation = recorded.get("visible_only_observation")
+    derived_observation = derived["visible_only_observation"]
+    check_typed_equal(observation, derived_observation, (
+        "the retained observation claim is not the one the tree's model derives:\n  "
+        f"recorded {observation}\n  derived  {derived_observation}"
     ))
-    assert (budget["stack_height"] > heuristic.HEIGHT
-            and budget["visible_field_max_height"] == 0
-            and budget["phase"] == wellplan.SPEND), (
-        "the budget claim's board does not state the case it exists to state: a column "
-        "resting in the hidden rows with an empty visible field, over the budget"
+    assert (observation["columns_differ_only_above_the_ceiling"]
+            and observation["observation_erases_the_buffer"]
+            and observation["stack_height_ceiled"] == observation["stack_height_rendered"]
+            and observation["phase_ceiled"] == observation["phase_rendered"]
+            and observation["reserve_ceiled"] == observation["reserve_rendered"]
+            and observation["plan_value_ceiled"] == observation["plan_value_rendered"]), (
+        "the observation claim's board does not state the case it exists to state: the "
+        "ceiled board must differ from the rendered one only above the ceiling, and every "
+        "feature the plan scores must be the same on both"
     )
     print(f"# reserve claim: well mask {reserve['well_column_mask']} with reserve "
           f"{reserve['well_reserve']} on {len(reserve['sequence'])} recorded placements")
     for case in cases:
         print(f"# composition claim ({case['phase']}): plan {case['plan_choice']} vs "
               f"clear-term-only {case['prior_composition_choice']}")
-    print(f"# budget claim: hidden-only column height {budget['column_heights'][0]} "
-          f"(visible field {budget['visible_field_max_height']}) gives stack_height "
-          f"{budget['stack_height']} and phase {budget['phase']}")
+    print(f"# observation claim: the ceiled board's columns differ only in the "
+          f"{observation['hidden_rows']} hidden rows and give the same height "
+          f"{observation['stack_height_rendered']}, phase {observation['phase_rendered']}, "
+          f"reserve {observation['reserve_rendered']} and plan value "
+          f"{observation['plan_value_rendered']}")
 
 
 def _identity_shape(version: int) -> str | None:
@@ -1711,8 +1739,9 @@ def check_record(path: Path) -> None:
     be what the tree's model derives (``check_mechanism``): the reserve on a board
     whose well column is occupied, one divergence per phase between the plan's
     composition and a current-placement term of ``clear_term`` alone, and the
-    stack height and phase of a board whose cells rest in the engine's hidden rows,
-    so prose about the objective's behaviour is derived rather than restated. The
+    invariance of every feature and choice between two boards that differ only above
+    the ceiling, so prose about the objective's behaviour is derived rather than
+    restated. The
     metrics block has to be the aggregate of the episode rows the same file carries,
     and those rows -- like Experiment 003's -- have to be the complete configured
     ``(agent, seed)`` set with no duplicate, so the reported means, rates and

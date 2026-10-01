@@ -111,7 +111,7 @@
       "result": "Experiment 003's configuration, replayed on this tree, reproduces every published per-episode row and summary it published: the lookahead side 912.8 mean lines and 2,822,959.9 mean score, the tetris side 349.5 mean lines and 567,266.2 mean score, which are the numbers the acceptance criteria name"
     }
   },
-  "conclusion": "The bounded well plan meets all three acceptance thresholds on Experiment 003's identical ten seeds: a Tetris line rate of 0.03871 against the required 0.011445 (3.38x the Experiment 003 baseline's rate), 620.0 mean lines against more than 349.5 (1.77x) and 1665036.0 mean score against more than 567266.2 (2.94x), with no episode stopped at the frame cap. Two changes to the objective are what move them, and the measurements are attributed to both rather than to the plan alone. The plan is a designated well column, an explicit stack-height budget, a reserve measured as the rows a vertical I would complete above the column's topmost filled cell, and a spend-or-abandon rule at a self-tracked I-drought bound. Beside it, the composition scores the current placement's whole plan value, where Experiment 003 adds only that placement's clear term to the preview's value: the objective_mechanism block derives 2 reachable boards on which the two compositions select different placements, so the evaluation does not rest on the claim that the two compose a current placement alike. It does not reach the frozen lookahead agent's survival on the same seeds (620.0 against 912.8 mean lines, 1665036.0 against 2822959.9 mean score), so the plan buys Tetris rate with lines rather than adding both, and that trade is the experiment's main limitation. The verdict is the re-measurement taken after the plan's objective, its identity walk, its height accounting and the allocation of its agent to the runner's dispatch were corrected: the per-episode rows of every run this one superseded are retained and the refactor_no_outcomes_changed block re-makes the comparison against them field for field, so the result is one measurement under corrected code rather than a revised one.",
+  "conclusion": "The bounded well plan meets all three acceptance thresholds on Experiment 003's identical ten seeds: a Tetris line rate of 0.03871 against the required 0.011445 (3.38x the Experiment 003 baseline's rate), 620.0 mean lines against more than 349.5 (1.77x) and 1665036.0 mean score against more than 567266.2 (2.94x), with no episode stopped at the frame cap. Two changes to the objective are what move them, and the measurements are attributed to both rather than to the plan alone. The plan is a designated well column, an explicit stack-height budget, a reserve measured as the rows a vertical I would complete above the column's topmost filled cell, and a spend-or-abandon rule at a self-tracked I-drought bound. Beside it, the composition scores the current placement's whole plan value, where Experiment 003 adds only that placement's clear term to the preview's value: the objective_mechanism block derives 2 reachable boards on which the two compositions select different placements, so the evaluation does not rest on the claim that the two compose a current placement alike. It does not reach the frozen lookahead agent's survival on the same seeds (620.0 against 912.8 mean lines, 1665036.0 against 2822959.9 mean score), so the plan buys Tetris rate with lines rather than adding both, and that trade is the experiment's main limitation. The verdict is the re-measurement taken after the plan's objective, its identity walk, its visible-information observation (the earlier height accounting that read the engine's hidden rows is reversed) and the allocation of its agent to the runner's dispatch were corrected: the per-episode rows of every run this one superseded are retained and the refactor_no_outcomes_changed block re-makes the comparison against them field for field, so the result is one measurement under corrected code rather than a revised one.",
   "configuration": {
     "agents": [
       "lookahead",
@@ -537,7 +537,7 @@
     "This file is a distilled record, not the full run record: the evaluation's own run.json is ignored, disposable output holding one input mask per logical frame. The evidence is therefore re-derived from the code rather than replayed from stored inputs -- retained_replay re-plays the retained configuration and compares every outcome and metric -- and the temporary record the predeclaration cites is named by that block's cited_record for as long as this checkout keeps it.",
     "Two declared-objective agents cannot be configured in one suite: a suite record carries one objective section. A comparison of tetris and tetris_plan in one run is therefore not expressible, and this experiment compares the plan against Experiment 003's retained rows and against a re-run of Experiment 003's own configuration instead.",
     "The reported rows reproduce only with the Block Stack working tree the cited run record names: engine commit 8ca4158711c2d6339cab1ee8d78aa65bd624c89d, dirty: true, kind: working-tree. That working tree is not retained in this repository and its uncommitted local changes cannot be exported, so the native behaviour behind these rows cannot be reconstructed from a clean checkout of this project. The dependency is at least identified: 37 source files of that checkout and their sha256 digests are recorded in experiments/004-bounded-well-plan/probes/engine_fingerprint.json (combined sha256 ad99d375b2af46cadb32f6fb7592cbf6cd7050ee93fc7a6f120bc28f6817b15e), together with the commit and dirty flag above. No claim of reconstructability and no claim of clean reproducible-dependency CI is made anywhere in this record; the code and engine versions themselves stay where the writer put them, in the cited run record.",
-    "The plan's height accounting was corrected before this publication, and the evaluation was re-measured under the corrected code more than once. The refactor_no_outcomes_changed block retains those runs' rows -- 9 of them -- and re-makes the comparison against this run's field for field, so the statement that the corrections changed no outcome is derived rather than asserted. The corrected reading itself is derived in objective_mechanism.hidden_rows_are_stack_height and reached on the engine itself by the native integration test named in notes.md, not by the ten-seed measurement."
+    "The plan's information policy is visible-information-only, and that guarantee is enforced by the code rather than stated: the plan's observation is the rendered field with the engine's two hidden rows erased (wellplan.visible_grid), and column_heights, field_features and well_reserve read that field alone, so a board's cells above the ceiling cannot reach a height, a phase, a reserve or a choice. Two boards that differ only above the ceiling are one board to the plan; the guarantee is derived in objective_mechanism.visible_only_observation and pinned by tests/test_wellplan.py::test_every_plan_feature_is_a_function_of_the_rendered_field and test_the_plan_agent_executes_the_same_choice_on_a_ceiled_board, both reproduced failing against git archive 1c50ee6d of this branch before the repair, and reached on the engine itself by the native integration test named in notes.md. The evaluation was re-measured under the corrected code more than once -- the earlier height accounting deliberately read the hidden rows and that reading is reversed here -- and the refactor_no_outcomes_changed block retains those runs' rows -- 12 of them -- and re-makes the comparison against this run's field for field, so the statement that the corrections changed no outcome is derived rather than asserted."
   ],
   "metrics": {
     "lookahead": {
@@ -737,39 +737,6 @@
         "statement": "on a reachable board in SPEND the plan's composition selects (0, 9) (clearing 1 row(s)) for the O with O shown, while a current-placement term of clear_term alone selects (0, 5) (clearing 0 row(s))"
       }
     ],
-    "hidden_rows_are_stack_height": {
-      "build_value": -82.5,
-      "column_heights": [
-        22,
-        21,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "columns": [
-        1,
-        2,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "hidden_rows": 2,
-      "holds_well": false,
-      "phase": "spend",
-      "stack_height": 22,
-      "statement": "a column whose cells all rest in the 2 hidden rows above the ceiling has height 22 while the frozen visible field reads 0, so stack_height is 22 and the plan's phase on that board is SPEND: cells above the ceiling are stack height, not an empty column",
-      "visible_field_max_height": 0
-    },
     "reserve_with_an_occupied_well": {
       "columns": [
         114688,
@@ -841,6 +808,45 @@
       "well_column_mask": 1572864,
       "well_column_topmost_filled_row": 19,
       "well_reserve": 1
+    },
+    "visible_only_observation": {
+      "ceiled_columns": [
+        3932163,
+        3932163,
+        3932163,
+        3932163,
+        3932163,
+        3932163,
+        3932163,
+        3932163,
+        3932163,
+        3
+      ],
+      "columns_differ_only_above_the_ceiling": true,
+      "hidden_rows": 2,
+      "observation_erases_the_buffer": true,
+      "phase_ceiled": "build",
+      "phase_rendered": "build",
+      "plan_value_ceiled": 2.0,
+      "plan_value_rendered": 2.0,
+      "rendered_columns": [
+        3932160,
+        3932160,
+        3932160,
+        3932160,
+        3932160,
+        3932160,
+        3932160,
+        3932160,
+        3932160,
+        0
+      ],
+      "reserve_ceiled": 4,
+      "reserve_rendered": 4,
+      "stack_height_ceiled": 4,
+      "stack_height_rendered": 4,
+      "statement": "the engine's 2 hidden rows are not part of the plan's observation: two boards whose columns differ only above the ceiling give one height (4), one phase (BUILD), one reserve (4) and one plan value (2.0), and the plan's observation of the rendered field erases the buffer",
+      "well_column": 9
     }
   },
   "objective_record": {
@@ -852,7 +858,7 @@
       "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
       "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
       "block_stack_ai.runner": "81a0bfbae21fc1afe0d48187f7a0e158394f5e7520cd4944ba502d8cdd8c4f77",
-      "block_stack_ai.wellplan": "d6e5d49e658f01371170173458eb2c28f752643c99d85317d243c9e821d5c904"
+      "block_stack_ai.wellplan": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7"
     },
     "weights": {
       "aggregate_height": -0.5,
@@ -872,16 +878,16 @@
   },
   "predeclared_objective": {
     "capture_file": "experiments/004-bounded-well-plan/probes/predeclared_objective.json",
-    "capture_order": "the capture was written at 2026-10-01T02:03:23.017207+00:00, before the cited record's own created_at 2026-10-01T02:03:38.206026+00:00, and the record's own objective identity is the capture's",
-    "captured_at": "2026-10-01T02:03:23.017207+00:00",
-    "cited_record": "runs/20261001T020629406583Z-80e5bbc7/run.json",
-    "cited_record_created_at": "2026-10-01T02:03:38.206026+00:00",
+    "capture_order": "the capture was written at 2026-10-01T10:29:20.102116+00:00, before the cited record's own created_at 2026-10-01T10:29:29.296449+00:00, and the record's own objective identity is the capture's",
+    "captured_at": "2026-10-01T10:29:20.102116+00:00",
+    "cited_record": "runs/20261001T103223460978Z-b332bb8a/run.json",
+    "cited_record_created_at": "2026-10-01T10:29:29.296449+00:00",
     "identity_coverage": "The capture records the digest of every module the plan's decisions are computed from, the same set the run's own objective.sources enumerates: block_stack_ai.agents, block_stack_ai.engine, block_stack_ai.heuristic, block_stack_ai.pathaware, block_stack_ai.pieces, block_stack_ai.runner, block_stack_ai.wellplan. 7 modules, produced by the runner's own identity walk rather than listed by hand; the walk excludes the sibling Tetris objective, and each digest is this tree's file at the moment of the capture",
     "module": "src/block_stack_ai/wellplan.py",
-    "module_sha256": "d6e5d49e658f01371170173458eb2c28f752643c99d85317d243c9e821d5c904",
-    "note": "the declared objective -- the module, the modules its decisions are computed from, and the documented weights, plan constants and rationale -- captured from the unmodified tree before the evaluation run; no constant is revised against evaluation outcomes. The development seed set the constants were chosen on (odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23, disjoint from the ten evaluation seeds) is a declaration in notes.md and not retained evidence: no development run, candidate values or outcomes are kept, so the tuning step is stated and not auditable from this repository. This capture supersedes the 9 earlier ones the block's superseded_captures names, one for each run this evaluation superseded and each of a different design -- which is where the design every one of them preceded is described; every one of them published the same declared weights and constants, because no change that forced a re-capture touched one, and each named a rationale section retained beside the captures, so a substance-preserving prose correction to the section is recorded rather than read as a revised objective",
+    "module_sha256": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7",
+    "note": "the declared objective -- the module, the modules its decisions are computed from, and the documented weights, plan constants and rationale -- captured from the unmodified tree before the evaluation run; no constant is revised against evaluation outcomes. The development seed set the constants were chosen on (odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23, disjoint from the ten evaluation seeds) is a declaration in notes.md and not retained evidence: no development run, candidate values or outcomes are kept, so the tuning step is stated and not auditable from this repository. This capture supersedes the 12 earlier ones the block's superseded_captures names, one for each run this evaluation superseded and each of a different design -- which is where the design every one of them preceded is described; every one of them published the same declared weights and constants, because no change that forced a re-capture touched one, and each named a rationale section retained beside the captures, so a substance-preserving prose correction to the section is recorded rather than read as a revised objective",
     "notes_section": "experiments/004-bounded-well-plan/notes.md#predeclared-objective",
-    "notes_section_sha256": "51089c20689490f2827da93500737239fea0d0cc143f711e0362847ed029714f",
+    "notes_section_sha256": "c8b657b453d7c71dd58bae212a0cdb9eead75ab9feee5ec1ea8a18068099bb2f",
     "objective": {
       "aggregate_height": -0.5,
       "bumpiness": -0.5,
@@ -904,24 +910,27 @@
       "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
       "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
       "block_stack_ai.runner": "81a0bfbae21fc1afe0d48187f7a0e158394f5e7520cd4944ba502d8cdd8c4f77",
-      "block_stack_ai.wellplan": "d6e5d49e658f01371170173458eb2c28f752643c99d85317d243c9e821d5c904"
+      "block_stack_ai.wellplan": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7"
     },
     "superseded_captures": [
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-agent-move.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-boundary-wording.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-budget-wording.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-dispatch.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-drought-unit.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-explicit-shape.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-height-fix.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-hidden-rows.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-piece-counter.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-preview-docstring.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-summed-wording.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-version-bump.json"
     ]
   },
   "refactor_no_outcomes_changed": {
     "artifact": "experiments/004-bounded-well-plan/probes/superseded_run_rows.json",
     "rows_identical_to_every_superseded_run": true,
-    "statement": "every superseded run's retained rows equal this run's, field for field, so each re-measurement this evaluation superseded -- every correction this record's history describes, the last being the predeclared rationale's account of the drought counter's unit -- changed no outcome: runs/20260929T171936702109Z-3733d12b/run.json, runs/20260929T174836231811Z-b6c35f6b/run.json, runs/20260930T010141245162Z-edcbfcfe/run.json, runs/20260930T020945782490Z-f908aba9/run.json, runs/20260930T041601202177Z-7bb33021/run.json, runs/20260930T044258461859Z-332ee653/run.json, runs/20260930T064941239339Z-dc40e8da/run.json, runs/20260930T100945820449Z-b0cd2600/run.json, runs/20261001T001038850583Z-949815c9/run.json",
+    "statement": "every superseded run's retained rows equal this run's, field for field, so each re-measurement this evaluation superseded -- every correction this record's history describes, the last being the visible-information observation that replaced the earlier height accounting's read of the engine's hidden rows -- changed no outcome: runs/20260929T171936702109Z-3733d12b/run.json, runs/20260929T174836231811Z-b6c35f6b/run.json, runs/20260930T010141245162Z-edcbfcfe/run.json, runs/20260930T020945782490Z-f908aba9/run.json, runs/20260930T041601202177Z-7bb33021/run.json, runs/20260930T044258461859Z-332ee653/run.json, runs/20260930T064941239339Z-dc40e8da/run.json, runs/20260930T100945820449Z-b0cd2600/run.json, runs/20261001T001038850583Z-949815c9/run.json, runs/20261001T020629406583Z-80e5bbc7/run.json, runs/20261001T101009486155Z-0462108b/run.json, runs/20261001T102558815871Z-904a2e61/run.json",
     "superseded_runs": [
       {
         "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-agent-move.json",
@@ -967,6 +976,21 @@
         "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-drought-unit.json",
         "created_at": "2026-10-01T00:07:48.031741+00:00",
         "run": "runs/20261001T001038850583Z-949815c9/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-hidden-rows.json",
+        "created_at": "2026-10-01T02:03:38.206026+00:00",
+        "run": "runs/20261001T020629406583Z-80e5bbc7/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-summed-wording.json",
+        "created_at": "2026-10-01T10:07:15.850593+00:00",
+        "run": "runs/20261001T101009486155Z-0462108b/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-budget-wording.json",
+        "created_at": "2026-10-01T10:23:05.766790+00:00",
+        "run": "runs/20261001T102558815871Z-904a2e61/run.json"
       }
     ]
   },

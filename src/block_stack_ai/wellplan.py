@@ -10,7 +10,12 @@ was score-neutral there, and the height terms always preferred the flatter board
 the agent held no well it could name.
 
 This module adds a plan around the same reachable set and the same one piece of
-player-visible lookahead. Everything it adds is visible-information only:
+player-visible lookahead. Everything it adds is visible-information only, and the
+guarantee is a property of the code rather than of this paragraph: the plan's
+observation is built by :func:`visible_grid` from ``state.board`` — the twenty
+rows a player sees — and never reads ``state.hidden_rows``, the two-row buffer the
+engine keeps above the ceiling. Two engine boards that differ only above the
+ceiling are therefore one observation, one set of features and one choice:
 
 * **one designated well column** (:data:`WELL_COLUMN`, the rightmost column).
   The plan measures the field -- every other column -- and the well separately,
@@ -22,16 +27,18 @@ player-visible lookahead. Everything it adds is visible-information only:
   capped at four, so the plan is rewarded for the clear it is actually setting
   up rather than for an abstract column depth.
 * an explicit **stack-height budget** (:data:`HEIGHT_BUDGET`): the plan builds
-  only while the whole stack is below it, and the settled board's height over
-  the budget is charged again at ``overflow`` per row: an over-budget candidate
+  only while the stack it is shown stands below it, and the settled board's height
+  over the budget is charged again at ``overflow`` per row: an over-budget candidate
   loses value inside the summed score, not the comparison, because the charge
   can be outweighed by a larger clear or by the field and reserve terms it is
   summed with, and the experiment's evidence derives a board where the
   over-budget placement is the one the objective selects. The height is measured
-  over the whole
-  22-row grid rather than the visible field alone, so a column whose cells rest
-  in the two hidden rows above the ceiling counts as over the budget instead of
-  as an empty column.
+  over the plan's own observation -- the rendered field, with the engine's hidden
+  rows erased -- so the budget and the overflow are computed from what a player
+  sees. A cell the engine holds above the ceiling is not in that observation: the
+  plan neither counts it as stack height nor treats the board as topped out
+  because of it, so a board whose only occupied cells are up there is, to the
+  plan, an empty board.
 * **spend-or-abandon at a self-tracked I-drought bound** (:data:`DROUGHT_BOUND`):
   the counter advances once per spawned piece -- one observation per piece the
   agent places, from that piece and the visible preview it is shown with -- and an
@@ -122,6 +129,7 @@ from .heuristic import (
     WIDTH,
     BoardFeatures,
     Placement,
+    board_grid,
     feature_score,
 )
 from .pathaware import (
@@ -183,6 +191,26 @@ def weights_record() -> dict[str, object]:
     }
 
 
+# The engine's two hidden rows, empty: the plan's observation puts these back in
+# front of the rendered field so the grid keeps the model's 22-row shape.
+_EMPTY_HIDDEN_ROWS = tuple((0,) * WIDTH for _ in range(HIDDEN_ROWS))
+
+
+def visible_grid(board: object) -> tuple[tuple[int, ...], ...]:
+    """The plan's observation of the engine's board: the rendered field alone.
+
+    ``state.board`` is the twenty rows a player sees; ``state.hidden_rows`` is the
+    two-row buffer the engine keeps above the ceiling, and this plan never reads
+    it. The observation is therefore the rendered field with the hidden rows
+    erased, kept in the model's 22-row shape by :func:`heuristic.board_grid` so the
+    shared reachability model reads it unchanged. Erasing them at the observation
+    is what makes the plan's visible-information guarantee enforceable: two boards
+    that differ only above the ceiling produce one grid here, so every feature
+    computed from it and every placement chosen from it is the same on both.
+    """
+    return board_grid(board, _EMPTY_HIDDEN_ROWS)
+
+
 def clear_term(lines_cleared: int) -> float:
     """The clear-size reward for one lock.
 
@@ -198,30 +226,27 @@ def clear_term(lines_cleared: int) -> float:
 
 
 def column_heights(columns: tuple[int, ...]) -> tuple[int, ...]:
-    """The height of each column over the whole stack, hidden rows included.
+    """The height of each column of the field the plan is shown.
 
-    ``column_features`` reads the visible field alone, and that is the right
-    measure for the frozen geometry: the engine clears visible rows, and the two
-    hidden rows above the ceiling are a separate buffer it never clears. The
-    plan's budget is not a field term, though. A column whose cells all sit in
-    those hidden rows has reached the ceiling — a piece came to rest above the
-    visible field because nothing below it was free — and reading it as height 0
-    would report an empty column on a topped-out stack: ``holds_well`` would keep
-    building, ``initial_phase`` would never take the SPEND transition and
-    ``plan_value``'s overflow would charge nothing for the state that has already
-    spent the stack. The height is therefore measured from the lowest occupied
-    cell of the whole 22-row grid, which is exactly the value
-    ``column_features`` reports for a column with a visible cell and is above
-    ``HEIGHT`` for a hidden-only column, so the budget and the overflow read that
-    state as over the ceiling.
+    The plan's observation is the rendered field alone (:func:`visible_grid`): the
+    engine's two rows above the ceiling are a buffer it never reads, and neither is
+    any cell the plan's own settle simulation projects there for a lock at the
+    ceiling. The height of a column is therefore read from its topmost *visible*
+    cell — exactly the value :func:`~block_stack_ai.pathaware.column_features`
+    reports — so every feature the plan scores is a function of the visible field.
+    A cell above the ceiling is not counted, whether the engine holds it there
+    (never shown to the plan) or the plan's own settle simulation projects it for a
+    lock at the ceiling: the height is the height of the field the plan is shown,
+    and nothing above the ceiling is part of it.
     """
     heights = []
     for column in columns:
-        if not column:
+        visible = column >> HIDDEN_ROWS
+        if not visible:
             heights.append(0)
             continue
-        lowest = (column & -column).bit_length() - 1
-        heights.append(GRID_ROWS - lowest)
+        top = (visible & -visible).bit_length() - 1
+        heights.append(HEIGHT - top)
     return tuple(heights)
 
 
@@ -237,10 +262,11 @@ def field_features(columns: tuple[int, ...], well: int = WELL_COLUMN) -> BoardFe
     left out of every field term, so holding four rows of it does not read as
     four holes and does not have to outbid the height terms. Bumpiness is summed
     over adjacent field columns only, so the step down into the well is not
-    counted either. The heights are :func:`column_heights` — the whole stack,
-    hidden rows included — so a field column resting on the ceiling reads as over
-    the budget; the holes stay the visible field's, because a cell above the
-    ceiling is occupied rather than covered.
+    counted either. The heights are :func:`column_heights` over the plan's own
+    observation — the rendered field, with the engine's hidden rows erased — so a
+    projected lock that comes to rest at the ceiling reads as over the budget; the
+    holes stay the visible field's, because a cell above the ceiling is occupied
+    rather than covered.
     """
     heights = column_heights(columns)
     field_heights = [height for index, height in enumerate(heights) if index != well]
@@ -267,16 +293,16 @@ def well_reserve(columns: tuple[int, ...], well: int = WELL_COLUMN) -> int:
 
     The I enters the well from above and descends to its floor: it comes to rest
     on the well column's topmost filled cell, the engine's own descent rule for a
-    straight drop, and the rows it fills are the four above that cell. The
-    reserve is how many of those rows the lock actually clears, which is exactly
-    what a Tetris is. A board whose well could not take the I -- the four rows it
-    would fill reach above the ceiling -- has no reserve.
+    straight drop, and the rows it fills are the four above that cell. The reserve
+    is how many of those rows the lock actually clears, which is exactly what a
+    Tetris is. The column is read as the field the plan is shown, so the cell it
+    rests on is the topmost *visible* one and a cell the plan's own simulation
+    projects above the ceiling is not consulted. A board whose well could not take
+    the I -- the four rows it would fill reach above the ceiling -- has no reserve.
     """
-    blocked = GRID_ROWS
-    for row in range(GRID_ROWS):
-        if columns[well] >> row & 1:
-            blocked = row
-            break
+    visible = columns[well] >> HIDDEN_ROWS
+    blocked = (GRID_ROWS if not visible
+               else HIDDEN_ROWS + (visible & -visible).bit_length() - 1)
     landing = blocked - RESERVE_CAP
     if landing < 0:
         return 0
@@ -388,8 +414,11 @@ class PlanAgent(PlacementAgent):
     piece the agent places, from that piece and the visible preview it is shown
     with -- and an I in either place resets it, so it counts the pieces the agent
     has spawned since an I was last visible to it. It hands that count to the
-    objective. Every other input is the state the engine reports, so the plan
-    sees only what a player sees.
+    objective. The board it plans on is :func:`visible_grid` of ``state.board``:
+    the rendered field, with the engine's two hidden rows erased, so the buffer the
+    engine keeps above the ceiling never reaches a feature or a choice. Every other
+    input is the visible state the engine reports, so the plan sees only what a
+    player sees.
     """
 
     def __init__(self) -> None:
@@ -399,7 +428,13 @@ class PlanAgent(PlacementAgent):
         super().reset()
         self._drought = 0
 
-    def _choose(self, state: Any, grid: Any) -> Placement | None:
+    def _choose(self, state: Any, _inherited_grid: Any) -> Placement | None:
+        # The base controller's grid is the engine's board *with* its hidden rows;
+        # the plan's observation is the rendered field alone, so that grid is
+        # deliberately unused and the observation is rebuilt from ``state.board``.
+        # The shared controller and the other agents keep the observation they have
+        # always had.
+        grid = visible_grid(state.board)
         # The count is updated once per spawned piece, from the two pieces the
         # agent is shown: an I in either place restarts it.
         self._drought = 0 if state.current_piece == "I" or state.next_piece == "I" \

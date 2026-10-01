@@ -128,16 +128,21 @@ The tie-break is Experiment 002's and Experiment 003's: the first highest-valued
 placement in canonical enumeration order, orientation ascending then column
 ascending.
 
-The plan reads only what a player sees: the engine's board, the current piece, the
-player-visible preview, the level, the line count, the start level, the
-first-piece delay, the engine's own piece counter, and its own count of the pieces
-it has spawned. It reads no future piece and no RNG stream. The counter is the
-one exception to "only what the plan itself counts": `PlanAgent` inherits
-`PlacementAgent.act`, which picks one placement per spawned piece by comparing
-`state.piece_count` with the count it last saw, and the plan overrides only
-`_choose` — so the plan does read the engine's piece counter. That counter is the
-engine's visible per-piece observation, the same value a player's piece tally
-comes from, not hidden information.
+The plan reads only what a player sees: the rendered field (`state.board`, the
+twenty rows the display shows), the current piece, the player-visible preview, the
+level, the line count, the start level, the first-piece delay, the engine's own
+piece counter, and its own count of the pieces it has spawned. It never reads
+`state.hidden_rows`, the engine's two-row buffer above the ceiling: `PlanAgent`
+builds its observation with `wellplan.visible_grid`, which erases those rows before
+any feature is computed, and `column_heights`, `field_features` and `well_reserve`
+read the visible field alone — so two boards that differ only above the ceiling are
+one board to the plan, with the same height, phase, reserve and value. It reads no
+future piece and no RNG stream. The counter is the one exception to "only what the
+plan itself counts": `PlanAgent` inherits `PlacementAgent.act`, which picks one
+placement per spawned piece by comparing `state.piece_count` with the count it last
+saw, and the plan overrides only `_choose` — so the plan does read the engine's
+piece counter. That counter is the engine's visible per-piece observation, the same
+value a player's piece tally comes from, not hidden information.
 <!-- predeclared-objective:end -->
 
 ## The policy
@@ -166,26 +171,30 @@ the four rows above the column's topmost filled cell, not the four rows at the
 floor — so a well filled low down still holds a reserve for the rows above it, and
 the objective's count is not restricted to a column that is open to the floor.
 
-**An explicit stack-height budget.** The plan builds only while the whole stack —
-the well column included — stands below `height_budget`, and the settled stack's
-height over the budget is charged again by `overflow`, per row, inside the summed
-value. That is a penalty and not a rule that makes an over-budget candidate lose:
-the charge is one term among the clear, field and reserve terms, so a larger clear
-can outweigh it. The regression
+**An explicit stack-height budget.** The plan builds only while the stack it is
+shown — the well column included — stands below `height_budget`, and the settled
+board's height over the budget is charged again by `overflow`, per row, inside the
+summed value. That is a penalty and not a rule that makes an over-budget candidate
+lose: the charge is one term among the clear, field and reserve terms, so a larger
+clear can outweigh it. The regression
 `tests/test_wellplan.py::test_overflow_is_a_penalty_inside_the_value_not_a_dominance_rule`
 derives a board on which the over-budget placement is the one `plan_choice`
 selects, so the sentence is not read as a stronger claim than the
-arithmetic supports. The height is measured over
-the engine's whole 22-row grid, not the visible field alone: a column whose cells
-rest in the two hidden rows above the ceiling has reached the top of the stack, and
-reading it as an empty column would leave the plan building while `BUILD`'s own
-budget and the `SPEND` transition were both unreachable. The retained evidence
-derives that state from the plan's own functions (`result.json` →
-`objective_mechanism.hidden_rows_are_stack_height`): on the column masks the
-engine's hidden buffer produces, the frozen visible-field measure reads 0 while the
-plan's height is 22, so `stack_height` is 22 and the phase is `SPEND`. The native
-integration suite reaches the same state on the engine itself by locking an O above
-the ceiling (`test_the_plan_reads_a_native_hidden_stack_as_over_its_budget`).
+arithmetic supports. The height is measured over the plan's own observation, which
+is the rendered field with the engine's two hidden rows erased
+(`wellplan.visible_grid`): the buffer above the ceiling is never read, so a
+column's height is the height a player sees, and `column_heights`,
+`field_features` and `well_reserve` all read that field alone. Two engine boards
+that differ only above the ceiling are therefore one board to the plan — the same
+height, phase, reserve and value — and that is a property of the executed code
+rather than of this paragraph:
+`tests/test_wellplan.py::test_every_plan_feature_is_a_function_of_the_rendered_field`
+drives the plan's own functions on the two column sets and
+`test_the_plan_agent_executes_the_same_choice_on_a_ceiled_board` drives the agent;
+both were reproduced failing against `git archive 1c50ee6d` of this branch before
+the repair. The native integration suite reaches the same state on the engine
+itself by locking an O above the ceiling and asserts the plan reads the rendered
+field (`test_the_plan_ignores_a_native_hidden_stack_and_reads_the_rendered_field`).
 
 **Spend-or-abandon at a self-tracked I-drought bound.** The counter advances once
 per spawned piece — one observation per piece the agent places, from that piece
@@ -227,10 +236,10 @@ composition does not take at all.
 ## Results
 
 Measured on 2026-10-01 at fallgorithm `9e8e9f8c` (working tree, `dirty: true` — the
-committed experiment plus this round's evidence, disclosure and predeclaration
-changes) with the sibling engine `8ca41587` (working tree), on
+committed experiment plus this round's visible-information change, its evidence,
+disclosure and predeclaration) with the sibling engine `8ca41587` (working tree), on
 the ten seeds number 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, start level 18, frame limit
-200000. The run record is `runs/20261001T020629406583Z-80e5bbc7/run.json`
+200000. The run record is `runs/20261001T103223460978Z-b332bb8a/run.json`
 (temporary, ignored output); its per-episode rows, its metrics and the objective it
 declared are retained in [`result.json`](result.json), and `verify` replays the
 record from its own recorded inputs (exit 0, with the engine working-tree warning).
@@ -243,15 +252,20 @@ The evaluation was re-measured after each of the
 corrections this record's history describes — the objective module's
 reorganisation, its identity walk, its height accounting, the widening of the
 writer's walk, the preview-phase, drought-boundary and overflow descriptions, the
-predeclared rationale's account of the engine's piece counter, and now the drought
-counter's unit — and every
+predeclared rationale's account of the engine's piece counter, the drought
+counter's unit, and now the visible-information observation that replaced the
+height accounting's read of the engine's hidden rows (with the two description
+corrections that followed it) — and every
 superseded
 run's distilled per-episode rows are retained beside this one in
 `probes/superseded_run_rows.json`, so the claim that the re-measurements changed no
 outcome is *derived*: `check-record` re-makes the comparison field for field against
 that artifact and reports a difference. The numbers below are therefore the same
 measurement under corrected code rather than a revised one, and that is checked
-rather than asserted.
+rather than asserted. The visible-information change is a real behaviour change —
+the derived regression named under *The policy* fails on the pre-fix tree — yet it
+moved no evaluation outcome: the fresh run's rows are identical to the superseded
+run's field for field.
 
 | Agent | Tetris line rate | Tetris lines / lines | Mean lines | Mean score | Mean frames | Pieces placed | Stopping |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -310,10 +324,10 @@ branch base, which is what keeps the identity of the record this comparison cite
 and of every record Experiment 003 retained — matching this tree.
 
 **Predeclaration.** `probes/evidence.py predeclare` wrote
-`probes/predeclared_objective.json` at 2026-10-01T02:03:23.017207+00:00, before the
-evaluation record's own `created_at` 2026-10-01T02:03:38.206026+00:00, capturing
-the objective module (`src/block_stack_ai/wellplan.py`, `sha256:d6e5d49e…`), the
-marked rationale section of this file (`sha256:51089c20…`), the published weights
+`probes/predeclared_objective.json` at 2026-10-01T10:29:20.102116+00:00, before the
+evaluation record's own `created_at` 2026-10-01T10:29:29.296449+00:00, capturing
+the objective module (`src/block_stack_ai/wellplan.py`, `sha256:6bafa2dd…`), the
+marked rationale section of this file (`sha256:c8b657b4…`), the published weights
 and constants, and the identity of the seven modules the plan's choices run
 through — the objective module, the board model, the reachable set, the wrapper and
 its factory, the game factory, and the module whose dispatch selects the plan's
@@ -351,7 +365,7 @@ boolean is reported rather than summed back to the integer it compares equal to.
 set of top-level blocks the record carries is asserted against the set of blocks that
 check knows, so a claim no check derives cannot be added to the certified record.
 
-The capture has been made ten times, and all nine superseded ones are kept beside
+The capture has been made thirteen times, and all twelve superseded ones are kept beside
 it. The first (2026-09-29T17:11:15.420024+00:00) preceded the first ten-seed run
 (`runs/20260929T171936702109Z-3733d12b`); the plan agent was then moved out of the
 shared factory into its objective module (see *What this experiment adds*), so the
@@ -391,9 +405,30 @@ counter — which changes the rationale section the capture hashes, so a ninth c
 corrected — the module's own descriptions and the rationale row counted the pieces
 the plan has been *shown*, one more than the per-spawn counter — which changes both
 the module a plan record hashes and the rationale section the capture hashes, so a
-tenth capture (`2026-10-01T02:03:23.017207+00:00`) was taken before this evaluation
-was re-run (`runs/20261001T020629406583Z-80e5bbc7`). The
+tenth capture (`2026-10-01T02:03:23.017207+00:00`) was taken before that evaluation
+was re-run (`runs/20261001T020629406583Z-80e5bbc7`); and the plan's information
+policy was then made visible-information-only — `PlanAgent` and the plan's feature
+functions were changed to read the rendered field alone, reversing the height
+accounting's read of the engine's hidden rows, and the module's own descriptions and
+the predeclared rationale's account of what the plan reads were corrected with them
+— which changes both the module a plan record hashes and the rationale section the
+capture hashes, so an eleventh capture
+(`2026-10-01T10:07:10.932657+00:00`) was taken before that evaluation was re-run
+(`runs/20261001T101009486155Z-0462108b`); and the module's docstring then lost a
+word when the height-budget sentence was rewritten — `summed` dropped out of the
+overflow sentence — so that description was corrected, which changes the module a
+plan record hashes without changing the rationale section, and a twelfth capture
+(`2026-10-01T10:23:01.580070+00:00`) was taken before that evaluation was re-run
+(`runs/20261001T102558815871Z-904a2e61`); and the height-budget bullet's replacement
+sentence then described the reversed reading as if the buffer were still scored, so
+it was corrected to say what the code does — a description-only change that again
+moves the module a plan record hashes — and a thirteenth capture
+(`2026-10-01T10:29:20.102116+00:00`) was taken before this evaluation was re-run
+(`runs/20261001T103223460978Z-b332bb8a`). The
 superseded captures are `probes/predeclared_objective.pre-drought-unit.json`,
+`probes/predeclared_objective.pre-hidden-rows.json`,
+`probes/predeclared_objective.pre-summed-wording.json`,
+`probes/predeclared_objective.pre-budget-wording.json`,
 `probes/predeclared_objective.pre-piece-counter.json`,
 `probes/predeclared_objective.pre-boundary-wording.json`,
 `probes/predeclared_objective.pre-preview-docstring.json`,
@@ -410,18 +445,22 @@ retained in `probes/superseded_run_rows.json` and re-made field for field by
 `check-record` (`result.json` → `refactor_no_outcomes_changed`), not asserted — so the
 reorganisation, the identity correction, the height correction, the version bump,
 the default-shape change, the preview-phase description correction, the boundary and
-overflow description corrections, the piece-counter correction and this round's
-drought-unit correction changed no
+overflow description corrections, the piece-counter correction, the drought-unit
+correction, this round's visible-information correction and the two description
+corrections beside it changed no
 outcome. The declared
-*weights and constants* are the same in all ten captures, and each capture's
+*weights and constants* are the same in all thirteen captures, and each capture's
 rationale-section digest names a retained section: the seven oldest captures name
 `probes/notes_predeclared_objective.pre-boundary-wording.md`, the section as it stood
 before the boundary-wording prose correction, the eighth names
 `probes/notes_predeclared_objective.pre-piece-counter.md`, the section as it stood
 before the piece-counter correction, the ninth names
 `probes/notes_predeclared_objective.pre-drought-unit.md`, the section as it stood
-before this round's correction, and the current capture names the section on this
-tree. That is derived too, from the captures and the retained sections
+before the drought-unit correction, the tenth names
+`probes/notes_predeclared_objective.pre-hidden-rows.md`, the section as it stood
+before this round's visible-information correction, and the eleventh and twelfth
+name this tree's current section (their corrections touched the module alone), as
+does the current capture. That is derived too, from the captures and the retained sections
 themselves (`rationale_generations`).
 
 One rule was widened this round rather than the claim: `check-record` required each
@@ -582,19 +621,47 @@ hidden rows — a column at the ceiling, which the engine really reaches, as the
 native `seed_hidden` fixture shows — read as height 0. Every consumer inherited it:
 `holds_well` kept building on a topped-out stack, `initial_phase` could not take
 the `SPEND` transition, and `plan_value`'s overflow charged nothing for the state
-that had already spent the stack. The height is now measured from the lowest
+that had already spent the stack. The height was then measured from the lowest
 occupied cell of the whole 22-row grid, which is exactly the frozen
 `column_features` value for a column with a visible cell and above `HEIGHT` for a
 hidden-only one, so the budget and the overflow read that state as over the
-ceiling. The corrected reading is derived from the plan's own functions in
-`objective_mechanism.hidden_rows_are_stack_height` and reached on the engine itself
-by `tests/test_integration.py::test_the_plan_reads_a_native_hidden_stack_as_over_its_budget`;
-both were confirmed to fail before the repair. The evaluation was re-measured under
+ceiling. The corrected reading was derived from the plan's own functions in an
+`objective_mechanism.hidden_rows_are_stack_height` claim and reached on the engine
+itself by a native integration test that locked an O above the ceiling; both were
+confirmed to fail before that repair and both are *gone from this tree* — the claim
+is replaced by `objective_mechanism.visible_only_observation` and the test by
+`test_the_plan_ignores_a_native_hidden_stack_and_reads_the_rendered_field` — because
+the owner's later decision reversed the reading itself (next paragraph). The
+evaluation was re-measured under
 the corrected code (`runs/20260930T020945782490Z-f908aba9/run.json`); its
 per-episode rows and metrics are identical to the superseded run's — derived from
 the superseded rows retained in `probes/superseded_run_rows.json`, because no
-episode of the ten reached that state — and that comparison is one of the seven
+episode of the ten reached that state — and that comparison is one of the
 `check-record` re-makes (`result.json` → `refactor_no_outcomes_changed`).
+
+**That height reading was then reversed, on the owner's decision, and the plan's
+information policy is now enforced by the code.** The owner required Experiment 004
+to be genuinely visible-information-only and to exclude the engine's two hidden
+rows from the plan's observations *and* calculations, which is a behaviour change
+and not a documentation one: the earlier correction above had deliberately made the
+plan read the buffer. `PlanAgent` now rebuilds its observation from `state.board`
+alone (`wellplan.visible_grid`, which erases the hidden rows), and
+`column_heights`, `field_features` and `well_reserve` read the visible field alone,
+so no engine row above the ceiling can reach a feature or a choice. Two boards that
+differ only above the ceiling are one board to the plan; the guarantee is pinned by
+`tests/test_wellplan.py::test_every_plan_feature_is_a_function_of_the_rendered_field`
+and `test_the_plan_agent_executes_the_same_choice_on_a_ceiled_board`, both
+reproduced failing against `git archive 1c50ee6d` of this branch before the repair,
+and by the native
+`tests/test_integration.py::test_the_plan_ignores_a_native_hidden_stack_and_reads_the_rendered_field`.
+The retained claim about the objective's behaviour is correspondingly replaced:
+`objective_mechanism.visible_only_observation` is derived from the plan's own
+functions on the two column sets rather than restating the guarantee. The
+predeclared rationale section and the module's own descriptions were corrected with
+the code, so the chain was *regenerated* — the pre-correction section is retained
+as `probes/notes_predeclared_objective.pre-hidden-rows.md` and the superseded
+capture as `probes/predeclared_objective.pre-hidden-rows.json` — and the ten-seed
+evaluation was re-measured on the identical settings.
 
 *The legacy-record checks rejected an advisory engine warning.* `check-legacy` and
 the integration check on the frozen writer's record asserted that every warning the
@@ -960,11 +1027,11 @@ history.
 
 ```sh
 PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
-$PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 261 passed
+$PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 262 passed
 $PY -m pytest -q -p no:cacheprovider -m integration            # 39 passed
 # the same selection as the GitHub unit-tests job: no Block Stack checkout beside the
 # worktree and `block_stack` unimportable, e.g. with BLOCK_STACK_ROOT unset and
-# `sys.modules['block_stack'] = None` before pytest.main([...])   # 261 passed
+# `sys.modules['block_stack'] = None` before pytest.main([...])   # 262 passed
 $PY -m block_stack_ai.cli run --config experiments/004-bounded-well-plan/config.json
 $PY -m block_stack_ai.cli verify runs/<run-id>/run.json
 $PY experiments/004-bounded-well-plan/probes/evidence.py check-predeclaration runs/<run-id>/run.json
@@ -1043,28 +1110,24 @@ $PY experiments/004-bounded-well-plan/probes/evidence.py all
   both `tetris` and `tetris_plan`. This experiment therefore compares against
   Experiment 003's retained rows and against a re-run of its own configuration,
   not against a same-run baseline.
-* The plan's height accounting was corrected after the first publication (see *The
-  verification surface and the height accounting*): a column whose cells rest in
-  the engine's two hidden rows is stack height (22 on the plan's scale, against the
-  frozen visible-field measure of 0) rather than an empty column, so the budget,
-  the `SPEND` transition and the overflow term read that state correctly. The
-  retained evaluation was re-measured under the corrected code, and the objective
-  module's own descriptions were corrected in the same way after later reviews (see
-  *The retained claims are recomputed from their artifacts* and *The retained
-  descriptions are derived from the code*): the preview's phase, the drought
-  boundary the predicate implements, the overflow term's status as a per-row
-  penalty rather than a dominance rule, the account of what the plan
-  reads — the engine's own piece counter, which the `act` it inherits keys its
-  once-per-piece detection on — and this round's counter unit, spawned pieces
-  rather than the pieces the plan has been shown. Every superseded run's distilled rows are
-  retained beside the result in `probes/superseded_run_rows.json` and `check-record`
-  re-makes the comparison field for field, so the statement that none of those
-  corrections changed an outcome is derived rather than asserted. The corrected
-  readings themselves are derived in
-  `objective_mechanism.hidden_rows_are_stack_height` and reached on the engine
-  itself by the native integration test named above, not by the ten-seed
-  measurement, and the boundary, overflow and counter-unit descriptions are pinned
-  by the regressions named in the paragraph above.
+* The plan's information policy is visible-information-only, and that guarantee is
+  enforced by the code rather than stated: the plan's observation is the rendered
+  field with the engine's two hidden rows erased (`wellplan.visible_grid`), and
+  `column_heights`, `field_features` and `well_reserve` read that field alone, so a
+  board's cells above the ceiling cannot reach a height, a phase, a reserve or a
+  choice. Two boards that differ only above the ceiling are one board to the plan;
+  the guarantee is derived in `objective_mechanism.visible_only_observation` and
+  pinned by
+  `tests/test_wellplan.py::test_every_plan_feature_is_a_function_of_the_rendered_field`
+  and `test_the_plan_agent_executes_the_same_choice_on_a_ceiled_board`, both
+  reproduced failing against `git archive 1c50ee6d` of this branch before the
+  repair, and reached on the engine itself by the native integration test named
+  above. The evaluation was re-measured under the corrected code more than once —
+  the earlier height accounting deliberately read the hidden rows and that reading
+  is reversed here — and the `refactor_no_outcomes_changed` block retains those
+  runs' rows (10 of them) and re-makes the comparison against this run's field for
+  field, so the statement that the corrections changed no outcome is derived rather
+  than asserted.
 
 ## Conclusion
 
@@ -1084,7 +1147,8 @@ Tetris rate with better lines and score than Experiment 003, not the aspirationa
 912.8 mean lines.
 
 The three thresholds are met by the re-measurement taken after the plan's objective,
-its identity walk, its height accounting, the writer's identity walk, the
+its identity walk, its visible-information observation (the earlier height accounting
+that read the engine's hidden rows is reversed), the writer's identity walk, the
 objective module's own descriptions of its preview phase, drought boundary,
 overflow term and drought-counter unit, and the predeclared rationale's account of
 the engine's piece counter
@@ -1092,7 +1156,10 @@ were corrected. Every superseded run's distilled
 per-episode rows are retained in `probes/superseded_run_rows.json`, and
 `check-record` re-makes the comparison against them field for field, so the verdict
 is the same measurement under corrected code rather than a revised one — that is
-derived from the artifact, not asserted here.
+derived from the artifact, not asserted here. The visible-only change is a real
+behaviour change, proved by the derived regression that fails on the pre-fix tree,
+yet it moved no evaluation outcome: the comparison against the superseded run's
+retained rows is identical, field for field.
 
 The rows reproduce only on the engine working tree named in the Results section,
 which this repository does not retain and cannot reconstruct; that limitation is
