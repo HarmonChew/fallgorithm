@@ -2,13 +2,15 @@
 
 ## Question
 
-Experiment 003's `tetris` agent had the best Tetris line rate of the two agents it
-measured — 40 Tetris lines in 3495 cleared, a rate of 0.011445, against the frozen
-`lookahead` agent's 0.000876 — but it placed 910 pieces against `lookahead`'s 2314,
-topped out in all ten games and averaged 349.5 lines. Its own notes name the cause:
-its objective rewards a four-line clear and a one-column well, but never decides
-when to hold that well or when to give it up, so it shaped the board constantly
-instead of playing a plan.
+Experiment 003's retained rows give its `tetris` agent the best Tetris line rate of
+the two agents that experiment measured — 40 Tetris lines in 3495 cleared, a rate
+of 0.011445, against the frozen `lookahead` agent's 0.000876 — and `tetris` placed
+910 pieces against `lookahead`'s 2314, topped out in all ten games and averaged
+349.5 lines. Those are Experiment 003's published numbers, re-derived from its
+retained rows by this experiment's baseline block rather than copied here. Its own
+notes name the cause: its objective rewards a four-line clear and a one-column
+well, but never decides when to hold that well or when to give it up, so it shaped
+the board constantly instead of playing a plan.
 
 Can an explicit, visible-information well plan — one designated well column, an
 explicit stack-height budget and a spend-or-abandon rule at a self-tracked
@@ -89,11 +91,16 @@ proportion to hold it. **Tetrises per 100 placed pieces** uses the engine's own
 placed-piece count. **Mean lines**, **mean score** and **mean frames** are the
 per-agent means of the per-episode values Experiment 003 published.
 
-The constants below were fixed from measurements on a development seed set that
-excludes the ten evaluation seeds — odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23.
-That development is stated here rather than presented as a pre-existing choice; no
-evaluation outcome was used to choose or revise any constant, and the capture in
-item 5 is dated before the evaluation run.
+The constants are read only from `wellplan.py`, and a development seed set — odd
+seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23, disjoint from the ten evaluation seeds
+— is *declared* here as the set they were chosen on; `result.json`'s `development`
+block retains that declaration. What is retained is the declaration only: no
+development configuration, no candidate values, no per-candidate outcomes and no
+selection record is kept, so neither the tuning procedure nor the claim that no
+evaluation outcome informed a constant is derivable from this repository. The
+capture in item 5 predates the evaluation run, and the one part of the declaration
+a retained check re-derives is that the declared set is disjoint from the ten
+evaluation seeds.
 
 <!-- predeclared-objective:start -->
 ## The predeclared objective (declared before the ten evaluation seeds were measured)
@@ -122,9 +129,15 @@ placement in canonical enumeration order, orientation ascending then column
 ascending.
 
 The plan reads only what a player sees: the engine's board, the current piece, the
-player-visible preview, the level, the line count, the start level and the
-first-piece delay, plus its own count of the pieces it has been shown. It reads no
-future piece, no RNG stream and no engine counter.
+player-visible preview, the level, the line count, the start level, the
+first-piece delay, the engine's own piece counter, and its own count of the pieces
+it has been shown. It reads no future piece and no RNG stream. The counter is the
+one exception to "only what the plan itself counts": `PlanAgent` inherits
+`PlacementAgent.act`, which picks one placement per spawned piece by comparing
+`state.piece_count` with the count it last saw, and the plan overrides only
+`_choose` — so the plan does read the engine's piece counter. That counter is the
+engine's visible per-piece observation, the same value a player's piece tally
+comes from, not hidden information.
 <!-- predeclared-objective:end -->
 
 ## The policy
@@ -210,21 +223,25 @@ composition does not take at all.
 
 ## Results
 
-Measured on 2026-09-30 at fallgorithm `70a1c65f` (working tree, `dirty: true` — the
-committed experiment plus this round's objective-description and typed-comparison
+Measured on 2026-10-01 at fallgorithm `45477728` (working tree, `dirty: true` — the
+committed experiment plus this round's evidence, disclosure and predeclaration
 changes) with the sibling engine `8ca41587` (working tree), on
 the ten seeds number 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, start level 18, frame limit
-200000. The run record is `runs/20260930T100945820449Z-b0cd2600/run.json`
+200000. The run record is `runs/20261001T001038850583Z-949815c9/run.json`
 (temporary, ignored output); its per-episode rows, its metrics and the objective it
 declared are retained in [`result.json`](result.json), and `verify` replays the
 record from its own recorded inputs (exit 0, with the engine working-tree warning).
 The declared objective's identity in that record is the seven-module one described
 above, so the run that produced these numbers is one whose identity covers the
-dispatch that selected its agent. The evaluation was re-measured after each of the
+dispatch that selected its agent. **Those rows reproduce only on the engine working
+tree named above, which is not retained here** — see the engine-dependency
+limitation — and the engine's own code is not reconstructable from this repository.
+The evaluation was re-measured after each of the
 corrections this record's history describes — the objective module's
 reorganisation, its identity walk, its height accounting, the widening of the
-writer's walk, the preview-phase description, and now the drought-boundary and
-overflow descriptions below — and every superseded
+writer's walk, the preview-phase, drought-boundary and overflow descriptions, and
+now the predeclared rationale's account of the engine's piece counter — and every
+superseded
 run's distilled per-episode rows are retained beside this one in
 `probes/superseded_run_rows.json`, so the claim that the re-measurements changed no
 outcome is *derived*: `check-record` re-makes the comparison field for field against
@@ -272,11 +289,14 @@ every published per-episode row field by field — lines, score, frames,
 `pieces_placed`, stopping reason and clear-size histogram, for all 20 episodes —
 and reproduces its published summary (912.8 mean lines / 2,822,959.9 mean score for
 `lookahead`, 349.5 / 567,266.2 for `tetris`). `probes/evidence.py baseline` is the
-mechanical form of that comparison, and it makes its claim only for the complete
+mechanical form of that comparison: it verifies the supplied record first — the same
+`runner.verify_run` replay `check-legacy` applies, so a hand-made file carrying
+Experiment 003's configuration and a copy of its published rows is rejected rather
+than printed as a reproduction — and then makes its claim only for the complete
 configured `(agent, seed)` set: the fresh run's configuration has to be Experiment
 003's, and both sides have to carry every one of the 20 pairs exactly once, so a
-truncated comparison or a duplicated key is reported instead of printed as a
-reproduction. That re-run is a current (version-7) record of the *Tetris* agent,
+truncated comparison or a duplicated key is reported too. That re-run is a current
+(version-7) record of the *Tetris* agent,
 whose identity is seeded from the dispatch that builds it; Experiment 003's
 retained records are version-6 records and keep verifying against that version's
 five-module walk, which is the shape their own writer recorded. The frozen
@@ -286,10 +306,10 @@ branch base, which is what keeps the identity of the record this comparison cite
 and of every record Experiment 003 retained — matching this tree.
 
 **Predeclaration.** `probes/evidence.py predeclare` wrote
-`probes/predeclared_objective.json` at 2026-09-30T10:06:36.090130+00:00, before the
-evaluation record's own `created_at` 2026-09-30T10:06:55.923796+00:00, capturing
+`probes/predeclared_objective.json` at 2026-10-01T00:07:38.503859+00:00, before the
+evaluation record's own `created_at` 2026-10-01T00:07:48.031741+00:00, capturing
 the objective module (`src/block_stack_ai/wellplan.py`, `sha256:85d111b2…`), the
-marked rationale section of this file (`sha256:2753d48e…`), the published weights
+marked rationale section of this file (`sha256:f638baa3…`), the published weights
 and constants, and the identity of the seven modules the plan's choices run
 through — the objective module, the board model, the reachable set, the wrapper and
 its factory, the game factory, and the module whose dispatch selects the plan's
@@ -314,15 +334,20 @@ timestamps and its named superseded captures from the files on the tree — incl
 the rationale generation each capture recorded — its
 agent-factory and dispatcher
 digests from those modules' own bytes, its baseline block from Experiment 003's rows
-and its own configuration, its `dispatcher_coverage` block from the version-keyed
-walks and Experiment 003's regenerated version prose, and its reserve, composition
+and its own configuration — the fresh run it names is re-compared as the complete
+configured set, and `probes/evidence.py baseline` replays that record with
+`runner.verify_run` before printing the reproduction claim, which the check's own
+binding does not do and says so — its `dispatcher_coverage` block from the version-keyed
+walks and Experiment 003's regenerated version prose, its `engine_dependency` block
+from the retained fingerprint manifest and, where the Block Stack checkout is
+readable, from that checkout's own files and Git state, and its reserve, composition
 and height claims from the model rather than from the prose beside them. Every one of
 those comparisons is type- and value-sensitive, so a retained number edited to a
 boolean is reported rather than summed back to the integer it compares equal to. The
 set of top-level blocks the record carries is asserted against the set of blocks that
 check knows, so a claim no check derives cannot be added to the certified record.
 
-The capture has been made eight times, and all seven superseded ones are kept beside
+The capture has been made nine times, and all eight superseded ones are kept beside
 it. The first (2026-09-29T17:11:15.420024+00:00) preceded the first ten-seed run
 (`runs/20260929T171936702109Z-3733d12b`); the plan agent was then moved out of the
 shared factory into its objective module (see *What this experiment adds*), so the
@@ -347,14 +372,20 @@ re-run (`runs/20260930T044258461859Z-332ee653`); the objective module's own
 description of the preview's phase was corrected to match the code (*The retained
 claims are recomputed from their artifacts*, below), which changes the module a
 plan record hashes, so a seventh capture was taken before the evaluation was
-re-run (`runs/20260930T064941239339Z-dc40e8da`); and the module's description of
+re-run (`runs/20260930T064941239339Z-dc40e8da`); the module's description of
 the drought boundary and of the overflow term was then corrected in the same way
 (*The retained descriptions are derived from the code*, below), with the
 predeclared rationale row corrected beside it, which changes both the module a plan
 record hashes and the rationale section the capture hashes, so an eighth capture
-(`2026-09-30T10:06:36.090130+00:00`) was taken before this evaluation was re-run
-(`runs/20260930T100945820449Z-b0cd2600`). The
-superseded captures are `probes/predeclared_objective.pre-boundary-wording.json`,
+(`2026-09-30T10:06:36.090130+00:00`) was taken before the evaluation was re-run
+(`runs/20260930T100945820449Z-b0cd2600`); and the predeclared rationale's account of
+what the plan reads was then corrected — it said the plan reads no engine counter,
+while the `act` it inherits keys its once-per-piece detection on the engine's piece
+counter — which changes the rationale section the capture hashes, so a ninth capture
+(`2026-10-01T00:07:38.503859+00:00`) was taken before this evaluation was re-run
+(`runs/20261001T001038850583Z-949815c9`). The
+superseded captures are `probes/predeclared_objective.pre-piece-counter.json`,
+`probes/predeclared_objective.pre-boundary-wording.json`,
 `probes/predeclared_objective.pre-preview-docstring.json`,
 `probes/predeclared_objective.pre-explicit-shape.json`,
 `probes/predeclared_objective.pre-version-bump.json`,
@@ -368,14 +399,25 @@ superseded — the comparison is *derived*, from the superseded runs' distilled 
 retained in `probes/superseded_run_rows.json` and re-made field for field by
 `check-record` (`result.json` → `refactor_no_outcomes_changed`), not asserted — so the
 reorganisation, the identity correction, the height correction, the version bump,
-the default-shape change, the preview-phase description correction and this round's
-boundary and overflow description corrections changed no outcome. The declared
-*weights and constants* are the same in all eight captures, and each capture's
-rationale-section digest names a retained section: the seven earlier captures name
+the default-shape change, the preview-phase description correction, the boundary and
+overflow description corrections and this round's piece-counter correction changed no
+outcome. The declared
+*weights and constants* are the same in all nine captures, and each capture's
+rationale-section digest names a retained section: the seven oldest captures name
 `probes/notes_predeclared_objective.pre-boundary-wording.md`, the section as it stood
-before this round's prose correction, and the current capture names the section on
-this tree. That is derived too, from the captures and the retained sections
+before the boundary-wording prose correction, the eighth names
+`probes/notes_predeclared_objective.pre-piece-counter.md`, the section as it stood
+before this round's correction, and the current capture names the section on this
+tree. That is derived too, from the captures and the retained sections
 themselves (`rationale_generations`).
+
+One rule was widened this round rather than the claim: `check-record` required each
+superseded capture to differ from the current one in its module digest or its
+identity, which a correction to the *rationale section alone* does not change. A
+capture is therefore compared by its whole subject — module, rationale section and
+identity — which is the same three-part subject `check_superseded_captures` already
+uses to keep the listed captures distinct from one another. Nothing else about the
+history is relaxed.
 
 The correction is what makes the incomplete identity visible: the previous
 publication's plan record, `runs/20260929T174836231811Z-b6c35f6b/run.json`, now
@@ -885,19 +927,32 @@ current capture" to "a rationale text retained on this tree", because a sanction
 prose correction to the section would otherwise invalidate every capture in the
 history.
 
+**The retained claims were audited once more, and the four defects the final review named were re-derived on the pre-fix tree.** Each was reproduced against `git archive 45477728` before it was repaired — extracted to a temporary directory and driven with the input the new check now rejects — and the two recurring shapes were swept rather than patched instance by instance.
+
+*The baseline reproduction claim was issuable from copied rows.* `probes/evidence.py baseline` compared a supplied JSON's rows with Experiment 003's published rows and printed "Experiment 003's published rows reproduce exactly on this tree" without verifying the supplied record, so a hand-made file carrying Experiment 003's canonical configuration plus a copy of its published rows — no `format_version`, no inputs, no per-episode structure, nothing replayable — reached the claim on the pre-fix tree. The command now calls `runner.verify_run` on the supplied record first, the same replay `check-legacy` applies to the frozen fixture, and only then compares, so the claim is made about a run of this tree. The comparison half is also usable on its own (`baseline_rows`, with `verified` saying which of the two checks ran), because `check-record` binds the temporary run the result names without replaying the whole Experiment 003 suite, and the sentence that path prints says exactly that — it does not print the reproduction claim. The regression drives the exact copied-rows file the finding described: `baseline_rows` accepts it and says it did not replay it, `baseline` rejects it with `VerificationError`, and the integration suite shows the same gate passing a genuine replayable record. The command is unchanged in the documented reproduction.
+
+*The development-seed tuning was claimed but not retained.* The method paragraph said the constants "were fixed from measurements on a development seed set", named ten odd seeds and claimed no evaluation outcome was used, while only the seed list was retained — no development configuration, no candidate values, no per-candidate outcomes and no selection record — so neither the tuning step nor that claim could be audited from this repository. The development artifacts are not recoverable here (they were never copied into the tree, and inventing them would be worse than the gap), so the claim is narrowed to what is retained: the seed set is a *declaration*, `result.json`'s `development` block carries it with that statement, the predeclaration note and the limitations say the same, and the one part a retained check re-derives is that the declared set is disjoint from the ten evaluation seeds. The evaluation seed set stays disjoint from the declared development set.
+
+*The predeclared rationale said the plan reads no engine counter.* The sentence inside the predeclared markers claimed the plan "reads no future piece, no RNG stream and no engine counter", but `PlanAgent` overrides only `_choose` and inherits `PlacementAgent.act`, which detects each spawn by comparing `state.piece_count` with the count it last saw — so the plan does read the engine's piece counter (the engine's visible per-piece observation, not hidden information). The sentence now says so explicitly and keeps the true part: no future piece and no RNG stream. It is inside the hashed section, so the whole chain was *regenerated* — the pre-correction section is retained as `probes/notes_predeclared_objective.pre-piece-counter.md`, the superseded capture as `probes/predeclared_objective.pre-piece-counter.json`, a ninth capture was taken on the edited text before the ten-seed evaluation was re-run on the identical settings, and the re-measured numbers stand as they fell (they are the same rows, because the edit is prose).
+
+*The engine dependency was named but neither described nor fingerprinted.* The only mention of the dependency was "the sibling engine `8ca41587` (working tree)", and the retained record said the run's versions stayed in the cited run record — which is temporary, ignored output — so nothing identified the working tree the rows were measured on. The limitation now states plainly and prominently that the rows reproduce only on that unavailable dirty working tree, that its uncommitted changes cannot be exported and are not retained, and that neither reconstructability nor clean reproducible-dependency CI is claimed anywhere. `probes/evidence.py fingerprint-engine` writes `probes/engine_fingerprint.json`: the checkout, its commit, its dirty flag, all 37 source files and their sha256 digests plus a combined digest. `check-record` derives the retained `engine_dependency` block from that manifest, re-derives the manifest itself from the Block Stack checkout where that checkout is readable (asserting the files and Git state are the ones measured on), and reports it as identified but not re-derived where it is not readable — which is how the GitHub unit-tests job, with no checkout at all, still passes.
+
+*The comparisons were swept for type and structure.* `reproduction_differences` compared the intersection of the two row mappings and its values with plain equality; it now reports an identity present on one side only and keeps the per-field schema check, so two structurally different records cannot certify each other as a reproduction, and it is driven from the tampered side by `test_the_plan_reproduction_comparison_rejects_a_structurally_different_record`. The identity fields themselves are checked before they become keys — a retained `seed` edited from the integer `2` to the float `2.0`, or to a boolean, built the configured key and was never compared, so `rows_by_identity` now requires an agent name and an integer seed, the rule `runner._verify_suite` already applies to a record's own episodes, and `check-record` and `reproduce` both reject a mistyped identity. The baseline's new half is compared the same way. And one history rule was widened rather than the claim: `check-record` required a superseded capture to differ from the current one in its module digest *or* its identity, which a rationale-section-only correction does not change, so a capture is now compared by its whole subject — module, rationale section and identity, the same subject `check_superseded_captures` uses to keep the listed captures distinct. That is the one rule relaxed this round, and only to the shape the rationale-generation rule already accepts.
+
 ## Reproduction
 
 ```sh
 PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
-$PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 250 passed
-$PY -m pytest -q -p no:cacheprovider -m integration            # 37 passed
+$PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 260 passed
+$PY -m pytest -q -p no:cacheprovider -m integration            # 39 passed
 # the same selection as the GitHub unit-tests job: no Block Stack checkout beside the
 # worktree and `block_stack` unimportable, e.g. with BLOCK_STACK_ROOT unset and
-# `sys.modules['block_stack'] = None` before pytest.main([...])   # 250 passed
+# `sys.modules['block_stack'] = None` before pytest.main([...])   # 260 passed
 $PY -m block_stack_ai.cli run --config experiments/004-bounded-well-plan/config.json
 $PY -m block_stack_ai.cli verify runs/<run-id>/run.json
 $PY experiments/004-bounded-well-plan/probes/evidence.py check-predeclaration runs/<run-id>/run.json
 $PY experiments/004-bounded-well-plan/probes/evidence.py baseline runs/<003-rerun>/run.json
+$PY experiments/004-bounded-well-plan/probes/evidence.py fingerprint-engine
 $PY experiments/004-bounded-well-plan/probes/evidence.py check-record experiments/004-bounded-well-plan/result.json
 $PY experiments/004-bounded-well-plan/probes/evidence.py reproduce experiments/004-bounded-well-plan/result.json
 $PY experiments/004-bounded-well-plan/probes/evidence.py all
@@ -908,10 +963,13 @@ $PY experiments/004-bounded-well-plan/probes/evidence.py all
 * One configuration: `classic_ntsc_extended`, endless, start level 18, height 0, a
   positive 200000-frame cap. No other ruleset, level or mode was measured, and no
   live-desktop or whole-game mode was run.
-* The constants were developed on a seed set disjoint from the ten evaluation
-  seeds (odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23). The numbers above are the
-  first measurement of these constants on the evaluation seeds; the development is
-  stated rather than presented as a pre-existing choice.
+* The constants are read only from `wellplan.py`. The development seed set they were
+  chosen on (odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23) is *declared* as
+  disjoint from the ten evaluation seeds, and `result.json`'s `development` block
+  retains the declaration. Nothing else about the development is retained: no
+  development configuration, candidate values, per-candidate outcomes or selection
+  record is kept, so the tuning step is not auditable from this repository, and the
+  declaration's disjointness is the only part a retained check re-derives.
 * The agent is a one-piece, straight-drop, commit-per-piece policy: it does not
   search, it knows only the visible preview, and it cannot repair a covered cell.
   Its reserve is therefore often partial — 60 of its 15857 placements were
@@ -941,6 +999,20 @@ $PY experiments/004-bounded-well-plan/probes/evidence.py all
   version-6 writer's records have to keep verifying. *Frozen records still verify*
   and *The version-keyed identity and the reader-side checks*, above, state and
   check both.
+* **The reported rows reproduce only with the Block Stack working tree they were
+  measured on, and that working tree is not retained here.** The dependency is the
+  registered sibling checkout at commit `8ca41587` with `dirty: true` (`kind:
+  working-tree`): it carried uncommitted local changes at measurement time, those
+  changes cannot be exported from this project, and no copy of them is kept, so the
+  native behaviour behind the rows cannot be reconstructed from a clean checkout.
+  No claim of reconstructability — and no claim of clean reproducible-dependency CI
+  — is made anywhere in this record. What *is* retained is an identification:
+  `probes/engine_fingerprint.json` lists the 37 source files of that checkout with
+  their sha256 digests (combined sha256 `ad99d375…`); it is written by
+  `probes/evidence.py fingerprint-engine` and re-derived from the checkout itself by
+  `check-record` wherever that checkout is readable. The agents reach the engine
+  through `block_stack_ai.engine`, which loads the binding's `Game`, and the rules
+  that class implements decide every placement's outcome.
 * The retained `result.json` is a distilled record, not the full run record: the
   evaluation's own `run.json` holds one input mask per logical frame and is about
   17 MB of ignored, disposable output. The retained evidence is therefore
@@ -949,10 +1021,7 @@ $PY experiments/004-bounded-well-plan/probes/evidence.py all
   and compares every episode outcome and every metric, and
   `probes/evidence.py check-record` re-derives the metrics from the retained rows —
   and the temporary record the predeclaration cites is named by that block's
-  `cited_record` for as long as this checkout keeps it. The record deliberately does
-  not restate the run's own code and engine versions: the cited record carries them,
-  and a second copy in a file no check could re-derive would be a claim rather than
-  evidence.
+  `cited_record` for as long as this checkout keeps it.
 * A suite record carries one `objective` section, so a suite cannot configure
   both `tetris` and `tetris_plan`. This experiment therefore compares against
   Experiment 003's retained rows and against a re-run of its own configuration,
@@ -966,8 +1035,10 @@ $PY experiments/004-bounded-well-plan/probes/evidence.py all
   module's own descriptions were corrected in the same way after later reviews (see
   *The retained claims are recomputed from their artifacts* and *The retained
   descriptions are derived from the code*): the preview's phase, the drought
-  boundary the predicate implements and the overflow term's status as a per-row
-  penalty rather than a dominance rule. Every superseded run's distilled rows are
+  boundary the predicate implements, the overflow term's status as a per-row
+  penalty rather than a dominance rule, and this round's account of what the plan
+  reads — the engine's own piece counter, which the `act` it inherits keys its
+  once-per-piece detection on. Every superseded run's distilled rows are
   retained beside the result in `probes/superseded_run_rows.json` and `check-record`
   re-makes the comparison field for field, so the statement that none of those
   corrections changed an outcome is derived rather than asserted. The corrected
@@ -995,11 +1066,17 @@ Tetris rate with better lines and score than Experiment 003, not the aspirationa
 912.8 mean lines.
 
 The three thresholds are met by the re-measurement taken after the plan's objective,
-its identity walk, its height accounting, the writer's identity walk and the
+its identity walk, its height accounting, the writer's identity walk, the
 objective module's own descriptions of its preview phase, drought boundary and
-overflow term were corrected. Every superseded run's distilled
+overflow term, and the predeclared rationale's account of the engine's piece counter
+were corrected. Every superseded run's distilled
 per-episode rows are retained in `probes/superseded_run_rows.json`, and
 `check-record` re-makes the comparison against them field for field, so the verdict
 is the same measurement under corrected code rather than a revised one — that is
 derived from the artifact, not asserted here.
+
+The rows reproduce only on the engine working tree named in the Results section,
+which this repository does not retain and cannot reconstruct; that limitation is
+stated in full under *Limitations* and is identified by the retained fingerprint
+manifest rather than left implicit.
 

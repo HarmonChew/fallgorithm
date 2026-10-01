@@ -872,6 +872,40 @@ def test_the_plan_probe_aggregate_command_checks_the_native_fixture():
     assert probe.main(["check-legacy"]) == 0
 
 
+def test_the_plan_baseline_gate_accepts_a_genuine_replayable_record():
+    """Verification gates the supplied record on replayability, not on identity.
+
+    ``baseline`` replays the record it is given with ``runner.verify_run`` before it
+    compares any rows. The frozen writer's retained fixture is a genuine record of
+    this tree's engine -- its recorded inputs replay -- so it has to pass that gate
+    and be refused only for the configuration it records, which is not Experiment
+    003's. A record with real replay evidence is therefore not rejected by the gate,
+    while the copied-rows file the unit suite drives is rejected by it.
+    """
+    probe = _plan_probe("exp004_plan_baseline_genuine_probe")
+    with pytest.raises(AssertionError, match="not Experiment 003's configuration"):
+        probe.baseline(probe.LEGACY_RECORD)
+
+
+def test_the_plan_engine_fingerprint_rederives_from_the_registered_checkout():
+    """The manifest is re-derived from the dependency where that checkout is readable.
+
+    The engine-dependency block and the limitation beside it are derived from the
+    manifest, and the manifest here has to be the registered Block Stack checkout
+    itself: every source file's digest, the commit and the dirty flag are recomputed
+    from the dependency, so the disclosure cannot be a hand-written list that names a
+    checkout nobody used.
+    """
+    probe = _plan_probe("exp004_plan_engine_fingerprint_probe")
+    root = probe.readable_engine_root()
+    assert root is not None, "the integration selection requires the Block Stack checkout"
+    manifest = probe.check_engine_manifest()
+    live = probe.engine.git_info(root)
+    assert probe.engine_source_files(root) == manifest["files"]
+    assert (manifest["commit"], manifest["dirty"], manifest["kind"]) == (
+        live["commit"], live["dirty"], live["kind"])
+
+
 def test_suite_record_with_the_tetris_agent_runs_and_verifies(tmp_path: Path):
     """The new agent plays a suite episode, records its clear sizes, and replays."""
     raw = json.loads(TETRIS_CONFIG.read_text(encoding="utf-8"))

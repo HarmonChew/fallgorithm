@@ -32,8 +32,16 @@ gone; ``report <run.json>`` prints a saved run's retained metrics; and
 ``baseline <run.json>`` compares a fresh run of Experiment 003's frozen
 configuration with the rows Experiment 003 published, so the comparison the new
 agent is measured against is re-derived on this tree rather than carried over.
+That record has to *verify* first — ``runner.verify_run`` replays its own recorded
+inputs and checks its per-episode structure — so the reproduction claim is made
+about a run of this tree rather than about a JSON of copied rows.
 Both comparisons require the complete configured ``(agent, seed)`` set on each
-side, so a truncated or duplicated run cannot be reported as a reproduction.
+side, so a truncated or duplicated run cannot be reported as a reproduction, and
+``reproduction_differences`` reports a key present on one side only rather than
+comparing the intersection of two structurally different records.
+``fingerprint-engine`` writes the read-only manifest that identifies the Block
+Stack working tree the reported rows were measured on; it is the only record of
+that dependency, which is not retained here and cannot be reconstructed.
 
 Every top-level block the retained result carries is re-derived by ``check-record``
 except the few named as narrative, and the block set itself is asserted, so a
@@ -56,10 +64,11 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import re
 from statistics import fmean
 import sys
 
-from block_stack_ai import heuristic, pathaware, runner, wellplan
+from block_stack_ai import engine, heuristic, pathaware, runner, wellplan
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 EXPERIMENT = PROJECT_ROOT / "experiments" / "004-bounded-well-plan"
@@ -95,10 +104,10 @@ EXPERIMENT_CONFIG = EXPERIMENT / "config.json"
 # derives cannot be added to the certified result silently.
 RETAINED_BLOCKS = frozenset({
     "acceptance", "baseline", "conclusion", "configuration", "development",
-    "dispatcher_coverage", "episodes_by_agent_seed", "legacy_verification",
-    "limitations", "metrics", "objective_mechanism", "objective_record",
-    "predeclared_objective", "refactor_no_outcomes_changed", "retained_replay",
-    "status", "stopping",
+    "dispatcher_coverage", "engine_dependency", "episodes_by_agent_seed",
+    "legacy_verification", "limitations", "metrics", "objective_mechanism",
+    "objective_record", "predeclared_objective", "refactor_no_outcomes_changed",
+    "retained_replay", "status", "stopping",
 })
 # The retained result: the artifact `check-record` certifies, and the one that names
 # the run its predeclaration block cites.
@@ -106,6 +115,13 @@ RESULT_PATH = EXPERIMENT / "result.json"
 # A version-6 record written by the frozen Experiment 003-era writer, retained so the
 # legacy-verification guarantee is checked by this tree rather than asserted.
 LEGACY_RECORD = EXPERIMENT / "probes" / "legacy_v6_tetris_record.json"
+# The read-only fingerprint of the Block Stack working tree the reported rows were
+# measured on. The dependency is not retained in this repository and its uncommitted
+# changes cannot be exported, so this manifest identifies it -- the checkout's commit,
+# its dirty flag and the digest of every source file it held -- rather than
+# reconstructing it. ``check_engine_manifest`` re-derives it where that checkout is
+# still readable and reports the manifest as unverifiable where it is not.
+ENGINE_MANIFEST = EXPERIMENT / "probes" / "engine_fingerprint.json"
 TETRIS_RESULT = PROJECT_ROOT / "experiments" / "003-tetris-aware-agent" / "result.json"
 # Experiment 003's own canonical configuration: the file the documented
 # ``run --config`` command for that experiment executes, and therefore the authority
@@ -493,9 +509,15 @@ def reproduction_differences(recorded: dict, fresh: dict) -> list[str]:
     Every compared field is checked against the writer's schema before its value, so a
     row whose clear-size counts are booleans is a difference from one whose counts are
     integers whichever side carries it, instead of reproducing it as an equal value.
+    An identity present on one side only is a difference too: comparing the
+    intersection alone would read two structurally different records as a
+    reproduction of the keys they happen to share.
     """
     differences = []
-    for key in sorted(set(recorded) & set(fresh), key=repr):
+    for key in sorted(set(recorded) | set(fresh), key=repr):
+        if key not in recorded or key not in fresh:
+            differences.append(f"{key}: present on one side only")
+            continue
         differences.extend(outcome_differences(recorded[key], fresh[key], str(key)))
     return differences
 
@@ -522,10 +544,25 @@ def rows_by_identity(rows: list[dict], where: str) -> dict[tuple[str, int], dict
     one, would read as a complete reproduction. Both sides are therefore built as
     maps, and the callers require each map's key set to be the configured one, so
     the set equality means something.
+
+    The identity fields are checked before they become a key. A retained row whose
+    ``seed`` was edited from the integer ``2`` to the float ``2.0`` (or to ``true``,
+    which is not the integer ``1`` either) builds the same key as the configured
+    ``(agent, 2)``, and the identity fields are not among the fields the comparison
+    checks, so the retained-evidence paths would certify a reproduction for an
+    episode identity ``runner._verify_suite`` rejects. This is that verifier's own
+    identity rule, applied at the one place every retained-row comparison builds
+    its keys.
     """
     by_identity: dict[tuple[str, int], dict] = {}
     for row in rows:
-        key = (row["agent"], row["seed"])
+        agent, seed = row["agent"], row["seed"]
+        if type(agent) is not str or type(seed) is not int:
+            raise AssertionError(
+                f"{where} carries an episode identity that is not an agent name and an "
+                f"integer seed: recorded agent {agent!r} with seed {seed!r}"
+            )
+        key = (agent, seed)
         assert key not in by_identity, f"{where} carries {key} twice"
         by_identity[key] = row
     return by_identity
@@ -659,25 +696,34 @@ def evaluation_configuration(result_path: Path | None = None) -> dict:
     return canonical
 
 
-# The development seed set the plan's constants were fixed on. It is a
-# declaration -- no code publishes it -- so it is stated here and in notes.md, and
-# what the retained block's check derives is the part of the claim that can be
-# false: that the declared set is disjoint from the evaluated seeds.
+# The development seed set the plan's constants were chosen on. It is a
+# declaration -- no artifact in this repository records the development runs,
+# the candidate values, their outcomes or the selection procedure -- so what the
+# retained block's check derives is the part of the claim that can be checked here:
+# that the declared set is disjoint from the evaluated seeds. The note says so
+# rather than presenting the development as retained evidence.
 DEVELOPMENT_SEEDS = (1, 3, 5, 7, 9, 15, 17, 19, 21, 23)
 DEVELOPMENT_NOTE = (
-    "the seeds the plan's constants were developed on; they are disjoint from the ten "
-    "evaluation seeds and from Experiment 003's published rows"
+    "the declaration of the seed set the plan's constants were chosen on. It is a "
+    "declaration only: no development configuration, no candidate values, no "
+    "per-candidate outcomes and no selection record is retained here, so neither the "
+    "tuning procedure nor the claim that no evaluation outcome informed a constant is "
+    "derivable from this repository. The one part of the declaration a retained check "
+    "re-derives is that the declared set is disjoint from the ten evaluation seeds, "
+    "which are Experiment 003's published ones"
 )
 
 
 def development_block(configuration: dict) -> dict:
     """The ``development`` block, with the disjointness of its seeds checked.
 
-    The development seed set is a declaration -- nothing in the code publishes it --
-    so it is stated here and in notes.md, and what the retained block's check derives
-    is the part of the claim that can be false: that the declared set is disjoint
-    from the evaluated seeds, which are Experiment 003's published ones as well, and
-    that the note is the one written here.
+    The development seed set is a declaration and nothing in this repository backs
+    more of it than the disjointness: no development run, candidate values or
+    outcomes were retained, so the block states that gap rather than presenting the
+    tuning as evidence. What the check derives is the part of the claim that can be
+    false here -- that the declared set is disjoint from the evaluated seeds, which
+    are Experiment 003's published ones as well -- and that the note is the one
+    written here.
     """
     tetris_record, _ = experiment_003_evidence()
     check_typed_equal(sorted(configuration["seeds"]),
@@ -862,16 +908,18 @@ def predeclaration_note(capture: dict, superseded: list[str]) -> str:
         "the declared objective -- the module, the modules its decisions are computed from, "
         "and the documented weights, plan constants and rationale -- captured from the "
         "unmodified tree before the evaluation run; no constant is revised against "
-        "evaluation outcomes. The constants were fixed on a development seed set that "
-        "excludes the ten evaluation seeds (odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23); "
-        "that development is stated in notes.md rather than presented as a pre-existing "
-        f"choice. This capture supersedes the {len(superseded)} earlier ones the block's "
-        "superseded_captures names, one for each run this evaluation superseded and each "
-        "of a different design -- which is where the design every one of them preceded is "
-        "described; every one of them published the same declared weights and constants, "
-        "because no change that forced a re-capture touched one, and each named a "
-        "rationale section retained beside the captures, so a substance-preserving prose "
-        "correction to the section is recorded rather than read as a revised objective"
+        "evaluation outcomes. The development seed set the constants were chosen on (odd "
+        "seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23, disjoint from the ten evaluation "
+        "seeds) is a declaration in notes.md and not retained evidence: no development "
+        "run, candidate values or outcomes are kept, so the tuning step is stated and not "
+        "auditable from this repository. This capture supersedes the "
+        f"{len(superseded)} earlier ones the block's superseded_captures names, one for "
+        "each run this evaluation superseded and each of a different design -- which is "
+        "where the design every one of them preceded is described; every one of them "
+        "published the same declared weights and constants, because no change that forced "
+        "a re-capture touched one, and each named a rationale section retained beside the "
+        "captures, so a substance-preserving prose correction to the section is recorded "
+        "rather than read as a revised objective"
     )
 
 
@@ -914,10 +962,10 @@ def _superseded_run_rows_checked() -> list[dict]:
 def refactor_statement(runs: list[dict]) -> str:
     """The sentence the refactor block has to carry, from the runs it compared."""
     return (
-        "every superseded run's retained rows equal this run's, field for field, so the "
-        "re-measurements taken after the plan's objective module was reorganised, after "
-        "its identity walk was corrected, after its height accounting was corrected and "
-        "after the writer's walk was widened for every agent changed no outcome: "
+        "every superseded run's retained rows equal this run's, field for field, so each "
+        "re-measurement this evaluation superseded -- every correction this record's "
+        "history describes, the last being the predeclared rationale's account of the "
+        "engine's piece counter -- changed no outcome: "
         + ", ".join(entry["run"] for entry in runs)
     )
 
@@ -1110,6 +1158,7 @@ def limitations_statements(facts: dict) -> list[str]:
     plan = facts["plan"]
     aspiration = facts["aspirational"]
     superseded = facts["superseded_runs"]
+    engine = facts["engine"]
     capped = plan["frame_cap_stops"]
     outcomes = (
         f"All {plan['games']} of the plan's games topped out, so the ten-seed means are "
@@ -1125,10 +1174,12 @@ def limitations_statements(facts: dict) -> list[str]:
         f"{configuration['frame_limit']}-frame cap, the settings Experiments 002 and 003 "
         "used. Nothing here measures another ruleset, level or mode, and no live-desktop "
         "game or whole-game mode was run.",
-        "The plan's constants were fixed on a development seed set that excludes the ten "
-        "evaluation seeds (the development block states it and names the exclusion). That "
-        "is development, not evaluation: the numbers above are the first measurement of "
-        "these constants on the evaluation seeds, and notes.md states the development.",
+        "The plan's constants are read only from its objective module, and the development "
+        "seed set the constants were chosen on is disjoint from the ten evaluation seeds "
+        "(the development block states that declaration). The development itself is not "
+        "retained: no development configuration, candidate values, per-candidate outcomes "
+        "or selection record is kept, so the tuning step is stated by the author of the "
+        "constants and is not auditable from this repository.",
         "The plan's advantage over Experiment 003's agent is bounded and specific: it is a "
         "one-piece, straight-drop, commit-per-piece policy. It does not search, it does not "
         "know a future piece beyond the visible preview, and it cannot repair a covered "
@@ -1168,9 +1219,18 @@ def limitations_statements(facts: dict) -> list[str]:
         "is therefore not expressible, and this experiment compares the plan against "
         "Experiment 003's retained rows and against a re-run of Experiment 003's own "
         "configuration instead.",
-        "The run's own code and engine versions are recorded in the cited run record, not "
-        "restated here: the record this result names carries them, and this file does not "
-        "keep a second copy that no check could re-derive.",
+        "The reported rows reproduce only with the Block Stack working tree the cited run "
+        f"record names: engine commit {engine['commit']}, dirty: "
+        f"{str(engine['dirty']).lower()}, kind: {engine['kind']}. That working tree is not "
+        "retained in this repository and its uncommitted local changes cannot be exported, "
+        "so the native behaviour behind these rows cannot be reconstructed from a clean "
+        "checkout of this project. The dependency is at least identified: "
+        f"{engine['file_count']} source files of that checkout and their sha256 digests "
+        f"are recorded in {engine['manifest']} (combined sha256 "
+        f"{engine['combined_sha256']}), together with the commit and dirty flag above. No "
+        "claim of reconstructability and no claim of clean reproducible-dependency CI is "
+        "made anywhere in this record; the code and engine versions themselves stay where "
+        "the writer put them, in the cited run record.",
         "The plan's height accounting was corrected before this publication, and the "
         "evaluation was re-measured under the corrected code more than once. The "
         f"refactor_no_outcomes_changed block retains those runs' rows -- "
@@ -1675,7 +1735,12 @@ def check_record(path: Path) -> None:
     either is used. The baseline block's published metrics have to
     be Experiment 003's rows' aggregate, and its reproduction block's count, fields,
     source and sentence have to be the ones those artifacts reconstruct, so a
-    comparison that was not complete cannot be reported as one. And the cited run
+    comparison that was not complete cannot be reported as one. The engine-dependency
+    block is the fingerprint manifest's own summary (``engine_dependency_block``),
+    re-derived from the Block Stack checkout where that checkout is readable and
+    identified by the retained manifest where it is not, so the dependency the reported
+    rows reproduce only on is a checked disclosure rather than a caveat beside the
+    numbers. And the cited run
     record has to be the run this result cites — the path, the evaluation
     configuration, the complete ``(agent, seed)`` episode set and every per-episode
     outcome the retained rows carry, checked by
@@ -1766,8 +1831,14 @@ def check_record(path: Path) -> None:
             f"the superseded capture {path_name} was written at {earlier['captured_at']}, "
             f"not before the current capture at {capture['captured_at']}"
         )
-        assert (earlier["sources"] != capture["sources"]
-                or earlier["module_sha256"] != capture["module_sha256"]), (
+        # A superseded capture is a capture of a *different* design, and the design a
+        # capture declares is its whole subject -- the module it hashes, the rationale
+        # section it hashes and the identity it records. Comparing only the module and
+        # the identity would count a capture of the same code and identity whose
+        # rationale section was corrected as describing the current objective, which is
+        # the substance-preserving prose correction the history already records and the
+        # generation rule below already accepts.
+        assert capture_subject(earlier) != capture_subject(capture), (
             f"the superseded capture {path_name} describes the current objective, so it "
             "is not a superseded capture of an earlier design"
         )
@@ -1877,6 +1948,14 @@ def check_record(path: Path) -> None:
     )
     check_dispatcher_bound(retained)
     check_mechanism(retained)
+    # The dependency the rows reproduce only on is identified by a retained manifest and
+    # re-derived from the checkout where it is readable, so the disclosure is a checked
+    # claim rather than a caveat beside the numbers.
+    derived_engine = engine_dependency_block()
+    check_typed_equal(retained["engine_dependency"], derived_engine, (
+        "the retained engine-dependency block is not the one the fingerprint manifest "
+        f"derives:\n  recorded {retained['engine_dependency']}\n  derived  {derived_engine}"
+    ))
     rows = retained["episodes_by_agent_seed"]
     # The retained rows are the complete configured identity set, each pair once:
     # every aggregate and acceptance verdict below is taken over them, and a
@@ -2021,6 +2100,7 @@ def check_record(path: Path) -> None:
         "baseline": tetris_baseline,
         "other": others[0],
         "aspirational": aspiration,
+        "engine": derived_engine,
         "changed_boards": retained["objective_mechanism"][
             "composition_differs_from_experiment_003"],
         "superseded_runs": retained["refactor_no_outcomes_changed"]["superseded_runs"],
@@ -2104,7 +2184,10 @@ def check_record(path: Path) -> None:
     # is the record whose rows the reproduction claim compared, so where this checkout
     # still holds it the comparison is re-made -- the fresh configuration has to be
     # Experiment 003's and both sides have to be its complete configured episode set
-    # -- rather than the path being read as evidence that a comparison happened.
+    # -- rather than the path being read as evidence that a comparison happened. The
+    # record is not replayed here (``verified=False``): ``probes/evidence.py baseline``
+    # is the entry point that replays it with ``runner.verify_run`` first, and the
+    # sentence printed below says which of the two checks ran.
     replay_record = PROJECT_ROOT / reproduction["record"]
     if replay_record.is_file():
         check_typed_equal(reproduction["record"],
@@ -2112,7 +2195,7 @@ def check_record(path: Path) -> None:
             f"baseline.reproduction.record is not a project-relative path: "
             f"{reproduction['record']!r}"
         ))
-        baseline(replay_record)
+        baseline_rows(replay_record, verified=False)
     else:
         print(f"# the fresh Experiment 003 run {reproduction['record']!r} is not retained "
               "in this checkout (``runs/`` is ignored output); the reproduction it backs "
@@ -2177,22 +2260,15 @@ def baseline_result_statement(published: dict) -> str:
     )
 
 
-def baseline(path: Path) -> None:
-    """Compare a fresh run of Experiment 003's configuration with its retained rows.
+def baseline_rows(path: Path, *, verified: bool) -> None:
+    """The comparison half of ``baseline``, and its own, exactly-scoped claim.
 
-    The comparison the new agent is measured against is Experiment 003's published
-    ten-seed measurement of ``tetris``. Re-running that configuration on this tree
-    shows whether the frozen agent still produces those rows here -- the new
-    objective shares the module the agent factory selects, the board model and the
-    reachable set, so a behaviour change in any of them would move this comparison
-    even though no weight of Experiment 003's was touched.
-
-    The claim is only made for a complete reproduction: the fresh run's
-    configuration has to be Experiment 003's, and both sides have to carry every
-    configured ``(agent, seed)`` exactly once. Iterating the fresh episodes alone
-    -- what this did before -- printed the claim for a single matching episode, or
-    for twenty copies of one key, so a truncated or duplicated comparison read as
-    evidence that the whole published set reproduced.
+    ``verified`` says whether the caller has already replayed the supplied record with
+    ``runner.verify_run``. ``baseline`` has, so it may print the reproduction claim;
+    ``check_record`` binds the temporary run the result names without replaying it,
+    because re-verifying inside every result check would replay the whole Experiment
+    003 suite, and its printed sentence says so. Which of the two happened is therefore
+    part of the output, and the weaker path cannot read as the stronger one.
     """
     fresh = json.loads(path.read_text(encoding="utf-8"))
     retained = json.loads(TETRIS_RESULT.read_text(encoding="utf-8"))
@@ -2212,7 +2288,41 @@ def baseline(path: Path) -> None:
     if differences:
         raise AssertionError("the frozen Experiment 003 rows did not reproduce:\n  "
                              + "\n  ".join(differences))
-    print("# Experiment 003's published rows reproduce exactly on this tree")
+    if verified:
+        print("# Experiment 003's published rows reproduce exactly on this tree, from a "
+              "record that replays from its own recorded inputs")
+    else:
+        print("# the supplied record's configuration and per-episode rows are Experiment "
+              "003's complete configured set; this path does not replay the record, so a "
+              "record whose rows were copied is not excluded here -- "
+              "``probes/evidence.py baseline <record>`` replays it with runner.verify_run "
+              "before making the reproduction claim")
+
+
+def baseline(path: Path) -> None:
+    """Compare a verified fresh run of Experiment 003's configuration with its rows.
+
+    The comparison the new agent is measured against is Experiment 003's published
+    ten-seed measurement of ``tetris``. Re-running that configuration on this tree
+    shows whether the frozen agent still produces those rows here -- the new
+    objective shares the module the agent factory selects, the board model and the
+    reachable set, so a behaviour change in any of them would move this comparison
+    even though no weight of Experiment 003's was touched.
+
+    The supplied record has to verify before any claim is made about it:
+    ``runner.verify_run`` replays its own recorded inputs and checks its per-episode
+    structure, the same verification path ``check-legacy`` applies to the frozen
+    fixture. A hand-made file carrying Experiment 003's canonical configuration and a
+    copy of its published rows -- no inputs, no per-frame structure, nothing
+    replayable -- used to reach the reproduction claim; it now fails verification
+    before the rows are compared. The claim is made only for a complete reproduction:
+    the fresh run's configuration has to be Experiment 003's, and both sides have to
+    carry every configured ``(agent, seed)`` exactly once.
+    """
+    advisories = runner.verify_run(path)
+    print(f"# the supplied record replays from its own recorded inputs "
+          f"({len(advisories)} engine advisory warning(s))")
+    baseline_rows(path, verified=True)
 
 
 def reproduce(path: Path) -> None:
@@ -2298,6 +2408,174 @@ def frozen_factory_digest() -> str:
         f"this tree's version-6 Tetris identity covers {identity}, not this tree's {tree}"
     )
     return tree
+
+
+# The Block Stack source files the agents' behaviour depends on. What is retained is a
+# read-only identification of the dependency, not a copy of it: ``block_stack_ai.engine``
+# loads the binding's ``Game``, whose rules decide every placement's outcome, so the
+# checkout the reported rows were measured on is identified by the digest of every
+# source file it held -- the C++ core, the Python binding, the tools and the build
+# inputs -- with build output and Git metadata excluded, because those are outputs of
+# the build rather than the source it is built from.
+ENGINE_EXCLUDED_DIRECTORIES = frozenset({"build", "build-headless", ".git", "__pycache__"})
+
+
+def engine_source_files(root: Path) -> dict[str, str]:
+    """sha256 of every source file of an engine checkout, by checkout-relative path."""
+    files: dict[str, str] = {}
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(root)
+        if ENGINE_EXCLUDED_DIRECTORIES & set(relative.parts):
+            continue
+        files[relative.as_posix()] = _sha256(path.read_bytes())
+    return files
+
+
+def engine_source_combined(files: dict[str, str]) -> str:
+    """One digest over a fingerprint's file list, so the manifest is self-describing."""
+    return _sha256(
+        "\n".join(f"{name} {digest}" for name, digest in sorted(files.items())).encode("utf-8")
+    )
+
+
+def readable_engine_root() -> Path | None:
+    """The dependency's checkout where this environment can read it, else ``None``.
+
+    The unit selection runs with no Block Stack checkout beside the worktree and with
+    the binding unimportable, so a check that required one would fail there. The
+    manifest is identified anyway; where the checkout cannot be read this reports that
+    it is not re-derivable here rather than passing silently.
+    """
+    try:
+        return engine.engine_root()
+    except engine.EngineError:
+        return None
+
+
+def fingerprint_engine() -> None:
+    """Write the read-only fingerprint manifest of the Block Stack dependency.
+
+    This is the only record of the working tree the reported rows were measured on.
+    The dependency is a read-only registered checkout, its uncommitted changes cannot
+    be exported, and no copy of it is retained in this repository, so the manifest
+    names the checkout, its commit and dirty flag, and the digest of every source file
+    it held -- enough to identify the dependency even though it cannot be
+    reconstructed.
+    """
+    root = engine.engine_root()
+    info = engine.git_info(root)
+    files = engine_source_files(root)
+    document = {
+        "what_it_is": (
+            "a read-only fingerprint of the Block Stack working tree the reported rows "
+            "were measured on: the checkout, its commit and dirty flag, and the sha256 of "
+            "every source file it held. It identifies the dependency; it does not "
+            "reproduce it, and the uncommitted changes it carries are not retained here"
+        ),
+        "engine_root": str(root),
+        "commit": info["commit"],
+        "dirty": info["dirty"],
+        "kind": info["kind"],
+        "file_count": len(files),
+        "files": files,
+        "combined_sha256": engine_source_combined(files),
+    }
+    ENGINE_MANIFEST.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n",
+                               encoding="utf-8")
+    print(f"# engine fingerprint: {document['commit']} (dirty={document['dirty']}, "
+          f"{document['file_count']} files, combined sha256 {document['combined_sha256']})")
+    print(f"# written to {ENGINE_MANIFEST.relative_to(PROJECT_ROOT)}")
+
+
+def check_engine_manifest() -> dict:
+    """The manifest must be self-consistent, and re-derived where the dependency is.
+
+    The manifest is retained evidence about a dependency this repository does not
+    contain, so it cannot be re-derived everywhere. It is checked in two parts: its
+    own digest has to be the digest of its file list and every entry a sha256, which
+    holds wherever the manifest is read; and where the Block Stack checkout is still
+    readable, that checkout's files, commit and dirty flag have to be the manifest's,
+    which is what makes it a fingerprint of the working tree the rows were measured on
+    rather than a hand-written list.
+    """
+    assert ENGINE_MANIFEST.is_file(), (
+        f"the engine fingerprint manifest is not on this tree: {ENGINE_MANIFEST}, so the "
+        "dependency the reported rows reproduce only on is not identified anywhere"
+    )
+    manifest = json.loads(ENGINE_MANIFEST.read_text(encoding="utf-8"))
+    files = manifest.get("files")
+    assert isinstance(files, dict) and files, (
+        f"the engine fingerprint manifest lists no source files: {files!r}"
+    )
+    for name, digest in files.items():
+        assert isinstance(name, str) and re.fullmatch(r"[0-9a-f]{64}", str(digest)), (
+            f"the engine fingerprint manifest carries an entry that is not a sha256: "
+            f"{name!r} -> {digest!r}"
+        )
+    assert manifest["file_count"] == len(files), (
+        f"the engine fingerprint manifest's file_count {manifest['file_count']!r} is not "
+        f"the {len(files)} files it lists"
+    )
+    assert manifest["combined_sha256"] == engine_source_combined(files), (
+        "the engine fingerprint manifest's combined digest is not the digest of its own "
+        "file list"
+    )
+    assert type(manifest["dirty"]) is bool, (
+        f"the engine fingerprint manifest's dirty flag is not a boolean: {manifest['dirty']!r}"
+    )
+    assert isinstance(manifest["commit"], str) and manifest["commit"], (
+        f"the engine fingerprint manifest names no commit: {manifest['commit']!r}"
+    )
+    root = readable_engine_root()
+    if root is None:
+        print("# the Block Stack checkout is not readable in this environment, so the "
+              "engine fingerprint manifest is identified but not re-derived here")
+        return manifest
+    live_files = engine_source_files(root)
+    live = engine.git_info(root)
+    differing = sorted(
+        name for name in set(live_files) | set(files)
+        if live_files.get(name) != files.get(name)
+    )
+    assert not differing, (
+        "the Block Stack checkout on this host is not the one the manifest fingerprints, "
+        "so the reported rows were not measured on this dependency: "
+        + ", ".join(differing[:5])
+    )
+    assert (live["commit"], live["dirty"], live["kind"]) == (
+        manifest["commit"], manifest["dirty"], manifest["kind"]), (
+        "the Block Stack checkout's Git state is not the manifest's, so it is not the "
+        f"working tree the reported rows were measured on: manifest "
+        f"{manifest['commit']}/{manifest['dirty']}/{manifest['kind']} against checkout "
+        f"{live['commit']}/{live['dirty']}/{live['kind']}"
+    )
+    print(f"# engine fingerprint re-derived from the checkout: {manifest['commit']} "
+          f"(dirty={manifest['dirty']}, {manifest['file_count']} files)")
+    return manifest
+
+
+def engine_dependency_block(manifest: dict | None = None) -> dict:
+    """The retained ``engine_dependency`` block, from the manifest and its own check."""
+    m = check_engine_manifest() if manifest is None else manifest
+    return {
+        "manifest": str(ENGINE_MANIFEST.relative_to(PROJECT_ROOT)),
+        "engine_root": m["engine_root"],
+        "commit": m["commit"],
+        "dirty": m["dirty"],
+        "kind": m["kind"],
+        "file_count": m["file_count"],
+        "combined_sha256": m["combined_sha256"],
+        "statement": (
+            "the reported rows reproduce only with this Block Stack working tree, which is "
+            "a read-only registered dependency whose uncommitted local changes cannot be "
+            "exported and are not retained here. The block identifies it -- the commit, "
+            "the dirty flag and the digest of every source file, listed in the manifest "
+            "-- and claims neither a reconstruction of the engine nor a clean "
+            "reproducible-dependency CI"
+        ),
+    }
 
 
 def engine_advisories() -> tuple[str, ...]:
@@ -2411,6 +2689,8 @@ def main(argv: list[str]) -> int:
         check_record(Path(rest[0]))
     elif command == "check-legacy":
         check_legacy()
+    elif command == "fingerprint-engine":
+        fingerprint_engine()
     elif command == "reproduce":
         reproduce(Path(rest[0]))
     elif command == "baseline":

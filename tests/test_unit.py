@@ -2393,6 +2393,14 @@ def _tampered_plan_result(record: dict, tamper: str) -> dict:
         result["acceptance"]["tetris_line_rate"]["numerator"] = "four-line clears (0)"
     elif tamper == "development":
         result["development"]["seeds"] = list(result["configuration"]["seeds"])
+    elif tamper == "development_boolean":
+        result["development"]["seeds"][0] = False
+    elif tamper == "float_seed":
+        result["episodes_by_agent_seed"][0]["seed"] = 2.0
+    elif tamper == "engine_dependency":
+        result["engine_dependency"]["commit"] = "0" * 40
+    elif tamper == "engine_dependency_boolean":
+        result["engine_dependency"]["dirty"] = 1
     elif tamper == "conclusion":
         result["conclusion"] = result["conclusion"].replace("620.0", "999.0")
         assert "999.0" in result["conclusion"]
@@ -2428,6 +2436,11 @@ def _tampered_plan_result(record: dict, tamper: str) -> dict:
     ("status", "the retained status is"),
     ("numerator", "is not the rate's own"),
     ("development", "the retained development block is not the declared development set"),
+    ("development_boolean",
+     "the retained development block is not the declared development set"),
+    ("float_seed", "integer seed"),
+    ("engine_dependency", "the retained engine-dependency block is not the one"),
+    ("engine_dependency_boolean", "the retained engine-dependency block is not the one"),
     ("conclusion", "the retained conclusion is not the one"),
     ("limitations", "the retained limitations are not the ones"),
     ("configuration", "not this experiment's canonical"),
@@ -2700,10 +2713,14 @@ def test_the_plan_baseline_claim_requires_the_complete_identity_set(
     configuration to be Experiment 003's and both sides to carry every configured
     ``(agent, seed)`` exactly once, so a truncated set, a duplicated key and a
     mismatched configuration are each reported instead. The recorded run is
-    synthesised from Experiment 003's own retained rows, so the check is exercised
-    without replaying the native suite.
+    synthesised from Experiment 003's own retained rows, so the comparison is
+    exercised without replaying the native suite; the replay that a real
+    ``baseline`` call makes first is stubbed here and driven for real by
+    ``test_the_plan_baseline_rejects_a_copied_rows_record_without_replay_evidence``
+    and by the integration suite's genuine-record case.
     """
     probe = _load_plan_probe("exp004_plan_baseline_probe")
+    monkeypatch.setattr(probe.runner, "verify_run", lambda path: [])
     retained = json.loads(probe.TETRIS_RESULT.read_text(encoding="utf-8"))
     rows = retained["episodes_by_agent_seed"]
     path = tmp_path / "003-replay.json"
@@ -2712,6 +2729,46 @@ def test_the_plan_baseline_claim_requires_the_complete_identity_set(
         probe.baseline(path)
         return
     with pytest.raises(AssertionError, match=message):
+        probe.baseline(path)
+
+
+def test_the_plan_baseline_rejects_a_copied_rows_record_without_replay_evidence(
+    tmp_path, monkeypatch
+):
+    """A reproduction claim is not issuable from copied rows alone.
+
+    ``baseline`` compared a supplied JSON's rows with Experiment 003's published
+    rows and printed "Experiment 003's published rows reproduce exactly on this
+    tree" without ever verifying the supplied record. A hand-made file carrying
+    Experiment 003's canonical configuration and a copy of its published rows —
+    no ``format_version``, no recorded inputs, no per-episode structure, nothing
+    replayable — reached that claim. The supplied record now has to verify through
+    ``runner.verify_run``, the same path ``check-legacy`` applies to the frozen
+    fixture, before any claim is made about it, and this drives that exact file.
+    The verification is structural before it is a replay, so the rejection needs
+    no native game: the file fails on its own shape. The narrowed comparison half
+    still accepts the same file and says in its own output that it did not replay
+    it, which is what keeps ``check_record``'s cheap binding honest.
+    """
+    probe = _load_plan_probe("exp004_plan_baseline_copied_probe")
+    retained = json.loads(probe.TETRIS_RESULT.read_text(encoding="utf-8"))
+    rows = retained["episodes_by_agent_seed"]
+    copied = {
+        "configuration": json.loads(probe.TETRIS_CONFIG.read_text(encoding="utf-8")),
+        "episodes": [
+            {"agent": row["agent"], "seed": row["seed"],
+             "pieces_placed": row["pieces_placed"], "clear_sizes": row["clear_sizes"],
+             "result": {"lines": row["lines"], "score": row["score"],
+                        "frame_count": row["frames"],
+                        "stopping_reason": row["stopping_reason"]}}
+            for row in rows
+        ],
+    }
+    path = tmp_path / "copied-rows.json"
+    path.write_text(json.dumps(copied), encoding="utf-8")
+    # The row comparison half accepts it -- and says it did not replay the record.
+    probe.baseline_rows(path, verified=False)
+    with pytest.raises(probe.runner.VerificationError):
         probe.baseline(path)
 
 
@@ -2735,6 +2792,7 @@ def test_the_plan_baseline_requires_the_retained_rows_to_be_the_complete_set(
     path = tmp_path / "003-replay.json"
     path.write_text(json.dumps(_baseline_replay(retained, rows)), encoding="utf-8")
     with monkeypatch.context() as patch:
+        patch.setattr(probe.runner, "verify_run", lambda path: [])
         patch.setattr(probe, "TETRIS_RESULT", retained_path)
         with pytest.raises(AssertionError, match="not the configured"):
             probe.baseline(path)
@@ -2778,6 +2836,152 @@ def test_the_plan_reproduction_comparison_rejects_a_boolean_for_a_number():
         "a row whose clear-size counts are booleans on both sides is not the schema the "
         "writer emits"
     )
+
+
+def test_the_plan_reproduction_comparison_rejects_a_structurally_different_record():
+    """A comparison is over the complete identity set, not over the shared keys.
+
+    ``reproduction_differences`` walked the intersection of the two mappings, so a
+    record that carried an extra identity, or dropped one, compared equal to the
+    record it was said to reproduce whenever the keys they shared agreed. The
+    callers check the key sets first, and the comparison now reports an identity
+    present on one side only as well, so two structurally different records cannot
+    be certified as a reproduction of each other.
+    """
+    probe = _load_plan_probe("exp004_plan_structural_probe")
+    row = {
+        "agent": "tetris_plan", "seed": 2, "lines": 5, "score": 100, "frames": 10,
+        "pieces_placed": 3, "stopping_reason": "game_over",
+        "clear_sizes": {"singles": 1, "doubles": 0, "triples": 0, "tetrises": 0},
+    }
+    later = json.loads(json.dumps(row))
+    later["seed"] = 4
+    left = {("tetris_plan", 2): row, ("tetris_plan", 4): later}
+    right = {("tetris_plan", 2): json.loads(json.dumps(row))}
+    assert probe.reproduction_differences(left, right), (
+        "an identity present on one side only is a structural difference"
+    )
+    assert probe.reproduction_differences(right, left)
+
+
+def test_the_plan_retained_identity_types_are_checked_before_they_are_keys():
+    """A mistyped identity is rejected, not folded into the configured key.
+
+    ``rows_by_identity`` built its key straight from the retained row, so a row
+    whose ``seed`` had been edited from the integer ``2`` to the float ``2.0`` —
+    which JSON compares equal to ``2``, and which is not among the fields the
+    outcome comparison checks — produced the configured key, passed the identity-set
+    check and certified an exact reproduction for an identity ``runner.verify_run``
+    rejects. Every retained-row path builds its keys here, so the writer's own
+    identity rule is applied here: the agent has to be a string and the seed an
+    integer, excluding booleans.
+    """
+    probe = _load_plan_probe("exp004_plan_identity_type_probe")
+    row = {
+        "agent": "tetris_plan", "seed": 2, "lines": 5, "score": 100, "frames": 10,
+        "pieces_placed": 3, "stopping_reason": "game_over",
+        "clear_sizes": {"singles": 1, "doubles": 0, "triples": 0, "tetrises": 0},
+    }
+    assert set(probe.rows_by_identity([row], "the row")) == {("tetris_plan", 2)}
+    assert set(probe.rows_by_identity([{**row, "seed": 1}], "the row")) == {("tetris_plan", 1)}
+    for field, value in (("seed", 2.0), ("seed", True), ("seed", "2"), ("agent", 2)):
+        suspect = json.loads(json.dumps(row))
+        suspect[field] = value
+        with pytest.raises(AssertionError, match="integer seed"):
+            probe.rows_by_identity([suspect], "the tampered row")
+
+
+def test_the_plan_replay_rejects_a_mistyped_retained_identity(tmp_path, monkeypatch):
+    """The replay's retained rows carry the writer's identity types too.
+
+    ``reproduce`` builds the retained rows into ``(agent, seed)`` keys before it
+    compares anything, so a retained ``seed`` edited to the float ``2.0`` used to
+    pass the identity-set check and reproduce the row it was typed to resemble. The
+    suite is stubbed from the retained rows, so this path is driven without a native
+    run and the tampered record must be rejected.
+    """
+    probe = _load_plan_probe("exp004_plan_replay_identity_probe")
+    retained = json.loads(probe.RESULT_PATH.read_text(encoding="utf-8"))
+    rows = retained["episodes_by_agent_seed"]
+    episodes = [
+        {
+            "agent": row["agent"], "seed": row["seed"],
+            "pieces_placed": row["pieces_placed"], "clear_sizes": row["clear_sizes"],
+            "result": {"lines": row["lines"], "score": row["score"],
+                       "frame_count": row["frames"],
+                       "stopping_reason": row["stopping_reason"]},
+        }
+        for row in rows
+    ]
+    monkeypatch.setattr(probe.runner, "run_suite", lambda configuration: episodes)
+    tampered = json.loads(json.dumps(retained))
+    tampered["episodes_by_agent_seed"][0]["seed"] = 2.0
+    path = tmp_path / "result.json"
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    with pytest.raises(AssertionError, match="integer seed"):
+        probe.reproduce(path)
+
+
+def test_the_plan_engine_manifest_identifies_the_dependency(tmp_path, monkeypatch):
+    """The dependency the rows reproduce only on is identified, not asserted.
+
+    The Block Stack working tree the evaluation was measured on is a read-only
+    registered checkout whose uncommitted changes cannot be exported, so what this
+    repository keeps is the manifest ``fingerprint-engine`` writes: the checkout,
+    its commit, its dirty flag and the digest of every source file. The manifest is
+    the retained evidence of that dependency, so its own consistency is checked
+    wherever it is read -- the entry types, the file count and the digest over its
+    own file list -- and the block the result carries is derived from it rather
+    than written beside it.
+    """
+    probe = _load_plan_probe("exp004_plan_engine_manifest_probe")
+    retained_manifest = json.loads(probe.ENGINE_MANIFEST.read_text(encoding="utf-8"))
+    # The block names the manifest by its project-relative path, so it is derived
+    # before the constant is pointed at a temporary copy.
+    block = probe.engine_dependency_block(retained_manifest)
+    assert block["file_count"] == len(retained_manifest["files"])
+    assert block["combined_sha256"] == retained_manifest["combined_sha256"]
+    assert block["commit"] == retained_manifest["commit"]
+
+    path = tmp_path / "engine_fingerprint.json"
+    path.write_text(json.dumps(retained_manifest), encoding="utf-8")
+    monkeypatch.setattr(probe, "ENGINE_MANIFEST", path)
+    assert probe.check_engine_manifest()["commit"] == retained_manifest["commit"]
+
+    def tampered(change) -> dict:
+        document = json.loads(json.dumps(retained_manifest))
+        change(document)
+        return document
+
+    cases = (
+        (tampered(lambda doc: doc.update(files={})), "lists no source files"),
+        (tampered(lambda doc: doc.update(file_count=doc["file_count"] + 1)),
+         "is not the"),
+        (tampered(lambda doc: doc.update(combined_sha256="0" * 64)),
+         "combined digest is not the digest of its own file list"),
+        (tampered(lambda doc: doc.update(dirty=0)),
+         "dirty flag is not a boolean"),
+        (tampered(lambda doc: doc.update(commit="")), "names no commit"),
+    )
+    for document, message in cases:
+        path.write_text(json.dumps(document), encoding="utf-8")
+        with pytest.raises(AssertionError, match=message):
+            probe.check_engine_manifest()
+
+    # A digest that is not a sha256 is reported on the entry itself, with the digest
+    # over the file list recomputed so the earlier check cannot stand in for it.
+    document = tampered(lambda doc: doc["files"].__setitem__("core/src/game.cpp", "nope"))
+    document["combined_sha256"] = probe.engine_source_combined(document["files"])
+    path.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(AssertionError, match="not a sha256"):
+        probe.check_engine_manifest()
+
+    # A manifest that is not on the tree at all is reported rather than skipped: the
+    # disclosure has to be backed by an artifact.
+    with monkeypatch.context() as patch:
+        patch.setattr(probe, "ENGINE_MANIFEST", tmp_path / "absent.json")
+        with pytest.raises(AssertionError, match="not on this tree"):
+            probe.check_engine_manifest()
 
 
 def test_the_plan_replay_rejects_a_boolean_for_a_retained_metric(tmp_path, monkeypatch):

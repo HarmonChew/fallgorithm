@@ -552,6 +552,50 @@ def test_the_plan_spends_at_the_drought_bound_the_prose_states(monkeypatch):
     )
 
 
+def test_the_plan_reads_the_engine_piece_counter_through_the_inherited_act(monkeypatch):
+    """The rationale's account of what the plan reads is derived from the controller.
+
+    The predeclared rationale used to say the plan reads "no engine counter".
+    ``PlanAgent`` overrides only ``_choose``, and the ``act`` it inherits from
+    ``PlacementAgent`` decides that a new piece spawned by comparing
+    ``state.piece_count`` with the count it last saw -- so the plan does read the
+    engine's piece counter, which is the engine's visible per-piece observation
+    rather than hidden information. The claim is derived here instead of restated:
+    the plan is shown to run the inherited controller, the controller is shown to
+    call the choice hook only when the counter changes, and the retained rationale
+    is required to say so and not to deny it.
+    """
+    assert "act" not in PlanAgent.__dict__, (
+        "the plan defines its own act, so the rationale's account of the inherited "
+        "controller is stale"
+    )
+    assert PlanAgent.act is PlacementAgent.act
+
+    calls: list[int] = []
+    agent = build_agent(PLAN_AGENT, 0)
+    original = agent._choose
+
+    def recording(state, grid):
+        calls.append(state.piece_count)
+        return original(state, grid)
+
+    monkeypatch.setattr(agent, "_choose", recording)
+    grid = open_well(1)
+    for count in (1, 1, 1, 2, 3, 3):
+        agent.act(PlanState(grid, "T", "O", piece_count=count))
+    # The controller chooses once per spawned piece, keyed on the engine's counter.
+    assert calls == [1, 2, 3]
+
+    section = " ".join(declared_objective_section().split())
+    assert "no engine counter" not in section, (
+        "the predeclared rationale denies a read the inherited controller makes"
+    )
+    assert "piece counter" in section, (
+        "the predeclared rationale does not state that the plan reads the engine's "
+        "piece counter"
+    )
+
+
 def test_overflow_is_a_penalty_inside_the_value_not_a_dominance_rule():
     """An over-budget placement can still outscore one that stays under the budget.
 
