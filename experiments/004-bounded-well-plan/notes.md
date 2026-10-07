@@ -366,7 +366,7 @@ set of top-level blocks the record carries is asserted against the set of blocks
 check knows, so a claim no check derives cannot be added to the certified record.
 
 The capture has been made thirteen times before the post-publication live-identity
-repair below re-made it twice more, and every superseded one is kept beside
+repair below re-made it three more times, and every superseded one is kept beside
 it. The first (2026-09-29T17:11:15.420024+00:00) preceded the first ten-seed run
 (`runs/20260929T171936702109Z-3733d12b`); the plan agent was then moved out of the
 shared factory into its objective module (see *What this experiment adds*), so the
@@ -1198,7 +1198,14 @@ shows a changed controller reported for a version-8 record while the same change
 leaves a version-7 record verifying,
 `tests/test_unit.py::test_a_version_8_record_without_an_objective_still_names_the_controller`
 requires the controller section on an objective-less record and reports a
-changed live module through it, and
+changed live module through it, and the section's loaded view runs the same
+stale-reference refusal the objective's does, so an `agents`-only reload leaves
+an objective-less session without an identity it can honestly write
+(`tests/test_live.py::test_live_session_refuses_a_stale_controller_closure`);
+the live writer's single-game shape is enforced too, so a multi-episode headless
+suite relabelled to version 8 is reported rather than taken for the interactive
+writer's output
+(`tests/test_unit.py::test_a_version_8_record_must_configure_the_single_live_game`).
 `tests/test_live.py::test_live_tetris_session_records_the_objective_and_verifies`
 and `tests/test_live.py::test_live_session_records_the_clear_size_histogram_and_verifies`
 run the same checks on real live records. A session retained across a reload of
@@ -1215,18 +1222,20 @@ is accepted, and on this tree the same game writes version 8, names the module,
 and the changed controller is rejected.
 
 The plan identity hashes `src/block_stack_ai/runner.py` as its dispatch seed, so
-the live-identity fix and the controller section that followed it each moved that
-module's bytes and the plan's predeclaration with them, and the capture was
-re-made twice. The current capture was taken from the fixed tree at
-`2026-10-07T08:39:18.780232+00:00`; the capture it replaces is retained as
-[`probes/predeclared_objective.pre-controller-section.json`](probes/predeclared_objective.pre-controller-section.json),
-whose own evaluation is retained as the fourteenth superseded run in
+each of the three fixes — the live shape, the controller section and the two
+validation rules added beside it — moved that module's bytes and the plan's
+predeclaration with them, and the capture was re-made three times. The current
+capture was taken from the fixed tree at `2026-10-07T08:56:19.005833+00:00`; the
+capture it replaces is retained as
+[`probes/predeclared_objective.pre-controller-validation.json`](probes/predeclared_objective.pre-controller-validation.json),
+whose own evaluation is retained as the fifteenth superseded run in
 [`probes/superseded_run_rows.json`](probes/superseded_run_rows.json), beside the
-thirteenth ([`probes/predeclared_objective.pre-live-identity.json`](probes/predeclared_objective.pre-live-identity.json)).
+fourteenth (`pre-controller-section.json`) and the thirteenth
+([`probes/predeclared_objective.pre-live-identity.json`](probes/predeclared_objective.pre-live-identity.json)).
 Each evaluation was re-measured after its capture (the newest record is
-`runs/20261007T084221261489Z-0834f8c5/run.json`, now the cited record) and all 20
-per-episode rows are identical, field for field, to the retained rows in both
-rounds: the plan's objective, weights, placement rule and measured values did not
+`runs/20261007T085918221754Z-7ce40fab/run.json`, now the cited record) and all 20
+per-episode rows are identical, field for field, to the retained rows in every
+round: the plan's objective, weights, placement rule and measured values did not
 move, only the runner bytes the identity covers. `check-record` re-makes the
 comparison against the retained artifact, so the unchanged outcomes are derived
 rather than asserted. The limitation above is unchanged: the new run is the same

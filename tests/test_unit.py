@@ -3537,7 +3537,7 @@ def test_a_changed_live_controller_is_reported_for_a_version_8_record(
     report the change; the mutation is a copy pointed at through ``__file__``, so
     the loaded controller that produced the recorded masks is what actually ran.
     """
-    path, factory, record = _objective_suite(tmp_path, monkeypatch)
+    path, factory, record = _objective_suite(tmp_path, monkeypatch, agents=("tetris",))
     assert record["format_version"] == runner.SUITE_FORMAT_VERSION
     assert live_module.__name__ not in record["objective"]["sources"]
     live_record = json.loads(json.dumps(record))
@@ -3632,6 +3632,46 @@ def test_a_version_8_record_without_an_objective_still_names_the_controller(
     with pytest.raises(VerificationError, match=r"controller: no writer of this format"):
         verify_run(path, factory)
     path.write_text(json.dumps(live_record), encoding="utf-8")
+    assert verify_run(path, factory) == []
+
+
+@pytest.mark.parametrize(
+    "seeds,agents",
+    [([1, 2], ["greedy"]), ([1], ["greedy", "lookahead"])],
+)
+def test_a_version_8_record_must_configure_the_single_live_game(
+    tmp_path, monkeypatch, seeds, agents
+):
+    """Only the live writer's one-game configuration may claim the live format.
+
+    ``play_live`` narrows its configuration to one seed and one agent before the
+    session writes the single episode, so a version-8 record with several episodes
+    is not something the live writer emits. Without the check, a multi-episode
+    headless suite relabelled to version 8 and supplied with the current
+    controller identity verified as though the interactive session had produced
+    it; the same record at its own headless version still verifies.
+    """
+    monkeypatch.setattr(runner, "engine_root", lambda: Path("/engine"))
+    monkeypatch.setattr(
+        runner, "git_info",
+        lambda root: {"commit": "abc123", "dirty": False, "kind": "committed"},
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps({
+        "game": SUITE["game"], "frame_limit": 2, "seeds": seeds, "agents": agents,
+    }), encoding="utf-8")
+    factory = lambda **_: ChoiceGame()
+    path = run_and_save(config_path, tmp_path / "runs", factory)
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert len(record["episodes"]) == len(seeds) * len(agents) > 1
+    live = json.loads(json.dumps(record))
+    live["format_version"] = runner.LIVE_SUITE_FORMAT_VERSION
+    live["controller"] = runner._controller_identity()
+    path.write_text(json.dumps(live), encoding="utf-8")
+    with pytest.raises(VerificationError,
+                       match=r"exactly one agent and one seed"):
+        verify_run(path, factory)
+    path.write_text(json.dumps(record), encoding="utf-8")
     assert verify_run(path, factory) == []
 
 

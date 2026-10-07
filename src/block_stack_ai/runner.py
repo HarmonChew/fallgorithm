@@ -1300,12 +1300,18 @@ def _controller_identity(*, loaded: bool = False) -> dict[str, Any]:
 
     ``loaded`` selects the writer's view (the bytes the interpreter loaded) or
     the verifier's (the tree now), exactly as it does for the objective's
-    identity; both enumerate the same closure through ``_objective_sources``.
+    identity; both enumerate the same closure through ``_objective_sources``. The
+    writer's view runs the same inconsistent-closure check the objective's
+    identity does, so a controller dependency the process reloaded while its
+    importers still hold the previous objects — ``runner.create_agent`` after an
+    ``agents`` reload, say — is refused rather than hashed as though the reloaded
+    bytes had built the agent.
     """
+    sources = (_loaded_objective_sources(_IDENTITY_CONTROLLER) if loaded
+               else _objective_sources(_IDENTITY_CONTROLLER))
     return {
         "module": _live_controller_module().__name__,
-        _OBJECTIVE_SOURCES_FIELD: _objective_sources(
-            _IDENTITY_CONTROLLER, loaded=loaded),
+        _OBJECTIVE_SOURCES_FIELD: sources,
     }
 
 
@@ -1628,6 +1634,17 @@ def _verify_suite(record: dict[str, Any], path: Path, version: int,
         raise VerificationError(f"Malformed run record in {path}: {error}") from error
     if not isinstance(config, SuiteConfig):
         raise VerificationError(f"Malformed run record in {path}: not a suite configuration")
+    # The live writer's version describes exactly one game: ``play_live`` narrows
+    # its configuration to one seed and one agent before the session writes the
+    # single episode. A multi-episode headless suite relabelled to that version
+    # could otherwise be supplied with the current controller identity and verify
+    # as though the interactive session had produced it.
+    if controller_required and (len(config.agents) != 1 or len(config.seeds) != 1):
+        raise VerificationError(
+            "A record of the live suite format must configure exactly one agent and "
+            f"one seed: this record configures {len(config.agents)} agents and "
+            f"{len(config.seeds)} seeds"
+        )
     _check_declared_agent_versions(config, version, path)
     objective_differences = _compare_objective(record, config, sections_required,
                                                identity_shape)
