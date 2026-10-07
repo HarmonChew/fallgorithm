@@ -112,7 +112,7 @@ def test_native_controller_exits_when_input_pipe_closes(desktop_environment):
         assert state.frame == 0
 
 
-def test_live_session_records_the_clear_size_histogram_and_verifies(tmp_path):
+def test_live_session_records_the_clear_size_histogram_and_verifies(tmp_path, monkeypatch):
     """A completed live game records the same histogram a suite episode does.
 
     Live play builds its own episode, so it is the second path that writes
@@ -146,6 +146,24 @@ def test_live_session_records_the_clear_size_histogram_and_verifies(tmp_path):
     assert (sizes["singles"] + 2 * sizes["doubles"] + 3 * sizes["triples"]
             + 4 * sizes["tetrises"]) == episode["result"]["lines"]
     assert record["summary"]["greedy"]["clear_sizes"] == sizes
+    # This agent declares no objective, so the controller section is the only
+    # source identity the record carries; it is what reports a changed live
+    # module for a greedy, random or lookahead live game.
+    assert record["format_version"] == runner.LIVE_SUITE_FORMAT_VERSION
+    assert "objective" not in record
+    assert record["controller"] == runner._controller_identity()
+    assert "block_stack_ai.live" in record["controller"]["sources"]
+    verify_run(records[0])
+    live = sys.modules["block_stack_ai.live"]
+    mutated = tmp_path / "live-changed.py"
+    mutated.write_text(Path(live.__file__).read_text(encoding="utf-8")
+                       + "\n# the controller changed after the game\n",
+                       encoding="utf-8")
+    with monkeypatch.context() as patch:
+        patch.setattr(live, "__file__", str(mutated))
+        with pytest.raises(VerificationError,
+                           match=r"controller\.sources\.block_stack_ai\.live"):
+            verify_run(records[0])
     verify_run(records[0])
 
 
@@ -188,6 +206,8 @@ def test_live_tetris_session_records_the_objective_and_verifies(tmp_path, monkey
         "sources": runner._objective_sources(runner._IDENTITY_LIVE),
     }
     assert "block_stack_ai.live" in record["objective"]["sources"]
+    assert record["controller"] == runner._controller_identity()
+    assert "block_stack_ai.live" in record["controller"]["sources"]
     assert sorted(record["summary"]) == ["tetris"]
     verify_run(records[0])
 

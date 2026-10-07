@@ -122,8 +122,13 @@ suite format, whose writer is the interactive live session. A live record's
 placements are chosen through `LiveSession.receive`, which reads each desktop
 observation, hands it to the agent and executes the mask it returns; the root
 objective-and-dispatch walk cannot reach that module, because it imports the
-runner rather than the other way round, so the version-8 identity seeds it beside
-the dispatch. The version is additive rather than a widening of version 7
+runner rather than the other way round, so the version-8 objective identity seeds
+it beside the dispatch. Every version-8 record also carries a `controller`
+section, the walk from `block_stack_ai.live` with the declared objectives
+excluded, because the live session drives `greedy`, `random` and `lookahead` as
+well: those agents declare no objective, so without the section none of their
+live records would carry a source map at all. The version is additive rather
+than a widening of version 7
 because every retained headless record is compared against the identity its own
 writer emitted: the headless writer still emits version 7 and the byte-for-byte
 walk it always emitted, while the live writer emits version 8, so a change to the
@@ -133,7 +138,8 @@ built is refused rather than recorded, because the retained class keeps
 executing the previous `receive` while its globals come from the reloaded
 module; construct a new session. A version 3, 4, 5, 6, 7 or 8
 record must carry the placed-piece count, the clear-size histogram and — for a
-suite that configures an agent with its own declared objective — that objective.
+suite that configures an agent with its own declared objective — that objective,
+and a version-8 record must carry the controller section as well.
 That is why the version is compared rather than the absence: a section deleted
 from a current record would otherwise be indistinguishable from a record that
 predates it. `verify` re-derives
@@ -276,7 +282,8 @@ and `verify` reports it once the file has moved on), the version-keyed live
 identity (the version-8 walk adds `block_stack_ai.live` — the module whose
 `LiveSession.receive` hands each observation to the agent — so a changed
 controller is reported for a live record, while the same change leaves a
-version-7 record verifying against the headless walk its own writer emitted), its
+version-7 record verifying against the headless walk its own writer emitted, and
+the controller section covers the objective-less live agents), its
 clear, well and board terms, the new agent's own count of the pieces it has been
 shown, and the new agents' choices on constructed boards, without the native
 engine. The second
@@ -292,8 +299,8 @@ Experiment 003-era writer still verifying (its declared objective identity still
 matches this tree, and its inputs replay), the Tetris agent's four-line
 clear and the plan agent's four-line clear on a ready native well, the suite
 record's declared objective and the live
-session's clear-size histogram, version-8 written record and live-seeded
-declared objective, and desktop replay exports
+session's clear-size histogram, version-8 written record, live-seeded
+declared objective and controller section, and desktop replay exports
 through the native writer and verifier. The desktop checks additionally require
 the SDL3 target; they exercise live input, pause/step/restart, record verification,
 invalid masks and pipe closure using dummy video/audio. None needs a display.
