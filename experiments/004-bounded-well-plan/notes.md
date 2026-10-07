@@ -1191,7 +1191,14 @@ derives the shape and the unchanged headless walks,
 shows a changed controller reported for a version-8 record while the same change
 leaves a version-7 record verifying, and
 `tests/test_live.py::test_live_tetris_session_records_the_objective_and_verifies`
-runs the same check on a real live record. The frozen-base reproduction is the
+runs the same check on a real live record. A session retained across a reload of
+the live module is refused at its next `receive` before any identity is captured
+— `importlib.reload(live)` replaces the class while the instance keeps executing
+the previous `receive`, and its globals now come from the reloaded module — and a
+newly constructed session records the reloaded identity;
+`tests/test_live.py::test_live_session_refreshes_loaded_identity_at_each_begin`
+drives the complete, objective-only and agents-only reloads. The frozen-base
+reproduction is the
 same record shape both ways: on `git archive 572f8d0` a live game writes version
 7 with no `block_stack_ai.live` in its identity, a changed `LiveSession.receive`
 is accepted, and on this tree the same game writes version 8, names the module,

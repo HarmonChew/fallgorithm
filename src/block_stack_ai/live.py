@@ -44,6 +44,20 @@ class LiveSession:
         self.game.close()
 
     def receive(self, kind: str, snapshot: bytes) -> int | None:
+        if type(self) is not LiveSession:
+            # ``importlib.reload(live)`` replaces the class while an existing
+            # session keeps executing the previous class's ``receive``; every
+            # global name resolved below would come from the reloaded module, so
+            # an identity captured here would name controller bytes that did not
+            # drive the inputs. Refuse rather than record, exactly as a partial
+            # reload of the objective's modules is refused: only a new session
+            # runs the current class.
+            raise VerificationError(
+                "The live module was reloaded after this session was built: the "
+                "session still executes the previous LiveSession.receive, so a "
+                "record would name controller bytes that did not drive its inputs. "
+                "Construct a new LiveSession."
+            )
         if kind == "BEGIN":
             if self.active:
                 raise VerificationError("Desktop restarted without ending the current live game")

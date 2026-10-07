@@ -260,7 +260,18 @@ def test_live_tetris_session_snapshots_the_objective_at_begin(tmp_path, monkeypa
 
 @pytest.mark.parametrize("reload_mode", ["complete", "objective_only", "agents_only"])
 def test_live_session_refreshes_loaded_identity_at_each_begin(tmp_path, reload_mode):
-    """A reused session records reloaded code and refuses inconsistent reloads."""
+    """A reused session records reloaded objective code, or is refused outright.
+
+    A session built before a reload keeps running the class it was constructed
+    from. Reloading the objective modules without the live module leaves the
+    running controller's references stale in its module namespaces, so the next
+    BEGIN is refused as an inconsistent closure; reloading the live module
+    replaces the class while the retained instance still executes the previous
+    ``receive``, so the session is refused before any identity is captured and a
+    newly constructed session records the reloaded identity and runs the
+    reloaded objective. Only a complete reload followed by a fresh session is a
+    describable implementation.
+    """
     package = Path(sys.modules["block_stack_ai"].__file__).parent
     source_root = tmp_path / "src"
     shutil.copytree(package, source_root / package.name,
@@ -293,6 +304,14 @@ try:
     changed = text.replace('"tetrises": 8.0,', '"tetrises": 9.0,')
     assert changed != text
     source.write_text(changed, encoding="utf-8")
+    # The live module changes too, so the retained session's class and the
+    # reloaded module's identity are different implementations.
+    live_source = Path(live.__file__)
+    live_source.write_text(
+        live_source.read_text(encoding="utf-8")
+        + "\n# reloaded while a session was retained\n",
+        encoding="utf-8",
+    )
     modules = {"complete": (tetris, agents, runner, live),
                "objective_only": (tetris,), "agents_only": (agents,)}[mode]
     for module in modules:
@@ -311,6 +330,22 @@ try:
         expected = runner._objective_section(
             config, loaded=True, shape=runner._IDENTITY_LIVE)["objective"]
         assert expected["sources"] != original["sources"]
+        first_record = json.loads(session.records[0].read_text(encoding="utf-8"))
+        # The retained session runs the previous class's ``receive``. Its next
+        # BEGIN has to be refused rather than stamped with the reloaded module's
+        # digest, because the code that would choose the game's inputs is not the
+        # code the record would name.
+        try:
+            session.receive("BEGIN", initial)
+        except runner.VerificationError as error:
+            assert "reloaded after this session" in str(error), str(error)
+        else:
+            raise AssertionError("BEGIN accepted a session the live reload left stale")
+        assert not session.active
+        assert len(session.records) == 1
+        # A new session runs the reloaded class and records the reloaded identity.
+        session.close()
+        session = live.LiveSession(config, root / "runs")
         session.receive("BEGIN", initial)
         assert type(session.agent) is agents.TetrisAgent
         calls = []
@@ -326,7 +361,7 @@ try:
         record = json.loads(session.records[-1].read_text(encoding="utf-8"))
         assert calls == [9.0], calls
         assert record["objective"] == expected, record["objective"]
-        assert json.loads(session.records[0].read_text())["objective"] == original
+        assert first_record["objective"] == original
         runner.verify_run(session.records[-1])
 finally:
     session.close()
