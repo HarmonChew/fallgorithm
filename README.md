@@ -136,7 +136,11 @@ controller that keeps the replayed masks and results is reported instead of
 certified. A session whose live module was reloaded after the instance was
 built is refused rather than recorded, because the retained class keeps
 executing the previous `receive` while its globals come from the reloaded
-module; construct a new session. A version 3, 4, 5, 6, 7 or 8
+module; construct a new session. The controller identity's loaded view runs the
+same inconsistent-closure refusal the objective's does, so reloading a
+controller dependency such as `block_stack_ai.agents` without its importers is
+refused instead of recorded, and a version-8 record must configure exactly one
+agent and one seed, the single game `play_live` runs. A version 3, 4, 5, 6, 7 or 8
 record must carry the placed-piece count, the clear-size histogram and — for a
 suite that configures an agent with its own declared objective — that objective,
 and a version-8 record must carry the controller section as well.
@@ -283,7 +287,9 @@ identity (the version-8 walk adds `block_stack_ai.live` — the module whose
 `LiveSession.receive` hands each observation to the agent — so a changed
 controller is reported for a live record, while the same change leaves a
 version-7 record verifying against the headless walk its own writer emitted, and
-the controller section covers the objective-less live agents), its
+the controller section covers the objective-less live agents, refuses a loaded
+controller closure whose imports were reloaded out from under it, and is
+required of a version-8 record that configures exactly one agent and one seed), its
 clear, well and board terms, the new agent's own count of the pieces it has been
 shown, and the new agents' choices on constructed boards, without the native
 engine. The second

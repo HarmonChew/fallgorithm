@@ -394,3 +394,55 @@ finally:
              "BLOCKS_NATIVE_LIB": str(native_library_path())},
     )
     assert completed.returncode == 0, completed.stdout + completed.stderr
+
+
+def test_live_session_refuses_a_stale_controller_closure(tmp_path):
+    """An objective-less session refuses a controller reload it cannot describe.
+
+    The reviewer's finding: ``greedy``, ``random`` and ``lookahead`` declare no
+    objective, so their version-8 record's identity is the controller section
+    alone. Reloading ``agents`` without its importers leaves
+    ``runner.create_agent`` pointing at the previous function while the
+    controller walk would hash the reloaded ``agents`` module, so the record
+    would name bytes that did not build the agent. The loaded view of the
+    controller identity runs the same inconsistent-closure check the objective
+    identity runs, and this drives that check through a separate interpreter.
+    """
+    package = Path(sys.modules["block_stack_ai"].__file__).parent
+    source_root = tmp_path / "src"
+    shutil.copytree(package, source_root / package.name,
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    code = r'''
+import importlib
+from pathlib import Path
+import sys
+from block_stack_ai import agents, live, runner
+
+root = Path(sys.argv[1])
+game = {"ruleset": "classic_ntsc_extended", "mode": "endless",
+        "start_level": 18, "height": 0}
+config = runner.SuiteConfig(game, 1, (2,), ("lookahead",))
+session = live.LiveSession(config, root / "runs")
+try:
+    initial = session.game.save_state()
+    importlib.reload(agents)
+    try:
+        session.receive("BEGIN", initial)
+    except runner.VerificationError as error:
+        assert "inconsistent" in str(error), str(error)
+        assert "runner.create_agent" in str(error), str(error)
+        print("refused")
+    else:
+        raise AssertionError("the controller section accepted a stale closure")
+finally:
+    session.close()
+'''
+    completed = subprocess.run(
+        [sys.executable, "-c", code, str(tmp_path)], cwd=tmp_path,
+        capture_output=True, text=True, timeout=30,
+        env={**os.environ, "PYTHONPATH": str(source_root),
+             "BLOCK_STACK_ROOT": str(engine_root()),
+             "BLOCKS_NATIVE_LIB": str(native_library_path())},
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert "refused" in completed.stdout
