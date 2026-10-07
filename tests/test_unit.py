@@ -1699,19 +1699,36 @@ def test_the_live_identity_adds_the_module_that_drives_the_session():
     returns is executed there. That module imports the runner rather than the other
     way round, so neither the objective walk nor the dispatch walk can reach it, and
     a change to ``receive`` that preserved the replayed masks stayed invisible. The
-    live writer emits a new format version — 8 — whose identity adds the
-    live-driving module to the dispatch-seeded walk. The shape is keyed by the
-    record's own version, so the headless walks are exactly what they were and a
-    headless record written now carries the identity it always carried.
+    live writer emits a new format version — 8 — whose objective identity adds the
+    live-driving module to the dispatch-seeded walk, and whose records always carry
+    a ``controller`` section seeded from the live module alone, so the greedy,
+    random and lookahead agents, which declare no objective, are covered too. The
+    shapes are keyed by the record's own version, so the headless walks are exactly
+    what they were and a headless record written now carries the identity it always
+    carried.
     """
     assert runner._SUITE_FORMAT_VERSIONS[runner.LIVE_SUITE_FORMAT_VERSION] == (
-        True, runner._IDENTITY_LIVE)
+        True, runner._IDENTITY_LIVE, True)
+    assert runner._SUITE_FORMAT_VERSIONS[runner.SUITE_FORMAT_VERSION] == (
+        True, runner._IDENTITY_DISPATCH, False)
     assert runner.LIVE_SUITE_FORMAT_VERSION > runner.SUITE_FORMAT_VERSION
     dispatch = runner._objective_sources(runner._IDENTITY_DISPATCH)
     live = runner._objective_sources(runner._IDENTITY_LIVE)
     assert set(live) == set(dispatch) | {live_module.__name__}
     assert live[live_module.__name__] == hashlib.sha256(
         Path(live_module.__file__).read_bytes()).hexdigest()
+    # The controller's own walk starts from the live module and stops before the
+    # declared objectives, because the agents that need it declare none.
+    controller = runner._objective_sources(runner._IDENTITY_CONTROLLER)
+    assert live_module.__name__ in controller
+    assert "block_stack_ai.tetris" not in controller
+    assert "block_stack_ai.wellplan" not in controller
+    assert set(controller) == {
+        live_module.__name__, "block_stack_ai.agents", "block_stack_ai.engine",
+        "block_stack_ai.heuristic", "block_stack_ai.pathaware",
+        "block_stack_ai.pieces", "block_stack_ai.runner",
+    }
+    assert runner._controller_identity()["module"] == live_module.__name__
     # The headless walks — and the unversioned default Experiment 003's probe and
     # capture mean — never name the live module.
     for shape in (runner._IDENTITY_DISPATCH, runner._IDENTITY_CHOICE,
@@ -1808,7 +1825,7 @@ def test_the_dispatcher_bound_is_derived_from_the_retained_artifacts(monkeypatch
         patch.setattr(runner, "_SUITE_FORMAT_VERSIONS",
                       {**runner._SUITE_FORMAT_VERSIONS,
                        runner.WRAPPER_IDENTITY_SUITE_FORMAT_VERSION:
-                           (True, runner._IDENTITY_DISPATCH)})
+                           (True, runner._IDENTITY_DISPATCH, False)})
         unversioned = probe.dispatcher_bound()
         assert unversioned["version_6_identity_shape"] == runner._IDENTITY_DISPATCH
         assert unversioned["version_6_tetris_identity_keys"] == \
@@ -3526,6 +3543,7 @@ def test_a_changed_live_controller_is_reported_for_a_version_8_record(
     live_record = json.loads(json.dumps(record))
     live_record["format_version"] = runner.LIVE_SUITE_FORMAT_VERSION
     live_record["objective"]["sources"] = runner._objective_sources(runner._IDENTITY_LIVE)
+    live_record["controller"] = runner._controller_identity()
     path.write_text(json.dumps(live_record), encoding="utf-8")
     assert verify_run(path, factory) == []
 
@@ -3554,6 +3572,65 @@ def test_a_changed_live_controller_is_reported_for_a_version_8_record(
         # writer's output, compared against the walk its own writer recorded.
         path.write_text(json.dumps(record), encoding="utf-8")
         assert verify_run(path, factory) == []
+    path.write_text(json.dumps(live_record), encoding="utf-8")
+    assert verify_run(path, factory) == []
+
+
+def test_a_version_8_record_without_an_objective_still_names_the_controller(
+    tmp_path, monkeypatch
+):
+    """The controller section is what covers the agents that declare no objective.
+
+    A live game of ``greedy``, ``random`` or ``lookahead`` declares no objective,
+    so its record carries no ``objective`` section and, before this section, no
+    source identity at all: a change to ``LiveSession.receive`` that preserved
+    the replayed masks was certified for every one of them. Version 8 requires
+    the controller section on every record, including these, and the section's
+    walk stops before the declared objectives because those choices never run
+    one. The same record under version 7 still verifies, because that writer
+    emitted no controller section and its records have to keep verifying.
+    """
+    path, factory, record = _objective_suite(tmp_path, monkeypatch, agents=("greedy",))
+    assert "objective" not in record
+    assert "controller" not in record
+    live_record = json.loads(json.dumps(record))
+    live_record["format_version"] = runner.LIVE_SUITE_FORMAT_VERSION
+    path.write_text(json.dumps(live_record), encoding="utf-8")
+    # The section is required at the version whose writer emits it, so its
+    # absence is a deleted section rather than an older record.
+    with pytest.raises(VerificationError, match=r"controller: absent, but a record"):
+        verify_run(path, factory)
+
+    live_record["controller"] = runner._controller_identity()
+    path.write_text(json.dumps(live_record), encoding="utf-8")
+    assert verify_run(path, factory) == []
+
+    source = Path(live_module.__file__).read_text(encoding="utf-8")
+    changed = source.replace(
+        "        if kind == \"STATE\":\n",
+        "        if kind == \"STATE\" and len(self.inputs) % 2 == 0:\n",
+    )
+    assert changed != source
+    mutated = tmp_path / "live-changed.py"
+    mutated.write_text(changed, encoding="utf-8")
+    with monkeypatch.context() as patch:
+        patch.setattr(live_module, "__file__", str(mutated))
+        with pytest.raises(
+            VerificationError,
+            match=r"controller\.sources\.block_stack_ai\.live: recorded",
+        ):
+            verify_run(path, factory)
+    # A controller section in a version whose writer emitted none was added, and
+    # is reported instead of accepted as though an older writer had produced it;
+    # the same record under version 7 verifies, because no older writer emitted
+    # the section and its records have to keep verifying.
+    path.write_text(json.dumps(record), encoding="utf-8")
+    assert verify_run(path, factory) == []
+    older = json.loads(json.dumps(record))
+    older["controller"] = runner._controller_identity()
+    path.write_text(json.dumps(older), encoding="utf-8")
+    with pytest.raises(VerificationError, match=r"controller: no writer of this format"):
+        verify_run(path, factory)
     path.write_text(json.dumps(live_record), encoding="utf-8")
     assert verify_run(path, factory) == []
 

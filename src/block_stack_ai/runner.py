@@ -127,6 +127,16 @@ version 8, whose identity seeds the live module beside the dispatch, and the
 version keys the shape because the headless writer must keep emitting exactly
 the identity its retained records were written with.
 
+Every version-8 record also carries the controller's own ``controller``
+section, because the live session drives agents that declare no objective:
+``greedy``, ``random`` and ``lookahead`` all take a version-8 record, and
+without that section none of them would carry a source map at all. The
+controller's walk starts from the live module and stops before the declared
+objectives, which none of those choices runs, and the objective-bearing agents
+carry both sections — the objective's identity, which includes the live module
+because the session drives it, and the controller's, which covers the shared
+agent code every live game also runs.
+
 The section is keyed by the agent, not by one hard-wired objective: the module
 it names is the one that declares the configured agent's objective, whichever
 agent the suite selects, and the walk that produces the identity starts from
@@ -189,11 +199,14 @@ SUITE_FORMAT_VERSION = 7  # a suite, which always records the sections and the i
 # sections and the same dispatch-seeded identity, plus the module that drives the
 # live game: ``block_stack_ai.live`` reads each desktop observation, hands it to
 # the agent and executes the placement it returns, so a change there that kept
-# the replayed masks was otherwise invisible to verification. A new version
-# rather than a wider version-7 walk, because every retained headless record is
-# compared against the identity its own writer emitted. Superseded by
-# ``SUITE_FORMAT_VERSION`` for headless runs only; the live session keeps
-# emitting this version.
+# the replayed masks was otherwise invisible to verification. Every version-8
+# record also carries a ``controller`` section of its own, because the live
+# session drives agents whose choices no declared objective computes: without it
+# a greedy, random or lookahead live record would carry no source identity at
+# all. A new version rather than a wider version-7 walk, because every retained
+# headless record is compared against the identity its own writer emitted.
+# Superseded by ``SUITE_FORMAT_VERSION`` for headless runs only; the live session
+# keeps emitting this version.
 LIVE_SUITE_FORMAT_VERSION = 8
 # The shapes the objective's source identity has been written in, named for the
 # walk that produces it. ``_IDENTITY_OUTWARD`` is the modules the module that
@@ -208,41 +221,50 @@ LIVE_SUITE_FORMAT_VERSION = 8
 # the wrapper, and the dispatch runs before any choice exists, so the objective's
 # own namespace cannot reach it either; for an agent the factory defines, seeding
 # the factory instead left the dispatch out while it still selected the agent.
-# ``_IDENTITY_LIVE`` is version 8's walk: the dispatch-seeded walk plus the
-# module that drives the live session, which imports the dispatch rather than the
-# other way round and so is reachable from no seed the other shapes use. Each
-# shape is keyed by the format version whose writer emitted it, so the records
-# written under a narrower walk — Experiment 003's capture and the retained
-# version 6 fixture among them — keep verifying against the walk they recorded.
+# ``_IDENTITY_LIVE`` is version 8's objective walk: the dispatch-seeded walk
+# plus the module that drives the live session, which imports the dispatch rather
+# than the other way round and so is reachable from no seed the other shapes use.
+# ``_IDENTITY_CONTROLLER`` is the walk behind the live controller's own section:
+# seeded from the live module alone and stopping before the declared objectives,
+# because it has to cover the agents that declare none. Each shape is keyed by
+# the format version whose writer emitted it, so the records written under a
+# narrower walk — Experiment 003's capture and the retained version 6 fixture
+# among them — keep verifying against the walk they recorded.
 _IDENTITY_OUTWARD = "outward"
 _IDENTITY_CHOICE = "choice"
 _IDENTITY_DISPATCH = "dispatch"
 _IDENTITY_LIVE = "live"
+_IDENTITY_CONTROLLER = "controller"
 # What each suite version's own writer always emitted, as ``(sections,
-# identity)``: the placed-piece count, the clear-size histogram and the declared
-# objective, then the objective's source identity inside that objective. Inferring
-# "legacy" from an absent section instead would accept a current record whose
-# section was deleted, because a stripped record and a pre-section record are the
-# same JSON. The prior version stays strict about everything its writer did emit —
-# its records carry the objective, so its verifier still requires it — and gates
-# only the identity, which its writer never recorded. The identity is the newer
-# of the two: a version whose writer emitted the sections therefore also requires
-# the ones that preceded it. The identity's second element names which modules
-# that version's identity covered, or ``None`` for a version whose writer emitted
-# none — an identity such a record carries anyway is an edit, and is compared
-# against the current shape, because no writer ever emitted another one there.
-# What a version's writer emitted is only half of what a record can be asked for:
-# the version is also a claim about which writer wrote it, so a record that
-# configures an agent no writer of that version could build is an edit rather
-# than a legacy record, and is reported by ``_check_declared_agent_versions``
-# before this table's requirements are applied.
+# identity, controller)``: the placed-piece count, the clear-size histogram and
+# the declared objective, then the objective's source identity inside that
+# objective, then whether the record carries the live controller's own identity
+# section. Inferring "legacy" from an absent section instead would accept a
+# current record whose section was deleted, because a stripped record and a
+# pre-section record are the same JSON. The prior version stays strict about
+# everything its writer did emit — its records carry the objective, so its
+# verifier still requires it — and gates only the identity, which its writer
+# never recorded. The identity is the newer of the two: a version whose writer
+# emitted the sections therefore also requires the ones that preceded it. The
+# identity's second element names which modules that version's identity covered,
+# or ``None`` for a version whose writer emitted none — an identity such a
+# record carries anyway is an edit, and is compared against the current shape,
+# because no writer ever emitted another one there. The third element is the
+# controller section the version-8 live writer emits for every live game: the
+# objective section is absent whenever a greedy, random or lookahead agent is
+# driven, so the controller's identity cannot live inside it. What a version's
+# writer emitted is only half of what a record can be asked for: the version is
+# also a claim about which writer wrote it, so a record that configures an agent
+# no writer of that version could build is an edit rather than a legacy record,
+# and is reported by ``_check_declared_agent_versions`` before this table's
+# requirements are applied.
 _SUITE_FORMAT_VERSIONS = {
-    LEGACY_SUITE_FORMAT_VERSION: (False, None),
-    PRIOR_SUITE_FORMAT_VERSION: (True, None),
-    OUTWARD_IDENTITY_SUITE_FORMAT_VERSION: (True, _IDENTITY_OUTWARD),
-    WRAPPER_IDENTITY_SUITE_FORMAT_VERSION: (True, _IDENTITY_CHOICE),
-    SUITE_FORMAT_VERSION: (True, _IDENTITY_DISPATCH),
-    LIVE_SUITE_FORMAT_VERSION: (True, _IDENTITY_LIVE),
+    LEGACY_SUITE_FORMAT_VERSION: (False, None, False),
+    PRIOR_SUITE_FORMAT_VERSION: (True, None, False),
+    OUTWARD_IDENTITY_SUITE_FORMAT_VERSION: (True, _IDENTITY_OUTWARD, False),
+    WRAPPER_IDENTITY_SUITE_FORMAT_VERSION: (True, _IDENTITY_CHOICE, False),
+    SUITE_FORMAT_VERSION: (True, _IDENTITY_DISPATCH, False),
+    LIVE_SUITE_FORMAT_VERSION: (True, _IDENTITY_LIVE, True),
 }
 _SCRIPTED_FORMAT_VERSIONS = {LEGACY_FORMAT_VERSION: False, FORMAT_VERSION: True}
 _EVENT_FIELDS = (
@@ -270,6 +292,11 @@ _PIECE_FIELDS = (_PIECES_PLACED_FIELD, _LEGACY_PIECES_FIELD)
 # entry. A record carries one ``objective`` section, so a suite configures at
 # most one of these agents.
 _OBJECTIVE_FIELD = "objective"
+# The live controller's own identity, beside the objective section: every
+# version-8 record carries it, because the live session also drives agents whose
+# choices no separately declared objective computes, and those records would
+# otherwise carry no source identity at all.
+_CONTROLLER_FIELD = "controller"
 # The objective's semantic identity, beside its weights: the sha256 of the source
 # of every package module its decisions are computed from. The weights are
 # constants and cannot identify the formula around them, so without this a record
@@ -884,15 +911,18 @@ def _choice_walk_seeds(agent: str, shape: str = _IDENTITY_CHOICE) -> list[Module
     objective's own namespace, ``_IDENTITY_CHOICE`` adds the wrapper and the
     module the version-6 writer named as its builder, ``_IDENTITY_DISPATCH``
     names the dispatch for every agent, which is what decides which
-    implementation is built, and ``_IDENTITY_LIVE`` is that dispatch-seeded walk
-    plus the module that drives the interactive live session — the code that
-    reads each desktop observation and hands it to the agent, which no walk from
-    the objective or the dispatch can reach. The default is ``_IDENTITY_CHOICE``,
-    the shape callers that predate the version keying mean
-    (``_objective_sources``); a caller that means the walk the current headless
-    writer emits passes ``_IDENTITY_DISPATCH``, and the live writer passes
-    ``_IDENTITY_LIVE``.
+    implementation is built, ``_IDENTITY_LIVE`` is that dispatch-seeded walk
+    plus the module that drives the interactive live session, and
+    ``_IDENTITY_CONTROLLER`` is the live module alone — the controller's own
+    section, which has to cover the greedy, random and lookahead agents that
+    declare no objective. The default is ``_IDENTITY_CHOICE``, the shape callers
+    that predate the version keying mean (``_objective_sources``); a caller that
+    means the walk the current headless writer emits passes
+    ``_IDENTITY_DISPATCH``, and the live session passes ``_IDENTITY_LIVE`` for
+    its objective and ``_IDENTITY_CONTROLLER`` for its controller section.
     """
+    if shape == _IDENTITY_CONTROLLER:
+        return [_live_controller_module()]
     seeds = [DECLARED_OBJECTIVES[agent].module]
     if shape == _IDENTITY_OUTWARD:
         return seeds
@@ -960,6 +990,18 @@ def _sibling_objective_modules(agent: str) -> set[int]:
             if name != agent}
 
 
+def _declared_objective_modules() -> set[int]:
+    """Every declared objective's module, which the controller walk excludes.
+
+    The controller section covers agents that declare no objective and the
+    shared agent code beside them; a ``greedy``, ``random`` or ``lookahead``
+    choice runs neither objective's module, so an edit to one must not
+    invalidate a controller record that never called it. The objective-bearing
+    agents carry the objective's own identity for that half of their code path.
+    """
+    return {id(objective.module) for objective in DECLARED_OBJECTIVES.values()}
+
+
 def _module_source_digest(module: ModuleType, *, loaded: bool) -> str:
     """One module's source digest, as the loaded code or as the tree now.
 
@@ -1023,7 +1065,10 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE, *, agent: str = TETRIS_AGE
     which the live session's writer emits under version 8: the session hands the
     agent every observation through ``LiveSession.receive``, and that module's
     dependency on the dispatch runs the other way, so it is an added seed rather
-    than something the existing walk can reach. ``_IDENTITY_CHOICE`` is the shape
+    than something the existing walk can reach. ``_IDENTITY_CONTROLLER`` is the
+    live controller's own walk — the live module alone, with the declared
+    objectives dropped from what it reaches — and needs no ``agent``: it exists
+    for the agents that declare no objective. ``_IDENTITY_CHOICE`` is the shape
     the version-6 writer emitted, which named the shared factory for an agent the
     factory defines and the dispatch only for an agent a declared objective owns;
     ``_IDENTITY_OUTWARD`` is the shape the version-5 writer emitted, which stops
@@ -1044,7 +1089,8 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE, *, agent: str = TETRIS_AGE
     only the bytes each digest is taken over differ.
     """
     seeds = _choice_walk_seeds(agent, shape)
-    excluded = _sibling_objective_modules(agent)
+    excluded = (_declared_objective_modules() if shape == _IDENTITY_CONTROLLER
+                else _sibling_objective_modules(agent))
     pending = list(seeds)
     sources: dict[str, str] = {}
     while pending:
@@ -1069,7 +1115,8 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE, *, agent: str = TETRIS_AGE
     return {name: sources[name] for name in sorted(sources)}
 
 
-def _stale_loaded_references(sources: dict[str, str], agent: str = TETRIS_AGENT) -> list[str]:
+def _stale_loaded_references(sources: dict[str, str],
+                             excluded: set[int]) -> list[str]:
     """Cross-module references a partial reload left pointing at replaced code.
 
     A module that imports a name from another module binds the *object*, not the
@@ -1101,8 +1148,11 @@ def _stale_loaded_references(sources: dict[str, str], agent: str = TETRIS_AGENT)
 
     Returns the references that no longer appear anywhere in the namespace of the
     module they were defined in, as ``module.attribute (defined in module)``.
+    ``excluded`` names the modules whose references are not part of this record's
+    code path and are therefore neither walked nor scanned: the *other* declared
+    objective for an objective's identity, and *every* declared objective for the
+    controller's.
     """
-    excluded = _sibling_objective_modules(agent)
     stale = []
     for name in sorted(sys.modules):
         if not name.startswith(_PACKAGE_PREFIX):
@@ -1153,7 +1203,9 @@ def _loaded_objective_sources(shape: str = _IDENTITY_CHOICE, *,
     again.
     """
     sources = _objective_sources(shape, agent=agent, loaded=True)
-    stale = _stale_loaded_references(sources, agent)
+    excluded = (_declared_objective_modules() if shape == _IDENTITY_CONTROLLER
+                else _sibling_objective_modules(agent))
+    stale = _stale_loaded_references(sources, excluded)
     if stale:
         raise VerificationError(
             "The loaded modules a choice runs through are inconsistent: "
@@ -1232,6 +1284,34 @@ def _objective_section(config: SuiteConfig, *, loaded: bool = False,
     """
     objective = _objective_record(config, loaded=loaded, shape=shape)
     return {} if objective is None else {_OBJECTIVE_FIELD: objective}
+
+
+def _controller_identity(*, loaded: bool = False) -> dict[str, Any]:
+    """The live controller's own identity: the module that drives the session.
+
+    The walk starts from ``block_stack_ai.live`` and stops before the declared
+    objectives, because the live session also drives the agents that declare
+    none and neither objective's code is on their path. The section exists for
+    exactly those agents: version 8 has to cover every live game, and the
+    objective section is absent whenever ``greedy``, ``random`` or ``lookahead``
+    was driven, so the controller's identity cannot live inside it. The shared
+    agent code, the dispatch that builds the agent and the helpers an agent calls
+    are all reached from the live module and are hashed with it.
+
+    ``loaded`` selects the writer's view (the bytes the interpreter loaded) or
+    the verifier's (the tree now), exactly as it does for the objective's
+    identity; both enumerate the same closure through ``_objective_sources``.
+    """
+    return {
+        "module": _live_controller_module().__name__,
+        _OBJECTIVE_SOURCES_FIELD: _objective_sources(
+            _IDENTITY_CONTROLLER, loaded=loaded),
+    }
+
+
+def _controller_section(*, loaded: bool = False) -> dict[str, Any]:
+    """The record entry that declares the live controller's identity."""
+    return {_CONTROLLER_FIELD: _controller_identity(loaded=loaded)}
 
 
 def _check_declared_agent_versions(config: SuiteConfig, version: int, path: Path) -> None:
@@ -1332,6 +1412,39 @@ def _compare_objective(record: dict[str, Any], config: SuiteConfig,
         required=identity_shape is not None,
     ))
     return differences
+
+
+def _compare_controller(record: dict[str, Any], required: bool) -> list[str]:
+    """Differences for the live controller's identity section of a suite record.
+
+    Every version-8 record carries this section, including the records whose
+    agents declare no objective: the live session writes every live game under
+    that version, and a greedy, random or lookahead record has no ``objective``
+    section for the controller's module to hide in. The section names the live
+    module and the sha256 of every package module its walk reaches, minus the
+    declared objectives. It is required at the version whose writer emits it; a
+    record below that version which carries one had it added, because no older
+    writer emitted the section, and is reported rather than accepted — the same
+    rule the objective section follows.
+    """
+    if _CONTROLLER_FIELD not in record:
+        if not required:
+            return []
+        return [
+            f"{_CONTROLLER_FIELD}: absent, but a record of this format version carries "
+            "the live controller's identity"
+        ]
+    if not required:
+        return [
+            f"{_CONTROLLER_FIELD}: no writer of this format version emits one, so the "
+            "section was added"
+        ]
+    recorded = record[_CONTROLLER_FIELD]
+    if not isinstance(recorded, dict):
+        raise VerificationError(
+            f"Recorded {_CONTROLLER_FIELD} must be dict, not {recorded!r}"
+        )
+    return _compare_fields(recorded, _controller_identity(), _CONTROLLER_FIELD)
 
 
 def _record_versions() -> dict[str, Any]:
@@ -1495,7 +1608,7 @@ def _verify_scripted(record: dict[str, Any], path: Path, sections_required: bool
 
 def _verify_suite(record: dict[str, Any], path: Path, version: int,
                   game_factory: Callable[..., Any]) -> list[str]:
-    sections_required, identity_shape = _SUITE_FORMAT_VERSIONS[version]
+    sections_required, identity_shape, controller_required = _SUITE_FORMAT_VERSIONS[version]
     recorded_engine, configuration = _record_sections(record, path)
     # ``weights_record()`` carries the writer's float weights and the tie-break
     # string, so the same type-and-key comparison the episodes and summary get
@@ -1522,6 +1635,16 @@ def _verify_suite(record: dict[str, Any], path: Path, version: int,
         raise VerificationError(
             "Recorded objective differs from the current implementation:\n  "
             + "\n  ".join(objective_differences)
+        )
+    # The controller section is compared after the objective so a record that
+    # carries both reports the objective's half of a changed live controller
+    # first; the live module's digest belongs to both sections, and the shared
+    # section answers for the records that declare no objective at all.
+    controller_differences = _compare_controller(record, controller_required)
+    if controller_differences:
+        raise VerificationError(
+            "Recorded controller differs from the current implementation:\n  "
+            + "\n  ".join(controller_differences)
         )
     # The record must carry exactly the sequence run_suite emits: agent order,
     # then seed order. Membership alone would accept a record that duplicates one

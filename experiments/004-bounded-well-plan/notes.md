@@ -366,7 +366,7 @@ set of top-level blocks the record carries is asserted against the set of blocks
 check knows, so a claim no check derives cannot be added to the certified record.
 
 The capture has been made thirteen times before the post-publication live-identity
-repair below re-made it once more, and every superseded one is kept beside
+repair below re-made it twice more, and every superseded one is kept beside
 it. The first (2026-09-29T17:11:15.420024+00:00) preceded the first ten-seed run
 (`runs/20260929T171936702109Z-3733d12b`); the plan agent was then moved out of the
 shared factory into its objective module (see *What this experiment adds*), so the
@@ -1185,13 +1185,23 @@ emitted, so every retained headless record and every earlier-version live record
 still verifies against the walk its own writer recorded:
 `runner._SUITE_FORMAT_VERSIONS` keys the shape by the record's own version and
 `runner._IDENTITY_LIVE` seeds the live module.
+Every version-8 record also carries a `controller` section of its own, because
+the live session drives `greedy`, `random` and `lookahead` as well: those agents
+declare no objective, so without the section none of their live records would
+carry a source map at all, and the walk behind it is seeded from the live module
+alone and stops before the declared objectives, which none of those choices
+runs.
 `tests/test_unit.py::test_the_live_identity_adds_the_module_that_drives_the_session`
-derives the shape and the unchanged headless walks,
+derives the shapes and the unchanged headless walks,
 `tests/test_unit.py::test_a_changed_live_controller_is_reported_for_a_version_8_record`
 shows a changed controller reported for a version-8 record while the same change
-leaves a version-7 record verifying, and
+leaves a version-7 record verifying,
+`tests/test_unit.py::test_a_version_8_record_without_an_objective_still_names_the_controller`
+requires the controller section on an objective-less record and reports a
+changed live module through it, and
 `tests/test_live.py::test_live_tetris_session_records_the_objective_and_verifies`
-runs the same check on a real live record. A session retained across a reload of
+and `tests/test_live.py::test_live_session_records_the_clear_size_histogram_and_verifies`
+run the same checks on real live records. A session retained across a reload of
 the live module is refused at its next `receive` before any identity is captured
 — `importlib.reload(live)` replaces the class while the instance keeps executing
 the previous `receive`, and its globals now come from the reloaded module — and a
@@ -1205,19 +1215,21 @@ is accepted, and on this tree the same game writes version 8, names the module,
 and the changed controller is rejected.
 
 The plan identity hashes `src/block_stack_ai/runner.py` as its dispatch seed, so
-this fix necessarily moved that module's bytes and the plan's predeclaration with
-them. The capture was re-made from the fixed tree at
-`2026-10-07T03:12:10.522381+00:00`; the capture it replaces is retained as
-[`probes/predeclared_objective.pre-live-identity.json`](probes/predeclared_objective.pre-live-identity.json),
-and the evaluation it preceded is retained as the thirteenth superseded run in
-[`probes/superseded_run_rows.json`](probes/superseded_run_rows.json). The
-evaluation was re-measured after the capture (record
-`runs/20261007T031507793687Z-6313191d/run.json`, now the cited record) and all 20
-per-episode rows are identical, field for field, to the retained rows: the plan's
-objective, weights, placement rule and measured values did not move, only the
-runner bytes the identity covers. `check-record` re-makes that comparison against
-the retained artifact, so the unchanged outcomes are derived rather than
-asserted. The limitation above is unchanged: the new run is the same read-only,
-dirty Block Stack working tree (`8ca41587`, working tree) as the rows it
-reproduces.
+the live-identity fix and the controller section that followed it each moved that
+module's bytes and the plan's predeclaration with them, and the capture was
+re-made twice. The current capture was taken from the fixed tree at
+`2026-10-07T08:39:18.780232+00:00`; the capture it replaces is retained as
+[`probes/predeclared_objective.pre-controller-section.json`](probes/predeclared_objective.pre-controller-section.json),
+whose own evaluation is retained as the fourteenth superseded run in
+[`probes/superseded_run_rows.json`](probes/superseded_run_rows.json), beside the
+thirteenth ([`probes/predeclared_objective.pre-live-identity.json`](probes/predeclared_objective.pre-live-identity.json)).
+Each evaluation was re-measured after its capture (the newest record is
+`runs/20261007T084221261489Z-0834f8c5/run.json`, now the cited record) and all 20
+per-episode rows are identical, field for field, to the retained rows in both
+rounds: the plan's objective, weights, placement rule and measured values did not
+move, only the runner bytes the identity covers. `check-record` re-makes the
+comparison against the retained artifact, so the unchanged outcomes are derived
+rather than asserted. The limitation above is unchanged: the new run is the same
+read-only, dirty Block Stack working tree (`8ca41587`, working tree) as the rows
+it reproduces.
 
