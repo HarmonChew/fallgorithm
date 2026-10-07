@@ -3558,6 +3558,26 @@ def test_a_changed_live_controller_is_reported_for_a_version_8_record(
     assert verify_run(path, factory) == []
 
 
+def test_a_reloaded_live_session_is_refused_not_recorded():
+    """A session the live reload left stale is refused before any identity is captured.
+
+    ``importlib.reload(live)`` creates a new ``LiveSession`` class while an
+    existing instance keeps executing the previous class's ``receive``. Every
+    module global that method resolves now comes from the reloaded module, so an
+    identity captured on its next call would name controller bytes that never
+    chose the inputs and the record would verify falsely. The guard is the class
+    identity, checked before any branch runs, so a session built from the
+    previous class is refused outright rather than stamped with the reloaded
+    module's digest. The check drives the guard directly, without a native game,
+    because the refusal must not depend on the engine.
+    """
+    class StaleSession:
+        pass
+
+    with pytest.raises(VerificationError, match="reloaded after this session"):
+        live_module.LiveSession.receive(StaleSession(), "BEGIN", b"")
+
+
 def test_objective_identity_is_required_at_the_current_version_and_optional_before(
     tmp_path, monkeypatch
 ):

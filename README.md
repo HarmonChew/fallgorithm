@@ -128,7 +128,10 @@ because every retained headless record is compared against the identity its own
 writer emitted: the headless writer still emits version 7 and the byte-for-byte
 walk it always emitted, while the live writer emits version 8, so a change to the
 controller that keeps the replayed masks and results is reported instead of
-certified. A version 3, 4, 5, 6, 7 or 8
+certified. A session whose live module was reloaded after the instance was
+built is refused rather than recorded, because the retained class keeps
+executing the previous `receive` while its globals come from the reloaded
+module; construct a new session. A version 3, 4, 5, 6, 7 or 8
 record must carry the placed-piece count, the clear-size histogram and — for a
 suite that configures an agent with its own declared objective — that objective.
 That is why the version is compared rather than the absence: a section deleted
