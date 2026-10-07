@@ -15,7 +15,7 @@ from types import SimpleNamespace
 import pytest
 
 from block_stack_ai.agents import ScriptedAgent, parse_script
-from block_stack_ai import agents as agents_module, engine, runner, tetris as tetris_module
+from block_stack_ai import agents as agents_module, engine, live as live_module, runner, tetris as tetris_module
 from block_stack_ai.runner import (
     RunConfig,
     SuiteConfig,
@@ -1689,6 +1689,41 @@ def test_the_two_declared_objectives_keep_separate_identities():
         Path(recorder.__file__).read_bytes()).hexdigest()
     assert runner._declared_agents(("lookahead", "tetris_plan")) == ("tetris_plan",)
     assert runner._declared_agents(("greedy", "random")) == ()
+
+
+def test_the_live_identity_adds_the_module_that_drives_the_session():
+    """The live suite format's walk covers the controller that hands over observations.
+
+    The live session drives the same agents a headless suite does, but every
+    observation reaches the agent through ``LiveSession.receive`` and every mask it
+    returns is executed there. That module imports the runner rather than the other
+    way round, so neither the objective walk nor the dispatch walk can reach it, and
+    a change to ``receive`` that preserved the replayed masks stayed invisible. The
+    live writer emits a new format version — 8 — whose identity adds the
+    live-driving module to the dispatch-seeded walk. The shape is keyed by the
+    record's own version, so the headless walks are exactly what they were and a
+    headless record written now carries the identity it always carried.
+    """
+    assert runner._SUITE_FORMAT_VERSIONS[runner.LIVE_SUITE_FORMAT_VERSION] == (
+        True, runner._IDENTITY_LIVE)
+    assert runner.LIVE_SUITE_FORMAT_VERSION > runner.SUITE_FORMAT_VERSION
+    dispatch = runner._objective_sources(runner._IDENTITY_DISPATCH)
+    live = runner._objective_sources(runner._IDENTITY_LIVE)
+    assert set(live) == set(dispatch) | {live_module.__name__}
+    assert live[live_module.__name__] == hashlib.sha256(
+        Path(live_module.__file__).read_bytes()).hexdigest()
+    # The headless walks — and the unversioned default Experiment 003's probe and
+    # capture mean — never name the live module.
+    for shape in (runner._IDENTITY_DISPATCH, runner._IDENTITY_CHOICE,
+                  runner._IDENTITY_OUTWARD):
+        assert live_module.__name__ not in runner._objective_sources(shape)
+    assert live_module.__name__ not in runner._objective_sources()
+    # The live walk still seeds the dispatch for every declared agent, because the
+    # session builds its agent through the same dispatch a headless run does.
+    for agent in ("tetris", "tetris_plan"):
+        assert runner._choice_driver(agent, runner._IDENTITY_LIVE) is runner
+        assert live_module.__name__ in runner._objective_sources(
+            runner._IDENTITY_LIVE, agent=agent)
 
 
 def test_a_change_to_the_dispatch_that_kept_the_choices_is_caught(tmp_path, monkeypatch):
@@ -3465,6 +3500,61 @@ def test_a_current_tetris_record_covers_the_dispatcher_and_cannot_shed_it(
     # The unedited record still verifies, so the identity rejects the relabel and
     # nothing else.
     path.write_text(json.dumps(record), encoding="utf-8")
+    assert verify_run(path, factory) == []
+
+
+def test_a_changed_live_controller_is_reported_for_a_version_8_record(
+    tmp_path, monkeypatch
+):
+    """A live record covers the controller that drove it; the pre-fix shape did not.
+
+    The reviewer's finding: ``LiveSession.receive`` decides when and how each
+    desktop observation reaches the agent and executes the mask it returns, while
+    the version-7 identity covered only the objective and the runner. A change to
+    the controller that still produced the recorded masks was therefore certified,
+    and the headless verifier accepted the record. A version-8 record carries the
+    live walk, so the same mutated controller is reported here — and the same
+    record under version 7, the shape the pre-fix writer emitted, still verifies,
+    which is the legacy guarantee and the gap the new version closes. The replay
+    never imports the live session, so the identity is the only thing that can
+    report the change; the mutation is a copy pointed at through ``__file__``, so
+    the loaded controller that produced the recorded masks is what actually ran.
+    """
+    path, factory, record = _objective_suite(tmp_path, monkeypatch)
+    assert record["format_version"] == runner.SUITE_FORMAT_VERSION
+    assert live_module.__name__ not in record["objective"]["sources"]
+    live_record = json.loads(json.dumps(record))
+    live_record["format_version"] = runner.LIVE_SUITE_FORMAT_VERSION
+    live_record["objective"]["sources"] = runner._objective_sources(runner._IDENTITY_LIVE)
+    path.write_text(json.dumps(live_record), encoding="utf-8")
+    assert verify_run(path, factory) == []
+
+    source = Path(live_module.__file__).read_text(encoding="utf-8")
+    # A real change to when observations reach the agent: every other state is
+    # dropped. The replay never reads this file, so the recorded masks are
+    # unchanged and only the identity can report the controller that chose them.
+    changed = source.replace(
+        "        if kind == \"STATE\":\n",
+        "        if kind == \"STATE\" and len(self.inputs) % 2 == 0:\n",
+    )
+    assert changed != source
+    mutated = tmp_path / "live-changed.py"
+    mutated.write_text(changed, encoding="utf-8")
+    recorded = live_record["objective"]["sources"][live_module.__name__]
+    with monkeypatch.context() as patch:
+        patch.setattr(live_module, "__file__", str(mutated))
+        with pytest.raises(
+            VerificationError,
+            match=rf"objective\.sources\.block_stack_ai\.live: recorded "
+                  rf"'{recorded}', replayed '[0-9a-f]{{64}}'",
+        ):
+            verify_run(path, factory)
+        # The version-7 writer never named the live module, so the same mutated
+        # controller leaves that shape verifying. That record is the pre-fix
+        # writer's output, compared against the walk its own writer recorded.
+        path.write_text(json.dumps(record), encoding="utf-8")
+        assert verify_run(path, factory) == []
+    path.write_text(json.dumps(live_record), encoding="utf-8")
     assert verify_run(path, factory) == []
 
 

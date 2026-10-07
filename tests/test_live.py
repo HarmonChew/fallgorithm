@@ -149,17 +149,21 @@ def test_live_session_records_the_clear_size_histogram_and_verifies(tmp_path):
     verify_run(records[0])
 
 
-def test_live_tetris_session_records_the_objective_and_verifies(tmp_path):
-    """A live Tetris game declares the same objective a headless suite does.
+def test_live_tetris_session_records_the_objective_and_verifies(tmp_path, monkeypatch):
+    """A live Tetris game declares the same objective a headless suite does, plus live.
 
     Live play is the second path that writes a suite record, so the declared
     objective has to be recorded there too: without it a live Tetris record would
     verify under whatever objective is current whenever the change happens to
     preserve the replayed choices, and without the objective's source identity it
     would verify under a changed formula whenever the weights were unchanged. The
-    desktop protocol is driven with a plain native mirror, and the record must
-    name the declaring module, its weights and the source identity, and replay
-    under ``verify_run``.
+    live session also emits its own format version, whose identity adds the module
+    that drove the game: every observation reached the agent through
+    ``LiveSession.receive`` here, and a change to that controller that preserved
+    the replayed masks has to be reported. The desktop protocol is driven with a
+    plain native mirror, and the record must name the declaring module, its
+    weights, the live-seeded source identity and version 8, and replay under
+    ``verify_run`` — which reports a changed controller and nothing else.
     """
     limit = 600
     config = SuiteConfig(GAME, limit, (2,), ("tetris",))
@@ -178,11 +182,33 @@ def test_live_tetris_session_records_the_objective_and_verifies(tmp_path):
     records = list((tmp_path / "runs").glob("*/run.json"))
     assert len(records) == 1
     record = json.loads(records[0].read_text(encoding="utf-8"))
+    assert record["format_version"] == runner.LIVE_SUITE_FORMAT_VERSION
     assert record["objective"] == {
         "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
-        "sources": runner._objective_sources(runner._IDENTITY_DISPATCH),
+        "sources": runner._objective_sources(runner._IDENTITY_LIVE),
     }
+    assert "block_stack_ai.live" in record["objective"]["sources"]
     assert sorted(record["summary"]) == ["tetris"]
+    verify_run(records[0])
+
+    # A change to the live controller's own source is reported for the record it
+    # wrote, while the record itself is untouched. The edit really changes when
+    # observations reach the agent — every other state is dropped — and the replay
+    # never reads this file, so the recorded masks still replay and the identity
+    # is the only thing that can report what the controller did.
+    live = sys.modules["block_stack_ai.live"]
+    mutated = tmp_path / "live-changed.py"
+    changed = Path(live.__file__).read_text(encoding="utf-8").replace(
+        '        if kind == "STATE":\n',
+        '        if kind == "STATE" and len(self.inputs) % 2 == 0:\n',
+    )
+    assert changed != Path(live.__file__).read_text(encoding="utf-8")
+    mutated.write_text(changed, encoding="utf-8")
+    with monkeypatch.context() as patch:
+        patch.setattr(live, "__file__", str(mutated))
+        with pytest.raises(VerificationError,
+                           match=r"objective\.sources\.block_stack_ai\.live"):
+            verify_run(records[0])
     verify_run(records[0])
 
 
@@ -282,7 +308,8 @@ try:
         assert not session.active
         assert len(session.records) == 1
     else:
-        expected = runner._objective_section(config, loaded=True)["objective"]
+        expected = runner._objective_section(
+            config, loaded=True, shape=runner._IDENTITY_LIVE)["objective"]
         assert expected["sources"] != original["sources"]
         session.receive("BEGIN", initial)
         assert type(session.agent) is agents.TetrisAgent

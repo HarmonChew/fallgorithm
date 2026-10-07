@@ -1,11 +1,11 @@
 """Run bounded episodes and replay exactly the inputs that were executed.
 
-Six record versions share this module and all replay against the native engine.
+Eight record versions share this module and all replay against the native engine.
 Versions 1 (one scripted episode) and 2 (a suite of placement-agent episodes over
 fixed seeds) are the older formats of each shape: the verifier accepts the
 placed-piece count, the clear-size histogram and the declared objective absent
 there and compares each one when present. Versions 3 (a
-scripted episode), 4, 5, 6 and 7 (suites) are written after them and must carry
+scripted episode), 4, 5, 6, 7 and 8 (suites) are written after them and must carry
 every section their writer emits — the placed-piece count, the clear-size
 histogram, and, for a suite that selects an agent with its own declared
 objective, that agent's declared objective.
@@ -15,9 +15,15 @@ version 5's writer recorded the identity as the modules the objective's own code
 reaches, which cannot include the agent wrapper that drives it; version 6 records
 the wrapper beside them, but names the shared factory rather than the runner's
 dispatch as the builder of an agent the factory defines, so a Tetris record of
-that version does not cover the code that selects its implementation; and version
+that version does not cover the code that selects its implementation; version
 7 records the dispatch for every agent, which is the code that decides which
-implementation is built. The numbers are reused rather than a schema
+implementation is built; and version 8 is the live-suite format, whose identity
+is the version-7 walk plus the module that drives the interactive live session
+(``block_stack_ai.live``). The live writer emits version 8 and the headless
+writer emits version 7, so the live entry is additive: a headless record keeps
+the identity version 7 recorded, and only a record the live session wrote is
+compared against the walk that includes the controller that handed its agent
+every observation. The numbers are reused rather than a schema
 history — the base commit's writer emitted the placed-piece count at versions 1
 and 2, and an earlier writer wrote the same numbers without it — so a version
 says which sections the verifier must require and which walk produced the
@@ -46,7 +52,7 @@ field existed carry the legacy ``pieces`` key instead, which held
 ``state.piece_count``; the replay compares it against that counter so those
 records keep verifying under their original semantics. A record that carries
 neither key is older still and keeps verifying at a legacy version; a version 3,
-4, 5, 6 or 7 record must carry ``pieces_placed``, because that is the key its writer
+4, 5, 6, 7 or 8 record must carry ``pieces_placed``, because that is the key its writer
 emits and its absence there is a deleted section rather than an older record. The
 per-agent summary reports the key the record as a whole carries, read from every
 episode: one writer emits one shape for a whole record, so a record whose first
@@ -62,7 +68,7 @@ a ``result`` object's keys to equal the replay's exactly, so a new key there
 would invalidate every record written before it. Like the piece count a legacy
 record may omit it — a record that carries neither the field nor the entry in its
 summary is older and keeps verifying — and a present one is compared with the
-same type-and-key rules as the mandatory sections. In a version 3, 4, 5, 6 or 7
+same type-and-key rules as the mandatory sections. In a version 3, 4, 5, 6, 7 or 8
 record the histogram is required: a scripted episode carries it, and a suite
 carries it on every episode and every agent summary. Presence is all-or-nothing
 in a legacy suite too: every episode and every agent summary in one record
@@ -109,6 +115,18 @@ records are compared against the walk their own writer recorded:
 the retained fixture and Experiment 003's capture are the version-6 shape,
 and the current writer's Tetris identity covers the dispatch as well.
 
+The live session is the second writer of suite records, and its decisions run
+through one module more than a headless run's: ``LiveSession.receive`` reads
+each desktop observation, hands it to the agent and executes the mask the agent
+returns, while the headless runner drives the same agent through ``_play``. The
+live module imports the runner rather than the other way round, so no walk from
+the objective or the dispatch can reach it, and a change to ``receive`` that
+altered how or when observations reached the agent stayed invisible whenever the
+replayed masks and result fields still matched. The live writer therefore emits
+version 8, whose identity seeds the live module beside the dispatch, and the
+version keys the shape because the headless writer must keep emitting exactly
+the identity its retained records were written with.
+
 The section is keyed by the agent, not by one hard-wired objective: the module
 it names is the one that declares the configured agent's objective, whichever
 agent the suite selects, and the walk that produces the identity starts from
@@ -124,6 +142,7 @@ from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import hashlib
+from importlib import import_module
 import json
 from pathlib import Path
 from statistics import fmean, median
@@ -166,6 +185,16 @@ OUTWARD_IDENTITY_SUITE_FORMAT_VERSION = 5
 # it. Superseded by SUITE_FORMAT_VERSION.
 WRAPPER_IDENTITY_SUITE_FORMAT_VERSION = 6
 SUITE_FORMAT_VERSION = 7  # a suite, which always records the sections and the identity
+# A suite written by the interactive live session. Its writer emits the version-7
+# sections and the same dispatch-seeded identity, plus the module that drives the
+# live game: ``block_stack_ai.live`` reads each desktop observation, hands it to
+# the agent and executes the placement it returns, so a change there that kept
+# the replayed masks was otherwise invisible to verification. A new version
+# rather than a wider version-7 walk, because every retained headless record is
+# compared against the identity its own writer emitted. Superseded by
+# ``SUITE_FORMAT_VERSION`` for headless runs only; the live session keeps
+# emitting this version.
+LIVE_SUITE_FORMAT_VERSION = 8
 # The shapes the objective's source identity has been written in, named for the
 # walk that produces it. ``_IDENTITY_OUTWARD`` is the modules the module that
 # declares the objective reaches: itself, and the package modules its own code
@@ -179,12 +208,16 @@ SUITE_FORMAT_VERSION = 7  # a suite, which always records the sections and the i
 # the wrapper, and the dispatch runs before any choice exists, so the objective's
 # own namespace cannot reach it either; for an agent the factory defines, seeding
 # the factory instead left the dispatch out while it still selected the agent.
-# Each shape is keyed by the format version whose writer emitted it, so the records
+# ``_IDENTITY_LIVE`` is version 8's walk: the dispatch-seeded walk plus the
+# module that drives the live session, which imports the dispatch rather than the
+# other way round and so is reachable from no seed the other shapes use. Each
+# shape is keyed by the format version whose writer emitted it, so the records
 # written under a narrower walk — Experiment 003's capture and the retained
 # version 6 fixture among them — keep verifying against the walk they recorded.
 _IDENTITY_OUTWARD = "outward"
 _IDENTITY_CHOICE = "choice"
 _IDENTITY_DISPATCH = "dispatch"
+_IDENTITY_LIVE = "live"
 # What each suite version's own writer always emitted, as ``(sections,
 # identity)``: the placed-piece count, the clear-size histogram and the declared
 # objective, then the objective's source identity inside that objective. Inferring
@@ -209,6 +242,7 @@ _SUITE_FORMAT_VERSIONS = {
     OUTWARD_IDENTITY_SUITE_FORMAT_VERSION: (True, _IDENTITY_OUTWARD),
     WRAPPER_IDENTITY_SUITE_FORMAT_VERSION: (True, _IDENTITY_CHOICE),
     SUITE_FORMAT_VERSION: (True, _IDENTITY_DISPATCH),
+    LIVE_SUITE_FORMAT_VERSION: (True, _IDENTITY_LIVE),
 }
 _SCRIPTED_FORMAT_VERSIONS = {LEGACY_FORMAT_VERSION: False, FORMAT_VERSION: True}
 _EVENT_FIELDS = (
@@ -848,17 +882,24 @@ def _choice_walk_seeds(agent: str, shape: str = _IDENTITY_CHOICE) -> list[Module
     ``shape`` names which walk the caller means, and the walk of a record's own
     version is the one its writer emitted: ``_IDENTITY_OUTWARD`` stops at the
     objective's own namespace, ``_IDENTITY_CHOICE`` adds the wrapper and the
-    module the version-6 writer named as its builder, and ``_IDENTITY_DISPATCH``
+    module the version-6 writer named as its builder, ``_IDENTITY_DISPATCH``
     names the dispatch for every agent, which is what decides which
-    implementation is built. The default is ``_IDENTITY_CHOICE``, the shape
-    callers that predate the version keying mean (``_objective_sources``); a
-    caller that means the walk the current writer emits passes
-    ``_IDENTITY_DISPATCH``.
+    implementation is built, and ``_IDENTITY_LIVE`` is that dispatch-seeded walk
+    plus the module that drives the interactive live session — the code that
+    reads each desktop observation and hands it to the agent, which no walk from
+    the objective or the dispatch can reach. The default is ``_IDENTITY_CHOICE``,
+    the shape callers that predate the version keying mean
+    (``_objective_sources``); a caller that means the walk the current headless
+    writer emits passes ``_IDENTITY_DISPATCH``, and the live writer passes
+    ``_IDENTITY_LIVE``.
     """
     seeds = [DECLARED_OBJECTIVES[agent].module]
     if shape == _IDENTITY_OUTWARD:
         return seeds
-    return seeds + [_choice_driver(agent, shape)]
+    seeds.append(_choice_driver(agent, shape))
+    if shape == _IDENTITY_LIVE:
+        seeds.append(_live_controller_module())
+    return seeds
 
 
 def _choice_driver(agent: str, shape: str = _IDENTITY_CHOICE) -> ModuleType:
@@ -880,10 +921,28 @@ def _choice_driver(agent: str, shape: str = _IDENTITY_CHOICE) -> ModuleType:
     are compared against that walk, which is the identity their writer recorded,
     and it is the default here for the same reason it is the default of
     ``_objective_sources``.
+
+    ``_IDENTITY_LIVE`` uses the dispatch for every agent too, because the live
+    session builds its agent through the same dispatch as a headless run; the
+    live module is an additional seed of that walk rather than a different
+    driver.
     """
-    if shape == _IDENTITY_DISPATCH or DECLARED_OBJECTIVES[agent].owner is not None:
+    if shape in (_IDENTITY_DISPATCH, _IDENTITY_LIVE) \
+            or DECLARED_OBJECTIVES[agent].owner is not None:
         return sys.modules[build_agent.__module__]
     return sys.modules[create_agent.__module__]
+
+
+def _live_controller_module() -> ModuleType:
+    """The module that drives the interactive live session, imported on demand.
+
+    ``block_stack_ai.live`` imports this module rather than the other way round,
+    so it cannot be imported at module load time here. A record of version 8 names
+    it as the code that handed its agent every observation, and the verifier
+    derives the same seed without depending on whether the caller already
+    imported it: the walk must enumerate the same modules on both sides.
+    """
+    return import_module(f"{__package__}.live")
 
 
 def _sibling_objective_modules(agent: str) -> set[int]:
@@ -958,14 +1017,19 @@ def _objective_sources(shape: str = _IDENTITY_CHOICE, *, agent: str = TETRIS_AGE
     factory imports them all and none of them computes this agent's choices.
 
     ``shape`` names which of those walks a caller means. ``_IDENTITY_DISPATCH`` is
-    the current one, above: the dispatch that builds every agent is a seed, so a
-    record of any agent covers the code that selects its implementation.
-    ``_IDENTITY_CHOICE`` is the shape the version-6 writer emitted, which named the
-    shared factory for an agent the factory defines and the dispatch only for an
-    agent a declared objective owns; ``_IDENTITY_OUTWARD`` is the shape the
-    version-5 writer emitted, which stops at what the objective's own namespace
-    reaches and therefore misses the wrapper. A record of either version is
-    compared against that shape, because it is the identity its writer recorded.
+    the current headless one, above: the dispatch that builds every agent is a
+    seed, so a record of any agent covers the code that selects its
+    implementation. ``_IDENTITY_LIVE`` is that walk plus the live-driving module,
+    which the live session's writer emits under version 8: the session hands the
+    agent every observation through ``LiveSession.receive``, and that module's
+    dependency on the dispatch runs the other way, so it is an added seed rather
+    than something the existing walk can reach. ``_IDENTITY_CHOICE`` is the shape
+    the version-6 writer emitted, which named the shared factory for an agent the
+    factory defines and the dispatch only for an agent a declared objective owns;
+    ``_IDENTITY_OUTWARD`` is the shape the version-5 writer emitted, which stops
+    at what the objective's own namespace reaches and therefore misses the
+    wrapper. A record of any version is compared against the shape its own writer
+    recorded.
 
     The default is the version-6 shape, and deliberately so: it is what callers
     that predate the version keying mean by "the Tetris objective's identity" —
@@ -1121,8 +1185,9 @@ def _objective_record(config: SuiteConfig, *, loaded: bool = False,
     identity is compared against the files on the tree now, and passes the
     ``shape`` the record's own version's writer emitted, because a version-6
     record's identity names the shared factory instead of the dispatch for an
-    agent the factory defines, and a version-5 record's stops at what the
-    objective's own namespace reaches.
+    agent the factory defines, a version-5 record's stops at what the objective's
+    own namespace reaches, and the live writer's adds the module that drives the
+    session beside the dispatch those two writers already seed.
     """
     agent = _declared_agent(config)
     if agent is None:
@@ -1155,9 +1220,17 @@ def _declared_agent(config: SuiteConfig) -> str | None:
     return agents[0]
 
 
-def _objective_section(config: SuiteConfig, *, loaded: bool = False) -> dict[str, Any]:
-    """The record entry that declares a suite's objective of its own, if it has one."""
-    objective = _objective_record(config, loaded=loaded)
+def _objective_section(config: SuiteConfig, *, loaded: bool = False,
+                       shape: str = _IDENTITY_DISPATCH) -> dict[str, Any]:
+    """The record entry that declares a suite's objective of its own, if it has one.
+
+    ``shape`` is the walk the caller's writer emits: the headless writer leaves
+    the default dispatch-seeded shape, and the live writer passes
+    ``_IDENTITY_LIVE`` so the record also covers the module that drove the
+    session. A caller that predates the live shape keeps emitting exactly the
+    identity it always emitted.
+    """
+    objective = _objective_record(config, loaded=loaded, shape=shape)
     return {} if objective is None else {_OBJECTIVE_FIELD: objective}
 
 
@@ -1221,10 +1294,12 @@ def _compare_objective(record: dict[str, Any], config: SuiteConfig,
 
     ``identity_shape`` is the shape the record's own version's writer emitted, as
     the version table gives it: the modules the objective's own code reaches, or
-    those plus the agent wrapper and the module that builds the agent. A version
-    whose writer emitted no identity at all gives ``None``, and the record is
-    compared against the current shape, because an identity such a record carries
-    is an edit and no writer ever emitted another shape under that version.
+    those plus the agent wrapper and the module that builds the agent, or — for
+    the live suite format — that dispatch-seeded walk plus the module that drives
+    the live session. A version whose writer emitted no identity at all gives
+    ``None``, and the record is compared against the current shape, because an
+    identity such a record carries is an edit and no writer ever emitted another
+    shape under that version.
     """
     expected = _objective_record(config, shape=identity_shape or _IDENTITY_DISPATCH)
     if expected is None:
@@ -1274,6 +1349,9 @@ def run_and_save(
         "configuration": config.to_dict(),
         "versions": _record_versions(),
     }
+    # The version the writer records is the headless writer's own, or the live
+    # writer's for a record the interactive session wrote; the two key different
+    # identity shapes, so neither writer can silently inherit the other's walk.
     if isinstance(config, SuiteConfig):
         record["format_version"] = SUITE_FORMAT_VERSION
         record["heuristic"] = weights_record()

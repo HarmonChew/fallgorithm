@@ -365,7 +365,8 @@ boolean is reported rather than summed back to the integer it compares equal to.
 set of top-level blocks the record carries is asserted against the set of blocks that
 check knows, so a claim no check derives cannot be added to the certified record.
 
-The capture has been made thirteen times, and all twelve superseded ones are kept beside
+The capture has been made thirteen times before the post-publication live-identity
+repair below re-made it once more, and every superseded one is kept beside
 it. The first (2026-09-29T17:11:15.420024+00:00) preceded the first ten-seed run
 (`runs/20260929T171936702109Z-3733d12b`); the plan agent was then moved out of the
 shared factory into its objective module (see *What this experiment adds*), so the
@@ -1165,4 +1166,51 @@ The rows reproduce only on the engine working tree named in the Results section,
 which this repository does not retain and cannot reconstruct; that limitation is
 stated in full under *Limitations* and is identified by the retained fingerprint
 manifest rather than left implicit.
+
+## Post-publication maintenance: the live record identity (Issue #17)
+
+The external review of PR #16 found that a record written by the interactive live
+session declared the same source identity as a headless suite. The live session's
+decisions run through `src/block_stack_ai/live.py` — `LiveSession.receive` reads
+each desktop observation, hands it to the agent and executes the mask it returns —
+but that module imports the runner rather than the other way round, so neither
+the objective walk nor the dispatch-seeded walk could reach it, and a change to
+`receive` that preserved the replayed masks and result fields was invisible to
+`verify`.
+
+The repair is a new suite format version, 8, emitted only by the live writer. Its
+identity is the version-7 dispatch-seeded walk plus `block_stack_ai.live`. The
+headless writer still emits version 7 and the byte-for-byte identity it always
+emitted, so every retained headless record and every earlier-version live record
+still verifies against the walk its own writer recorded:
+`runner._SUITE_FORMAT_VERSIONS` keys the shape by the record's own version and
+`runner._IDENTITY_LIVE` seeds the live module.
+`tests/test_unit.py::test_the_live_identity_adds_the_module_that_drives_the_session`
+derives the shape and the unchanged headless walks,
+`tests/test_unit.py::test_a_changed_live_controller_is_reported_for_a_version_8_record`
+shows a changed controller reported for a version-8 record while the same change
+leaves a version-7 record verifying, and
+`tests/test_live.py::test_live_tetris_session_records_the_objective_and_verifies`
+runs the same check on a real live record. The frozen-base reproduction is the
+same record shape both ways: on `git archive 572f8d0` a live game writes version
+7 with no `block_stack_ai.live` in its identity, a changed `LiveSession.receive`
+is accepted, and on this tree the same game writes version 8, names the module,
+and the changed controller is rejected.
+
+The plan identity hashes `src/block_stack_ai/runner.py` as its dispatch seed, so
+this fix necessarily moved that module's bytes and the plan's predeclaration with
+them. The capture was re-made from the fixed tree at
+`2026-10-07T03:12:10.522381+00:00`; the capture it replaces is retained as
+[`probes/predeclared_objective.pre-live-identity.json`](probes/predeclared_objective.pre-live-identity.json),
+and the evaluation it preceded is retained as the thirteenth superseded run in
+[`probes/superseded_run_rows.json`](probes/superseded_run_rows.json). The
+evaluation was re-measured after the capture (record
+`runs/20261007T031507793687Z-6313191d/run.json`, now the cited record) and all 20
+per-episode rows are identical, field for field, to the retained rows: the plan's
+objective, weights, placement rule and measured values did not move, only the
+runner bytes the identity covers. `check-record` re-makes that comparison against
+the retained artifact, so the unchanged outcomes are derived rather than
+asserted. The limitation above is unchanged: the new run is the same read-only,
+dirty Block Stack working tree (`8ca41587`, working tree) as the rows it
+reproduces.
 
