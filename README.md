@@ -115,12 +115,35 @@ declared objective without the source identity its successor adds, version 5 is
 the suite format whose identity stopped at the modules the objective's own code
 reaches and therefore missed the wrapper that drives it, version 6 records that
 identity with the wrapper but names the shared factory as the builder of an agent
-the factory defines, and version 7 is the current suite format, whose identity is
+the factory defines, version 7 is the headless suite format, whose identity is
 seeded from the runner's dispatch that builds every agent, so a Tetris record
-covers the code that selects its implementation too. A version 3,
-4, 5, 6 or 7
+covers the code that selects its implementation too, and version 8 is the live
+suite format, whose writer is the interactive live session. A live record's
+placements are chosen through `LiveSession.receive`, which reads each desktop
+observation, hands it to the agent and executes the mask it returns; the root
+objective-and-dispatch walk cannot reach that module, because it imports the
+runner rather than the other way round, so the version-8 objective identity seeds
+it beside the dispatch. Every version-8 record also carries a `controller`
+section, the walk from `block_stack_ai.live` with the declared objectives
+excluded, because the live session drives `greedy`, `random` and `lookahead` as
+well: those agents declare no objective, so without the section none of their
+live records would carry a source map at all. The version is additive rather
+than a widening of version 7
+because every retained headless record is compared against the identity its own
+writer emitted: the headless writer still emits version 7 and the byte-for-byte
+walk it always emitted, while the live writer emits version 8, so a change to the
+controller that keeps the replayed masks and results is reported instead of
+certified. A session whose live module was reloaded after the instance was
+built is refused rather than recorded, because the retained class keeps
+executing the previous `receive` while its globals come from the reloaded
+module; construct a new session. The controller identity's loaded view runs the
+same inconsistent-closure refusal the objective's does, so reloading a
+controller dependency such as `block_stack_ai.agents` without its importers is
+refused instead of recorded, and a version-8 record must configure exactly one
+agent and one seed, the single game `play_live` runs. A version 3, 4, 5, 6, 7 or 8
 record must carry the placed-piece count, the clear-size histogram and — for a
-suite that configures an agent with its own declared objective — that objective.
+suite that configures an agent with its own declared objective — that objective,
+and a version-8 record must carry the controller section as well.
 That is why the version is compared rather than the absence: a section deleted
 from a current record would otherwise be indistinguishable from a record that
 predates it. `verify` re-derives
@@ -259,7 +282,14 @@ produces its choices (the agent wrapper that hands it the state, beside the
 objective and its helpers) and the loaded code that identity names (a record
 written by a process that imported the objective's modules, had one of their
 files edited and only then imported the writer still carries the loaded bytes,
-and `verify` reports it once the file has moved on), its
+and `verify` reports it once the file has moved on), the version-keyed live
+identity (the version-8 walk adds `block_stack_ai.live` — the module whose
+`LiveSession.receive` hands each observation to the agent — so a changed
+controller is reported for a live record, while the same change leaves a
+version-7 record verifying against the headless walk its own writer emitted, and
+the controller section covers the objective-less live agents, refuses a loaded
+controller closure whose imports were reloaded out from under it, and is
+required of a version-8 record that configures exactly one agent and one seed), its
 clear, well and board terms, the new agent's own count of the pieces it has been
 shown, and the new agents' choices on constructed boards, without the native
 engine. The second
@@ -275,7 +305,8 @@ Experiment 003-era writer still verifying (its declared objective identity still
 matches this tree, and its inputs replay), the Tetris agent's four-line
 clear and the plan agent's four-line clear on a ready native well, the suite
 record's declared objective and the live
-session's clear-size histogram and objective, and desktop replay exports
+session's clear-size histogram, version-8 written record, live-seeded
+declared objective and controller section, and desktop replay exports
 through the native writer and verifier. The desktop checks additionally require
 the SDL3 target; they exercise live input, pause/step/restart, record verification,
 invalid masks and pipe closure using dummy video/audio. None needs a display.
@@ -284,8 +315,15 @@ unavailable. The measured results are in
 [experiments/000-connection](experiments/000-connection/notes.md) and
 [experiments/001-greedy-heuristic](experiments/001-greedy-heuristic/notes.md),
 and [experiments/README.md](experiments/README.md) describes the small record
-convention. `runs/`, `.build/`, `.venv/`, caches, and future large model files
-are ignored. Temporary run output is disposable.
+convention. Experiment 004's retained rows reproduce only against the read-only
+sibling Block Stack checkout they name — commit
+`8ca4158711c2d6339cab1ee8d78aa65bd624c89d`, recorded dirty (`kind:
+working-tree`) — whose uncommitted local changes cannot be exported and are not
+retained here: the dependency is identified by
+[its fingerprint manifest](experiments/004-bounded-well-plan/probes/engine_fingerprint.json),
+not reconstructed, and no clean reproducible-dependency CI is claimed.
+`runs/`, `.build/`, `.venv/`, caches, and future large model files are ignored.
+Temporary run output is disposable.
 
 ## Later stages
 

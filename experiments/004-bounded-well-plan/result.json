@@ -521,7 +521,7 @@
     "also_preserved": "the record formats keep their dispatch and their optional sections and their version-keyed identity walks (versions 1, 2, 3, 4, 5, 6 and 7 -- the writer's version moved to 7 for the dispatch-seeded walk), the frozen objective's module, weights and formula are untouched, the frozen version-6 fixture and Experiment 003's retained capture still verify at the version-6 shape their writers recorded, the identity walk and the partial-reload check skip the other declared objectives' modules, a record cannot claim a format version older than the one that introduced the agent it configures, and every published row of Experiment 003 reproduces on this tree (block 'baseline')",
     "check": "probes/evidence.py check-legacy, and probes/evidence.py check-record (which derives both this digest and the agent-factory digest from the tree's bytes and the retained fixture), and tests/test_integration.py::test_a_record_written_by_the_frozen_writer_still_verifies",
     "dispatcher": "block_stack_ai.runner is the module whose dispatch selects which implementation is built, and it is the module every record written now covers: the version-7 writer seeds it for both declared agents, so a Tetris record names the code that selects its implementation as well as a plan record does. Its digest here is derived from this tree's own bytes by `probes/evidence.py check-record` and compared with the `sources` entry the retained result and the capture carry, so the record that reports it cannot name a different dispatch. The version-6 shape is the one Experiment 003's retained evidence recorded: that walk named the shared factory for an agent the factory defines, so the frozen fixture's five-module identity carries no dispatcher entry, and it is compared against that five.",
-    "dispatcher_digest": "81a0bfbae21fc1afe0d48187f7a0e158394f5e7520cd4944ba502d8cdd8c4f77",
+    "dispatcher_digest": "4b7e610b64d7f3d1f92cf4145e1659d187911d3abffc3e19b688f798a27915d7",
     "fixture": "experiments/004-bounded-well-plan/probes/legacy_v6_tetris_record.json",
     "result": "the frozen record's own identity still equals this tree's version-6 Tetris identity, its recorded inputs replay, and every warning is an engine-Git advisory rather than a complaint about the record. Which of those advisories appears is a property of the engine checkout and not of the record -- the fixture records the engine as a working tree at a commit, so a checkout whose engine edits are later committed reports the recorded-vs-current advisory instead -- so the check compares against the verifier's own advisory vocabulary (engine_advisories, derived from runner._engine_warnings by a synthetic engine section that makes both of its advisory branches fire on any checkout) rather than one wording, and tests/test_integration.py::test_the_frozen_record_checks_tolerate_a_committed_engine and ::test_the_frozen_record_checks_tolerate_an_unversioned_engine pin the committed and Git-less engine states. The shared agent factory's source is byte-identical to the branch base, so the digest that record covers is unchanged; the new agent is declared in its objective module and built by the runner's per-agent dispatch instead, so the dispatch is part of the current writer's identity for both agents and not of that frozen version-6 one. A record that configures the plan agent is additionally required to claim a format version at or above the one that introduced it (runner.DECLARED_OBJECTIVES[...].introduced_in): no older writer could have built that agent, so the relabel itself is reported before any section is compared, while the Tetris agent's version-2 compatibility is preserved because its own version-2 writer already built it and wrote no objective.",
     "what_it_is": "a format_version 6 suite record written by the frozen Experiment 003-era writer (git archive of the branch base's src, whose tetris.py hashes to 3d32c1c3..., the digest Experiment 003's retained capture records), so it carries a declared objective section naming the Tetris objective and the source identity of the five modules that computed its placements"
@@ -537,7 +537,7 @@
     "This file is a distilled record, not the full run record: the evaluation's own run.json is ignored, disposable output holding one input mask per logical frame. The evidence is therefore re-derived from the code rather than replayed from stored inputs -- retained_replay re-plays the retained configuration and compares every outcome and metric -- and the temporary record the predeclaration cites is named by that block's cited_record for as long as this checkout keeps it.",
     "Two declared-objective agents cannot be configured in one suite: a suite record carries one objective section. A comparison of tetris and tetris_plan in one run is therefore not expressible, and this experiment compares the plan against Experiment 003's retained rows and against a re-run of Experiment 003's own configuration instead.",
     "The reported rows reproduce only with the Block Stack working tree the cited run record names: engine commit 8ca4158711c2d6339cab1ee8d78aa65bd624c89d, dirty: true, kind: working-tree. That working tree is not retained in this repository and its uncommitted local changes cannot be exported, so the native behaviour behind these rows cannot be reconstructed from a clean checkout of this project. The dependency is at least identified: 37 source files of that checkout and their sha256 digests are recorded in experiments/004-bounded-well-plan/probes/engine_fingerprint.json (combined sha256 ad99d375b2af46cadb32f6fb7592cbf6cd7050ee93fc7a6f120bc28f6817b15e), together with the commit and dirty flag above. No claim of reconstructability and no claim of clean reproducible-dependency CI is made anywhere in this record; the code and engine versions themselves stay where the writer put them, in the cited run record.",
-    "The plan's information policy is visible-information-only, and that guarantee is enforced by the code rather than stated: the plan's observation is the rendered field with the engine's two hidden rows erased (wellplan.visible_grid), and column_heights, field_features and well_reserve read that field alone, so a board's cells above the ceiling cannot reach a height, a phase, a reserve or a choice. Two boards that differ only above the ceiling are one board to the plan; the guarantee is derived in objective_mechanism.visible_only_observation and pinned by tests/test_wellplan.py::test_every_plan_feature_is_a_function_of_the_rendered_field and test_the_plan_agent_executes_the_same_choice_on_a_ceiled_board, both reproduced failing against git archive 1c50ee6d of this branch before the repair, and reached on the engine itself by the native integration test named in notes.md. The evaluation was re-measured under the corrected code more than once -- the earlier height accounting deliberately read the hidden rows and that reading is reversed here -- and the refactor_no_outcomes_changed block retains those runs' rows -- 12 of them -- and re-makes the comparison against this run's field for field, so the statement that the corrections changed no outcome is derived rather than asserted."
+    "The plan's information policy is visible-information-only, and that guarantee is enforced by the code rather than stated: the plan's observation is the rendered field with the engine's two hidden rows erased (wellplan.visible_grid), and column_heights, field_features and well_reserve read that field alone, so a board's cells above the ceiling cannot reach a height, a phase, a reserve or a choice. Two boards that differ only above the ceiling are one board to the plan; the guarantee is derived in objective_mechanism.visible_only_observation and pinned by tests/test_wellplan.py::test_every_plan_feature_is_a_function_of_the_rendered_field and test_the_plan_agent_executes_the_same_choice_on_a_ceiled_board, both reproduced failing against git archive 1c50ee6d of this branch before the repair, and reached on the engine itself by the native integration test named in notes.md. The evaluation was re-measured under the corrected code more than once -- the earlier height accounting deliberately read the hidden rows and that reading is reversed here -- and the refactor_no_outcomes_changed block retains those runs' rows -- 15 of them -- and re-makes the comparison against this run's field for field, so the statement that the corrections changed no outcome is derived rather than asserted."
   ],
   "metrics": {
     "lookahead": {
@@ -857,7 +857,7 @@
       "block_stack_ai.heuristic": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
       "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
       "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
-      "block_stack_ai.runner": "81a0bfbae21fc1afe0d48187f7a0e158394f5e7520cd4944ba502d8cdd8c4f77",
+      "block_stack_ai.runner": "4b7e610b64d7f3d1f92cf4145e1659d187911d3abffc3e19b688f798a27915d7",
       "block_stack_ai.wellplan": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7"
     },
     "weights": {
@@ -878,14 +878,14 @@
   },
   "predeclared_objective": {
     "capture_file": "experiments/004-bounded-well-plan/probes/predeclared_objective.json",
-    "capture_order": "the capture was written at 2026-10-01T10:29:20.102116+00:00, before the cited record's own created_at 2026-10-01T10:29:29.296449+00:00, and the record's own objective identity is the capture's",
-    "captured_at": "2026-10-01T10:29:20.102116+00:00",
-    "cited_record": "runs/20261001T103223460978Z-b332bb8a/run.json",
-    "cited_record_created_at": "2026-10-01T10:29:29.296449+00:00",
+    "capture_order": "the capture was written at 2026-10-07T08:56:19.005833+00:00, before the cited record's own created_at 2026-10-07T08:56:24.773387+00:00, and the record's own objective identity is the capture's",
+    "captured_at": "2026-10-07T08:56:19.005833+00:00",
+    "cited_record": "runs/20261007T085918221754Z-7ce40fab/run.json",
+    "cited_record_created_at": "2026-10-07T08:56:24.773387+00:00",
     "identity_coverage": "The capture records the digest of every module the plan's decisions are computed from, the same set the run's own objective.sources enumerates: block_stack_ai.agents, block_stack_ai.engine, block_stack_ai.heuristic, block_stack_ai.pathaware, block_stack_ai.pieces, block_stack_ai.runner, block_stack_ai.wellplan. 7 modules, produced by the runner's own identity walk rather than listed by hand; the walk excludes the sibling Tetris objective, and each digest is this tree's file at the moment of the capture",
     "module": "src/block_stack_ai/wellplan.py",
     "module_sha256": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7",
-    "note": "the declared objective -- the module, the modules its decisions are computed from, and the documented weights, plan constants and rationale -- captured from the unmodified tree before the evaluation run; no constant is revised against evaluation outcomes. The development seed set the constants were chosen on (odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23, disjoint from the ten evaluation seeds) is a declaration in notes.md and not retained evidence: no development run, candidate values or outcomes are kept, so the tuning step is stated and not auditable from this repository. This capture supersedes the 12 earlier ones the block's superseded_captures names, one for each run this evaluation superseded and each of a different design -- which is where the design every one of them preceded is described; every one of them published the same declared weights and constants, because no change that forced a re-capture touched one, and each named a rationale section retained beside the captures, so a substance-preserving prose correction to the section is recorded rather than read as a revised objective",
+    "note": "the declared objective -- the module, the modules its decisions are computed from, and the documented weights, plan constants and rationale -- captured from the unmodified tree before the evaluation run; no constant is revised against evaluation outcomes. The development seed set the constants were chosen on (odd seeds 1, 3, 5, 7, 9 and 15, 17, 19, 21, 23, disjoint from the ten evaluation seeds) is a declaration in notes.md and not retained evidence: no development run, candidate values or outcomes are kept, so the tuning step is stated and not auditable from this repository. This capture supersedes the 15 earlier ones the block's superseded_captures names, one for each run this evaluation superseded and each of a different design -- which is where the design every one of them preceded is described; every one of them published the same declared weights and constants, because no change that forced a re-capture touched one, and each named a rationale section retained beside the captures, so a substance-preserving prose correction to the section is recorded rather than read as a revised objective",
     "notes_section": "experiments/004-bounded-well-plan/notes.md#predeclared-objective",
     "notes_section_sha256": "c8b657b453d7c71dd58bae212a0cdb9eead75ab9feee5ec1ea8a18068099bb2f",
     "objective": {
@@ -909,7 +909,7 @@
       "block_stack_ai.heuristic": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
       "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
       "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
-      "block_stack_ai.runner": "81a0bfbae21fc1afe0d48187f7a0e158394f5e7520cd4944ba502d8cdd8c4f77",
+      "block_stack_ai.runner": "4b7e610b64d7f3d1f92cf4145e1659d187911d3abffc3e19b688f798a27915d7",
       "block_stack_ai.wellplan": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7"
     },
     "superseded_captures": [
@@ -924,13 +924,16 @@
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-piece-counter.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-preview-docstring.json",
       "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-summed-wording.json",
-      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-version-bump.json"
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-version-bump.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-live-identity.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-controller-section.json",
+      "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-controller-validation.json"
     ]
   },
   "refactor_no_outcomes_changed": {
     "artifact": "experiments/004-bounded-well-plan/probes/superseded_run_rows.json",
     "rows_identical_to_every_superseded_run": true,
-    "statement": "every superseded run's retained rows equal this run's, field for field, so each re-measurement this evaluation superseded -- every correction this record's history describes, the last being the visible-information observation that replaced the earlier height accounting's read of the engine's hidden rows -- changed no outcome: runs/20260929T171936702109Z-3733d12b/run.json, runs/20260929T174836231811Z-b6c35f6b/run.json, runs/20260930T010141245162Z-edcbfcfe/run.json, runs/20260930T020945782490Z-f908aba9/run.json, runs/20260930T041601202177Z-7bb33021/run.json, runs/20260930T044258461859Z-332ee653/run.json, runs/20260930T064941239339Z-dc40e8da/run.json, runs/20260930T100945820449Z-b0cd2600/run.json, runs/20261001T001038850583Z-949815c9/run.json, runs/20261001T020629406583Z-80e5bbc7/run.json, runs/20261001T101009486155Z-0462108b/run.json, runs/20261001T102558815871Z-904a2e61/run.json",
+    "statement": "every superseded run's retained rows equal this run's, field for field, so each re-measurement this evaluation superseded -- every correction this record's history describes, the last being the visible-information observation that replaced the earlier height accounting's read of the engine's hidden rows -- changed no outcome: runs/20260929T171936702109Z-3733d12b/run.json, runs/20260929T174836231811Z-b6c35f6b/run.json, runs/20260930T010141245162Z-edcbfcfe/run.json, runs/20260930T020945782490Z-f908aba9/run.json, runs/20260930T041601202177Z-7bb33021/run.json, runs/20260930T044258461859Z-332ee653/run.json, runs/20260930T064941239339Z-dc40e8da/run.json, runs/20260930T100945820449Z-b0cd2600/run.json, runs/20261001T001038850583Z-949815c9/run.json, runs/20261001T020629406583Z-80e5bbc7/run.json, runs/20261001T101009486155Z-0462108b/run.json, runs/20261001T102558815871Z-904a2e61/run.json, runs/20261001T103223460978Z-b332bb8a/run.json, runs/20261007T031507793687Z-6313191d/run.json, runs/20261007T084221261489Z-0834f8c5/run.json",
     "superseded_runs": [
       {
         "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-agent-move.json",
@@ -991,6 +994,21 @@
         "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-budget-wording.json",
         "created_at": "2026-10-01T10:23:05.766790+00:00",
         "run": "runs/20261001T102558815871Z-904a2e61/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-live-identity.json",
+        "created_at": "2026-10-01T10:29:29.296449+00:00",
+        "run": "runs/20261001T103223460978Z-b332bb8a/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-controller-section.json",
+        "created_at": "2026-10-07T03:12:15.846712+00:00",
+        "run": "runs/20261007T031507793687Z-6313191d/run.json"
+      },
+      {
+        "capture": "experiments/004-bounded-well-plan/probes/predeclared_objective.pre-controller-validation.json",
+        "created_at": "2026-10-07T08:39:24.402041+00:00",
+        "run": "runs/20261007T084221261489Z-0834f8c5/run.json"
       }
     ]
   },

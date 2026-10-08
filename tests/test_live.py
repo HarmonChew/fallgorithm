@@ -112,7 +112,7 @@ def test_native_controller_exits_when_input_pipe_closes(desktop_environment):
         assert state.frame == 0
 
 
-def test_live_session_records_the_clear_size_histogram_and_verifies(tmp_path):
+def test_live_session_records_the_clear_size_histogram_and_verifies(tmp_path, monkeypatch):
     """A completed live game records the same histogram a suite episode does.
 
     Live play builds its own episode, so it is the second path that writes
@@ -146,20 +146,42 @@ def test_live_session_records_the_clear_size_histogram_and_verifies(tmp_path):
     assert (sizes["singles"] + 2 * sizes["doubles"] + 3 * sizes["triples"]
             + 4 * sizes["tetrises"]) == episode["result"]["lines"]
     assert record["summary"]["greedy"]["clear_sizes"] == sizes
+    # This agent declares no objective, so the controller section is the only
+    # source identity the record carries; it is what reports a changed live
+    # module for a greedy, random or lookahead live game.
+    assert record["format_version"] == runner.LIVE_SUITE_FORMAT_VERSION
+    assert "objective" not in record
+    assert record["controller"] == runner._controller_identity()
+    assert "block_stack_ai.live" in record["controller"]["sources"]
+    verify_run(records[0])
+    live = sys.modules["block_stack_ai.live"]
+    mutated = tmp_path / "live-changed.py"
+    mutated.write_text(Path(live.__file__).read_text(encoding="utf-8")
+                       + "\n# the controller changed after the game\n",
+                       encoding="utf-8")
+    with monkeypatch.context() as patch:
+        patch.setattr(live, "__file__", str(mutated))
+        with pytest.raises(VerificationError,
+                           match=r"controller\.sources\.block_stack_ai\.live"):
+            verify_run(records[0])
     verify_run(records[0])
 
 
-def test_live_tetris_session_records_the_objective_and_verifies(tmp_path):
-    """A live Tetris game declares the same objective a headless suite does.
+def test_live_tetris_session_records_the_objective_and_verifies(tmp_path, monkeypatch):
+    """A live Tetris game declares the same objective a headless suite does, plus live.
 
     Live play is the second path that writes a suite record, so the declared
     objective has to be recorded there too: without it a live Tetris record would
     verify under whatever objective is current whenever the change happens to
     preserve the replayed choices, and without the objective's source identity it
     would verify under a changed formula whenever the weights were unchanged. The
-    desktop protocol is driven with a plain native mirror, and the record must
-    name the declaring module, its weights and the source identity, and replay
-    under ``verify_run``.
+    live session also emits its own format version, whose identity adds the module
+    that drove the game: every observation reached the agent through
+    ``LiveSession.receive`` here, and a change to that controller that preserved
+    the replayed masks has to be reported. The desktop protocol is driven with a
+    plain native mirror, and the record must name the declaring module, its
+    weights, the live-seeded source identity and version 8, and replay under
+    ``verify_run`` — which reports a changed controller and nothing else.
     """
     limit = 600
     config = SuiteConfig(GAME, limit, (2,), ("tetris",))
@@ -178,11 +200,35 @@ def test_live_tetris_session_records_the_objective_and_verifies(tmp_path):
     records = list((tmp_path / "runs").glob("*/run.json"))
     assert len(records) == 1
     record = json.loads(records[0].read_text(encoding="utf-8"))
+    assert record["format_version"] == runner.LIVE_SUITE_FORMAT_VERSION
     assert record["objective"] == {
         "module": "block_stack_ai.tetris", "weights": tetris_weights_record(),
-        "sources": runner._objective_sources(runner._IDENTITY_DISPATCH),
+        "sources": runner._objective_sources(runner._IDENTITY_LIVE),
     }
+    assert "block_stack_ai.live" in record["objective"]["sources"]
+    assert record["controller"] == runner._controller_identity()
+    assert "block_stack_ai.live" in record["controller"]["sources"]
     assert sorted(record["summary"]) == ["tetris"]
+    verify_run(records[0])
+
+    # A change to the live controller's own source is reported for the record it
+    # wrote, while the record itself is untouched. The edit really changes when
+    # observations reach the agent — every other state is dropped — and the replay
+    # never reads this file, so the recorded masks still replay and the identity
+    # is the only thing that can report what the controller did.
+    live = sys.modules["block_stack_ai.live"]
+    mutated = tmp_path / "live-changed.py"
+    changed = Path(live.__file__).read_text(encoding="utf-8").replace(
+        '        if kind == "STATE":\n',
+        '        if kind == "STATE" and len(self.inputs) % 2 == 0:\n',
+    )
+    assert changed != Path(live.__file__).read_text(encoding="utf-8")
+    mutated.write_text(changed, encoding="utf-8")
+    with monkeypatch.context() as patch:
+        patch.setattr(live, "__file__", str(mutated))
+        with pytest.raises(VerificationError,
+                           match=r"objective\.sources\.block_stack_ai\.live"):
+            verify_run(records[0])
     verify_run(records[0])
 
 
@@ -234,7 +280,18 @@ def test_live_tetris_session_snapshots_the_objective_at_begin(tmp_path, monkeypa
 
 @pytest.mark.parametrize("reload_mode", ["complete", "objective_only", "agents_only"])
 def test_live_session_refreshes_loaded_identity_at_each_begin(tmp_path, reload_mode):
-    """A reused session records reloaded code and refuses inconsistent reloads."""
+    """A reused session records reloaded objective code, or is refused outright.
+
+    A session built before a reload keeps running the class it was constructed
+    from. Reloading the objective modules without the live module leaves the
+    running controller's references stale in its module namespaces, so the next
+    BEGIN is refused as an inconsistent closure; reloading the live module
+    replaces the class while the retained instance still executes the previous
+    ``receive``, so the session is refused before any identity is captured and a
+    newly constructed session records the reloaded identity and runs the
+    reloaded objective. Only a complete reload followed by a fresh session is a
+    describable implementation.
+    """
     package = Path(sys.modules["block_stack_ai"].__file__).parent
     source_root = tmp_path / "src"
     shutil.copytree(package, source_root / package.name,
@@ -267,6 +324,14 @@ try:
     changed = text.replace('"tetrises": 8.0,', '"tetrises": 9.0,')
     assert changed != text
     source.write_text(changed, encoding="utf-8")
+    # The live module changes too, so the retained session's class and the
+    # reloaded module's identity are different implementations.
+    live_source = Path(live.__file__)
+    live_source.write_text(
+        live_source.read_text(encoding="utf-8")
+        + "\n# reloaded while a session was retained\n",
+        encoding="utf-8",
+    )
     modules = {"complete": (tetris, agents, runner, live),
                "objective_only": (tetris,), "agents_only": (agents,)}[mode]
     for module in modules:
@@ -282,8 +347,25 @@ try:
         assert not session.active
         assert len(session.records) == 1
     else:
-        expected = runner._objective_section(config, loaded=True)["objective"]
+        expected = runner._objective_section(
+            config, loaded=True, shape=runner._IDENTITY_LIVE)["objective"]
         assert expected["sources"] != original["sources"]
+        first_record = json.loads(session.records[0].read_text(encoding="utf-8"))
+        # The retained session runs the previous class's ``receive``. Its next
+        # BEGIN has to be refused rather than stamped with the reloaded module's
+        # digest, because the code that would choose the game's inputs is not the
+        # code the record would name.
+        try:
+            session.receive("BEGIN", initial)
+        except runner.VerificationError as error:
+            assert "reloaded after this session" in str(error), str(error)
+        else:
+            raise AssertionError("BEGIN accepted a session the live reload left stale")
+        assert not session.active
+        assert len(session.records) == 1
+        # A new session runs the reloaded class and records the reloaded identity.
+        session.close()
+        session = live.LiveSession(config, root / "runs")
         session.receive("BEGIN", initial)
         assert type(session.agent) is agents.TetrisAgent
         calls = []
@@ -299,7 +381,7 @@ try:
         record = json.loads(session.records[-1].read_text(encoding="utf-8"))
         assert calls == [9.0], calls
         assert record["objective"] == expected, record["objective"]
-        assert json.loads(session.records[0].read_text())["objective"] == original
+        assert first_record["objective"] == original
         runner.verify_run(session.records[-1])
 finally:
     session.close()
@@ -312,3 +394,55 @@ finally:
              "BLOCKS_NATIVE_LIB": str(native_library_path())},
     )
     assert completed.returncode == 0, completed.stdout + completed.stderr
+
+
+def test_live_session_refuses_a_stale_controller_closure(tmp_path):
+    """An objective-less session refuses a controller reload it cannot describe.
+
+    The reviewer's finding: ``greedy``, ``random`` and ``lookahead`` declare no
+    objective, so their version-8 record's identity is the controller section
+    alone. Reloading ``agents`` without its importers leaves
+    ``runner.create_agent`` pointing at the previous function while the
+    controller walk would hash the reloaded ``agents`` module, so the record
+    would name bytes that did not build the agent. The loaded view of the
+    controller identity runs the same inconsistent-closure check the objective
+    identity runs, and this drives that check through a separate interpreter.
+    """
+    package = Path(sys.modules["block_stack_ai"].__file__).parent
+    source_root = tmp_path / "src"
+    shutil.copytree(package, source_root / package.name,
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    code = r'''
+import importlib
+from pathlib import Path
+import sys
+from block_stack_ai import agents, live, runner
+
+root = Path(sys.argv[1])
+game = {"ruleset": "classic_ntsc_extended", "mode": "endless",
+        "start_level": 18, "height": 0}
+config = runner.SuiteConfig(game, 1, (2,), ("lookahead",))
+session = live.LiveSession(config, root / "runs")
+try:
+    initial = session.game.save_state()
+    importlib.reload(agents)
+    try:
+        session.receive("BEGIN", initial)
+    except runner.VerificationError as error:
+        assert "inconsistent" in str(error), str(error)
+        assert "runner.create_agent" in str(error), str(error)
+        print("refused")
+    else:
+        raise AssertionError("the controller section accepted a stale closure")
+finally:
+    session.close()
+'''
+    completed = subprocess.run(
+        [sys.executable, "-c", code, str(tmp_path)], cwd=tmp_path,
+        capture_output=True, text=True, timeout=30,
+        env={**os.environ, "PYTHONPATH": str(source_root),
+             "BLOCK_STACK_ROOT": str(engine_root()),
+             "BLOCKS_NATIVE_LIB": str(native_library_path())},
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert "refused" in completed.stdout
