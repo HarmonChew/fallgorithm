@@ -11,10 +11,11 @@ from typing import Any
 from .engine import EngineError, PROJECT_ROOT, create_game, engine_executable
 from .heuristic import weights_record
 from .runner import (
-    SUITE_FORMAT_VERSION, SuiteConfig, VerificationError, _CLEAR_SIZES_FIELD,
-    _count_clear_sizes, _count_events, _empty_clear_sizes, _empty_event_counts,
-    _hash, _objective_section, _placed_pieces, _record_versions, _summarize,
-    _terminal_reason, build_agent, load_config, parse_config, save_record,
+    LIVE_SUITE_FORMAT_VERSION, SuiteConfig, VerificationError, _CLEAR_SIZES_FIELD,
+    _IDENTITY_LIVE, _controller_section, _count_clear_sizes, _count_events,
+    _empty_clear_sizes, _empty_event_counts, _hash, _objective_section,
+    _placed_pieces, _record_versions, _summarize, _terminal_reason, build_agent,
+    load_config, parse_config, save_record,
 )
 
 
@@ -44,6 +45,20 @@ class LiveSession:
         self.game.close()
 
     def receive(self, kind: str, snapshot: bytes) -> int | None:
+        if type(self) is not LiveSession:
+            # ``importlib.reload(live)`` replaces the class while an existing
+            # session keeps executing the previous class's ``receive``; every
+            # global name resolved below would come from the reloaded module, so
+            # an identity captured here would name controller bytes that did not
+            # drive the inputs. Refuse rather than record, exactly as a partial
+            # reload of the objective's modules is refused: only a new session
+            # runs the current class.
+            raise VerificationError(
+                "The live module was reloaded after this session was built: the "
+                "session still executes the previous LiveSession.receive, so a "
+                "record would name controller bytes that did not drive its inputs. "
+                "Construct a new LiveSession."
+            )
         if kind == "BEGIN":
             if self.active:
                 raise VerificationError("Desktop restarted without ending the current live game")
@@ -54,8 +69,15 @@ class LiveSession:
             # policy too, not just a reset of the frame controller's counters.
             # Snapshot the loaded code for this game and reject partial reloads
             # before creating its agent. A reload between games changes this
-            # identity; a file edit without a reload does not.
-            self.objective = _objective_section(self.config, loaded=True)
+            # identity; a file edit without a reload does not. The live shape
+            # adds this module to the dispatch-seeded walk, so the controller
+            # that hands the agent every observation is covered too. The
+            # controller section is separate from the objective: it is the one
+            # every live record carries, including the games whose agents
+            # declare no objective at all.
+            self.objective = _objective_section(
+                self.config, loaded=True, shape=_IDENTITY_LIVE)
+            self.controller = _controller_section(loaded=True)
             self.agent = build_agent(self.name, self.seed)
             self.inputs = []
             self.events = _empty_event_counts()
@@ -106,7 +128,7 @@ class LiveSession:
             _CLEAR_SIZES_FIELD: self.clear_sizes.copy(),
         }
         record = {
-            "format_version": SUITE_FORMAT_VERSION,
+            "format_version": LIVE_SUITE_FORMAT_VERSION,
             "created_at": self.created_at,
             "configuration": self.config.to_dict(),
             "versions": self.versions,
@@ -115,10 +137,15 @@ class LiveSession:
             "summary": _summarize([episode]),
             # Live play is the second path that writes a suite record, so a live
             # game whose agent declares an objective of its own declares it
-            # exactly as a headless suite does.
+            # exactly as a headless suite does, plus this module: the record's
+            # version keys the shape, and the session's writer emits the shape
+            # that covers the code which drove the game. The controller section
+            # is written for every live game, because the greedy, random and
+            # lookahead agents have no objective section to carry it.
             # It is the identity captured at this game's BEGIN, not a fresh read: a
             # covered module edited while the session is alive must not be
             # recorded as the code that chose the inputs.
+            **self.controller,
             **self.objective,
         }
         path = save_record(record, self.runs_dir)

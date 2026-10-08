@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-10-07T08:56:19.005833+00:00",
+  "captured_at": "2026-10-07T08:39:18.780232+00:00",
   "module": "src/block_stack_ai/wellplan.py",
   "module_sha256": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7",
   "note": "the declared objective -- the module, the modules its decisions are computed from, and the documented weights, plan constants and rationale -- captured from the unmodified tree before the evaluation run; no constant is revised against evaluation outcomes",
@@ -26,7 +26,7 @@
     "block_stack_ai.heuristic": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
     "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
     "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
-    "block_stack_ai.runner": "4b7e610b64d7f3d1f92cf4145e1659d187911d3abffc3e19b688f798a27915d7",
+    "block_stack_ai.runner": "414e3d0895f18addfdd1092edf4ed302948657163f6c6635ab74b9799a068b6b",
     "block_stack_ai.wellplan": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7"
   }
 }
