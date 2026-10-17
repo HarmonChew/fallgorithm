@@ -140,7 +140,8 @@ module; construct a new session. The controller identity's loaded view runs the
 same inconsistent-closure refusal the objective's does, so reloading a
 controller dependency such as `block_stack_ai.agents` without its importers is
 refused instead of recorded, and a version-8 record must configure exactly one
-agent and one seed, the single game `play_live` runs. A version 3, 4, 5, 6, 7 or 8
+agent and one seed, the single game `play_live` runs and a session refuses to
+start with any other configuration. A version 3, 4, 5, 6, 7 or 8
 record must carry the placed-piece count, the clear-size histogram and — for a
 suite that configures an agent with its own declared objective — that objective,
 and a version-8 record must carry the controller section as well.
