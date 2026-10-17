@@ -6,6 +6,20 @@
     "height": 0
   },
   "frame_limit": 200000,
-  "seeds": [41, 43, 45],
-  "agents": ["lookahead", "tetris_plan"]
+  "seeds": [
+    42,
+    44,
+    46,
+    48,
+    50,
+    52,
+    54,
+    56,
+    58,
+    60
+  ],
+  "agents": [
+    "lookahead",
+    "tetris_plan"
+  ]
 }

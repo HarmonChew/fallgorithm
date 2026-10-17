@@ -4,7 +4,7 @@
     "report_only": "lookahead's mean lines, mean score and Tetris line rate are reported for context and carry no acceptance threshold",
     "secondary": "search_plan's Tetris line rate is at least tetris_plan's on the same seeds"
   },
-  "captured_at": "2026-10-17T15:05:38.162926+00:00",
+  "captured_at": "2026-10-17T15:10:26.855400+00:00",
   "config": {
     "agents": [
       "lookahead",
@@ -18,9 +18,16 @@
       "start_level": 18
     },
     "seeds": [
-      41,
-      43,
-      45
+      42,
+      44,
+      46,
+      48,
+      50,
+      52,
+      54,
+      56,
+      58,
+      60
     ]
   },
   "module": "block_stack_ai.searchplan",

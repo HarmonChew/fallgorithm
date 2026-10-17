@@ -1,0 +1,385 @@
+{
+  "configs": {
+    "baseline": {
+      "agents": [
+        "lookahead",
+        "tetris_plan"
+      ],
+      "frame_limit": 200000,
+      "game": {
+        "height": 0,
+        "mode": "endless",
+        "ruleset": "classic_ntsc_extended",
+        "start_level": 18
+      },
+      "seeds": [
+        41,
+        43,
+        45
+      ]
+    },
+    "search": {
+      "agents": [
+        "lookahead",
+        "search_plan"
+      ],
+      "frame_limit": 200000,
+      "game": {
+        "height": 0,
+        "mode": "endless",
+        "ruleset": "classic_ntsc_extended",
+        "start_level": 18
+      },
+      "seeds": [
+        41,
+        43,
+        45
+      ]
+    }
+  },
+  "decision_budget": {
+    "agents": [
+      "search_plan"
+    ],
+    "beam_width": 2,
+    "coverage": {
+      "all_configured_episodes": true,
+      "all_configured_seeds": true,
+      "budget_exhausted_decisions": 0
+    },
+    "depth": 3,
+    "expected_episodes": [
+      [
+        "search_plan",
+        41
+      ],
+      [
+        "search_plan",
+        43
+      ],
+      [
+        "search_plan",
+        45
+      ]
+    ],
+    "node_budget": 240,
+    "note": "One row per configured (agent, seed); decisions and nodes_expanded are deterministic and a fresh run reproduces them, while episode_seconds is measured on the reporting machine and is not reproducible across machines. The search is capped by the integer node budget, never by a wall clock.",
+    "per_episode": [
+      {
+        "agent": "search_plan",
+        "budget_exhausted_decisions": 0,
+        "decisions": 1292,
+        "episode_seconds": 10.742281,
+        "nodes_expanded": 49166,
+        "nodes_per_decision": 38.054,
+        "seed": 41
+      },
+      {
+        "agent": "search_plan",
+        "budget_exhausted_decisions": 0,
+        "decisions": 430,
+        "episode_seconds": 3.149101,
+        "nodes_expanded": 16264,
+        "nodes_per_decision": 37.823,
+        "seed": 43
+      },
+      {
+        "agent": "search_plan",
+        "budget_exhausted_decisions": 0,
+        "decisions": 1308,
+        "episode_seconds": 11.294407,
+        "nodes_expanded": 49740,
+        "nodes_per_decision": 38.028,
+        "seed": 45
+      }
+    ],
+    "schema": "fallgorithm.experiment005.decision-budget/1",
+    "seeds": [
+      41,
+      43,
+      45
+    ],
+    "totals": {
+      "budget_exhausted_decisions": 0,
+      "decisions": 3030,
+      "episodes": 3,
+      "nodes_expanded": 115170
+    }
+  },
+  "episodes_by_agent_seed": [
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 116,
+        "singles": 880,
+        "tetrises": 0,
+        "triples": 7
+      },
+      "frames": 111930,
+      "lines": 1133,
+      "pieces_placed": 2867,
+      "score": 3134474,
+      "seed": 41,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 33,
+        "singles": 212,
+        "tetrises": 0,
+        "triples": 2
+      },
+      "frames": 36710,
+      "lines": 284,
+      "pieces_placed": 744,
+      "score": 299115,
+      "seed": 43,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "clear_sizes": {
+        "doubles": 69,
+        "singles": 517,
+        "tetrises": 0,
+        "triples": 6
+      },
+      "frames": 71210,
+      "lines": 673,
+      "pieces_placed": 1717,
+      "score": 1229342,
+      "seed": 45,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 45,
+        "singles": 380,
+        "tetrises": 4,
+        "triples": 6
+      },
+      "frames": 53483,
+      "lines": 504,
+      "pieces_placed": 1291,
+      "score": 907955,
+      "seed": 41,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 10,
+        "singles": 126,
+        "tetrises": 1,
+        "triples": 2
+      },
+      "frames": 20224,
+      "lines": 156,
+      "pieces_placed": 429,
+      "score": 155320,
+      "seed": 43,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "clear_sizes": {
+        "doubles": 47,
+        "singles": 373,
+        "tetrises": 6,
+        "triples": 6
+      },
+      "frames": 56268,
+      "lines": 509,
+      "pieces_placed": 1307,
+      "score": 967158,
+      "seed": 45,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "clear_sizes": {
+        "doubles": 45,
+        "singles": 380,
+        "tetrises": 4,
+        "triples": 6
+      },
+      "frames": 53483,
+      "lines": 504,
+      "pieces_placed": 1291,
+      "score": 907955,
+      "seed": 41,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "clear_sizes": {
+        "doubles": 10,
+        "singles": 126,
+        "tetrises": 1,
+        "triples": 2
+      },
+      "frames": 20224,
+      "lines": 156,
+      "pieces_placed": 429,
+      "score": 155320,
+      "seed": 43,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "clear_sizes": {
+        "doubles": 47,
+        "singles": 373,
+        "tetrises": 6,
+        "triples": 6
+      },
+      "frames": 56268,
+      "lines": 509,
+      "pieces_placed": 1307,
+      "score": 967158,
+      "seed": 45,
+      "stopping_reason": "game_over"
+    }
+  ],
+  "metrics": {
+    "lookahead": {
+      "clear_sizes": {
+        "doubles": 218,
+        "singles": 1609,
+        "tetrises": 0,
+        "triples": 15
+      },
+      "frame_cap_stops": 0,
+      "frames_max": 111930,
+      "frames_mean": 73283.333,
+      "games": 3,
+      "lines_max": 1133,
+      "lines_mean": 696.667,
+      "lines_min": 284,
+      "lines_total": 2090,
+      "pieces_placed_mean": 1776.0,
+      "pieces_placed_total": 5328,
+      "score_mean": 1554310.333,
+      "score_total": 4662931,
+      "stopping_reasons": {
+        "game_over": 3
+      },
+      "tetris_line_rate": 0.0,
+      "tetris_lines": 0,
+      "tetrises_per_100_placed_pieces": 0.0,
+      "top_outs": 3
+    },
+    "search_plan": {
+      "clear_sizes": {
+        "doubles": 102,
+        "singles": 879,
+        "tetrises": 11,
+        "triples": 14
+      },
+      "frame_cap_stops": 0,
+      "frames_max": 56268,
+      "frames_mean": 43325.0,
+      "games": 3,
+      "lines_max": 509,
+      "lines_mean": 389.667,
+      "lines_min": 156,
+      "lines_total": 1169,
+      "pieces_placed_mean": 1009.0,
+      "pieces_placed_total": 3027,
+      "score_mean": 676811.0,
+      "score_total": 2030433,
+      "stopping_reasons": {
+        "game_over": 3
+      },
+      "tetris_line_rate": 0.037639,
+      "tetris_lines": 44,
+      "tetrises_per_100_placed_pieces": 0.363,
+      "top_outs": 3
+    },
+    "tetris_plan": {
+      "clear_sizes": {
+        "doubles": 102,
+        "singles": 879,
+        "tetrises": 11,
+        "triples": 14
+      },
+      "frame_cap_stops": 0,
+      "frames_max": 56268,
+      "frames_mean": 43325.0,
+      "games": 3,
+      "lines_max": 509,
+      "lines_mean": 389.667,
+      "lines_min": 156,
+      "lines_total": 1169,
+      "pieces_placed_mean": 1009.0,
+      "pieces_placed_total": 3027,
+      "score_mean": 676811.0,
+      "score_total": 2030433,
+      "stopping_reasons": {
+        "game_over": 3
+      },
+      "tetris_line_rate": 0.037639,
+      "tetris_lines": 44,
+      "tetrises_per_100_placed_pieces": 0.363,
+      "top_outs": 3
+    }
+  },
+  "note": "A development probe on seeds 41, 43 and 45, which are the retired attempt's development seeds and were not part of its held-out evaluation. It is kept separate from the final comparison; the final evaluation uses the original even held-out seeds 42-60 with the same agents and settings.",
+  "objective_record": {
+    "module": "block_stack_ai.searchplan",
+    "sources": {
+      "block_stack_ai.agents": "2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329",
+      "block_stack_ai.engine": "6c6ababa0e527053892a5a77fecf58e7c5079473f6c0c51647c38c6fab0ac60b",
+      "block_stack_ai.heuristic": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
+      "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
+      "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
+      "block_stack_ai.runner": "4b7e610b64d7f3d1f92cf4145e1659d187911d3abffc3e19b688f798a27915d7",
+      "block_stack_ai.searchplan": "8ab1b80b6f7e074332e518f621b8beee3223ec796027d8e2a8c43c016112804f",
+      "block_stack_ai.wellplan": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7"
+    },
+    "weights": {
+      "beam_width": 2,
+      "depth": 3,
+      "leaf_module": "block_stack_ai.wellplan",
+      "leaf_weights": {
+        "aggregate_height": -0.5,
+        "bumpiness": -0.5,
+        "drought_bound": 9,
+        "height_budget": 8,
+        "holes": -2.0,
+        "max_height": -1.0,
+        "overflow": -2.0,
+        "premature_clear": -1.0,
+        "reserve": 6.0,
+        "reserve_cap": 4,
+        "tetrises": 8.0,
+        "tie_break": "first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending",
+        "well_column": 9
+      },
+      "node_budget": 240,
+      "tie_break": "highest searched value; ties keep the first placement in canonical enumeration order (orientation ascending, then column ascending)",
+      "unknown_pieces": [
+        "I",
+        "J",
+        "L",
+        "O",
+        "S",
+        "T",
+        "Z"
+      ],
+      "unknown_weight": 0.14285714285714285
+    }
+  },
+  "run_identifiers": {
+    "baseline": "runs/20261017T150704244698Z-023ddfba",
+    "search": "runs/20261017T150804309993Z-e5fc697c"
+  },
+  "schema": "fallgorithm.experiment005.development-probe/1",
+  "seeds": [
+    41,
+    43,
+    45
+  ]
+}

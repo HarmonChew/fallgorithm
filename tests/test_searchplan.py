@@ -263,8 +263,12 @@ def test_a_negative_primary_comparison_is_retained_as_negative():
 def test_configs_are_declared_for_the_held_out_seeds():
     baseline = json.loads((e5.EXPERIMENT_ROOT / "config.json").read_text(encoding="utf-8"))
     search = json.loads((e5.EXPERIMENT_ROOT / "config-search.json").read_text(encoding="utf-8"))
-    assert baseline["seeds"] == [41, 43, 45]
-    assert search["seeds"] == [41, 43, 45]
+    held_out = [42, 44, 46, 48, 50, 52, 54, 56, 58, 60]
+    assert baseline["seeds"] == held_out
+    assert search["seeds"] == held_out
+    # The retired attempt's development seeds stay out of the evaluation sample.
+    assert not ({41, 43, 45} & set(held_out))
+    assert len(held_out) == 10 and len(set(held_out)) == 10
     assert baseline["agents"] == ["lookahead", "tetris_plan"]
     assert search["agents"] == ["lookahead", "search_plan"]
     # The baseline config is parseable by the stock runner, which is what keeps

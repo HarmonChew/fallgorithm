@@ -55,11 +55,19 @@ that attempt is reused.
 
 `experiments/005-search-plan/config.json` re-measures the unchanged agents —
 `lookahead` from Experiment 002 and `tetris_plan` from Experiment 004 — on the
-held-out seeds 41, 43 and 45 with Experiment 004's game settings
-(`classic_ntsc_extended`, endless, start level 18, height 0) and the same
-200000-frame safety cap. `config-search.json` runs `lookahead` and `search_plan`
-on the same seeds and settings. The two configurations are run as one
-evaluation; the search record is the one whose objective is declared.
+original held-out seeds, the even numbers 42, 44, 46, 48, 50, 52, 54, 56, 58 and
+60, with Experiment 004's game settings (`classic_ntsc_extended`, endless, start
+level 18, height 0) and the same 200000-frame safety cap. `config-search.json`
+runs `lookahead` and `search_plan` on the same seeds and settings. The two
+configurations are run as one evaluation; the search record is the one whose
+objective is declared.
+
+Seeds 41, 43 and 45 are the retired attempt's *development* seeds. A three-seed
+development probe on them was measured under the implementation commit; it is
+retained in [`probes/development_three_seed_probe.json`](probes/development_three_seed_probe.json)
+and is explicitly **not** the experiment's comparison. The final ten-seed run
+below uses only the held-out even seeds, so the development sample is kept
+separate and the evaluation sample is not quietly reduced.
 
 The acceptance rule was captured before the evaluation in
 [`probes/predeclared_objective.json`](probes/predeclared_objective.json), with
@@ -102,7 +110,11 @@ requirements, and the archive states each one and its resolution. In short:
 
 ## Results
 
-To be recorded from the measured run. `result.json` will hold the per-episode
-rows, the derived metrics, the comparison, the decision-budget block, the
+Pending the ten-seed held-out evaluation on seeds 42-60. The three-seed
+development probe is retained separately as
+`probes/development_three_seed_probe.json`: its `search_plan` rows match
+`tetris_plan`'s on those three development seeds, and it is reported as a probe,
+not as the comparison. `result.json` will hold the per-episode rows of the final
+run, the derived metrics, the comparison, the decision-budget block, the
 objective record, the engine dependency fingerprint and the limitations; this
 section will state the measured numbers from those rows.

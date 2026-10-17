@@ -40,13 +40,15 @@ fresh implementation and evidence:
    `block_stack_ai.wellplan` digest the stock walk drops as a sibling objective,
    and the dedicated verifier compares that superset. A regression asserts the
    well plan's digest is present and equal to the file on the tree.
-2. **MEDIUM — a wall-clock timing cap did not prove every held-out seed was
+2. **MEDIUM — a wall-clock timing cap did not prove every configured seed was
    searched.** The retired attempt capped decisions by time, so a slow machine
-   could have changed what ran. The fresh search is capped by a deterministic
-   integer node budget, and its `decision_budget` block records one row per
-   configured seed with decision and node counts and a coverage assertion. The
-   verifier re-runs the search and compares the counts exactly; wall-clock seconds
-   are advisory and marked as such.
+   could have changed what ran, and the review could not establish that all of
+   its development seeds were covered. The fresh search is capped by a
+   deterministic integer node budget, and its `decision_budget` block records one
+   row per configured seed with decision and node counts and a coverage
+   assertion. The verifier re-runs the search and compares the counts exactly;
+   wall-clock seconds are advisory and marked as such. The development probe on
+   seeds 41-45 is retained separately from the held-out evaluation on 42-60.
 3. **MEDIUM — the documented generators did not reproduce the saved schema or
    decision-time fields.** The fresh [`probes/evidence.py`](probes/evidence.py)
    is the only writer of the retained artifacts: `fingerprint`, `predeclare`,
