@@ -1,0 +1,159 @@
+{
+  "configuration": {
+    "agents": [
+      "lookahead",
+      "search_plan"
+    ],
+    "frame_limit": 200000,
+    "game": {
+      "height": 0,
+      "mode": "endless",
+      "ruleset": "classic_ntsc_extended",
+      "start_level": 18
+    },
+    "seeds": [
+      41,
+      43,
+      45
+    ]
+  },
+  "coverage": {
+    "lookahead": [
+      41,
+      43,
+      45
+    ],
+    "search_plan": [
+      41,
+      43,
+      45
+    ]
+  },
+  "engine_fingerprint": "7b4a71e9698de3e3d4a3b2bad0e7edee17fd9ecb7805506182806899343dbadf",
+  "kind": "suite",
+  "label": "development-search",
+  "note": "Development probe on the retired attempt's development seeds 41, 43 and 45 under the pre-fix implementation; not part of the held-out comparison.",
+  "outcomes": [
+    {
+      "agent": "lookahead",
+      "final_state_hash": "17b8298ce801d6b0",
+      "frames": 111930,
+      "lines": 1133,
+      "pieces_placed": 2867,
+      "score": 3134474,
+      "seed": 41,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "7c361a0e3a38fcc8",
+      "frames": 36710,
+      "lines": 284,
+      "pieces_placed": 744,
+      "score": 299115,
+      "seed": 43,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "a564fb20d5cd4842",
+      "frames": 71210,
+      "lines": 673,
+      "pieces_placed": 1717,
+      "score": 1229342,
+      "seed": 45,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "60575a460743cbfd",
+      "frames": 53483,
+      "lines": 504,
+      "pieces_placed": 1291,
+      "score": 907955,
+      "seed": 41,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "cc92edf2daf40554",
+      "frames": 20224,
+      "lines": 156,
+      "pieces_placed": 429,
+      "score": 155320,
+      "seed": 43,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "f87530beb6f6fc6e",
+      "frames": 56268,
+      "lines": 509,
+      "pieces_placed": 1307,
+      "score": 967158,
+      "seed": 45,
+      "stopping_reason": "game_over"
+    }
+  ],
+  "record_bytes": 3859920,
+  "record_file": "run.json.gz",
+  "record_sha256": "30325ef691f529b0af52b446a1849ee7ed287c04e5400f42dc2b6fa55087726e",
+  "replays": [
+    {
+      "agent": "lookahead",
+      "file": "seed-41-lookahead.rep",
+      "seed": 41,
+      "sha256": "c68348c86e079534a7f423d1a00395e2a73179fee0f5c76a93fa6e024d9a229d"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-43-lookahead.rep",
+      "seed": 43,
+      "sha256": "b8b01053c93a903daee2b2c90b720a29a8d4a1e18c7231ae9daeb1115ff6d8bc"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-45-lookahead.rep",
+      "seed": 45,
+      "sha256": "c1657c1170021aee59750fbc44ba0bbef1616900260e6a30ded1c7fd731ac283"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-41-search_plan.rep",
+      "seed": 41,
+      "sha256": "1592d427a8a44a755c49aceb9f5d7784fa6ed970cf9f01c27013d2a75fb4d56b"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-43-search_plan.rep",
+      "seed": 43,
+      "sha256": "9ec4ca64479742bc5edbf405a352b1a75a11715688cf8c03da83186638251381"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-45-search_plan.rep",
+      "seed": 45,
+      "sha256": "5955881e7d52778e36a792681a54325bacce11f899ee5fbb0fb3b8b56da27667"
+    }
+  ],
+  "retained_at": "2026-10-17T16:18:19.299560+00:00",
+  "schema": "fallgorithm.experiment005.retained-record/1",
+  "source_run": "20261017T150804309993Z-e5fc697c",
+  "verify": {
+    "decompress": "gunzip -c experiments/005-search-plan/records/development-search/run.json.gz > /tmp/run.json",
+    "record": "python -m block_stack_ai.experiment005 verify /tmp/run.json",
+    "replay": "each .rep was exported by `export-replay` after a full Python replay verify and a native headless final-hash comparison"
+  },
+  "versions": {
+    "engine": {
+      "commit": "8ca4158711c2d6339cab1ee8d78aa65bd624c89d",
+      "dirty": true,
+      "kind": "working-tree"
+    },
+    "fallgorithm": {
+      "commit": "8bf42e8e2987aefac9b1eeb1a2db7cc15897b16d",
+      "dirty": false,
+      "kind": "committed"
+    }
+  }
+}

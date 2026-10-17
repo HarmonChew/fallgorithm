@@ -249,10 +249,17 @@ def search_choice(grid: tuple[tuple[int, ...], ...], piece: str, next_piece: str
                       preview_board, next_level))
     # The beam is taken from the exact two-piece values before the unknown ply is
     # paid for, so a truncated search still compares against the plan's own
-    # two-piece ranking rather than against an unexpanded branch.
+    # two-piece ranking rather than against an unexpanded branch. Within the beam
+    # the chosen path is the one with the highest total after the expectation is
+    # added: the comparison is against the running best total, not against the
+    # first path's two-piece value, because the expectation is usually negative
+    # and a two-piece-value comparison would never let a branch overtake the
+    # first one. If no branch is fully evaluated because the budget refused an
+    # unseen piece, the exact two-piece ranking stands.
     paths.sort(key=lambda item: (-item[0], item[1]))
     beam = paths[:BEAM_WIDTH]
     best = beam[0]
+    best_total: float | None = None
     for value, order, placement, settled, preview, preview_board, next_level in beam:
         if preview is None:
             continue
@@ -277,8 +284,9 @@ def search_choice(grid: tuple[tuple[int, ...], ...], piece: str, next_piece: str
         if len(leaf_values) != len(unknown_pieces()):
             continue
         total = value + unknown_value(leaf_values)
-        if total > best[0]:
-            best = (total, order, placement, settled, preview, preview_board, next_level)
+        if best_total is None or total > best_total:
+            best, best_total = (total, order, placement, settled, preview,
+                                preview_board, next_level), total
     return SearchDecision(best[2], budget.used, budget.exhausted)
 
 

@@ -108,13 +108,60 @@ requirements, and the archive states each one and its resolution. In short:
   `hidden_rows` and asserts one mask and one choice, and an integration test does
   the same on a native state whose hidden buffer really holds minos.
 
+## Corrections to the frozen run
+
+The planner was frozen at commit `5feb12b` and the held-out even-seed comparison
+was measured with it. While checking why `search_plan`'s rows matched
+`tetris_plan`'s on every seed, a defect was found in the frozen search: the
+unknown-ply expectation was computed, but each branch's total was compared
+against the *first* branch's two-piece value instead of against the running best
+total. Because the expectation is usually negative, no branch could ever
+overtake the first one, so the extra ply never changed a choice and the frozen
+run measured a no-op search rather than a deeper one.
+
+The comparison was corrected to track the best total across the beam, and a
+regression pins that the unseen ply can change a choice (a board where two T
+placements tie on the two-piece value and the expectation selects the second).
+A second defect was fixed in the same round: the pre-fix launcher wrote the
+search objective section into the baseline suite's record as well, so a baseline
+record could no longer be checked by the ordinary verifier. The launcher now
+writes the stock objective section for a suite that declares no search agent.
+
+The frozen run is not discarded: its complete record and per-episode replay
+files are retained under [`records/frozen-prefix-baseline`](records/frozen-prefix-baseline)
+and [`records/frozen-prefix-search`](records/frozen-prefix-search), with a
+manifest that names it as the pre-fix measurement. It is superseded as the
+experiment's comparison by the fixed held-out run, whose records are retained
+under `records/held-out-*`. The development probe on seeds 41-45 is retained
+separately under [`records/development-baseline`](records/development-baseline)
+and [`records/development-search`](records/development-search).
+
+## Retained records
+
+`probes/evidence.py retain-records` writes one directory per run: the complete
+run record gzipped, one `.rep` replay file per episode, and a `manifest.json`
+with the coverage, outcomes, configuration, engine fingerprint and the exact
+verification commands. Every replay was exported through the engine's own
+replay writer after a full Python replay verify and a native final-hash
+comparison. Verify a retained record with:
+
+```sh
+gunzip -c records/<label>/run.json.gz > /tmp/run.json
+python -m block_stack_ai.experiment005 verify /tmp/run.json
+```
+
+The search records are checked by the dedicated verifier above; the baseline
+records verify through `block-stack-ai verify /tmp/run.json`. A pre-fix record
+additionally needs the code it was measured with: its manifest names the
+record's own `versions.fallgorithm.commit`, and that commit is in this branch's
+history.
+
 ## Results
 
-Pending the ten-seed held-out evaluation on seeds 42-60. The three-seed
-development probe is retained separately as
-`probes/development_three_seed_probe.json`: its `search_plan` rows match
-`tetris_plan`'s on those three development seeds, and it is reported as a probe,
-not as the comparison. `result.json` will hold the per-episode rows of the final
-run, the derived metrics, the comparison, the decision-budget block, the
-objective record, the engine dependency fingerprint and the limitations; this
-section will state the measured numbers from those rows.
+Pending the fixed ten-seed held-out evaluation on seeds 42-60. The pre-fix
+frozen run and the development probe are retained separately as described above;
+their `search_plan` rows match `tetris_plan`'s and they are not the experiment's
+comparison. `result.json` will hold the per-episode rows of the fixed run, the
+derived metrics, the comparison, the decision-budget block, the objective
+record, the engine dependency fingerprint, the superseded pre-fix run and the
+limitations; this section will state the measured numbers from those rows.

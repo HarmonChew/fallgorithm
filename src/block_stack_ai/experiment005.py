@@ -111,25 +111,34 @@ def _build_record_registered(
 
     The objective identity is read with ``loaded=True`` before the first choice,
     as the runner's own writer reads it, so the record names the bytes the
-    interpreter loaded for this process. The decision-budget block is generated
-    from the same run's counters.
+    interpreter loaded for this process. A configuration that selects the search
+    agent gets the search objective and the generated decision-budget block; a
+    baseline configuration that selects only the stock agents gets the standard
+    objective section the stock writer emits, so that record still verifies
+    through the ordinary ``block-stack-ai verify`` path.
     """
     config = runner.load_config(config_path)
     if not isinstance(config, runner.SuiteConfig):
         raise ValueError("Experiment 005 runs suite configurations only")
+    declared = runner._declared_agent(config)
     record: dict[str, Any] = {
         "created_at": datetime.now(timezone.utc).isoformat(),
         "configuration": config.to_dict(),
         "versions": runner._record_versions(),
         "format_version": runner.SUITE_FORMAT_VERSION,
         "heuristic": runner.weights_record(),
-        "objective": searchplan.objective_record(loaded=True),
     }
+    if declared == searchplan.SEARCH_AGENT:
+        record["objective"] = searchplan.objective_record(loaded=True)
+    else:
+        record.update(runner._objective_section(config, loaded=True,
+                                                shape=runner._IDENTITY_DISPATCH))
     episodes, budget_rows = run_suite_with_budget(config, game_factory)
     record["episodes"] = episodes
     record["summary"] = runner._summarize(episodes)
-    record["decision_budget"] = searchplan.budget_report(
-        config, searchplan.SEARCH_AGENT, budget_rows)
+    if declared == searchplan.SEARCH_AGENT:
+        record["decision_budget"] = searchplan.budget_report(
+            config, searchplan.SEARCH_AGENT, budget_rows)
     return runner.save_record(record, runs_dir)
 
 
@@ -167,13 +176,22 @@ def _verify_record_registered(
             f"not {record.get('format_version')!r}")
     try:
         config = runner.parse_config(record["configuration"])
-        episodes = record["episodes"]
-        summary = record["summary"]
-        budget = record["decision_budget"]
     except (KeyError, TypeError, ValueError) as error:
         raise runner.VerificationError(f"Malformed run record in {path}: {error}") from error
     if not isinstance(config, runner.SuiteConfig):
         raise runner.VerificationError(f"Malformed run record in {path}: not a suite configuration")
+    if runner._declared_agent(config) != searchplan.SEARCH_AGENT:
+        # A baseline record carries the standard objective section the stock
+        # writer emits, so the stock verifier is the right check and is reused
+        # rather than re-derived here.
+        return runner.verify_run(path, game_factory)
+    try:
+        episodes = record["episodes"]
+        summary = record["summary"]
+        budget = record["decision_budget"]
+    except KeyError as error:
+        raise runner.VerificationError(
+            f"Malformed search record in {path}: missing {error}") from error
     differences = runner._compare_fields(record.get("heuristic"), runner.weights_record(),
                                          "heuristic")
     expected_objective = searchplan.objective_record(loaded=False)
@@ -422,14 +440,17 @@ def retained_rows(baseline: dict[str, Any], search: dict[str, Any]) -> list[dict
 
 def build_result_document(*, baseline: dict[str, Any], search: dict[str, Any],
                           predeclared: dict[str, Any], engine: dict[str, Any],
-                          baseline_004: dict[str, Any]) -> dict[str, Any]:
+                          baseline_004: dict[str, Any],
+                          superseded: dict[str, Any] | None = None) -> dict[str, Any]:
     """The retained Experiment 005 result, derived from the two run records.
 
     Every metric and comparison is computed from ``baseline`` and ``search``'s
     own episode rows, so a claim cannot enter the record without the rows that
     derive it. ``baseline_004`` is Experiment 004's published metric block,
     cited for context; the experiment's acceptance is decided by the re-measured
-    held-out seeds, never by the citation.
+    held-out seeds, never by the citation. ``superseded`` carries the earlier
+    measurement the comparison replaces, with its own rows and derived metrics,
+    so the superseded claim is as checkable as the current one.
     """
     rows = retained_rows(baseline, search)
     metrics = metrics_for(rows)
@@ -439,7 +460,7 @@ def build_result_document(*, baseline: dict[str, Any], search: dict[str, Any],
     plan_rate = metrics["tetris_plan"]["tetris_line_rate"]
     primary_met = search_lines > plan_lines
     secondary_met = search_rate >= plan_rate
-    return {
+    document = {
         "schema": RESULT_SCHEMA,
         "experiment": "005-search-plan",
         "status": "passed" if primary_met else "negative",
@@ -507,6 +528,28 @@ def build_result_document(*, baseline: dict[str, Any], search: dict[str, Any],
              "over the held-out seeds; the negative result is retained")
         ),
     }
+    if superseded is not None:
+        document["superseded"] = superseded
+    return document
+
+
+def superseded_block(*, baseline: dict[str, Any], search: dict[str, Any], reason: str,
+                     retained_records: dict[str, str]) -> dict[str, Any]:
+    """The earlier measurement a corrected comparison replaces.
+
+    The block carries the superseded run's own unique episode rows and the
+    metrics derived from them, the reason it was replaced, the commit it was
+    measured from and the retained record directories, so the old measurement is
+    kept checkable rather than overwritten.
+    """
+    rows = retained_rows(baseline, search)
+    return {
+        "reason": reason,
+        "pre_fix_commit": baseline.get("versions", {}).get("fallgorithm", {}).get("commit"),
+        "retained_records": retained_records,
+        "episodes_by_agent_seed": rows,
+        "metrics": metrics_for(rows),
+    }
 
 
 def check_result_document(document: dict[str, Any]) -> list[str]:
@@ -565,6 +608,13 @@ def check_result_document(document: dict[str, Any]) -> list[str]:
     if "engine_dependency" not in document or "combined_sha256" not in \
             document.get("engine_dependency", {}):
         problems.append("engine dependency fingerprint is missing")
+    superseded = document.get("superseded")
+    if superseded is not None:
+        superseded_rows = superseded.get("episodes_by_agent_seed")
+        if not isinstance(superseded_rows, list) or not superseded_rows:
+            problems.append("superseded rows are missing")
+        elif superseded.get("metrics") != metrics_for(superseded_rows):
+            problems.append("superseded metrics do not match its rows")
     return problems
 
 

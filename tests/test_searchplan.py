@@ -12,6 +12,7 @@ forward from the retired attempt.
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -120,6 +121,35 @@ def test_the_search_budget_is_deterministic_and_never_exceeded():
     tiny = searchplan.search_choice(grid, "T", "J", node_budget=1, **arguments)
     assert tiny.nodes_expanded == 1
     assert tiny.budget_exhausted
+
+
+def test_the_unknown_ply_can_change_the_choice():
+    """The expectation is compared against the running best, not the first path.
+
+    On a bottom-row stack whose column 9 is empty, two T placements tie on
+    Experiment 004's exact two-piece value: the plan keeps the first in canonical
+    order (orientation 2, column 1). The seen I preview leaves the two boards
+    different plausible unseen continuations, and the higher expectation belongs
+    to the other branch, so the search must return orientation 2, column 7. A
+    search that compared a branch total against the first branch's two-piece value
+    would keep the plan's choice, which is the defect this test pins.
+    """
+    rows = [[0] * WIDTH for _ in range(ROWS)]
+    for row in range(18, 22):
+        for column in range(WIDTH - 1):
+            rows[row][column] = 1
+    grid = tuple(tuple(row) for row in rows)
+    arguments = dict(drought=0, level=18, lines=0, start_level=18,
+                     first_delay_remaining=0, ruleset="classic_ntsc_extended",
+                     mode="endless")
+    plan = wellplan.plan_choice(grid, "T", "I", **arguments)
+    decision = searchplan.search_choice(grid, "T", "I", **arguments)
+    assert (plan.orientation, plan.x) == (2, 1)
+    assert decision.placement is not None
+    assert not decision.budget_exhausted
+    assert (decision.placement.orientation, decision.placement.x) == (2, 7)
+    assert (decision.placement.orientation, decision.placement.x) != \
+        (plan.orientation, plan.x)
 
 
 def test_unknown_pieces_are_the_seven_types_with_one_weight_each():
@@ -258,6 +288,64 @@ def test_a_negative_primary_comparison_is_retained_as_negative():
     document = _result_document(plan_lines=120, search_lines=100)
     assert document["status"] == "negative"
     assert e5.check_result_document(document) == []
+
+
+def test_superseded_block_is_derived_from_its_own_rows():
+    baseline = _record(["lookahead", "tetris_plan"], [42], [
+        _episode("lookahead", 42, 90, 900, 1000, 0),
+        _episode("tetris_plan", 42, 100, 900, 1000, 2),
+    ])
+    search = _record(["lookahead", "search_plan"], [42], [
+        _episode("lookahead", 42, 90, 900, 1000, 0),
+        _episode("search_plan", 42, 100, 900, 1000, 2),
+    ])
+    block = e5.superseded_block(
+        baseline=baseline, search=search, reason="a defect was fixed",
+        retained_records={"baseline": "records/x", "search": "records/y"})
+    assert block["metrics"] == e5.metrics_for(block["episodes_by_agent_seed"])
+    document = _result_document()
+    document["superseded"] = block
+    assert e5.check_result_document(document) == []
+    block["metrics"]["search_plan"]["lines_mean"] = 999.0
+    assert "superseded metrics do not match its rows" in e5.check_result_document(document)
+
+
+def test_retained_manifests_carry_no_private_paths():
+    """Retained evidence names its own location relatively, never a host path."""
+    for manifest_path in sorted((e5.EXPERIMENT_ROOT / "records").glob("*/manifest.json")):
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert manifest["note"]
+        command = manifest["verify"]["decompress"]
+        assert not command.startswith("/")
+        assert "/home/" not in command and "/runtime/" not in command
+        assert command.startswith("gunzip -c experiments/005-search-plan/records/")
+
+
+def test_the_retained_records_and_result_pass_their_checks_without_the_engine(capsys):
+    """The committed evidence checks are engine-free and part of the test suite.
+
+    This drives the experiment's own ``check-retained`` and ``check-record``
+    commands over the committed artifacts, so a record, replay or derived claim
+    that stops matching its manifest or its rows fails the ordinary unit run
+    rather than waiting for a manual audit.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "experiment005_evidence",
+        e5.EXPERIMENT_ROOT / "probes" / "evidence.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.command_check_retained(
+        argparse.Namespace(directory=e5.EXPERIMENT_ROOT / "records")) == 0
+    result = e5.EXPERIMENT_ROOT / "result.json"
+    if not result.is_file():
+        # The result is added by the measurement commit on top of this base; the
+        # retained records above are already present and stay checked.
+        pytest.skip("result.json is added by the measurement commit")
+    assert module.command_check_record(
+        argparse.Namespace(record=result)) == 0
+    assert "Checked" in capsys.readouterr().out
 
 
 def test_configs_are_declared_for_the_held_out_seeds():

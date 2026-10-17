@@ -1044,9 +1044,11 @@ def test_search_suite_record_runs_and_verifies_on_the_dedicated_path(tmp_path: P
     The record names the search objective and its source identity, including the
     well plan dependency the stock walk drops; its decision-budget block covers
     every configured search seed; and the dedicated verifier replays the episodes
-    and compares the deterministic decision and node counts. The stock verifier
-    cannot parse the runtime-registered agent, which is the documented CLI
-    limitation rather than a silent acceptance.
+    and compares the deterministic decision and node counts. A baseline
+    configuration written by the same launcher keeps the stock objective section
+    and no budget block, and verifies through the ordinary path. The stock
+    verifier cannot parse the runtime-registered search agent, which is the
+    documented CLI limitation rather than a silent acceptance.
     """
     raw = json.loads((PROJECT_ROOT / "experiments" / "005-search-plan"
                       / "config-search.json").read_text(encoding="utf-8"))
@@ -1068,9 +1070,23 @@ def test_search_suite_record_runs_and_verifies_on_the_dedicated_path(tmp_path: P
     assert all(type(row["decisions"]) is int and type(row["nodes_expanded"]) is int
                for row in budget["per_episode"])
     e5.verify_record(path)
+    # The baseline configuration carries the stock objective section and no
+    # decision-budget block, so the dedicated verifier delegates it to the stock
+    # one and the ordinary verify path accepts it.
+    baseline_path = tmp_path / "baseline.json"
+    baseline_path.write_text(json.dumps({
+        "game": raw["game"], "frame_limit": 300, "seeds": [42],
+        "agents": ["lookahead", "tetris_plan"],
+    }), encoding="utf-8")
+    baseline_record_path = e5.build_record(baseline_path, runs_dir=tmp_path / "runs")
+    baseline_record = json.loads(baseline_record_path.read_text(encoding="utf-8"))
+    assert baseline_record["objective"]["module"] == "block_stack_ai.wellplan"
+    assert "decision_budget" not in baseline_record
+    e5.verify_record(baseline_record_path)
+    verify_run(baseline_record_path)
     # The stock verifier does not know the runtime-registered agent, so it cannot
-    # even parse the configuration; the dedicated verifier above is the published
-    # path. The unit suite separately shows the stock identity walk also drops the
-    # well plan dependency the dedicated record deliberately covers.
+    # even parse the search configuration; the dedicated verifier above is the
+    # published path. The unit suite separately shows the stock identity walk also
+    # drops the well plan dependency the dedicated record deliberately covers.
     with pytest.raises(VerificationError, match="agents must be chosen from"):
         verify_run(path)
