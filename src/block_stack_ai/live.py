@@ -26,9 +26,20 @@ class LiveSession:
     the agent. A native mirror predicts the effect of that one input, collecting
     the same events as the headless runner; the next desktop snapshot must match
     it byte for byte before any further input is chosen or a result is saved.
+
+    One session plays one game: the configuration must name exactly one agent
+    and one seed, because the record saves the configuration it played. A
+    multi-game configuration is refused here, before the native game is built,
+    rather than narrowed silently to its first entry.
     """
 
     def __init__(self, config: SuiteConfig, runs_dir: Path):
+        if len(config.agents) != 1 or len(config.seeds) != 1:
+            raise ValueError(
+                "A live session must configure exactly one agent and one seed: "
+                f"this configuration names {len(config.agents)} agents and "
+                f"{len(config.seeds)} seeds"
+            )
         self.config = config
         self.runs_dir = runs_dir
         self.name = config.agents[0]

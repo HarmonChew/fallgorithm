@@ -3675,6 +3675,27 @@ def test_a_version_8_record_must_configure_the_single_live_game(
     assert verify_run(path, factory) == []
 
 
+@pytest.mark.parametrize(
+    "seeds,agents",
+    [((1, 2), ("greedy",)), ((1,), ("greedy", "random"))],
+)
+def test_a_live_session_refuses_a_multi_game_configuration(tmp_path, seeds, agents):
+    """The live writer refuses the configuration it would save but not play.
+
+    ``LiveSession`` plays ``agents[0]`` with ``seeds[0]`` and writes the whole
+    configuration into its record, so a multi-agent or multi-seed configuration
+    would save a version-8 record the verifier refuses: the session would have
+    run one game and recorded another. The refusal happens before the native game
+    is built, so this is a configuration error rather than a game that starts and
+    cannot be recorded; ``play_live`` already narrows to a single game before it
+    constructs the session.
+    """
+    config = SuiteConfig(SUITE["game"], 10, seeds, agents)
+    with pytest.raises(ValueError, match="exactly one agent and one seed"):
+        live_module.LiveSession(config, tmp_path / "runs")
+    assert not (tmp_path / "runs").exists()
+
+
 def test_a_reloaded_live_session_is_refused_not_recorded():
     """A session the live reload left stale is refused before any identity is captured.
 
