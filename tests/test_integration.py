@@ -13,6 +13,8 @@ import pytest
 from block_stack_ai.agents import DOWN, create_agent
 from block_stack_ai.engine import PROJECT_ROOT, create_game, engine_executable
 from block_stack_ai.replay import export_replay
+from block_stack_ai import experiment005 as e5
+from block_stack_ai import searchplan
 from block_stack_ai import wellplan
 from block_stack_ai.heuristic import (
     SPAWN_ORIGIN_Y,
@@ -997,3 +999,78 @@ def test_suite_record_with_the_tetris_agent_declares_its_objective(tmp_path: Pat
     without_identity["format_version"] = PRIOR_SUITE_FORMAT_VERSION
     path.write_text(json.dumps(without_identity), encoding="utf-8")
     verify_run(path)
+
+
+def test_search_agent_ignores_a_native_hidden_stack_through_the_inherited_act_path():
+    """The search's observation ignores the engine's hidden buffer end to end.
+
+    ``_spawn_template(seed_hidden=True)`` locks an O above the ceiling, so the
+    engine holds minos the rendered field cannot show. The search agent is driven
+    through the inherited ``PlacementAgent.act`` on that state and its emitted
+    mask and chosen placement are compared with the choice derived from the
+    rendered field alone, so the base controller's whole-grid observation cannot
+    reach the decision.
+    """
+    suite = load_config(PLAN_CONFIG)
+    configuration = {**suite.game, "seed": 1}
+    template, _ = _spawn_template(configuration, [[0] * WIDTH for _ in range(20)], False,
+                                  seed_hidden=True)
+    with template, searchplan.registered():
+        whole = board_grid(template.state.board, template.state.hidden_rows)
+        assert all(cell == 0 for row in whole[2:] for cell in row)
+        assert whole[0][8:10] == (1, 1) and whole[1][8:10] == (1, 1)
+        observed = wellplan.visible_grid(template.state.board)
+        assert observed != whole
+        agent = runner.build_agent("search_plan", configuration["seed"])
+        mask = agent.act(template.state)
+        assert type(mask) is int and 0 <= mask <= 31
+        expected = searchplan.search_choice(
+            observed, template.state.current_piece, template.state.next_piece,
+            drought=agent._drought, level=template.state.level,
+            lines=template.state.lines, start_level=template.state.start_level,
+            first_delay_remaining=template.state.first_delay_remaining,
+            ruleset=template.state.ruleset, mode=template.state.mode).placement
+        assert expected is not None
+        assert agent._placement is not None
+        assert (agent._placement.orientation, agent._placement.x) == \
+            (expected.orientation, expected.x)
+        assert mask == plan_mask(0, 5, (expected.orientation, expected.x), False,
+                                 orientation_count(template.state.current_piece))[0]
+
+
+def test_search_suite_record_runs_and_verifies_on_the_dedicated_path(tmp_path: Path):
+    """The dedicated launcher writes and replays a search record, budget and all.
+
+    The record names the search objective and its source identity, including the
+    well plan dependency the stock walk drops; its decision-budget block covers
+    every configured search seed; and the dedicated verifier replays the episodes
+    and compares the deterministic decision and node counts. The stock verifier
+    cannot parse the runtime-registered agent, which is the documented CLI
+    limitation rather than a silent acceptance.
+    """
+    raw = json.loads((PROJECT_ROOT / "experiments" / "005-search-plan"
+                      / "config-search.json").read_text(encoding="utf-8"))
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps({**raw, "frame_limit": 400, "seeds": [41],
+                    "agents": ["lookahead", "search_plan"]}),
+        encoding="utf-8",
+    )
+    path = e5.build_record(config_path, runs_dir=tmp_path / "runs")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["format_version"] == SUITE_FORMAT_VERSION
+    assert record["objective"]["module"] == "block_stack_ai.searchplan"
+    assert "block_stack_ai.wellplan" in record["objective"]["sources"]
+    budget = record["decision_budget"]
+    assert budget["coverage"]["all_configured_episodes"]
+    assert budget["coverage"]["all_configured_seeds"]
+    assert [row["seed"] for row in budget["per_episode"]] == [41]
+    assert all(type(row["decisions"]) is int and type(row["nodes_expanded"]) is int
+               for row in budget["per_episode"])
+    e5.verify_record(path)
+    # The stock verifier does not know the runtime-registered agent, so it cannot
+    # even parse the configuration; the dedicated verifier above is the published
+    # path. The unit suite separately shows the stock identity walk also drops the
+    # well plan dependency the dedicated record deliberately covers.
+    with pytest.raises(VerificationError, match="agents must be chosen from"):
+        verify_run(path)
