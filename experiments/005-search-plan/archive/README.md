@@ -48,7 +48,8 @@ fresh implementation and evidence:
    row per configured seed with decision and node counts and a coverage
    assertion. The verifier re-runs the search and compares the counts exactly;
    wall-clock seconds are advisory and marked as such. The development probe on
-   seeds 41-45 is retained separately from the held-out evaluation on 42-60.
+   seeds 41, 43 and 45 is retained separately from the held-out evaluation on
+   the even seeds 42–60.
 3. **MEDIUM — the documented generators did not reproduce the saved schema or
    decision-time fields.** The fresh [`probes/evidence.py`](probes/evidence.py)
    is the only writer of the retained artifacts: `fingerprint`, `predeclare`,

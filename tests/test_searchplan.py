@@ -13,6 +13,7 @@ forward from the retired attempt.
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -218,6 +219,37 @@ def test_budget_report_covers_only_the_search_agent_and_its_seeds():
     short = searchplan.budget_report(config, searchplan.SEARCH_AGENT, rows[:2])
     assert not short["coverage"]["all_configured_seeds"]
     assert not short["coverage"]["all_configured_episodes"]
+
+
+def test_the_saved_budget_is_regenerated_from_the_retained_record():
+    """The result's budget block is the generated block of the retained record.
+
+    The budget-schema regression compares generated and saved data rather than
+    only a key set: the block saved in `result.json` must equal the retained run
+    record's own generated block, and regenerating it from that record's rows
+    through the same builder must reproduce it exactly (schema, per-episode
+    counts, totals and coverage).
+    """
+    result = json.loads((e5.EXPERIMENT_ROOT / "result.json").read_text(encoding="utf-8"))
+    directory = e5.EXPERIMENT_ROOT / "records" / "held-out-search"
+    manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
+    with gzip.open(directory / manifest["record_file"], "rb") as handle:
+        record = json.loads(handle.read())
+    saved = result["decision_budget"]
+    assert saved == record["decision_budget"]
+    assert saved["schema"] == searchplan._BUDGET_SCHEMA
+    assert saved["coverage"]["all_configured_episodes"]
+    assert saved["coverage"]["all_configured_seeds"]
+    config = runner.parse_config(result["configs"]["search"])
+    rows = [{key: row[key] for key in (
+        "agent", "seed", "decisions", "nodes_expanded", "nodes_per_decision",
+        "budget_exhausted_decisions", "episode_seconds")}
+        for row in record["decision_budget"]["per_episode"]]
+    regenerated = searchplan.budget_report(config, searchplan.SEARCH_AGENT, rows)
+    assert regenerated == saved
+    assert [row["seed"] for row in saved["per_episode"]] == \
+        list(result["configs"]["search"]["seeds"])
+    assert {row["agent"] for row in saved["per_episode"]} == {searchplan.SEARCH_AGENT}
 
 
 def _episode(agent, seed, lines, score, frames, tetrises):

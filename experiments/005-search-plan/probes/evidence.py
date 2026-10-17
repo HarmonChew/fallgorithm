@@ -46,6 +46,7 @@ RECORDS = PROBES.parent / "records"
 RESULT = PROBES.parent / "result.json"
 PREDECLARED = PROBES / "predeclared_objective.json"
 ENGINE = PROBES / "engine_fingerprint.json"
+DEVELOPMENT_PROBE = PROBES / "development_three_seed_probe.json"
 BASELINE_004 = runner.PROJECT_ROOT / "experiments" / "004-bounded-well-plan" / "result.json"
 
 
@@ -340,6 +341,58 @@ def command_retain_records(args: argparse.Namespace) -> int:
     return 0
 
 
+def _retained(label: str) -> tuple[dict, dict]:
+    """The retained record and manifest of one record directory."""
+    directory = RECORDS / label
+    manifest = _load(directory / "manifest.json")
+    with gzip.open(directory / manifest["record_file"], "rb") as handle:
+        return json.loads(handle.read()), manifest
+
+
+def development_summary() -> dict:
+    """The development-probe summary regenerated from the retained records.
+
+    Every field is derived from the two retained development record sets: the
+    seeds they configure, their episode rows, the metrics computed from those
+    rows, the search record's own decision-budget and objective blocks, and the
+    source-run identifiers the manifests name. A development summary edited away
+    from those records therefore no longer round-trips, which is what
+    ``check-retained`` compares.
+    """
+    baseline, baseline_manifest = _retained("development-baseline")
+    search, search_manifest = _retained("development-search")
+    rows = e5.retained_rows(baseline, search)
+    return {
+        "schema": "fallgorithm.experiment005.development-probe/1",
+        "note": (
+            "A development probe on seeds 41, 43 and 45, which are the retired "
+            "attempt's development seeds and were not part of its held-out "
+            "evaluation. It is kept separate from the final comparison; the "
+            "final evaluation uses the original even held-out seeds 42-60 with "
+            "the same agents and settings."
+        ),
+        "seeds": [41, 43, 45],
+        "configs": {"baseline": baseline["configuration"],
+                    "search": search["configuration"]},
+        "episodes_by_agent_seed": rows,
+        "metrics": e5.metrics_for(rows),
+        "decision_budget": search["decision_budget"],
+        "objective_record": search["objective"],
+        "run_identifiers": {
+            "baseline": f"runs/{baseline_manifest['source_run']}",
+            "search": f"runs/{search_manifest['source_run']}",
+        },
+    }
+
+
+def command_development_summary(args: argparse.Namespace) -> int:
+    document = development_summary()
+    args.output.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n",
+                           encoding="utf-8")
+    print(f"Wrote development summary: {args.output}")
+    return 0
+
+
 def command_check_retained(args: argparse.Namespace) -> int:
     """Verify the retained record and replay files against their manifests.
 
@@ -383,6 +436,11 @@ def command_check_retained(args: argparse.Namespace) -> int:
             if not path.is_file() or _sha256(path) != replay["sha256"]:
                 problems.append(f"{directory.name}: replay {replay['file']} is missing or changed")
         checked += 1
+    if not DEVELOPMENT_PROBE.is_file():
+        problems.append("the development-probe summary is not retained")
+    elif _load(DEVELOPMENT_PROBE) != development_summary():
+        problems.append(
+            "the development-probe summary does not match the retained development records")
     for problem in problems:
         print(f"Problem: {problem}", file=sys.stderr)
     if problems:
@@ -423,12 +481,16 @@ def main(argv: list[str] | None = None) -> int:
     check_retained = commands.add_parser("check-retained",
                                          help="verify retained records and replays")
     check_retained.add_argument("--directory", type=Path, default=RECORDS)
+    summary = commands.add_parser("development-summary",
+                                  help="regenerate the development probe from the retained records")
+    summary.add_argument("--output", type=Path, default=DEVELOPMENT_PROBE)
     args = parser.parse_args(argv)
     return {"fingerprint": command_fingerprint, "predeclare": command_predeclare,
             "retain": command_retain, "check-record": command_check_record,
             "reproduce": command_reproduce,
             "retain-records": command_retain_records,
-            "check-retained": command_check_retained}[args.command](args)
+            "check-retained": command_check_retained,
+            "development-summary": command_development_summary}[args.command](args)
 
 
 if __name__ == "__main__":

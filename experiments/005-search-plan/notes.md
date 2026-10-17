@@ -73,8 +73,9 @@ The acceptance rule was captured before the evaluation in
 [`probes/predeclared_objective.json`](probes/predeclared_objective.json), with
 the objective's module, weights and source identity read from the tree that ran:
 
-* **Primary:** `search_plan`'s mean lines over the three seeds is greater than
-  `tetris_plan`'s mean lines over the same seeds, both re-measured here.
+* **Primary:** `search_plan`'s mean lines over the ten held-out seeds (42, 44,
+  46, 48, 50, 52, 54, 56, 58 and 60) is greater than `tetris_plan`'s mean lines
+  over the same seeds, both re-measured here.
 * **Secondary:** `search_plan`'s Tetris line rate (four times its Tetrises over
   its total lines) is at least `tetris_plan`'s.
 * `lookahead`'s mean lines, mean score and Tetris line rate are reported for
@@ -82,9 +83,12 @@ the objective's module, weights and source identity read from the tree that ran:
   negative result; the experiment does not chase scores beyond this comparison.
 
 The search's constants are declared once in `searchplan.py` and are not revised
-against this evaluation. The held-out seeds were fixed before the run; they are
-odd and disjoint from Experiment 004's evaluation seeds (2–20) and from that
-experiment's stated development seeds.
+against this evaluation. The held-out seeds were fixed before the run: the ten
+even numbers 42, 44, 46, 48, 50, 52, 54, 56, 58 and 60, disjoint from Experiment
+004's evaluation seeds (2–20) and from the retired attempt's development seeds.
+The retired attempt's development seeds are exactly 41, 43 and 45; the
+three-seed development probe on them is retained separately and is not the
+comparison.
 
 ## Review findings carried forward
 
@@ -132,7 +136,7 @@ files are retained under [`records/frozen-prefix-baseline`](records/frozen-prefi
 and [`records/frozen-prefix-search`](records/frozen-prefix-search), with a
 manifest that names it as the pre-fix measurement. It is superseded as the
 experiment's comparison by the fixed held-out run, whose records are retained
-under `records/held-out-*`. The development probe on seeds 41-45 is retained
+under `records/held-out-*`. The development probe on seeds 41, 43 and 45 is retained
 separately under [`records/development-baseline`](records/development-baseline)
 and [`records/development-search`](records/development-search).
 
