@@ -53,7 +53,7 @@
   "engine_fingerprint": "7b4a71e9698de3e3d4a3b2bad0e7edee17fd9ecb7805506182806899343dbadf",
   "kind": "suite",
   "label": "held-out-search",
-  "note": "The fixed held-out comparison, measured from the sanitized pre-measurement base now in the outgoing history. This is the experiment's comparison; the frozen-prefix records are the superseded pre-fix run.",
+  "note": "The fixed held-out comparison, measured from the sanitized pre-measurement base now in the outgoing history. This is the experiment's comparison; the frozen-prefix records are the superseded pre-fix run. Verifies with the current candidate.",
   "outcomes": [
     {
       "agent": "lookahead",
@@ -381,13 +381,21 @@
       "sha256": "068f083c390d09c931ae15bede6322f041f13337f23a58fd4350b8989fcfe0fc"
     }
   ],
-  "retained_at": "2026-10-17T16:32:58.608892+00:00",
+  "retained_at": "2026-10-17T17:31:27.814192+00:00",
   "schema": "fallgorithm.experiment005.retained-record/1",
   "source_run": "20261017T163207453359Z-dfc36928",
   "verify": {
+    "cleanup": null,
     "decompress": "gunzip -c experiments/005-search-plan/records/held-out-search/run.json.gz > /tmp/run.json",
-    "record": "python -m block_stack_ai.experiment005 verify /tmp/run.json",
-    "replay": "each .rep was exported by `export-replay` after a full Python replay verify and a native headless final-hash comparison"
+    "defect": null,
+    "expected": "pass",
+    "historical": false,
+    "prepare": null,
+    "python_note": "the interpreter is the project's virtual environment, which a checkout set up by the project README has at .venv/bin/python; if the environment lives outside the checkout, run the same PYTHONPATH and module command with that interpreter.",
+    "record": "PYTHONPATH=src .venv/bin/python -m block_stack_ai.experiment005 verify /tmp/run.json",
+    "replay": "each .rep was exported by `export-replay` after a full Python replay verify and a native headless final-hash comparison",
+    "source_commit": "795712f4c061f5aab95998aba3fa16bd3c89904e",
+    "source_note": "the current candidate verifies this record; its source_commit names the measured base, which is an ancestor of the candidate."
   },
   "versions": {
     "engine": {

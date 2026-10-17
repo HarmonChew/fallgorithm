@@ -143,18 +143,31 @@ run record gzipped, one `.rep` replay file per episode, and a `manifest.json`
 with the coverage, outcomes, configuration, engine fingerprint and the exact
 verification commands. Every replay was exported through the engine's own
 replay writer after a full Python replay verify and a native final-hash
-comparison. Verify a retained record with:
+comparison.
+
+Each manifest's `verify` block is the readable instruction: `decompress`,
+`prepare`, `record`, `cleanup`, `source_commit`, `historical` and `expected`.
+The two held-out sets have `historical: false` and verify with the current
+candidate:
 
 ```sh
-gunzip -c records/<label>/run.json.gz > /tmp/run.json
-python -m block_stack_ai.experiment005 verify /tmp/run.json
+gunzip -c records/held-out-search/run.json.gz > /tmp/run.json
+PYTHONPATH=src .venv/bin/python -m block_stack_ai.experiment005 verify /tmp/run.json
 ```
 
-The search records are checked by the dedicated verifier above; the baseline
-records verify through `block-stack-ai verify /tmp/run.json`. A pre-fix record
-additionally needs the code it was measured with: its manifest names the
-record's own `versions.fallgorithm.commit`, and that commit is in this branch's
-history.
+The four superseded `frozen-prefix-*` and `development-*` sets have
+`historical: true` and name the commit they were measured at; `prepare` checks
+that commit out into a temporary worktree, `record` verifies with that
+worktree's source, and `cleanup` removes it. The two pre-fix search sets verify
+under their recorded code. The two pre-fix baseline sets carry
+`expected: fail-pre-fix-defect`: the pre-fix launcher stamped them with the
+search objective section and an empty decision-budget coverage block, so the
+dedicated verifier rejects them under their own code (and that old commit's CLI
+masks the rejection with an `AttributeError`); their recorded inputs and
+outcomes remain verified by the retained replay files. They are superseded
+history, not current-candidate evidence. The `python_note` in each manifest
+points at the project virtual environment for checkouts that keep it outside
+the tree.
 
 ## Results
 

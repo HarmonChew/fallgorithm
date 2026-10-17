@@ -53,7 +53,7 @@
   "engine_fingerprint": "7b4a71e9698de3e3d4a3b2bad0e7edee17fd9ecb7805506182806899343dbadf",
   "kind": "suite",
   "label": "frozen-prefix-baseline",
-  "note": "Measured before the unseen-ply comparison fix, with the pre-fix launcher that wrote the search objective section even for the baseline suite; retained as the frozen run and superseded by the fixed held-out records.",
+  "note": "Pre-fix baseline sets, measured at their recorded source commit; the pre-fix launcher defect below makes them fail the dedicated verifier under that code.",
   "outcomes": [
     {
       "agent": "lookahead",
@@ -381,13 +381,21 @@
       "sha256": "fda59945d99a44c8fc0d6e46c479426af8d195610692c6e5450f9a5b907591e0"
     }
   ],
-  "retained_at": "2026-10-17T16:17:56.235329+00:00",
+  "retained_at": "2026-10-17T17:32:03.660362+00:00",
   "schema": "fallgorithm.experiment005.retained-record/1",
   "source_run": "20261017T151333849047Z-eabeea6e",
   "verify": {
+    "cleanup": "git worktree remove /tmp/exp005-verify-frozen-prefix-baseline",
     "decompress": "gunzip -c experiments/005-search-plan/records/frozen-prefix-baseline/run.json.gz > /tmp/run.json",
-    "record": "block-stack-ai verify /tmp/run.json",
-    "replay": "each .rep was exported by `export-replay` after a full Python replay verify and a native headless final-hash comparison"
+    "defect": "the pre-fix launcher wrote the search objective section and an empty decision-budget coverage block into this baseline suite's record. Under the record's own source commit the dedicated verifier rejects that coverage claim, and that commit's CLI masks the rejection with an AttributeError in its exception handler. The recorded inputs and outcomes are still verified by the retained replay files, which were exported through the engine's writer with a native final-hash comparison. This set is superseded history, not current-candidate evidence.",
+    "expected": "fail-pre-fix-defect",
+    "historical": true,
+    "prepare": "git worktree add /tmp/exp005-verify-frozen-prefix-baseline 5feb12b16e5ff8d24c50b0a3446d6415f95707f7",
+    "python_note": "the interpreter is the project's virtual environment, which a checkout set up by the project README has at .venv/bin/python; if the environment lives outside the checkout, run the same PYTHONPATH and module command with that interpreter.",
+    "record": "PYTHONPATH=/tmp/exp005-verify-frozen-prefix-baseline/src .venv/bin/python -m block_stack_ai.experiment005 verify /tmp/run.json",
+    "replay": "each .rep was exported by `export-replay` after a full Python replay verify and a native headless final-hash comparison",
+    "source_commit": "5feb12b16e5ff8d24c50b0a3446d6415f95707f7",
+    "source_note": "this record was measured with the planner at its source_commit, not the current candidate; prepare/record/cleanup run against that commit. The two held-out sets verify with the current candidate instead (historical is false there)."
   },
   "versions": {
     "engine": {

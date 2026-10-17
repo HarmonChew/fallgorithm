@@ -32,7 +32,7 @@
   "engine_fingerprint": "7b4a71e9698de3e3d4a3b2bad0e7edee17fd9ecb7805506182806899343dbadf",
   "kind": "suite",
   "label": "development-search",
-  "note": "Development probe on the retired attempt's development seeds 41, 43 and 45 under the pre-fix implementation; not part of the held-out comparison.",
+  "note": "Pre-fix search sets, measured at their recorded source commit; verify them with that commit's code, not the current candidate.",
   "outcomes": [
     {
       "agent": "lookahead",
@@ -136,13 +136,21 @@
       "sha256": "5955881e7d52778e36a792681a54325bacce11f899ee5fbb0fb3b8b56da27667"
     }
   ],
-  "retained_at": "2026-10-17T16:18:19.299560+00:00",
+  "retained_at": "2026-10-17T17:31:47.628577+00:00",
   "schema": "fallgorithm.experiment005.retained-record/1",
   "source_run": "20261017T150804309993Z-e5fc697c",
   "verify": {
+    "cleanup": "git worktree remove /tmp/exp005-verify-development-search",
     "decompress": "gunzip -c experiments/005-search-plan/records/development-search/run.json.gz > /tmp/run.json",
-    "record": "python -m block_stack_ai.experiment005 verify /tmp/run.json",
-    "replay": "each .rep was exported by `export-replay` after a full Python replay verify and a native headless final-hash comparison"
+    "defect": null,
+    "expected": "pass",
+    "historical": true,
+    "prepare": "git worktree add /tmp/exp005-verify-development-search 8bf42e8e2987aefac9b1eeb1a2db7cc15897b16d",
+    "python_note": "the interpreter is the project's virtual environment, which a checkout set up by the project README has at .venv/bin/python; if the environment lives outside the checkout, run the same PYTHONPATH and module command with that interpreter.",
+    "record": "PYTHONPATH=/tmp/exp005-verify-development-search/src .venv/bin/python -m block_stack_ai.experiment005 verify /tmp/run.json",
+    "replay": "each .rep was exported by `export-replay` after a full Python replay verify and a native headless final-hash comparison",
+    "source_commit": "8bf42e8e2987aefac9b1eeb1a2db7cc15897b16d",
+    "source_note": "this record was measured with the planner at its source_commit, not the current candidate; prepare/record/cleanup run against that commit. The two held-out sets verify with the current candidate instead (historical is false there)."
   },
   "versions": {
     "engine": {

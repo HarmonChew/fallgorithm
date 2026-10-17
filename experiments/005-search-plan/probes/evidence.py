@@ -200,7 +200,8 @@ def _scripted_episode(suite: dict, episode: dict) -> dict:
 
 
 def retain_record(label: str, record_path: Path, output_dir: Path = RECORDS,
-                  note: str | None = None) -> dict:
+                  note: str | None = None, *, historical: bool = False,
+                  defect: str | None = None) -> dict:
     """Retain one full run record and its per-episode replay files durably.
 
     The complete record is written gzipped (the decompressed bytes are compared,
@@ -209,6 +210,13 @@ def retain_record(label: str, record_path: Path, output_dir: Path = RECORDS,
     verify, and a manifest records the coverage, the outcomes, the engine and
     configuration identity and the exact verification commands. Private paths stay
     out of the manifest: the source is identified by its run-directory name only.
+
+    ``historical=True`` marks a record measured with an earlier planner than the
+    current candidate: the manifest then names the record's own source commit and
+    gives the worktree commands that check out that commit and verify the record
+    against it. ``defect`` names a known historical defect that makes the record
+    fail the dedicated verifier under its recorded code; the manifest states it
+    and sets ``expected`` accordingly instead of promising a pass.
     """
     raw = record_path.read_bytes()
     record = json.loads(raw)
@@ -259,6 +267,18 @@ def retain_record(label: str, record_path: Path, output_dir: Path = RECORDS,
         display = retained.relative_to(runner.PROJECT_ROOT).as_posix()
     except ValueError:
         display = retained.name
+    source_commit = record.get("versions", {}).get("fallgorithm", {}).get("commit")
+    worktree = f"/tmp/exp005-verify-{label}"
+    if historical:
+        prepare = f"git worktree add {worktree} {source_commit}"
+        record_command = (f"PYTHONPATH={worktree}/src .venv/bin/python -m "
+                          "block_stack_ai.experiment005 verify /tmp/run.json")
+        cleanup = f"git worktree remove {worktree}"
+    else:
+        prepare = None
+        record_command = ("PYTHONPATH=src .venv/bin/python -m "
+                          "block_stack_ai.experiment005 verify /tmp/run.json")
+        cleanup = None
     manifest = {
         "schema": "fallgorithm.experiment005.retained-record/1",
         "label": label,
@@ -277,10 +297,27 @@ def retain_record(label: str, record_path: Path, output_dir: Path = RECORDS,
         "replays": replays,
         "verify": {
             "decompress": f"gunzip -c {display} > /tmp/run.json",
-            "record": (
-                "python -m block_stack_ai.experiment005 verify /tmp/run.json"
-                if any(agent == searchplan.SEARCH_AGENT for agent in coverage)
-                else "block-stack-ai verify /tmp/run.json"
+            "prepare": prepare,
+            "record": record_command,
+            "cleanup": cleanup,
+            "source_commit": source_commit,
+            "historical": historical,
+            "expected": "fail-pre-fix-defect" if defect else "pass",
+            "defect": defect,
+            "source_note": (
+                "this record was measured with the planner at its source_commit, "
+                "not the current candidate; prepare/record/cleanup run against that "
+                "commit. The two held-out sets verify with the current candidate "
+                "instead (historical is false there)."
+                if historical else
+                "the current candidate verifies this record; its source_commit names "
+                "the measured base, which is an ancestor of the candidate."
+            ),
+            "python_note": (
+                "the interpreter is the project's virtual environment, which a "
+                "checkout set up by the project README has at .venv/bin/python; if "
+                "the environment lives outside the checkout, run the same PYTHONPATH "
+                "and module command with that interpreter."
             ),
             "replay": "each .rep was exported by `export-replay` after a full Python "
                       "replay verify and a native headless final-hash comparison",
@@ -296,7 +333,8 @@ def command_retain_records(args: argparse.Namespace) -> int:
         if "=" not in item:
             raise SystemExit("--record must be LABEL=PATH")
         label, path = item.split("=", 1)
-        manifest = retain_record(label, Path(path), args.output_dir, note=args.note)
+        manifest = retain_record(label, Path(path), args.output_dir, note=args.note,
+                                 historical=args.historical, defect=args.defect)
         print(f"Retained {label}: {len(manifest['replays'])} replays, "
               f"{manifest['record_bytes']} bytes, coverage {manifest['coverage']}")
     return 0
@@ -378,6 +416,10 @@ def main(argv: list[str] | None = None) -> int:
                                 metavar="LABEL=PATH", type=str)
     retain_records.add_argument("--output-dir", type=Path, default=RECORDS)
     retain_records.add_argument("--note", type=str, default=None)
+    retain_records.add_argument("--historical", action="store_true",
+                                help="name the record's own source commit and worktree commands")
+    retain_records.add_argument("--defect", type=str, default=None,
+                                help="known historical defect the record cannot pass under")
     check_retained = commands.add_parser("check-retained",
                                          help="verify retained records and replays")
     check_retained.add_argument("--directory", type=Path, default=RECORDS)
