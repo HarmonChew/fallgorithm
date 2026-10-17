@@ -158,10 +158,36 @@ history.
 
 ## Results
 
-Pending the fixed ten-seed held-out evaluation on seeds 42-60. The pre-fix
-frozen run and the development probe are retained separately as described above;
-their `search_plan` rows match `tetris_plan`'s and they are not the experiment's
-comparison. `result.json` will hold the per-episode rows of the fixed run, the
-derived metrics, the comparison, the decision-budget block, the objective
-record, the engine dependency fingerprint, the superseded pre-fix run and the
-limitations; this section will state the measured numbers from those rows.
+Measured from clean commit `795712f4c061f5aab95998aba3fa16bd3c89904e` (the
+pre-measurement publication base) on 2026-10-17 with the pinned engine
+(`8ca4158`, dirty working tree; identified in `probes/engine_fingerprint.json`)
+on the held-out seeds 42-60, the same game settings and the 200000-frame cap as
+Experiment 004. The complete run records, one replay file per episode and
+manifests are retained under [`records/held-out-baseline`](records/held-out-baseline)
+and [`records/held-out-search`](records/held-out-search); the source identity
+each search record carries is the search objective plus the well plan dependency
+that the stock walk drops. Every per-episode row, metric, comparison and
+decision-budget count is identical to the archived pre-publication measurement,
+so the publication-history cleanup left the results unchanged.
+
+| agent | mean lines | mean score | Tetris line rate | Tetris lines / lines | top-outs | cap stops | mean pieces |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `lookahead` | 963.0 | 3,183,918.7 | 0.000831 | 8 / 9630 | 8 | 2 | 2437.9 |
+| `tetris_plan` (004, unchanged) | 526.9 | 1,114,764.1 | 0.038717 | 204 / 5269 | 10 | 0 | 1352.6 |
+| `search_plan` (fixed) | 1448.8 | 8,314,261.6 | 0.047764 | 692 / 14488 | 5 | 5 | 3642.8 |
+
+The predeclared primary acceptance is met: `search_plan`'s mean lines is 2.75x
+`tetris_plan`'s (1448.8 against 526.9), and the secondary is met too (Tetris
+line rate 0.047764 against 0.038717). `search_plan`'s mean lines is also 1.50x
+`lookahead`'s, which carried no threshold. Five search games stopped at the
+200000-frame cap while none of `tetris_plan`'s did: a capped game is a truncated
+measurement, so the search's line and score totals are floors rather than
+completed games, and the comparison against the plan is conservative in the
+plan's favour. The search made 36,435 decisions over the ten held-out seeds and
+expanded 1,391,712 reachable-set nodes with zero budget truncations; the
+decision-budget block in `result.json` carries one row per seed.
+
+The frozen pre-fix run is retained in `result.json`'s `superseded` block and its
+records under `records/frozen-prefix-*`; its `search_plan` rows match
+`tetris_plan`'s because of the defect described above, and it is not the
+experiment's comparison.

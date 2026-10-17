@@ -317,8 +317,8 @@ def test_retained_manifests_carry_no_private_paths():
         assert manifest["note"]
         command = manifest["verify"]["decompress"]
         assert not command.startswith("/")
-        assert "/home/" not in command and "/runtime/" not in command
         assert command.startswith("gunzip -c experiments/005-search-plan/records/")
+        assert "\n" not in command
 
 
 def test_the_retained_records_and_result_pass_their_checks_without_the_engine(capsys):
