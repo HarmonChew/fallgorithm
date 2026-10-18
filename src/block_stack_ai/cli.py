@@ -123,6 +123,8 @@ def main(argv: list[str] | None = None) -> int:
     _add_experiment_selection(play_parser)
     play_parser.add_argument("--agent", choices=AGENT_NAMES, default=None, help="agent within the selected experiment (default: greedy when the experiment offers it, otherwise its first agent)")
     play_parser.add_argument("--seed", type=int, help="fixed seed; otherwise choose a fresh random seed")
+    play_parser.add_argument("--frame-limit", type=int, default=None, metavar="N",
+                             help="stop and save this live game at N frames (default: the experiment's configured limit)")
     play_parser.add_argument("--speed", choices=PLAY_SPEEDS, default="1")
     play_parser.add_argument("--paused", action="store_true", help="start paused for frame stepping")
     args = parser.parse_args(argv)
@@ -154,7 +156,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "experiments":
             _print_experiments()
         elif args.command == "play":
-            play_live(config_path, args.agent, args.seed, args.speed, args.paused)
+            play_live(config_path, args.agent, args.seed, args.speed, args.paused, args.frame_limit)
         elif args.command == "run":
             path = run_and_save(config_path)
             record = json.loads(path.read_text(encoding="utf-8"))

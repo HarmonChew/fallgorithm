@@ -53,10 +53,12 @@ Launch without arguments to choose options in a terminal:
 
 `block-stack-ai menu` opens the same launcher. Type a menu option's number and
 press Enter to select an experiment, then choose live play or full evaluation.
-Live play offers the experiment's agents, a fresh or fixed seed, speed, and
-whether to start paused. Full evaluation uses all agents and fixed seeds from
-the saved experiment configuration. Scripted experiments offer a run or a run
-followed by replay playback.
+Live play offers the experiment's agents, a frame limit that defaults to the
+experiment's configured value, a fresh or fixed seed, speed, and whether to
+start paused (paused by default, so the first board is visible before the game
+runs). Full evaluation uses all agents and fixed seeds from the saved
+experiment configuration. Scripted experiments offer a run or a run followed by
+replay playback.
 
 The launcher shows your selections and the equivalent command before you choose
 **Start**. Choose **Choose again** to change them, or enter **q** at any prompt
@@ -206,11 +208,17 @@ The window starts a new game immediately, with a freshly selected seed printed
 in the terminal and shown in the game. The existing Python agent chooses the
 next input from the desktop's current state on every logical frame. The desktop
 owns the game clock and renders that game as it runs. No recorded game is loaded.
-The selected experiment supplies its game settings and frame limit; experiment
-001 uses a 60,000-frame limit. `--agent` chooses an algorithm within that
-experiment (default: `greedy` when the experiment offers it, otherwise the
-experiment's first agent). Experiment 000 is a fixed controller script and
-supports `run` and replay rather than live placement play.
+The selected experiment supplies its game settings; experiment 001 uses a
+60,000-frame limit. The launcher asks for a frame limit with that saved value
+as the default, and `--frame-limit N` overrides it for this game. The chosen
+limit bounds the live session and is what the saved record carries; the
+experiment's configuration file is never edited. Launched from the menu, a live
+game starts paused by default so the first board is visible before the game
+runs; the direct `play` command starts playing unless `--paused` is given.
+`--agent` chooses an algorithm within that experiment (default: `greedy` when
+the experiment offers it, otherwise the experiment's first agent). Experiment
+000 is a fixed controller script and supports `run` and replay rather than live
+placement play.
 
 **P** pauses, **.** advances one frame while paused, **R** restarts the same seed,
 **[ / ]** changes speed, and **Esc** quits. A new invocation chooses a fresh seed.
@@ -220,6 +228,7 @@ To choose the seed, watch faster, or compare the random baseline:
 .venv/bin/block-stack-ai play --experiment 001 --seed 2 --speed 4
 .venv/bin/block-stack-ai play --experiment 001 --agent random
 .venv/bin/block-stack-ai play --experiment 001 --seed 2 --paused
+.venv/bin/block-stack-ai play --experiment 001 --frame-limit 30000
 ```
 
 Each completed game or frame-limit stop saves a normal one-episode suite record

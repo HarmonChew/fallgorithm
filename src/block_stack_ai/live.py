@@ -173,6 +173,7 @@ def play_live(
     seed: int | None = None,
     speed: str = "1",
     paused: bool = False,
+    frame_limit: int | None = None,
     *,
     runs_dir: Path = PROJECT_ROOT / "runs",
     desktop_arguments: tuple[str, ...] = (),
@@ -186,8 +187,13 @@ def play_live(
     if agent not in source.agents:
         raise ValueError(f"Agent {agent!r} is not in this experiment. Available agents: {', '.join(source.agents)}")
     seed = secrets.randbelow(65536) if seed is None else seed
+    # The frame limit is a per-game choice. It bounds this session and is what
+    # the record saves; the experiment's own configuration file stays untouched,
+    # so a later evaluation still uses the saved limit.
     config = parse_config({
-        "game": source.game, "frame_limit": source.frame_limit, "seeds": [seed], "agents": [agent],
+        "game": source.game,
+        "frame_limit": source.frame_limit if frame_limit is None else frame_limit,
+        "seeds": [seed], "agents": [agent],
     })
     executable = engine_executable("block_stack")
     game = config.game
