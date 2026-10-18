@@ -1,0 +1,29 @@
+{
+  "combined_sha256": "7b4a71e9698de3e3d4a3b2bad0e7edee17fd9ecb7805506182806899343dbadf",
+  "commit": "8ca4158711c2d6339cab1ee8d78aa65bd624c89d",
+  "dirty": true,
+  "engine_root": "sibling block-stack checkout",
+  "file_count": 18,
+  "files": {
+    "CMakeLists.txt": "2de0692516d1dde4d2b67d085777f6ea4fef17ff48e9ae800519be5298b1d155",
+    "core/include/blocks/c_api.h": "36e1ce06e0263fd4fc4ca691148da36a67b51b9dee74d4273bd8c03f94a2563e",
+    "core/include/blocks/game.hpp": "5e514cb5206527f1034377a86f77b2189956c7dabd0a4b6236c9e07a1b5cc236",
+    "core/include/blocks/replay.hpp": "8a82724553d49f82bbfc4ada8f30acca430afd6ef674d55988bdd7df35d3d581",
+    "core/src/c_api.cpp": "fc43dd68f97f681b3c20fce8b0b761ffdb29d8429809796bf60f854def555099",
+    "core/src/game.cpp": "8d0cc9c02e9a2511cbd5918ae0e1beee0f7e5912b923564729016af2166514b2",
+    "core/src/pieces.cpp": "a8659d23d9901b2599dae539c22ef963ffb65349d39aeaeba10c1315b7188a7e",
+    "core/src/replay.cpp": "10f85fb37ea08e7bd70518c1b94860d19efb0de1e28abf2afca40895a979e3a6",
+    "core/src/rng.cpp": "18aa2374c0e651a6ccb6e8f5f1813dff4237a28f96ce39fd236d0487ccea4820",
+    "core/src/rules.cpp": "532fe47b68e819aa3b3aa0e05405d04be8b601e09b1aa93518ac4593418b2683",
+    "python/block_stack.egg-info/SOURCES.txt": "a308da1b6e83d125a4b0ea940c46cb634ea54a3a7afbf68a5cf98f510785d068",
+    "python/block_stack.egg-info/dependency_links.txt": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "python/block_stack.egg-info/requires.txt": "44860f5f791883640a134330b3c000720962038ecc2ebbc8dd91f6d6d11fb3f1",
+    "python/block_stack.egg-info/top_level.txt": "6688bd134da5684abd5323376c1b6ccc97158cb25cbf0a7606623d09960e197e",
+    "python/block_stack/__init__.py": "7ce9b3106f7abd03eb3ca8d966fb189738d2b7883ddbf067028738b5b2412894",
+    "python/block_stack/gym.py": "aafd90d3850dd44dcfc9c6ed17486993e1f9cd6e9bc3f03e2eb1da759a24341d",
+    "python/examples/gym_agent.py": "534bcf914a9f6a59d6003546f87df20d936b8933e909f018bcf44f42ff6ea1b3",
+    "python/examples/headless.py": "4a830ce42ffcafc99e83cb56c22f94660275488df534f508a4aca6e27f7db7c5"
+  },
+  "kind": "working-tree",
+  "statement": "the reported rows reproduce only with this Block Stack working tree; its uncommitted local changes cannot be exported and are not retained here, so the engine source is identified but not reconstructable"
+}

@@ -14,7 +14,10 @@ a Tetris-oriented agent on 002's reachable set. Experiment 004 adds a bounded
 well plan: a designated well column, an explicit stack-height budget and a
 spend-or-abandon rule at a self-tracked I-drought bound, on the same reachable
 set, with the declared objective of whichever agent a suite selects recorded and
-replayed. There is no machine learning yet.
+replayed. Experiment 005 adds a budgeted search planner: it keeps Experiment
+004's well plan as its leaf evaluation and searches one piece deeper over
+plausible unseen pieces under a deterministic integer node budget, and it runs
+through a dedicated launcher of its own. There is no machine learning yet.
 Development proceeds one measured experiment at a time, reusing this engine
 connection and recording path.
 
@@ -79,6 +82,25 @@ Both `run` and `play` require an explicit `--experiment` number or full director
 name (for example, `001` or `001-greedy-heuristic`). The selected name and resolved
 config path are printed before starting. `--config path/to/config.json` remains
 available for a custom configuration; it cannot be combined with `--experiment`.
+
+Experiment 005 is the one exception to the shared `run` command: its
+`search_plan` agent is registered at runtime so that the source files Experiment
+004's retained identity covers stay byte-identical, and the stock configuration
+parser does not know that name. Run and verify that experiment through its
+dedicated launcher:
+
+```sh
+.venv/bin/python -m block_stack_ai.experiment005 run experiments/005-search-plan/config-search.json
+.venv/bin/python -m block_stack_ai.experiment005 verify runs/<run-id>/run.json
+```
+
+Its retained records under `experiments/005-search-plan/records/` each carry a
+manifest with the exact verification commands, including the commit to use for
+the superseded pre-fix sets.
+The current comparison uses ten fresh seeds selected by native state identity;
+the original even-seed comparison is retained as exploratory because two of its
+games duplicate development games. See [Experiment 005](experiments/005-search-plan/notes.md)
+for the frozen protocol, retained evidence and current results.
 
 `doctor` prints the resolved checkout, Git version, binding and library paths,
 and performs a create/read/step/close smoke check. `run` prints the stopping
@@ -331,7 +353,8 @@ Temporary run output is disposable.
 The runner can keep supplying observations and accepting one frame mask at a
 time. Experiment 001 adds the hand-written greedy placement heuristic and its
 random baseline, Experiment 002 the path-aware one-piece-lookahead agent,
-Experiment 003 the Tetris-oriented objective on 002's reachable set, and
-Experiment 004 the bounded well plan; later experiments can add a search planner,
-a learned evaluator, or a learned frame controller on the same engine connection
-and run-recording workflow. None of those is implemented yet.
+Experiment 003 the Tetris-oriented objective on 002's reachable set,
+Experiment 004 the bounded well plan, and Experiment 005 the budgeted search
+planner; later experiments can add a learned evaluator or a learned frame
+controller on the same engine connection and run-recording workflow. None of
+those later stages is implemented yet.

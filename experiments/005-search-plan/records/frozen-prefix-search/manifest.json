@@ -1,0 +1,412 @@
+{
+  "configuration": {
+    "agents": [
+      "lookahead",
+      "search_plan"
+    ],
+    "frame_limit": 200000,
+    "game": {
+      "height": 0,
+      "mode": "endless",
+      "ruleset": "classic_ntsc_extended",
+      "start_level": 18
+    },
+    "seeds": [
+      42,
+      44,
+      46,
+      48,
+      50,
+      52,
+      54,
+      56,
+      58,
+      60
+    ]
+  },
+  "coverage": {
+    "lookahead": [
+      42,
+      44,
+      46,
+      48,
+      50,
+      52,
+      54,
+      56,
+      58,
+      60
+    ],
+    "search_plan": [
+      42,
+      44,
+      46,
+      48,
+      50,
+      52,
+      54,
+      56,
+      58,
+      60
+    ]
+  },
+  "engine_fingerprint": "7b4a71e9698de3e3d4a3b2bad0e7edee17fd9ecb7805506182806899343dbadf",
+  "kind": "suite",
+  "label": "frozen-prefix-search",
+  "note": "Pre-fix search sets, measured at their recorded source commit; verify them with that commit's code, not the current candidate.",
+  "outcomes": [
+    {
+      "agent": "lookahead",
+      "final_state_hash": "587397a790f656c9",
+      "frames": 36710,
+      "lines": 284,
+      "pieces_placed": 744,
+      "score": 299115,
+      "seed": 42,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "8ff7ffdce4a81bc3",
+      "frames": 71210,
+      "lines": 673,
+      "pieces_placed": 1717,
+      "score": 1229342,
+      "seed": 44,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "72badb9a05c900ae",
+      "frames": 57539,
+      "lines": 519,
+      "pieces_placed": 1334,
+      "score": 774889,
+      "seed": 46,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "5703b814b388aeff",
+      "frames": 54776,
+      "lines": 486,
+      "pieces_placed": 1250,
+      "score": 726172,
+      "seed": 48,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "6e33a44ddc40c2bf",
+      "frames": 84576,
+      "lines": 816,
+      "pieces_placed": 2075,
+      "score": 1693725,
+      "seed": 50,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "e659e881cbff6efc",
+      "frames": 200000,
+      "lines": 2133,
+      "pieces_placed": 5339,
+      "score": 10369614,
+      "seed": 52,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "2d3c55334890daca",
+      "frames": 69813,
+      "lines": 651,
+      "pieces_placed": 1664,
+      "score": 1112253,
+      "seed": 54,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "56b0ed940b3c9f97",
+      "frames": 72057,
+      "lines": 699,
+      "pieces_placed": 1782,
+      "score": 1356268,
+      "seed": 56,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "93d1eff41f7c2e45",
+      "frames": 119933,
+      "lines": 1243,
+      "pieces_placed": 3142,
+      "score": 3753396,
+      "seed": 58,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "89a7aa5d65b0dd65",
+      "frames": 200000,
+      "lines": 2126,
+      "pieces_placed": 5332,
+      "score": 10524413,
+      "seed": 60,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "79abf2df11d6a625",
+      "frames": 20224,
+      "lines": 156,
+      "pieces_placed": 429,
+      "score": 155320,
+      "seed": 42,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "da24d101ac460dcb",
+      "frames": 56268,
+      "lines": 509,
+      "pieces_placed": 1307,
+      "score": 967158,
+      "seed": 44,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "c68f6b20cf32d28b",
+      "frames": 62728,
+      "lines": 602,
+      "pieces_placed": 1540,
+      "score": 1294642,
+      "seed": 46,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "b6fb23e0c8094b9a",
+      "frames": 84740,
+      "lines": 846,
+      "pieces_placed": 2151,
+      "score": 2783722,
+      "seed": 48,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "a2e94e1bf1159181",
+      "frames": 41173,
+      "lines": 345,
+      "pieces_placed": 897,
+      "score": 449994,
+      "seed": 50,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "953bc160d16dda5b",
+      "frames": 56326,
+      "lines": 524,
+      "pieces_placed": 1344,
+      "score": 1082406,
+      "seed": 52,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "afaa4a4db5513051",
+      "frames": 68886,
+      "lines": 657,
+      "pieces_placed": 1677,
+      "score": 1389419,
+      "seed": 54,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "24a9f8dc2a97fca0",
+      "frames": 53146,
+      "lines": 484,
+      "pieces_placed": 1244,
+      "score": 911289,
+      "seed": 56,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "62a441d75110514f",
+      "frames": 65531,
+      "lines": 612,
+      "pieces_placed": 1567,
+      "score": 1211664,
+      "seed": 58,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "dc76db6c3daaaf42",
+      "frames": 56371,
+      "lines": 534,
+      "pieces_placed": 1370,
+      "score": 902027,
+      "seed": 60,
+      "stopping_reason": "game_over"
+    }
+  ],
+  "record_bytes": 16880656,
+  "record_file": "run.json.gz",
+  "record_sha256": "e939d2d246b3ab34a7feebda7bc82c7cf70c6624680896bd9b975a4349cb7dc4",
+  "replays": [
+    {
+      "agent": "lookahead",
+      "file": "seed-42-lookahead.rep",
+      "seed": 42,
+      "sha256": "d6c78885417285d7d61588305ae2e4cbd05dec560fdade8909e944112d8abb5f"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-44-lookahead.rep",
+      "seed": 44,
+      "sha256": "e7938060ca60de7f08aa0d047ce1b5029110178f3c3196dff3e4aedcc3760dcd"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-46-lookahead.rep",
+      "seed": 46,
+      "sha256": "1db6c11d41124b01433065c3a0c58c5e0e054ce4b140c198b16fd45530d60812"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-48-lookahead.rep",
+      "seed": 48,
+      "sha256": "5833cbdcf1701dba696e396c801bcecca3366c670513bb4daa63dd4e4f16e20d"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-50-lookahead.rep",
+      "seed": 50,
+      "sha256": "12215f0feae2f94e8fbcb364ba27b2febe93ada198b9b2be30a0b851ce1eddc1"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-52-lookahead.rep",
+      "seed": 52,
+      "sha256": "7798e36125abf79ad972449876869dbc997cc3781ef058a9b9c827f82d655ffe"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-54-lookahead.rep",
+      "seed": 54,
+      "sha256": "39b104c886614af3db534336dee1d3703687ff3902263d5def94cbe836354f78"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-56-lookahead.rep",
+      "seed": 56,
+      "sha256": "c3740ae022aa76ad08edcfabcc8d5224db78312341aebc97131dcb448a8db989"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-58-lookahead.rep",
+      "seed": 58,
+      "sha256": "f8f56938bd337d707f02a18bbf003e5ef903d6ae7b55c2b3d3b54fde77619bd1"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-60-lookahead.rep",
+      "seed": 60,
+      "sha256": "841ed9519b6d3786cccba1ad76747a80f8219e81fdeea0b1f7b427d79cfe2ee3"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-42-search_plan.rep",
+      "seed": 42,
+      "sha256": "bd5597ca7474b9470f9e8d2d03f35a542014761b62dbcef86a88ae2357eeceb2"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-44-search_plan.rep",
+      "seed": 44,
+      "sha256": "e54df6371144c2e260bd8d8bde52f9bcfcd727eea0175b29d932dfa87fe88e65"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-46-search_plan.rep",
+      "seed": 46,
+      "sha256": "217da3627f930c36e9b9cdc79605550a643959c0fd2cadfdbc97fd8c05729e6a"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-48-search_plan.rep",
+      "seed": 48,
+      "sha256": "b77d441e72d75b6b71accc73a7dd8994220e54fa6a9bfc947ec72dd8997858f2"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-50-search_plan.rep",
+      "seed": 50,
+      "sha256": "2f3a6b385bcbf2b03366b70da69958d44c3a552fed749fb3738b9c9d3ce4eb29"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-52-search_plan.rep",
+      "seed": 52,
+      "sha256": "acd760ae0435fce09603dfca4beccf0539e9aaa9862648a176ffe8c65c71d4bf"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-54-search_plan.rep",
+      "seed": 54,
+      "sha256": "357abe56e38d5297f2a089165b65ac0572c71c43cd22568c688a8333c5caea83"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-56-search_plan.rep",
+      "seed": 56,
+      "sha256": "e025dc18292db1ce2e70cceaa88d5b8279516dc78d1e94947891fbeddde3c75e"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-58-search_plan.rep",
+      "seed": 58,
+      "sha256": "aa275340af98aeef59e2d485b5fb7bf87d585b4c64f009aac97f6ca013a78f69"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-60-search_plan.rep",
+      "seed": 60,
+      "sha256": "fda59945d99a44c8fc0d6e46c479426af8d195610692c6e5450f9a5b907591e0"
+    }
+  ],
+  "retained_at": "2026-10-17T17:31:43.985927+00:00",
+  "schema": "fallgorithm.experiment005.retained-record/1",
+  "source_run": "20261017T151717097296Z-5f3cb3bb",
+  "verify": {
+    "cleanup": "git worktree remove /tmp/exp005-verify-frozen-prefix-search",
+    "decompress": "gunzip -c experiments/005-search-plan/records/frozen-prefix-search/run.json.gz > /tmp/run.json",
+    "defect": null,
+    "expected": "pass",
+    "historical": true,
+    "prepare": "git worktree add /tmp/exp005-verify-frozen-prefix-search 5feb12b16e5ff8d24c50b0a3446d6415f95707f7",
+    "python_note": "the interpreter is the project's virtual environment, which a checkout set up by the project README has at .venv/bin/python; if the environment lives outside the checkout, run the same PYTHONPATH and module command with that interpreter.",
+    "record": "PYTHONPATH=/tmp/exp005-verify-frozen-prefix-search/src .venv/bin/python -m block_stack_ai.experiment005 verify /tmp/run.json",
+    "replay": "each .rep was exported by `export-replay` after a full Python replay verify and a native headless final-hash comparison",
+    "source_commit": "5feb12b16e5ff8d24c50b0a3446d6415f95707f7",
+    "source_note": "this record was measured with the planner at its source_commit, not the current candidate; prepare/record/cleanup run against that commit. The two held-out sets verify with the current candidate instead (historical is false there)."
+  },
+  "versions": {
+    "engine": {
+      "commit": "8ca4158711c2d6339cab1ee8d78aa65bd624c89d",
+      "dirty": true,
+      "kind": "working-tree"
+    },
+    "fallgorithm": {
+      "commit": "5feb12b16e5ff8d24c50b0a3446d6415f95707f7",
+      "dirty": false,
+      "kind": "committed"
+    }
+  }
+}

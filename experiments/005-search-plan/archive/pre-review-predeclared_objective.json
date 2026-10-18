@@ -1,0 +1,76 @@
+{
+  "acceptance": {
+    "primary": "search_plan's mean lines over the held-out seeds is greater than tetris_plan's mean lines over the same seeds, both re-measured by this experiment with the pinned engine",
+    "report_only": "lookahead's mean lines, mean score and Tetris line rate are reported for context and carry no acceptance threshold",
+    "secondary": "search_plan's Tetris line rate is at least tetris_plan's on the same seeds"
+  },
+  "captured_at": "2026-10-17T15:29:51.411093+00:00",
+  "config": {
+    "agents": [
+      "lookahead",
+      "search_plan"
+    ],
+    "frame_limit": 200000,
+    "game": {
+      "height": 0,
+      "mode": "endless",
+      "ruleset": "classic_ntsc_extended",
+      "start_level": 18
+    },
+    "seeds": [
+      42,
+      44,
+      46,
+      48,
+      50,
+      52,
+      54,
+      56,
+      58,
+      60
+    ]
+  },
+  "module": "block_stack_ai.searchplan",
+  "sources": {
+    "block_stack_ai.agents": "2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329",
+    "block_stack_ai.engine": "6c6ababa0e527053892a5a77fecf58e7c5079473f6c0c51647c38c6fab0ac60b",
+    "block_stack_ai.heuristic": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
+    "block_stack_ai.pathaware": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
+    "block_stack_ai.pieces": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
+    "block_stack_ai.runner": "4b7e610b64d7f3d1f92cf4145e1659d187911d3abffc3e19b688f798a27915d7",
+    "block_stack_ai.searchplan": "7d196428fe3d90b0c2dded17d886d913583161e865b56226f6fdb01a63be0b90",
+    "block_stack_ai.wellplan": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7"
+  },
+  "weights": {
+    "beam_width": 2,
+    "depth": 3,
+    "leaf_module": "block_stack_ai.wellplan",
+    "leaf_weights": {
+      "aggregate_height": -0.5,
+      "bumpiness": -0.5,
+      "drought_bound": 9,
+      "height_budget": 8,
+      "holes": -2.0,
+      "max_height": -1.0,
+      "overflow": -2.0,
+      "premature_clear": -1.0,
+      "reserve": 6.0,
+      "reserve_cap": 4,
+      "tetrises": 8.0,
+      "tie_break": "first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending",
+      "well_column": 9
+    },
+    "node_budget": 240,
+    "tie_break": "highest searched value; ties keep the first placement in canonical enumeration order (orientation ascending, then column ascending)",
+    "unknown_pieces": [
+      "I",
+      "J",
+      "L",
+      "O",
+      "S",
+      "T",
+      "Z"
+    ],
+    "unknown_weight": 0.14285714285714285
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "game": {
+    "ruleset": "classic_ntsc_extended",
+    "mode": "endless",
+    "start_level": 18,
+    "height": 0
+  },
+  "frame_limit": 200000,
+  "seeds": [
+    42,
+    44,
+    46,
+    48,
+    50,
+    52,
+    54,
+    56,
+    58,
+    60
+  ],
+  "agents": [
+    "lookahead",
+    "tetris_plan"
+  ]
+}

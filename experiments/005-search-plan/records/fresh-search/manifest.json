@@ -1,0 +1,412 @@
+{
+  "configuration": {
+    "agents": [
+      "lookahead",
+      "search_plan"
+    ],
+    "frame_limit": 200000,
+    "game": {
+      "height": 0,
+      "mode": "endless",
+      "ruleset": "classic_ntsc_extended",
+      "start_level": 18
+    },
+    "seeds": [
+      39497,
+      2918,
+      42114,
+      18319,
+      54626,
+      22909,
+      30033,
+      53641,
+      8833,
+      62362
+    ]
+  },
+  "coverage": {
+    "lookahead": [
+      39497,
+      2918,
+      42114,
+      18319,
+      54626,
+      22909,
+      30033,
+      53641,
+      8833,
+      62362
+    ],
+    "search_plan": [
+      39497,
+      2918,
+      42114,
+      18319,
+      54626,
+      22909,
+      30033,
+      53641,
+      8833,
+      62362
+    ]
+  },
+  "engine_fingerprint": "7b4a71e9698de3e3d4a3b2bad0e7edee17fd9ecb7805506182806899343dbadf",
+  "kind": "suite",
+  "label": "fresh-search",
+  "note": "Fresh native-state-disjoint evaluation from clean source-freeze commit 2313f0e. The search constants and decision procedure are unchanged by the review corrections. Full suite replay verification passed, including every input, outcome and deterministic budget field; all retained native replays matched their recorded hashes.",
+  "outcomes": [
+    {
+      "agent": "lookahead",
+      "final_state_hash": "4adf61f9041f2f3c",
+      "frames": 60089,
+      "lines": 549,
+      "pieces_placed": 1410,
+      "score": 834429,
+      "seed": 39497,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "b9d9f2331ac37dfd",
+      "frames": 85969,
+      "lines": 838,
+      "pieces_placed": 2132,
+      "score": 1797474,
+      "seed": 2918,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "eed8d16d63138a5c",
+      "frames": 169693,
+      "lines": 1780,
+      "pieces_placed": 4484,
+      "score": 7447600,
+      "seed": 42114,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "84fa53edd1361827",
+      "frames": 103293,
+      "lines": 1035,
+      "pieces_placed": 2622,
+      "score": 2719826,
+      "seed": 18319,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "ce40d39cfcd7a09d",
+      "frames": 200000,
+      "lines": 2121,
+      "pieces_placed": 5309,
+      "score": 10511794,
+      "seed": 54626,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "45fd83b8d8caca19",
+      "frames": 152389,
+      "lines": 1589,
+      "pieces_placed": 4010,
+      "score": 5927314,
+      "seed": 22909,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "ee82ecd7a37da5bb",
+      "frames": 96053,
+      "lines": 951,
+      "pieces_placed": 2414,
+      "score": 2365293,
+      "seed": 30033,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "8bed25d350cf6419",
+      "frames": 183772,
+      "lines": 1945,
+      "pieces_placed": 4898,
+      "score": 8982091,
+      "seed": 53641,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "ba07cb3e4c5d189b",
+      "frames": 71222,
+      "lines": 668,
+      "pieces_placed": 1705,
+      "score": 1190748,
+      "seed": 8833,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "135070faf923a984",
+      "frames": 82108,
+      "lines": 800,
+      "pieces_placed": 2036,
+      "score": 1663009,
+      "seed": 62362,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "b71b1905227ce80d",
+      "frames": 200000,
+      "lines": 2149,
+      "pieces_placed": 5379,
+      "score": 14926690,
+      "seed": 39497,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "57f7ae480a518d0c",
+      "frames": 200000,
+      "lines": 2150,
+      "pieces_placed": 5379,
+      "score": 14314276,
+      "seed": 2918,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "880e190a30288eff",
+      "frames": 190755,
+      "lines": 2036,
+      "pieces_placed": 5125,
+      "score": 12018780,
+      "seed": 42114,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "9456c8749c170f8b",
+      "frames": 120280,
+      "lines": 1234,
+      "pieces_placed": 3121,
+      "score": 4953454,
+      "seed": 18319,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "c267cc2518b4a88d",
+      "frames": 46839,
+      "lines": 401,
+      "pieces_placed": 1039,
+      "score": 628198,
+      "seed": 54626,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "981081cdfb68a321",
+      "frames": 200000,
+      "lines": 2169,
+      "pieces_placed": 5426,
+      "score": 15622205,
+      "seed": 22909,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "88eea5a16df6e11c",
+      "frames": 33394,
+      "lines": 241,
+      "pieces_placed": 637,
+      "score": 274232,
+      "seed": 30033,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "5cab88bd2d26d601",
+      "frames": 198013,
+      "lines": 2130,
+      "pieces_placed": 5361,
+      "score": 13687530,
+      "seed": 53641,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "ca8be82c55eed6b0",
+      "frames": 177398,
+      "lines": 1889,
+      "pieces_placed": 4756,
+      "score": 11395956,
+      "seed": 8833,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "f4745d278429e20b",
+      "frames": 200000,
+      "lines": 2149,
+      "pieces_placed": 5378,
+      "score": 14779901,
+      "seed": 62362,
+      "stopping_reason": "frame_limit"
+    }
+  ],
+  "record_bytes": 30516318,
+  "record_file": "run.json.gz",
+  "record_sha256": "d3a38fca9ea9261ce1f4e4d4feec2bd83347526b98ab861d0a93f88bfa061585",
+  "replays": [
+    {
+      "agent": "lookahead",
+      "file": "seed-39497-lookahead.rep",
+      "seed": 39497,
+      "sha256": "a2bfdd002e93d48ea10de1d0e309d366af4dc2395943b795b7eb9fe7aaf0456b"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-2918-lookahead.rep",
+      "seed": 2918,
+      "sha256": "e93ce0adf7eeb7a89e0c16692b6f63c12c1bc7f231e98ecd5c222dab19cbed0f"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-42114-lookahead.rep",
+      "seed": 42114,
+      "sha256": "0ef9e5e72fd856cd1ef9674d95c588118de47b8c9bc3e9de4a18cbebc1d381f1"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-18319-lookahead.rep",
+      "seed": 18319,
+      "sha256": "719e553c46281e8cd45d07c7786db1ab6b9c2a3f3aa33b614d013098ab34d4ff"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-54626-lookahead.rep",
+      "seed": 54626,
+      "sha256": "f3a6a9b37c38e5c6eaf401fb0699908652d672309ef3868c62ec404718163288"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-22909-lookahead.rep",
+      "seed": 22909,
+      "sha256": "229821d4d077efc2226cf16b7f72703cf682cb6a14e9d0e58cad664fe27a4e0f"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-30033-lookahead.rep",
+      "seed": 30033,
+      "sha256": "c55a45285654d00505c655462544877a9d0ed84e7bc2c0e1ab3e7e43e45863fa"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-53641-lookahead.rep",
+      "seed": 53641,
+      "sha256": "2ca22ae3e4f98c6459cf88120bbb5a12210b0b7b8ebb0b84ba354ab29c347e55"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-8833-lookahead.rep",
+      "seed": 8833,
+      "sha256": "819e841c42e25b0e4904e86a0e60861cc42c6df55efcb56f063c02c146df1c88"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-62362-lookahead.rep",
+      "seed": 62362,
+      "sha256": "3e4647cf02d1f3a0ecbc0a57c39590ffee04f083d0edd3ee3429c12194ecc849"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-39497-search_plan.rep",
+      "seed": 39497,
+      "sha256": "cc6c53a63e836085a74cb732e719025df4fbca38bf0ca3b55f3d662d09540de0"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-2918-search_plan.rep",
+      "seed": 2918,
+      "sha256": "41a92f66e8c0520acc3f5eb0685b64cb16980f94bab148bd68b76a7e5d162f8b"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-42114-search_plan.rep",
+      "seed": 42114,
+      "sha256": "5ec435df75eae670b0ff105c651d182dc8ba426aa6d11955c4de90bfc848a891"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-18319-search_plan.rep",
+      "seed": 18319,
+      "sha256": "7083ef347be26f470dd36d35694abd5169f3aade0ddcf07a2302377d8d9d9aa9"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-54626-search_plan.rep",
+      "seed": 54626,
+      "sha256": "4d50b17c876189eb929a008748d264170cf987abc8b9186370863f31e96de60b"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-22909-search_plan.rep",
+      "seed": 22909,
+      "sha256": "f5b20c8a4ec63b4096ecc6431c13f751bc4ed98b60a07de625e6bb336e779a45"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-30033-search_plan.rep",
+      "seed": 30033,
+      "sha256": "7d052cfa8f1e8a54f7edc55187eb5568a7591646ddd4f97f3f45c49e1762ff64"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-53641-search_plan.rep",
+      "seed": 53641,
+      "sha256": "4ce3c947e16d4c747b6bc7d570d01929cd0675bd18d941d1f79bbb4cbc253584"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-8833-search_plan.rep",
+      "seed": 8833,
+      "sha256": "1ec1673c6ec5224b4611cf829ac1d8fad1f5810ec089447d48de885ffd9439d3"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-62362-search_plan.rep",
+      "seed": 62362,
+      "sha256": "31503fd7b78071aeda3b487c889262a67fac2f9e93cede35f47275bcbd85255f"
+    }
+  ],
+  "retained_at": "2026-10-18T02:46:02.893608+00:00",
+  "schema": "fallgorithm.experiment005.retained-record/1",
+  "source_run": "20261018T024450969236Z-bb7f1d1d",
+  "verify": {
+    "cleanup": null,
+    "decompress": "gunzip -c experiments/005-search-plan/records/fresh-search/run.json.gz > /tmp/run.json",
+    "defect": null,
+    "expected": "pass",
+    "historical": false,
+    "prepare": null,
+    "python_note": "the interpreter is the project's virtual environment, which a checkout set up by the project README has at .venv/bin/python; if the environment lives outside the checkout, run the same PYTHONPATH and module command with that interpreter.",
+    "record": "PYTHONPATH=src .venv/bin/python -m block_stack_ai.experiment005 verify /tmp/run.json",
+    "replay": "each .rep was exported by `export-replay` after a full Python replay verify and a native headless final-hash comparison",
+    "source_commit": "2313f0e6c02f1c91b18a72fae2544f3f6bbd60e3",
+    "source_note": "the current candidate verifies this record; its source_commit names the measured base, which is an ancestor of the candidate."
+  },
+  "versions": {
+    "engine": {
+      "commit": "8ca4158711c2d6339cab1ee8d78aa65bd624c89d",
+      "dirty": true,
+      "kind": "working-tree"
+    },
+    "fallgorithm": {
+      "commit": "2313f0e6c02f1c91b18a72fae2544f3f6bbd60e3",
+      "dirty": false,
+      "kind": "committed"
+    }
+  }
+}

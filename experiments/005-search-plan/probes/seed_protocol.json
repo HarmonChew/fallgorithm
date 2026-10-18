@@ -1,0 +1,437 @@
+{
+  "captured_at": "2026-10-18T02:33:00.798639+00:00",
+  "engine_fingerprint": "7b4a71e9698de3e3d4a3b2bad0e7edee17fd9ecb7805506182806899343dbadf",
+  "excluded": [
+    {
+      "initial_state_sha256": "649dcfbf1f41e4561d42bad502a155916d18fe418fbf5963e206e35bcf5774fb",
+      "seed": 1
+    },
+    {
+      "initial_state_sha256": "bb17b3f450a1a22226f65ba4c5efd5174eccab0941c29ead2473a13d04e5ff95",
+      "seed": 2
+    },
+    {
+      "initial_state_sha256": "bb17b3f450a1a22226f65ba4c5efd5174eccab0941c29ead2473a13d04e5ff95",
+      "seed": 3
+    },
+    {
+      "initial_state_sha256": "87adbea5d58bb8e67772c09668e73d27427adbeb0b46f33d8c6b4133fab82ac5",
+      "seed": 4
+    },
+    {
+      "initial_state_sha256": "87adbea5d58bb8e67772c09668e73d27427adbeb0b46f33d8c6b4133fab82ac5",
+      "seed": 5
+    },
+    {
+      "initial_state_sha256": "7bec7268899ada57ebbb0fc840e981ce1e3cbed355351893bf2bfb4b5b0c0750",
+      "seed": 6
+    },
+    {
+      "initial_state_sha256": "7bec7268899ada57ebbb0fc840e981ce1e3cbed355351893bf2bfb4b5b0c0750",
+      "seed": 7
+    },
+    {
+      "initial_state_sha256": "6270ada25874702a5b1bba86c36fc01e34bbb343c02bd7245a445155e6e17824",
+      "seed": 8
+    },
+    {
+      "initial_state_sha256": "6270ada25874702a5b1bba86c36fc01e34bbb343c02bd7245a445155e6e17824",
+      "seed": 9
+    },
+    {
+      "initial_state_sha256": "4503e117ca89f27a72d5fe3b7ab8ecac3107dc856c9ac517e19cf493ab32b212",
+      "seed": 10
+    },
+    {
+      "initial_state_sha256": "6ce9043dc0a09baa2371fb8d10710e2f9dfcf1516a297675776b28cf30ae4a83",
+      "seed": 12
+    },
+    {
+      "initial_state_sha256": "bf03720a161caa2988e8fe1987e4176a80d5067512efb822c089caa326c7c4b1",
+      "seed": 14
+    },
+    {
+      "initial_state_sha256": "bf03720a161caa2988e8fe1987e4176a80d5067512efb822c089caa326c7c4b1",
+      "seed": 15
+    },
+    {
+      "initial_state_sha256": "8f69f4e6f4b366c034c7dc771073be3e527a313e182f6c6985586e09a33563b2",
+      "seed": 16
+    },
+    {
+      "initial_state_sha256": "8f69f4e6f4b366c034c7dc771073be3e527a313e182f6c6985586e09a33563b2",
+      "seed": 17
+    },
+    {
+      "initial_state_sha256": "737b7d6794f269ffc1d40e1da97957170383a2a794070907e91e5a2b78a6ba3a",
+      "seed": 18
+    },
+    {
+      "initial_state_sha256": "737b7d6794f269ffc1d40e1da97957170383a2a794070907e91e5a2b78a6ba3a",
+      "seed": 19
+    },
+    {
+      "initial_state_sha256": "4fc28933660afe8d2f6ea8e8a6e71a4df05c3ae69976242ea174877213b2c61d",
+      "seed": 20
+    },
+    {
+      "initial_state_sha256": "4fc28933660afe8d2f6ea8e8a6e71a4df05c3ae69976242ea174877213b2c61d",
+      "seed": 21
+    },
+    {
+      "initial_state_sha256": "6eb03d1372d59db21e44204aa24c323ba826d5109d5a02a2974a1989091238aa",
+      "seed": 23
+    },
+    {
+      "initial_state_sha256": "07b34d07eb473b71a5274e52d89005f63831f55d91e3711250f8c52142d48b8d",
+      "seed": 41
+    },
+    {
+      "initial_state_sha256": "ace08e91695d91c628eef4c18b17276d238ea8f86d54957a6fa2bb2336e0d1c6",
+      "seed": 42
+    },
+    {
+      "initial_state_sha256": "ace08e91695d91c628eef4c18b17276d238ea8f86d54957a6fa2bb2336e0d1c6",
+      "seed": 43
+    },
+    {
+      "initial_state_sha256": "e18cba663dcecd6ea177133daecb31ece8f12bf2421bfbc4b3a53c2e80e7a1c4",
+      "seed": 44
+    },
+    {
+      "initial_state_sha256": "e18cba663dcecd6ea177133daecb31ece8f12bf2421bfbc4b3a53c2e80e7a1c4",
+      "seed": 45
+    },
+    {
+      "initial_state_sha256": "ae5df18fd3cd46944e739793fd71040cce55f1b1510616f00a3c36462313eafc",
+      "seed": 46
+    },
+    {
+      "initial_state_sha256": "d04fcc8d0095feb5ae01c6ad4b16b6393d0682131e8dcb5d981646d1fa4e796d",
+      "seed": 48
+    },
+    {
+      "initial_state_sha256": "f5f1a3ae314caddefd236485cf98af391be1e93a2060a8dd04b758c46bd38781",
+      "seed": 50
+    },
+    {
+      "initial_state_sha256": "3d0033260d2ba8007a83c108b270fabb7df7bb7158fcfbd24bb28500ac336159",
+      "seed": 52
+    },
+    {
+      "initial_state_sha256": "78fadd38025c84693de42a410bf8d740c1b411725d84eca22313647bade2125b",
+      "seed": 54
+    },
+    {
+      "initial_state_sha256": "4a26881bfb187b2365bffaf8c92e1a6d24f08ee3c868e92112dc618344c2348e",
+      "seed": 56
+    },
+    {
+      "initial_state_sha256": "550166572ee543c6f6bb023d81fd4948da9c00a3144f5bbea5d84c69dbbf94f6",
+      "seed": 58
+    },
+    {
+      "initial_state_sha256": "c183d6ad013ad3943cc96d2993630408c256c0e04af8848f7ddb0782b999b1b1",
+      "seed": 60
+    }
+  ],
+  "game": {
+    "height": 0,
+    "mode": "endless",
+    "ruleset": "classic_ntsc_extended",
+    "start_level": 18
+  },
+  "identity": "SHA256 of sorted compact JSON of the complete native State dataclass, with only the seed field removed",
+  "prior_sources": {
+    "documented_development_seeds": {
+      "reference": "experiments/004-bounded-well-plan/notes.md and the retained 005 development probe",
+      "seeds": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        15,
+        17,
+        19,
+        21,
+        23,
+        41,
+        43,
+        45
+      ]
+    },
+    "experiments/000-connection/config.json": {
+      "seeds": [
+        42
+      ],
+      "sha256": "6126a1d5092727ebed8688e368301a95f1ee5e0b4287dfecd260f2f88ac3c974"
+    },
+    "experiments/001-greedy-heuristic/config.json": {
+      "seeds": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20
+      ],
+      "sha256": "303f66d00af0376ad6c22bcec7bc2a218503277500cfc71aea8a56a98ca91ea9"
+    },
+    "experiments/001-greedy-heuristic/result.json": {
+      "seeds": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20
+      ],
+      "sha256": "11da7b4b689508430fd28872282c29de355e9c57b3ed9d43156edc42d58b8df0"
+    },
+    "experiments/002-path-aware-lookahead/config.json": {
+      "seeds": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20
+      ],
+      "sha256": "fa6de6c7d081374a19423295d6781c368b64e78537888251ca9db2606e9dade6"
+    },
+    "experiments/002-path-aware-lookahead/result.json": {
+      "seeds": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20
+      ],
+      "sha256": "c48715c3d67b7357380e7db717de25d90056067a3a50ac15420521a22d14cfca"
+    },
+    "experiments/003-tetris-aware-agent/config.json": {
+      "seeds": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20
+      ],
+      "sha256": "a9b20935a6892bbc6cf8e4ab433ef38573d66c0fda45108ee74853e347a3d7b0"
+    },
+    "experiments/003-tetris-aware-agent/result.json": {
+      "seeds": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20
+      ],
+      "sha256": "3972ed36db9cce811a4370d5270ca160cf9a9c054c98dba20f4caa496c278a59"
+    },
+    "experiments/004-bounded-well-plan/config.json": {
+      "seeds": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20
+      ],
+      "sha256": "5c93611bcc217b88c19aabce71dbfd9c26c6da259bff4b7a4f7e7f399570d1f2"
+    },
+    "experiments/004-bounded-well-plan/probes/legacy_v6_tetris_record.json": {
+      "seeds": [
+        2,
+        4
+      ],
+      "sha256": "61dfe05b03f4a686811c5f11758973ace7101f999abf1a7ac1e5e90b29162c45"
+    },
+    "experiments/004-bounded-well-plan/probes/superseded_run_rows.json": {
+      "seeds": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20
+      ],
+      "sha256": "8cee58690665de00487771b7c23211b66ee2bbf3fe59f97403192bb8b5049bf9"
+    },
+    "experiments/004-bounded-well-plan/result.json": {
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        23
+      ],
+      "sha256": "9f7c4aef11e37dcf738d2e080768e46bae80e338b460366251d4eba7e81aa5c4"
+    },
+    "experiments/005-search-plan/archive/pre-review-config-search.json": {
+      "seeds": [
+        42,
+        44,
+        46,
+        48,
+        50,
+        52,
+        54,
+        56,
+        58,
+        60
+      ],
+      "sha256": "4076a975a099e4d4e5ee1805f4346c3edecbb9fa77f8a31be4de22640303a5d2"
+    },
+    "experiments/005-search-plan/archive/pre-review-config.json": {
+      "seeds": [
+        42,
+        44,
+        46,
+        48,
+        50,
+        52,
+        54,
+        56,
+        58,
+        60
+      ],
+      "sha256": "88b4c801b5279c619b787b6a0500da7e81fc00638292cf9e22a9d68695be9731"
+    },
+    "experiments/005-search-plan/archive/pre-review-predeclared_objective.json": {
+      "seeds": [
+        42,
+        44,
+        46,
+        48,
+        50,
+        52,
+        54,
+        56,
+        58,
+        60
+      ],
+      "sha256": "c45b6b9aa652b84046bc16e073df377941b061f44ce87be58f4252f33a3f5d18"
+    },
+    "experiments/005-search-plan/archive/pre-review-result.json": {
+      "seeds": [
+        42,
+        44,
+        46,
+        48,
+        50,
+        52,
+        54,
+        56,
+        58,
+        60
+      ],
+      "sha256": "574175461f698442906953780703ebc7705ba0c1d871bba10c047eb4bacf73a1"
+    }
+  },
+  "schema": "fallgorithm.experiment005.seed-protocol/1",
+  "selected": [
+    {
+      "candidate_index": 0,
+      "initial_state_sha256": "58727538ed753021ae5206d9c8c18a4983eb66aaef76fad7843a4c0388006a73",
+      "seed": 39497
+    },
+    {
+      "candidate_index": 1,
+      "initial_state_sha256": "13583b9468c8947e8bf2c3d469ee57f1cb0080be79469d7a8644634af632aaff",
+      "seed": 2918
+    },
+    {
+      "candidate_index": 2,
+      "initial_state_sha256": "b5cc9ae26337d115925be72ca61d6477daf81ca2bd7eccf2a65ace441bc6435b",
+      "seed": 42114
+    },
+    {
+      "candidate_index": 3,
+      "initial_state_sha256": "3155722aaad0cbf1e2cc8534651a999022144da56842b5cb546429a4f2c7cdaf",
+      "seed": 18319
+    },
+    {
+      "candidate_index": 4,
+      "initial_state_sha256": "283b425f89673f177df51f927c410c25edf5260295803a75f1571d77ac37a730",
+      "seed": 54626
+    },
+    {
+      "candidate_index": 5,
+      "initial_state_sha256": "2ec681f78946331b726d9e84fa1848ba2c31ae4e97b49225b0f0081170715e31",
+      "seed": 22909
+    },
+    {
+      "candidate_index": 6,
+      "initial_state_sha256": "599814924408c23d60ec70a2332d98ba03b3bdb6ccbca8039077b71307e5ed53",
+      "seed": 30033
+    },
+    {
+      "candidate_index": 7,
+      "initial_state_sha256": "34506a3b1c14c4050aacdaac447655b2eb008408687a089224cf5dc846b3a57a",
+      "seed": 53641
+    },
+    {
+      "candidate_index": 8,
+      "initial_state_sha256": "45d779129fdf89bfa12c8d546d4e70da63b55ff148b98c5df4b564594ad8966e",
+      "seed": 8833
+    },
+    {
+      "candidate_index": 9,
+      "initial_state_sha256": "2356a6c25659dcd642628339f10d3e16fc92aa749ea67adce3cb124a9f993aa1",
+      "seed": 62362
+    }
+  ],
+  "selection": "SHA256(fallgorithm005/review-holdout/v1/<index>), first two bytes big-endian; skip native-state collisions; no gameplay outcomes inspected"
+}
