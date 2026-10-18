@@ -64,8 +64,6 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass
-import hashlib
-from pathlib import Path
 from typing import Any
 
 from . import wellplan
@@ -73,7 +71,6 @@ from .agents import PlacementAgent
 from .heuristic import Placement
 from .pathaware import _reachable, gravity_period, grid_columns, level_for_lines
 from .pieces import PIECES
-from .sourceidentity import loaded_source_digest
 
 # The agent name a suite configures for this objective.
 SEARCH_AGENT = "search_plan"
@@ -387,41 +384,50 @@ def unregister() -> None:
 @contextmanager
 def registered():
     """Register for the duration of the block, then restore the dispatch."""
+    from . import runner
+    previous = runner.DECLARED_OBJECTIVES.get(SEARCH_AGENT)
+    names = runner.AGENT_NAMES
     register()
     try:
         yield
     finally:
-        unregister()
+        runner.AGENT_NAMES = names
+        if previous is None:
+            runner.DECLARED_OBJECTIVES.pop(SEARCH_AGENT, None)
+        else:
+            runner.DECLARED_OBJECTIVES[SEARCH_AGENT] = previous
 
 
 def objective_sources(*, loaded: bool = False) -> dict[str, str]:
     """The identity of every package module a search decision runs through.
 
-    The recorded map is the runner's dispatch-seeded walk for this agent — the
-    walk the version-7 writer emits, which seeds this module and the runner's
-    dispatch and follows every package module the two reach — plus the one
-    module that walk deliberately excludes: :mod:`block_stack_ai.wellplan`. The
+    The recorded map combines the runner's dispatch-seeded walks for this agent
+    and its well-plan leaf, including every helper either objective reaches. The
     exclusion exists so a record of one declared objective is not invalidated by
     an edit to a sibling objective no choice of it runs; the search does run the
     well plan's leaf evaluation, so dropping it would leave the high review
     finding in place. The well plan's digest is taken the same way as the rest of
     the closure: the bytes the loader read when this process imported it for the
-    writer's view, the file on the tree now for the verifier's.
+    writer's view, the file on the tree now for the verifier's. The loaded view
+    refuses stale references across that complete augmented closure.
     """
     from . import runner
     sources = runner._objective_sources(runner._IDENTITY_DISPATCH, agent=SEARCH_AGENT,
                                         loaded=loaded)
+    # Walk the leaf's dependencies too: it is a used objective here, not an
+    # unrelated sibling. This also follows helpers a later leaf revision adds.
+    sources.update(runner._objective_sources(
+        runner._IDENTITY_DISPATCH, agent=wellplan.PLAN_AGENT, loaded=loaded))
     if loaded:
-        digest = loaded_source_digest(wellplan.__name__)
-        if digest is None:
-            raise RuntimeError(
-                "No loaded source identity was recorded for block_stack_ai.wellplan: it "
-                "did not load through the package's own recorder, so the bytes that ran "
-                "are not available and a record cannot honestly name them"
+        excluded = runner._sibling_objective_modules(SEARCH_AGENT) - {id(wellplan)}
+        stale = runner._stale_loaded_references(sources, excluded)
+        if stale:
+            raise runner.VerificationError(
+                "The loaded modules a search choice runs through are inconsistent: "
+                + ", ".join(stale)
+                + "; a partial reload left callers on earlier objects. Reload their "
+                "importers too, or start a fresh process before recording the run."
             )
-    else:
-        digest = hashlib.sha256(Path(wellplan.__file__).read_bytes()).hexdigest()
-    sources[wellplan.__name__] = digest
     return {name: sources[name] for name in sorted(sources)}
 
 

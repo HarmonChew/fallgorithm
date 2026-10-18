@@ -326,7 +326,7 @@
       "top_outs": 3
     }
   },
-  "note": "A development probe on seeds 41, 43 and 45, which are the retired attempt's development seeds and were not part of its held-out evaluation. It is kept separate from the final comparison; the final evaluation uses the original even held-out seeds 42-60 with the same agents and settings.",
+  "note": "Historical development probe on seeds 41, 43 and 45. The old even-seed comparison is exploratory because 42/43 and 44/45 initialize to the same native games. The fresh evaluation uses the separately frozen native-state-disjoint seed protocol, with the same agents and settings.",
   "objective_record": {
     "module": "block_stack_ai.searchplan",
     "sources": {

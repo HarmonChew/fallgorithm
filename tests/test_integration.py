@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import copy
 import importlib.util
 import json
 from pathlib import Path
@@ -1090,3 +1091,57 @@ def test_search_suite_record_runs_and_verifies_on_the_dedicated_path(tmp_path: P
     # drops the well plan dependency the dedicated record deliberately covers.
     with pytest.raises(VerificationError, match="agents must be chosen from"):
         verify_run(path)
+
+
+def test_search_verifier_checks_the_entire_budget_report(tmp_path: Path):
+    config = json.loads((e5.EXPERIMENT_ROOT / "config-search.json").read_text())
+    config.update(frame_limit=200, seeds=[41, 43], agents=[searchplan.SEARCH_AGENT])
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps(config))
+    path = e5.build_record(config_path, runs_dir=tmp_path / "runs")
+    record = json.loads(path.read_text())
+    e5.verify_record(path)
+
+    def row(field, value):
+        return lambda budget: budget["per_episode"][0].update({field: value})
+
+    mutations = [
+        lambda b: b.update(node_budget=1),
+        lambda b: b.update(depth=999),
+        lambda b: b.update(beam_width=999),
+        lambda b: b.update(agents=[], seeds=[], expected_episodes=[]),
+        lambda b: b["totals"].update(decisions=999999, nodes_expanded=999999),
+        lambda b: b["coverage"].update(all_configured_episodes=1),
+        lambda b: b["coverage"].update(budget_exhausted_decisions=True),
+        lambda b: b["per_episode"].append(copy.deepcopy(b["per_episode"][0])),
+        lambda b: b["per_episode"].reverse(),
+        row("nodes_per_decision", 999999.0),
+        row("budget_exhausted_decisions", False),  # false == 0 is still the wrong JSON type
+        row("seed", 41.0),
+    ]
+    for mutate in mutations:
+        tampered = copy.deepcopy(record)
+        mutate(tampered["decision_budget"])
+        path.write_text(json.dumps(tampered))
+        with pytest.raises(VerificationError, match="decision budget"):
+            e5.verify_record(path)
+    advisory = copy.deepcopy(record)
+    for item in advisory["decision_budget"]["per_episode"]:
+        item["episode_seconds"] = 12345.0
+    path.write_text(json.dumps(advisory))
+    e5.verify_record(path)
+
+
+def test_fresh_seed_protocol_matches_native_states_and_excludes_known_aliases():
+    spec = importlib.util.spec_from_file_location(
+        "experiment005_seed_evidence", e5.EXPERIMENT_ROOT / "probes" / "evidence.py")
+    evidence = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(evidence)
+    protocol = json.loads(evidence.SEED_PROTOCOL.read_text())
+    evidence.check_seed_protocol(protocol)
+    game = protocol["game"]
+    assert evidence.native_initial_identity(game, 42) == evidence.native_initial_identity(game, 43)
+    assert evidence.native_initial_identity(game, 44) == evidence.native_initial_identity(game, 45)
+    for row in protocol["excluded"] + protocol["selected"]:
+        assert evidence.native_initial_identity(game, row["seed"]) == row["initial_state_sha256"]
+    assert e5.engine_fingerprint()["combined_sha256"] == protocol["engine_fingerprint"]

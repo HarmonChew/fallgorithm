@@ -15,8 +15,13 @@ from __future__ import annotations
 import argparse
 import gzip
 import hashlib
+import importlib.util
 import json
+import os
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -98,6 +103,53 @@ def test_objective_sources_include_the_well_plan_dependency():
     # A record written from the loaded closure agrees with the tree on a tree
     # that has not moved, so the writer's view is not a later read.
     assert searchplan.objective_sources(loaded=True) == sources
+
+
+@pytest.mark.parametrize("stale_holder", ["block_stack_ai.searchplan", "block_stack_ai.wellplan"])
+def test_loaded_identity_refuses_partially_reloaded_decision_code(tmp_path, stale_holder):
+    """Exercise real loader digests and stale references in a disposable process."""
+    source = tmp_path / "src"
+    shutil.copytree(runner.PROJECT_ROOT / "src", source)
+    script = r'''
+import importlib, sys
+from pathlib import Path
+from block_stack_ai import runner, searchplan, pathaware
+path = Path(pathaware.__file__)
+path.write_text(path.read_text().replace(
+    "return GRAVITY_PERIOD[level if level < 29 else 29]", "return 48"))
+old_gravity = searchplan.gravity_period
+importlib.reload(pathaware)
+assert old_gravity(18) == 3 and pathaware.gravity_period(18) == 48
+# Rebind every other importer. A stale reference in the leaf alone must be
+# caught too, even though the stock walk excludes that sibling objective.
+for name, module in list(sys.modules.items()):
+    if not name.startswith("block_stack_ai.") or name == sys.argv[1]:
+        continue
+    for attribute, value in list(vars(module).items()):
+        if getattr(value, "__module__", None) == pathaware.__name__:
+            setattr(module, attribute, getattr(pathaware, value.__name__))
+with searchplan.registered():
+    try:
+        searchplan.objective_record(loaded=True)
+    except runner.VerificationError as error:
+        assert sys.argv[1] in str(error)
+    else:
+        raise AssertionError("a partial reload was recorded as consistent source")
+'''
+    process = subprocess.run([sys.executable, "-c", script, stale_holder],
+                             env={**os.environ, "PYTHONPATH": str(source),
+                                  "PYTHONDONTWRITEBYTECODE": "1"},
+                             capture_output=True, text=True)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_nested_registration_preserves_the_outer_dispatch():
+    before = runner.DECLARED_OBJECTIVES[searchplan.SEARCH_AGENT]
+    names = runner.AGENT_NAMES
+    with searchplan.registered(), searchplan.registered():
+        assert runner.DECLARED_OBJECTIVES[searchplan.SEARCH_AGENT] is before
+    assert runner.AGENT_NAMES is names
+    assert runner.DECLARED_OBJECTIVES[searchplan.SEARCH_AGENT] is before
 
 
 def test_the_search_budget_is_deterministic_and_never_exceeded():
@@ -230,8 +282,11 @@ def test_the_saved_budget_is_regenerated_from_the_retained_record():
     through the same builder must reproduce it exactly (schema, per-episode
     counts, totals and coverage).
     """
-    result = json.loads((e5.EXPERIMENT_ROOT / "result.json").read_text(encoding="utf-8"))
-    directory = e5.EXPERIMENT_ROOT / "records" / "held-out-search"
+    result_path = e5.EXPERIMENT_ROOT / "result.json"
+    if not result_path.is_file():
+        pytest.skip("the fresh measurement is retained after freezing its source")
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    directory = e5.EXPERIMENT_ROOT / result["retained_records"]["search"]
     manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
     with gzip.open(directory / manifest["record_file"], "rb") as handle:
         record = json.loads(handle.read())
@@ -380,14 +435,78 @@ def test_the_retained_records_and_result_pass_their_checks_without_the_engine(ca
     assert "Checked" in capsys.readouterr().out
 
 
+@pytest.fixture
+def evidence_module():
+    spec = importlib.util.spec_from_file_location(
+        "experiment005_evidence", e5.EXPERIMENT_ROOT / "probes" / "evidence.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_fabricated_scores_cannot_be_certified_by_recomputing_their_metrics(tmp_path, evidence_module):
+    path = e5.EXPERIMENT_ROOT / "result.json"
+    if not path.is_file():
+        pytest.skip("the fresh measurement is retained after freezing its source")
+    assert evidence_module.command_check_record(argparse.Namespace(record=path)) == 0
+    document = json.loads(path.read_text())
+    for row in document["episodes_by_agent_seed"]:
+        if row["agent"] == searchplan.SEARCH_AGENT:
+            row["score"] *= 1000
+    document["metrics"] = e5.metrics_for(document["episodes_by_agent_seed"])
+    assert e5.check_result_document(document) == []  # internal consistency is insufficient
+    tampered = tmp_path / "fabricated.json"
+    tampered.write_text(json.dumps(document))
+    assert evidence_module.command_check_record(argparse.Namespace(record=tampered)) == 1
+
+
+@pytest.mark.parametrize("section", ["configs", "predeclared_objective", "decision_budget",
+                                   "superseded", "engine_dependency", "conclusion", "limitations"])
+def test_every_result_section_is_bound_to_retained_evidence(tmp_path, evidence_module, section):
+    path = e5.EXPERIMENT_ROOT / "result.json"
+    if not path.is_file():
+        pytest.skip("the fresh measurement is retained after freezing its source")
+    document = json.loads(path.read_text())
+    document[section] = None
+    tampered = tmp_path / "tampered.json"
+    tampered.write_text(json.dumps(document))
+    assert evidence_module.command_check_record(argparse.Namespace(record=tampered)) == 1
+
+
+def test_retained_reader_checks_the_compressed_bytes_before_using_rows(tmp_path, evidence_module):
+    source = e5.EXPERIMENT_ROOT / "records" / "held-out-baseline"
+    shutil.copytree(source, tmp_path / "record")
+    path = tmp_path / "record" / "run.json.gz"
+    document = json.loads(gzip.decompress(path.read_bytes()))
+    document["episodes"][0]["result"]["score"] += 1
+    path.write_bytes(gzip.compress(json.dumps(document).encode(), mtime=0))
+    with pytest.raises(ValueError, match="digest mismatch"):
+        evidence_module.checked_retained(tmp_path / "record")
+
+
+def test_the_seed_protocol_rejects_aliases_even_when_seed_numbers_are_distinct(evidence_module):
+    protocol = json.loads(evidence_module.SEED_PROTOCOL.read_text())
+    evidence_module.check_seed_protocol(protocol)
+    protocol["selected"][0]["initial_state_sha256"] = protocol["excluded"][0]["initial_state_sha256"]
+    with pytest.raises(ValueError, match="native states overlap"):
+        evidence_module.check_seed_protocol(protocol)
+
+
+def test_evidence_comparison_rejects_boolean_numbers_inside_lists():
+    assert e5.compare_fields([{"count": True}], [{"count": 1}], "rows")
+    assert e5.compare_fields([{"count": 1.0}], [{"count": 1}], "rows")
+
+
 def test_configs_are_declared_for_the_held_out_seeds():
     baseline = json.loads((e5.EXPERIMENT_ROOT / "config.json").read_text(encoding="utf-8"))
     search = json.loads((e5.EXPERIMENT_ROOT / "config-search.json").read_text(encoding="utf-8"))
-    held_out = [42, 44, 46, 48, 50, 52, 54, 56, 58, 60]
+    protocol = json.loads((e5.EXPERIMENT_ROOT / "probes" / "seed_protocol.json").read_text())
+    held_out = [row["seed"] for row in protocol["selected"]]
     assert baseline["seeds"] == held_out
     assert search["seeds"] == held_out
     # The retired attempt's development seeds stay out of the evaluation sample.
     assert not ({41, 43, 45} & set(held_out))
+    assert not (set(range(42, 61, 2)) & set(held_out))
     assert len(held_out) == 10 and len(set(held_out)) == 10
     assert baseline["agents"] == ["lookahead", "tetris_plan"]
     assert search["agents"] == ["lookahead", "search_plan"]

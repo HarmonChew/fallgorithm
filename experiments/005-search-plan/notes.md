@@ -1,210 +1,120 @@
 # Experiment 005 — a budgeted search on Experiment 004's well plan
 
-## Question
+## Question and frozen design
 
-Experiment 004's `tetris_plan` agent plans two pieces deep: it scores every
-placement the controller can reach with the well plan's own value and adds the
-best plan value the player-visible preview can reach on the board it leaves. Its
-published run kept the Tetris rate but lost to the frozen `lookahead` agent on
-mean lines and score, and gave the well back whenever the I ran late. Can a
-deterministic search one piece deeper — over the pieces the agent cannot see,
-with a declared plausibility model and a deterministic decision budget — beat
-that plan and the plain lookahead on seeds held out from every earlier
-experiment, while keeping the plan's well building and recovery behaviour?
+Does searching one unknown piece beyond the visible preview improve mean lines
+and preserve the Tetris line rate of the unchanged `tetris_plan` baseline?
+`search_plan` keeps the Experiment 004 well-plan leaf, a two-path beam, three-piece
+depth, equal plausibility for the seven unknown pieces and a 240-expansion budget.
+The search constants and placement decisions are unchanged from the reviewed
+implementation. The agent uses the rendered board, current and preview pieces,
+visible game settings and its own drought counter. The extra ply never reads the
+engine RNG. The shared runner, agent factory, well plan and Experiment 004 records
+remain byte-identical to the PR base.
 
-This is a fresh experiment. An earlier attempt at the same direction was retired
-with its snapshot unrecoverable; its four review findings are carried forward and
-addressed here, and the old attempt is described in
-[`archive/README.md`](archive/README.md). No result, capture or engine pin from
-that attempt is reused.
+The dedicated launcher registers the search at runtime so those older source
+identities remain valid. Use `python -m block_stack_ai.experiment005`; the stock
+`block-stack-ai` commands do not register `search_plan`.
 
-## What this experiment adds
+## Fresh evaluation protocol
 
-* **`search_plan`**, a sixth placement agent, declared in
-  `src/block_stack_ai/searchplan.py` beside the search it runs. It chooses from
-  the same reachable set Experiment 002's `lookahead`, Experiment 003's `tetris`
-  and Experiment 004's `tetris_plan` use, and keeps Experiment 004's leaf: the
-  designated well, the reserve, the stack-height budget and the spend-or-abandon
-  drought bound are read from `block_stack_ai.wellplan` unchanged.
-* **A deeper, budgeted search.** Experiment 004's exact two-piece value is
-  extended one ply: the best `beam_width` (current, preview) paths are expanded
-  over the seven plausible unseen pieces, and a branch is worth its accumulated
-  plan values plus the mean best value over those unseen pieces. One decision is
-  capped by an integer node budget, where a node is one reachable-set expansion.
-  The expansion order is canonical, so the budget is deterministic and does not
-  depend on the machine or the wall clock.
-* **A declared plausibility model.** The engine's piece selection is an NES-style
-  16-bit stream, not a bag. The search never reads the RNG or the future; it
-  treats each of the seven piece types as equally plausible, which is stated in
-  the objective's weights and in the notes rather than hidden in the code.
-* **A declared decision-budget report.** Every search run writes a
-  `decision_budget` block with one row per configured (agent, seed): decision
-  count, node count, nodes per decision, truncated decisions and advisory
-  wall-clock seconds, plus a coverage assertion. The dedicated verifier replays
-  the search and compares every integer count.
-* **A dedicated launcher, `python -m block_stack_ai.experiment005`.** The standard
-  `block-stack-ai run --experiment 005` path reads the source-registered agent
-  names, and Experiment 004's retained objective identity covers the sha256 of
-  `runner.py` and `agents.py`. Registering the search agent in either file would
-  invalidate that retained evidence, so the launcher registers the agent in the
-  runner's runtime dispatch and drives the runner's own record, replay and
-  summary code. The CLI limitation is documented in the launcher and the
-  limitations below.
+The independent review found that seed-number disjointness was insufficient:
+42 and 43 initialize to the same native game, as do 44 and 45, with only the seed
+metadata differing. The original ten even-seed comparison therefore overlaps the
+development sample. It is retained as exploratory history, including its full
+records, inputs, replays, original configurations, capture and result. Its
+1,448.8 versus 526.9 mean-line result is not fresh held-out evidence.
 
-## Method
+A replacement sample was selected without running a playing agent or inspecting
+outcomes. `probes/evidence.py select-holdout` takes the first two bytes of
+`SHA256("fallgorithm005/review-holdout/v1/<index>")` as a candidate seed and skips
+collisions in the initialized native state. The state identity is SHA256 of
+sorted compact JSON of the complete native State dataclass, erasing only its
+seed field. This includes RNG state solely as a protocol diagnostic; it never
+supplies any additional information to an agent.
 
-`experiments/005-search-plan/config.json` re-measures the unchanged agents —
-`lookahead` from Experiment 002 and `tetris_plan` from Experiment 004 — on the
-original held-out seeds, the even numbers 42, 44, 46, 48, 50, 52, 54, 56, 58 and
-60, with Experiment 004's game settings (`classic_ntsc_extended`, endless, start
-level 18, height 0) and the same 200000-frame safety cap. `config-search.json`
-runs `lookahead` and `search_plan` on the same seeds and settings. The two
-configurations are run as one evaluation; the search record is the one whose
-objective is declared.
+`probes/seed_protocol.json` freezes the selection, native identities and the
+source digests and seeds of the earlier published configurations and results,
+plus documented development seeds. Every selected state is distinct from those
+prior states and from the other selected states. A native regression recomputes
+every identity and explicitly catches the 42/43 and 44/45 aliases. Engine-free
+checks bind the protocol to its prior sources, configurations and predeclaration.
+The ten new seeds, in frozen order, are:
 
-Seeds 41, 43 and 45 are the retired attempt's *development* seeds. A three-seed
-development probe on them was measured under the implementation commit; it is
-retained in [`probes/development_three_seed_probe.json`](probes/development_three_seed_probe.json)
-and is explicitly **not** the experiment's comparison. The final ten-seed run
-below uses only the held-out even seeds, so the development sample is kept
-separate and the evaluation sample is not quietly reduced.
+`39497, 2918, 42114, 18319, 54626, 22909, 30033, 53641, 8833, 62362`.
 
-The acceptance rule was captured before the evaluation in
-[`probes/predeclared_objective.json`](probes/predeclared_objective.json), with
-the objective's module, weights and source identity read from the tree that ran:
+Both configurations use `classic_ntsc_extended`, endless mode, start level 18,
+height 0 and the same 200,000-frame cap as Experiment 004. `config.json` runs
+`lookahead` and `tetris_plan`; `config-search.json` runs `lookahead` and
+`search_plan`. Their shared lookahead episodes must agree before being counted
+once. The objective is captured before both runs in
+`probes/predeclared_objective.json`, which also names the seed protocol's digest.
 
-* **Primary:** `search_plan`'s mean lines over the ten held-out seeds (42, 44,
-  46, 48, 50, 52, 54, 56, 58 and 60) is greater than `tetris_plan`'s mean lines
-  over the same seeds, both re-measured here.
-* **Secondary:** `search_plan`'s Tetris line rate (four times its Tetrises over
-  its total lines) is at least `tetris_plan`'s.
-* `lookahead`'s mean lines, mean score and Tetris line rate are reported for
-  context and carry no threshold. A negative primary result is retained as a
-  negative result; the experiment does not chase scores beyond this comparison.
+The acceptance rules are unchanged: primary mean lines greater than the
+re-measured plan; secondary Tetris line rate at least the plan's. Lookahead
+metrics are reported for context without an acceptance threshold. No outcome is
+used to revise the constants or replace an evaluation seed. A negative primary
+result is retained as negative, with each rule reported separately.
 
-The search's constants are declared once in `searchplan.py` and are not revised
-against this evaluation. The held-out seeds were fixed before the run: the ten
-even numbers 42, 44, 46, 48, 50, 52, 54, 56, 58 and 60, disjoint from Experiment
-004's evaluation seeds (2–20) and from the retired attempt's development seeds.
-The retired attempt's development seeds are exactly 41, 43 and 45; the
-three-seed development probe on them is retained separately and is not the
-comparison.
+## Review corrections
 
-## Review findings carried forward
-
-The retired attempt's four findings are carried into this experiment as
-requirements, and the archive states each one and its resolution. In short:
-
-* **HIGH — source identity omitted the well plan dependency.** The search
-  record's `objective.sources` is the runner's dispatch-seeded walk plus the
-  `block_stack_ai.wellplan` digest that walk drops as a sibling objective, and
-  the dedicated verifier compares that superset against the tree.
-* **MEDIUM — a timing cap did not prove seed coverage.** The search is capped by
-  a deterministic integer node budget, and `decision_budget` records and asserts
-  one row per configured seed with the verifier re-deriving every count.
-* **MEDIUM — documented generators did not reproduce the saved schema or
-  decision-time fields.** `probes/evidence.py` writes every retained artifact,
-  `retain` builds `result.json` through the same derivation `check-record`
-  re-makes, and the decision-budget schema is the generated
-  `searchplan.budget_report` schema; wall-clock seconds are explicitly advisory.
-* **LOW — the hidden-row regression needed the full inherited act path.** A unit
-  test drives the inherited `PlacementAgent.act` on two states differing only in
-  `hidden_rows` and asserts one mask and one choice, and an integration test does
-  the same on a native state whose hidden buffer really holds minos.
-
-## Corrections to the frozen run
-
-The planner was frozen at commit `5feb12b` and the held-out even-seed comparison
-was measured with it. While checking why `search_plan`'s rows matched
-`tetris_plan`'s on every seed, a defect was found in the frozen search: the
-unknown-ply expectation was computed, but each branch's total was compared
-against the *first* branch's two-piece value instead of against the running best
-total. Because the expectation is usually negative, no branch could ever
-overtake the first one, so the extra ply never changed a choice and the frozen
-run measured a no-op search rather than a deeper one.
-
-The comparison was corrected to track the best total across the beam, and a
-regression pins that the unseen ply can change a choice (a board where two T
-placements tie on the two-piece value and the expectation selects the second).
-A second defect was fixed in the same round: the pre-fix launcher wrote the
-search objective section into the baseline suite's record as well, so a baseline
-record could no longer be checked by the ordinary verifier. The launcher now
-writes the stock objective section for a suite that declares no search agent.
-
-The frozen run is not discarded: its complete record and per-episode replay
-files are retained under [`records/frozen-prefix-baseline`](records/frozen-prefix-baseline)
-and [`records/frozen-prefix-search`](records/frozen-prefix-search), with a
-manifest that names it as the pre-fix measurement. It is superseded as the
-experiment's comparison by the fixed held-out run, whose records are retained
-under `records/held-out-*`. The development probe on seeds 41, 43 and 45 is retained
-separately under [`records/development-baseline`](records/development-baseline)
-and [`records/development-search`](records/development-search).
-
-## Retained records
-
-`probes/evidence.py retain-records` writes one directory per run: the complete
-run record gzipped, one `.rep` replay file per episode, and a `manifest.json`
-with the coverage, outcomes, configuration, engine fingerprint and the exact
-verification commands. Every replay was exported through the engine's own
-replay writer after a full Python replay verify and a native final-hash
-comparison.
-
-Each manifest's `verify` block is the readable instruction: `decompress`,
-`prepare`, `record`, `cleanup`, `source_commit`, `historical` and `expected`.
-The two held-out sets have `historical: false` and verify with the current
-candidate:
-
-```sh
-gunzip -c records/held-out-search/run.json.gz > /tmp/run.json
-PYTHONPATH=src .venv/bin/python -m block_stack_ai.experiment005 verify /tmp/run.json
-```
-
-The four superseded `frozen-prefix-*` and `development-*` sets have
-`historical: true` and name the commit they were measured at; `prepare` checks
-that commit out into a temporary worktree, `record` verifies with that
-worktree's source, and `cleanup` removes it. The two pre-fix search sets verify
-under their recorded code. The two pre-fix baseline sets carry
-`expected: fail-pre-fix-defect`: the pre-fix launcher stamped them with the
-search objective section and an empty decision-budget coverage block, so the
-dedicated verifier rejects them under their own code (and that old commit's CLI
-masks the rejection with an `AttributeError`); their recorded inputs and
-outcomes remain verified by the retained replay files. They are superseded
-history, not current-candidate evidence. The `python_note` in each manifest
-points at the project virtual environment for checkouts that keep it outside
-the tree.
+* The loaded source identity now walks the well-plan dependencies as well as the
+  search and dispatch, then checks the complete augmented closure for stale
+  references. Partial reloads are refused before a record can name new source
+  while callers still execute old functions. Subprocess regressions exercise
+  stale references in the search and in the well-plan leaf separately.
+* Replay verification compares the complete regenerated deterministic budget:
+  constants, ordered unique episode rows, totals, coverage, nodes per decision,
+  exact mapping keys and JSON types. Only advisory `episode_seconds` is omitted.
+  Native regressions reject all the review's alterations, duplicated/reordered
+  rows and boolean numbers, while allowing different elapsed seconds.
+* `check-record` and `retain` derive the complete result from digest-checked
+  retained run and replay files. They bind the actual config files, objective,
+  clean producer commits and module source digests, capture ordering, engine
+  fingerprint, superseded comparison and seed protocol. Recomputing metrics from
+  fabricated scores no longer certifies them. Changes to any result section,
+  including its conclusion and limitations, are detected.
+* The old comparison is exploratory; the new native-state-disjoint protocol is
+  frozen before fresh measurement. The original six record sets and all 92
+  replay files remain available. The two former `held-out-*` directories retain
+  their names for compatibility, but their manifests now say exploratory and
+  verify against their original source commit.
 
 ## Results
 
-Measured from clean commit `795712f4c061f5aab95998aba3fa16bd3c89904e` (the
-pre-measurement publication base) on 2026-10-17 with the pinned engine
-(`8ca4158`, dirty working tree; identified in `probes/engine_fingerprint.json`)
-on the held-out seeds 42-60, the same game settings and the 200000-frame cap as
-Experiment 004. The complete run records, one replay file per episode and
-manifests are retained under [`records/held-out-baseline`](records/held-out-baseline)
-and [`records/held-out-search`](records/held-out-search); the source identity
-each search record carries is the search objective plus the well plan dependency
-that the stock walk drops. Every per-episode row, metric, comparison and
-decision-budget count is identical to the archived pre-publication measurement,
-so the publication-history cleanup left the results unchanged.
+The fresh evaluation is pending at the source-freeze commit. Its measurement
+commit will add `result.json` and the two `records/fresh-*` sets without changing
+the frozen search source or constants. Earlier results are preserved under
+`archive/pre-review-*` and the six original record directories.
 
-| agent | mean lines | mean score | Tetris line rate | Tetris lines / lines | top-outs | cap stops | mean pieces |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `lookahead` | 963.0 | 3,183,918.7 | 0.000831 | 8 / 9630 | 8 | 2 | 2437.9 |
-| `tetris_plan` (004, unchanged) | 526.9 | 1,114,764.1 | 0.038717 | 204 / 5269 | 10 | 0 | 1352.6 |
-| `search_plan` (fixed) | 1448.8 | 8,314,261.6 | 0.047764 | 692 / 14488 | 5 | 5 | 3642.8 |
+## Verification and reproduction
 
-The predeclared primary acceptance is met: `search_plan`'s mean lines is 2.75x
-`tetris_plan`'s (1448.8 against 526.9), and the secondary is met too (Tetris
-line rate 0.047764 against 0.038717). `search_plan`'s mean lines is also 1.50x
-`lookahead`'s, which carried no threshold. Five search games stopped at the
-200000-frame cap while none of `tetris_plan`'s did: a capped game is a truncated
-measurement, so the search's line and score totals are floors rather than
-completed games, and the comparison against the plan is conservative in the
-plan's favour. The search made 36,435 decisions over the ten held-out seeds and
-expanded 1,391,712 reachable-set nodes with zero budget truncations; the
-decision-budget block in `result.json` carries one row per seed.
+From a checkout set up as described in the project README:
 
-The frozen pre-fix run is retained in `result.json`'s `superseded` block and its
-records under `records/frozen-prefix-*`; its `search_plan` rows match
-`tetris_plan`'s because of the defect described above, and it is not the
-experiment's comparison.
+```sh
+PYTHONPATH=src .venv/bin/python -m block_stack_ai.experiment005 run experiments/005-search-plan/config.json
+PYTHONPATH=src .venv/bin/python -m block_stack_ai.experiment005 run experiments/005-search-plan/config-search.json
+PYTHONPATH=src .venv/bin/python -m block_stack_ai.experiment005 verify runs/<run-id>/run.json
+PYTHONPATH=src .venv/bin/python experiments/005-search-plan/probes/evidence.py check-retained
+PYTHONPATH=src .venv/bin/python experiments/005-search-plan/probes/evidence.py check-record
+PYTHONPATH=src .venv/bin/python experiments/005-search-plan/probes/evidence.py reproduce
+```
+
+`reproduce` first checks the certified result, then runs both actual configuration
+files with fresh agents and compares every episode row and the entire
+deterministic budget. It leaves the retained evidence intact. Each retained
+manifest includes its own decompression and verification commands. Historical
+sets must use the source commit their manifests name. The pre-fix baseline sets
+still document their original objective-section defect and expected verification
+failure; their inputs and outcomes remain supported by native replays.
+
+## Limitations
+
+The engine fingerprint identifies the dirty sibling engine working tree
+(`8ca4158711c2d6339cab1ee8d78aa65bd624c89d`). Its uncommitted source is not retained
+here, so the engine commit alone cannot reconstruct it. Native source identities
+are rechecked locally; the experiment does not establish clean-checkout engine
+reproducibility. Wall-clock seconds are advisory and may vary. The ten-seed sample
+is finite, the equal unknown-piece model is an approximation, and capped totals
+are lower bounds. The stock CLI limitation and historical verifier defects
+remain explicit above.

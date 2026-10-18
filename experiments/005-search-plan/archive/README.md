@@ -72,3 +72,13 @@ survived the retirement and a copy of an unavailable artifact would not be
 evidence. No task, session or account identifier appears here or in any project
 commit: the experiment's notes link only to this archive, and the archive
 describes the retired attempt by what it was.
+
+## Independent review of PR 20
+
+The later independent review found native seed aliases in the published sample
+and gaps in loaded-source, result and budget verification. The original published
+notes, configurations, capture and result are preserved as `pre-review-*` here.
+The six original record directories and their replay bytes are unchanged; the
+former held-out manifests now label that comparison exploratory. The active
+experiment notes describe the fixes and the fresh frozen native-state-disjoint
+evaluation.

@@ -244,31 +244,52 @@ def _verify_record_registered(
             + "\n  ".join(summary_differences))
     if not isinstance(budget, dict) or budget.get("schema") != BUDGET_SCHEMA:
         raise runner.VerificationError("Recorded decision budget has the wrong schema")
-    expected_budget = searchplan.budget_report(
-        config, searchplan.SEARCH_AGENT,
-        [{key: row[key] for key in (
-            "agent", "seed", "decisions", "nodes_expanded",
-            "budget_exhausted_decisions")} for row in budget_rows])
-    recorded_rows = {json.dumps([row.get("agent"), row.get("seed")]): row
-                     for row in budget.get("per_episode", [])}
-    expected_rows = {json.dumps([row["agent"], row["seed"]]): row
-                     for row in expected_budget["per_episode"]}
-    if set(recorded_rows) != set(expected_rows):
+    expected_budget = searchplan.budget_report(config, searchplan.SEARCH_AGENT, budget_rows)
+    budget_differences = compare_fields(
+        deterministic_budget(budget), deterministic_budget(expected_budget), "decision_budget")
+    if budget_differences:
         raise runner.VerificationError(
-            "Recorded decision budget does not cover the configured search episodes")
-    for key, expected_row in expected_rows.items():
-        recorded_row = recorded_rows[key]
-        for field in ("decisions", "nodes_expanded", "budget_exhausted_decisions"):
-            if type(recorded_row.get(field)) is not int or \
-                    recorded_row[field] != expected_row[field]:
-                raise runner.VerificationError(
-                    f"Decision budget row {key} field {field}: recorded "
-                    f"{recorded_row.get(field)!r}, replayed {expected_row[field]!r}")
-    coverage = budget.get("coverage")
-    if not isinstance(coverage, dict) or not coverage.get("all_configured_episodes") \
-            or not coverage.get("all_configured_seeds"):
-        raise runner.VerificationError("Recorded decision budget does not claim full seed coverage")
+            "Recorded decision budget differs from the replay:\n  "
+            + "\n  ".join(budget_differences))
     return runner._engine_warnings(record.get("versions", {}).get("engine"))
+
+
+def deterministic_budget(budget: dict[str, Any]) -> dict[str, Any]:
+    """Keep all report fields and ordered rows except advisory elapsed seconds.
+
+    Do not index rows by episode identity: doing so silently loses duplicates.
+    The strict recursive comparison also checks constants, totals, coverage,
+    nodes per decision, keys and JSON types against the regenerated report.
+    """
+    rows = budget.get("per_episode")
+    if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
+        raise runner.VerificationError("Decision budget per_episode must be a list of mappings")
+    return {**budget, "per_episode": [
+        {key: value for key, value in row.items() if key != "episode_seconds"}
+        for row in rows
+    ]}
+
+
+def compare_fields(recorded: Any, expected: Any, where: str) -> list[str]:
+    """Type-sensitive comparison, including values nested inside ordered lists.
+
+    The shared comparator treats lists as leaves, where Python considers a JSON
+    boolean equal to an integer. Budget rows and retained result rows need the
+    recursive check as well as exact order, length and mapping keys.
+    """
+    if type(recorded) is not type(expected):
+        return [f"{where}: expected {type(expected).__name__}, got {type(recorded).__name__}"]
+    if isinstance(expected, dict):
+        if set(recorded) != set(expected):
+            return [f"{where}: mapping keys differ"]
+        return [problem for key in expected
+                for problem in compare_fields(recorded[key], expected[key], f"{where}.{key}")]
+    if isinstance(expected, list):
+        if len(recorded) != len(expected):
+            return [f"{where}: list lengths differ ({len(recorded)} != {len(expected)})"]
+        return [problem for index, (left, right) in enumerate(zip(recorded, expected))
+                for problem in compare_fields(left, right, f"{where}[{index}]")]
+    return [] if recorded == expected else [f"{where}: {recorded!r} != {expected!r}"]
 
 
 def predeclaration(config_path: Path) -> dict[str, Any]:
@@ -434,7 +455,10 @@ def retained_rows(baseline: dict[str, Any], search: dict[str, Any]) -> list[dict
     """
     rows: dict[tuple[str, int], dict[str, Any]] = {}
     for row in _rows(baseline) + _rows(search):
-        rows.setdefault((row["agent"], row["seed"]), row)
+        identity = (row["agent"], row["seed"])
+        if identity in rows and compare_fields(row, rows[identity], "shared episode"):
+            raise ValueError(f"The runs disagree on the shared episode {identity}")
+        rows.setdefault(identity, row)
     return list(rows.values())
 
 

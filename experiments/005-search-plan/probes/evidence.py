@@ -28,11 +28,13 @@ writer and the checker call.
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 import gzip
 import hashlib
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -48,6 +50,9 @@ PREDECLARED = PROBES / "predeclared_objective.json"
 ENGINE = PROBES / "engine_fingerprint.json"
 DEVELOPMENT_PROBE = PROBES / "development_three_seed_probe.json"
 BASELINE_004 = runner.PROJECT_ROOT / "experiments" / "004-bounded-well-plan" / "result.json"
+SEED_PROTOCOL = PROBES / "seed_protocol.json"
+CURRENT_BASELINE = "fresh-baseline"
+CURRENT_SEARCH = "fresh-search"
 
 
 def _load(path: Path) -> dict:
@@ -64,6 +69,7 @@ def command_fingerprint(args: argparse.Namespace) -> int:
 
 def command_predeclare(args: argparse.Namespace) -> int:
     document = e5.predeclaration(args.config)
+    document["seed_protocol_sha256"] = _sha256(SEED_PROTOCOL)
     args.output.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n",
                            encoding="utf-8")
     print(f"Wrote {args.output} for {document['module']}")
@@ -71,37 +77,12 @@ def command_predeclare(args: argparse.Namespace) -> int:
 
 
 def command_retain(args: argparse.Namespace) -> int:
-    baseline = _load(args.baseline)
-    search = _load(args.search)
-    predeclared = _load(args.predeclared)
-    engine = _load(args.engine)
-    predeclared_bindings = {
-        "module": search["objective"]["module"],
-        "weights": search["objective"]["weights"],
-        "sources": search["objective"]["sources"],
-    }
-    for key, value in predeclared_bindings.items():
-        if predeclared.get(key) != value:
-            raise SystemExit(
-                f"the run's objective {key} does not match the predeclaration; "
-                "the evaluation must not be retained under a different objective")
-    baseline_004 = _load(BASELINE_004)["metrics"]["tetris_plan"]
-    superseded = None
-    if args.superseded_baseline and args.superseded_search:
-        superseded = e5.superseded_block(
-            baseline=_load(args.superseded_baseline), search=_load(args.superseded_search),
-            reason=(
-                "the frozen held-out run was measured before the unseen-ply "
-                "comparison was fixed, when the extra ply could not change the "
-                "chosen move and the pre-fix launcher also wrote the search "
-                "objective into the baseline record; the corrected run from the "
-                "clean fix commit supersedes it"
-            ),
-            retained_records={"baseline": "records/frozen-prefix-baseline",
-                              "search": "records/frozen-prefix-search"})
-    document = e5.build_result_document(
-        baseline=baseline, search=search, predeclared=predeclared, engine=engine,
-        baseline_004=baseline_004, superseded=superseded)
+    for path, label in ((args.baseline, CURRENT_BASELINE), (args.search, CURRENT_SEARCH)):
+        retained, _ = _retained(label)
+        require_equal(_load(path), retained, f"retained {label}")
+    require_equal(_load(args.predeclared), _load(PREDECLARED), "predeclaration")
+    require_equal(_load(args.engine), _load(ENGINE), "engine")
+    document = expected_result_document()
     problems = e5.check_result_document(document)
     if problems:
         raise SystemExit("the result document is inconsistent:\n  " + "\n  ".join(problems))
@@ -113,14 +94,12 @@ def command_retain(args: argparse.Namespace) -> int:
 
 def command_check_record(args: argparse.Namespace) -> int:
     document = _load(args.record)
-    problems = e5.check_result_document(document)
-    predeclared = _load(PREDECLARED)
-    for key in ("module", "weights", "sources"):
-        if document.get("objective_record", {}).get(key) != predeclared.get(key):
-            problems.append(f"objective_record.{key} does not match the predeclaration")
-    baseline_004 = _load(BASELINE_004)["metrics"]["tetris_plan"]
-    if document.get("baseline_004") != baseline_004:
-        problems.append("baseline_004 does not match Experiment 004's retained metrics")
+    try:
+        expected = expected_result_document()
+        problems = e5.compare_fields(document, expected, "result")
+    except (ValueError, KeyError, OSError, runner.VerificationError,
+            subprocess.CalledProcessError) as error:
+        problems = [str(error)]
     if problems:
         for problem in problems:
             print(f"Problem: {problem}", file=sys.stderr)
@@ -130,6 +109,8 @@ def command_check_record(args: argparse.Namespace) -> int:
 
 
 def command_reproduce(args: argparse.Namespace) -> int:
+    if command_check_record(args):
+        return 1
     document = _load(args.record)
     expected_rows = document["episodes_by_agent_seed"]
     expected_budget = document["decision_budget"]
@@ -138,7 +119,8 @@ def command_reproduce(args: argparse.Namespace) -> int:
         configs = Path(temporary) / "configs"
         configs.mkdir()
         records = {}
-        for name, config in document["configs"].items():
+        for name, filename in (("baseline", "config.json"), ("search", "config-search.json")):
+            config = _load(PROBES.parent / filename)
             path = configs / f"{name}.json"
             path.write_text(json.dumps(config), encoding="utf-8")
             records[name] = _load(e5.build_record(path, runs_dir=runs))
@@ -146,21 +128,10 @@ def command_reproduce(args: argparse.Namespace) -> int:
         if actual_rows != expected_rows:
             raise SystemExit("the reproduced episode rows differ from the retained ones")
         actual_budget = records["search"]["decision_budget"]
-        for field in ("per_episode", "totals", "coverage"):
-            if field == "per_episode":
-                recorded = {json.dumps([row["agent"], row["seed"]]): row
-                            for row in expected_budget[field]}
-                replayed = {json.dumps([row["agent"], row["seed"]]): row
-                            for row in actual_budget[field]}
-                for key, row in recorded.items():
-                    for count in ("decisions", "nodes_expanded",
-                                  "budget_exhausted_decisions"):
-                        if row[count] != replayed[key][count]:
-                            raise SystemExit(
-                                f"reproduced budget {key} {count}: {row[count]} != "
-                                f"{replayed[key][count]}")
-            elif expected_budget[field] != actual_budget[field]:
-                raise SystemExit(f"reproduced decision budget {field} differs")
+        differences = e5.compare_fields(e5.deterministic_budget(expected_budget),
+                                        e5.deterministic_budget(actual_budget), "decision_budget")
+        if differences:
+            raise SystemExit("\n".join(differences))
     print("Reproduced every retained row and every decision and node count")
     return 0
 
@@ -342,11 +313,223 @@ def command_retain_records(args: argparse.Namespace) -> int:
 
 
 def _retained(label: str) -> tuple[dict, dict]:
-    """The retained record and manifest of one record directory."""
-    directory = RECORDS / label
+    """Read retained bytes only after checking their manifest and replay digests."""
+    return checked_retained(RECORDS / label)
+
+
+def require_equal(actual, expected, where: str) -> None:
+    problems = e5.compare_fields(actual, expected, where)
+    if problems:
+        raise ValueError("\n".join(problems))
+
+
+def checked_retained(directory: Path) -> tuple[dict, dict]:
     manifest = _load(directory / "manifest.json")
-    with gzip.open(directory / manifest["record_file"], "rb") as handle:
-        return json.loads(handle.read()), manifest
+    path = directory / manifest["record_file"]
+    if _sha256(path) != manifest["record_sha256"]:
+        raise ValueError(f"{directory.name}: retained record digest mismatch")
+    raw = gzip.decompress(path.read_bytes())
+    require_equal(len(raw), manifest["record_bytes"], "record_bytes")
+    record = json.loads(raw)
+    require_equal(record["configuration"], manifest["configuration"], "manifest.configuration")
+    require_equal(record["versions"], manifest["versions"], "manifest.versions")
+    coverage = {}
+    outcomes = []
+    for episode in record["episodes"]:
+        coverage.setdefault(episode["agent"], []).append(episode["seed"])
+        outcomes.append({
+            "agent": episode["agent"], "seed": episode["seed"],
+            "lines": episode["result"]["lines"], "score": episode["result"]["score"],
+            "frames": episode["result"]["frame_count"],
+            "stopping_reason": episode["result"]["stopping_reason"],
+            "pieces_placed": episode["pieces_placed"],
+            "final_state_hash": episode["result"]["final_state_hash"],
+        })
+    require_equal(outcomes, manifest["outcomes"], "manifest.outcomes")
+    require_equal(coverage, manifest["coverage"], "manifest.coverage")
+    require_equal([[r["agent"], r["seed"]] for r in manifest["replays"]],
+                  [[e["agent"], e["seed"]] for e in record["episodes"]], "manifest.replays")
+    for replay in manifest["replays"]:
+        if _sha256(directory / replay["file"]) != replay["sha256"]:
+            raise ValueError(f"{directory.name}: replay {replay['file']} digest mismatch")
+    return record, manifest
+
+
+def _check_run_binding(record: dict, config: dict, objective: dict, captured_at: str) -> None:
+    require_equal(record["configuration"], config, "run.configuration")
+    require_equal(record["objective"], objective, "run.objective")
+    require_equal([[e["agent"], e["seed"]] for e in record["episodes"]],
+                  [[agent, seed] for agent in config["agents"] for seed in config["seeds"]],
+                  "run.episode_order")
+    require_equal(record["summary"], runner._summarize(record["episodes"]), "run.summary")
+    if datetime.fromisoformat(captured_at) > datetime.fromisoformat(record["created_at"]):
+        raise ValueError("The predeclaration must precede both evaluation runs")
+    version = record["versions"]["fallgorithm"]
+    if version["dirty"] is not False or version["kind"] != "committed" or not version["commit"]:
+        raise ValueError("The fresh evaluation must name a clean producer commit")
+    for module, digest in record["objective"]["sources"].items():
+        source = "src/" + module.replace(".", "/") + ".py"
+        result = subprocess.run(["git", "show", f"{version['commit']}:{source}"],
+                                cwd=runner.PROJECT_ROOT, capture_output=True, check=True)
+        require_equal(hashlib.sha256(result.stdout).hexdigest(), digest,
+                      f"producer source {module}")
+
+
+def expected_result_document() -> dict:
+    """Derive every certified result field from independent retained evidence."""
+    baseline, baseline_manifest = _retained(CURRENT_BASELINE)
+    search, search_manifest = _retained(CURRENT_SEARCH)
+    predeclared = _load(PREDECLARED)
+    engine = _load(ENGINE)
+    baseline_config = _load(PROBES.parent / "config.json")
+    search_config = _load(PROBES.parent / "config-search.json")
+    require_equal(predeclared["config"], search_config, "predeclaration.config")
+    require_equal(predeclared["seed_protocol_sha256"], _sha256(SEED_PROTOCOL),
+                  "predeclaration.seed_protocol_sha256")
+    protocol = _load(SEED_PROTOCOL)
+    check_seed_protocol(protocol)
+    require_equal(protocol["game"], search_config["game"], "seed_protocol.game")
+    selected = [row["seed"] for row in protocol["selected"]]
+    require_equal(selected, search_config["seeds"], "seed_protocol.search_seeds")
+    require_equal(selected, baseline_config["seeds"], "seed_protocol.baseline_seeds")
+    require_equal(baseline_config["game"], search_config["game"], "comparison.game")
+    require_equal(baseline_config["frame_limit"], search_config["frame_limit"], "comparison.frame_limit")
+    if datetime.fromisoformat(protocol["captured_at"]) > datetime.fromisoformat(predeclared["captured_at"]):
+        raise ValueError("The seed protocol must precede the objective capture")
+    with searchplan.registered():
+        objective = searchplan.objective_record()
+        for key in ("module", "weights", "sources"):
+            require_equal(predeclared[key], objective[key], f"predeclaration.{key}")
+        config = runner.parse_config(baseline_config)
+        _check_run_binding(baseline, baseline_config, runner._objective_section(config)["objective"],
+                           predeclared["captured_at"])
+        _check_run_binding(search, search_config, objective, predeclared["captured_at"])
+        budget_config = runner.parse_config(search_config)
+    for manifest in (baseline_manifest, search_manifest):
+        require_equal(manifest["engine_fingerprint"], engine["combined_sha256"], "engine_fingerprint")
+    require_equal(protocol["engine_fingerprint"], engine["combined_sha256"], "seed_protocol.engine")
+    regenerated_budget = searchplan.budget_report(
+        budget_config, searchplan.SEARCH_AGENT, search["decision_budget"]["per_episode"])
+    require_equal(search["decision_budget"], regenerated_budget, "run.decision_budget")
+    old_baseline, _ = _retained("held-out-baseline")
+    old_search, _ = _retained("held-out-search")
+    superseded = e5.superseded_block(
+        baseline=old_baseline, search=old_search,
+        reason=("Exploratory pre-review comparison: evaluation seeds 42 and 44 alias "
+                "development seeds 43 and 45. The original artifacts remain retained, "
+                "but this sample is not fresh held-out evidence."),
+        retained_records={"baseline": "records/held-out-baseline", "search": "records/held-out-search"})
+    document = e5.build_result_document(
+        baseline=baseline, search=search, predeclared=predeclared, engine=engine,
+        baseline_004=_load(BASELINE_004)["metrics"]["tetris_plan"], superseded=superseded)
+    document["seed_protocol"] = protocol
+    document["retained_records"] = {"baseline": f"records/{CURRENT_BASELINE}",
+                                    "search": f"records/{CURRENT_SEARCH}"}
+    return document
+
+
+def prior_seed_sources() -> dict:
+    """Published earlier configurations/results plus documented development seeds."""
+    sources = {}
+    paths = [path for directory in sorted((runner.PROJECT_ROOT / "experiments").glob("00[0-4]-*"))
+             for path in sorted(directory.rglob("*.json"))]
+    paths += sorted((PROBES.parent / "archive").glob("pre-review-*.json"))
+
+    def seeds_in(value):
+        seeds = set()
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if key == "seed" and type(child) is int:
+                    seeds.add(child)
+                elif key == "seeds" and isinstance(child, list):
+                    seeds.update(seed for seed in child if type(seed) is int)
+                else:
+                    seeds.update(seeds_in(child))
+        elif isinstance(value, list):
+            for child in value:
+                seeds.update(seeds_in(child))
+        return {seed for seed in seeds if 0 <= seed <= 65535}
+
+    for path in paths:
+        seeds = sorted(seeds_in(_load(path)))
+        if seeds:
+            sources[path.relative_to(runner.PROJECT_ROOT).as_posix()] = {
+                "sha256": _sha256(path), "seeds": seeds}
+    sources["documented_development_seeds"] = {
+        "seeds": [1, 3, 5, 7, 9, 15, 17, 19, 21, 23, 41, 43, 45],
+        "reference": "experiments/004-bounded-well-plan/notes.md and the retained 005 development probe",
+    }
+    return sources
+
+
+def native_initial_identity(game: dict, seed: int) -> str:
+    """Hash the initialized native state, erasing only its seed metadata.
+
+    This protocol diagnostic may inspect RNG state; it never supplies anything
+    to the placement agent. The same seed-erased state gives the same future
+    state for every common input sequence, which catches adjacent-seed aliases.
+    """
+    with runner.create_game(**game, seed=seed) as native:
+        state = asdict(native.state)
+    state.pop("seed")
+    raw = json.dumps(state, sort_keys=True, separators=(",", ":"),
+                     default=lambda value: value.tolist()).encode()
+    return hashlib.sha256(raw).hexdigest()
+
+
+def check_seed_protocol(protocol: dict) -> None:
+    require_equal(protocol["prior_sources"], prior_seed_sources(), "seed_protocol.prior_sources")
+    prior_seeds = sorted({seed for source in protocol["prior_sources"].values()
+                          for seed in source["seeds"]})
+    require_equal([row["seed"] for row in protocol["excluded"]], prior_seeds, "seed_protocol.excluded")
+    selected = protocol["selected"]
+    if len(selected) != 10 or len({row["seed"] for row in selected}) != 10:
+        raise ValueError("The fresh protocol requires ten unique evaluation seeds")
+    identities = {row["initial_state_sha256"] for row in selected}
+    excluded = {row["initial_state_sha256"] for row in protocol["excluded"]}
+    if len(identities) != 10 or identities & excluded:
+        raise ValueError("Evaluation native states overlap prior games or one another")
+    for index, row in enumerate(selected):
+        expected_seed = int.from_bytes(hashlib.sha256(
+            f"fallgorithm005/review-holdout/v1/{row['candidate_index']}".encode()).digest()[:2], "big")
+        require_equal(row["seed"], expected_seed, f"seed_protocol.selected[{index}]")
+
+
+def command_select_holdout(args: argparse.Namespace) -> int:
+    if SEED_PROTOCOL.exists():
+        raise ValueError("A seed protocol is already frozen; retain it rather than selecting again")
+    config = _load(PROBES.parent / "config.json")
+    sources = prior_seed_sources()
+    excluded = [{"seed": seed, "initial_state_sha256": native_initial_identity(config["game"], seed)}
+                for seed in sorted({seed for source in sources.values() for seed in source["seeds"]})]
+    seen = {row["initial_state_sha256"] for row in excluded}
+    selected = []
+    index = 0
+    while len(selected) < 10:
+        seed = int.from_bytes(hashlib.sha256(
+            f"fallgorithm005/review-holdout/v1/{index}".encode()).digest()[:2], "big")
+        identity = native_initial_identity(config["game"], seed)
+        if identity not in seen:
+            selected.append({"seed": seed, "candidate_index": index, "initial_state_sha256": identity})
+            seen.add(identity)
+        index += 1
+    document = {
+        "schema": "fallgorithm.experiment005.seed-protocol/1",
+        "captured_at": datetime.now(timezone.utc).isoformat(),
+        "game": config["game"], "prior_sources": sources, "excluded": excluded, "selected": selected,
+        "engine_fingerprint": e5.engine_fingerprint()["combined_sha256"],
+        "selection": "SHA256(fallgorithm005/review-holdout/v1/<index>), first two bytes big-endian; skip native-state collisions; no gameplay outcomes inspected",
+        "identity": "SHA256 of sorted compact JSON of the complete native State dataclass, with only the seed field removed",
+    }
+    check_seed_protocol(document)
+    SEED_PROTOCOL.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n")
+    for filename in ("config.json", "config-search.json"):
+        path = PROBES.parent / filename
+        value = _load(path)
+        value["seeds"] = [row["seed"] for row in selected]
+        path.write_text(json.dumps(value, indent=2) + "\n")
+    print(f"Froze ten native-state-disjoint seeds: {[row['seed'] for row in selected]}")
+    return 0
 
 
 def development_summary() -> dict:
@@ -365,11 +548,10 @@ def development_summary() -> dict:
     return {
         "schema": "fallgorithm.experiment005.development-probe/1",
         "note": (
-            "A development probe on seeds 41, 43 and 45, which are the retired "
-            "attempt's development seeds and were not part of its held-out "
-            "evaluation. It is kept separate from the final comparison; the "
-            "final evaluation uses the original even held-out seeds 42-60 with "
-            "the same agents and settings."
+            "Historical development probe on seeds 41, 43 and 45. The old even-seed "
+            "comparison is exploratory because 42/43 and 44/45 initialize to the "
+            "same native games. The fresh evaluation uses the separately frozen "
+            "native-state-disjoint seed protocol, with the same agents and settings."
         ),
         "seeds": [41, 43, 45],
         "configs": {"baseline": baseline["configuration"],
@@ -407,34 +589,10 @@ def command_check_retained(args: argparse.Namespace) -> int:
         manifest_path = directory / "manifest.json"
         if not manifest_path.is_file():
             continue
-        manifest = _load(manifest_path)
-        retained = directory / manifest["record_file"]
-        if not retained.is_file() or _sha256(retained) != manifest["record_sha256"]:
-            problems.append(f"{directory.name}: retained record digest mismatch")
-            continue
-        with gzip.open(retained, "rb") as handle:
-            record = json.loads(handle.read())
-        if "episodes" in record:
-            outcomes = [{
-                "agent": episode["agent"], "seed": episode["seed"],
-                "lines": episode["result"]["lines"],
-                "score": episode["result"]["score"],
-                "frames": episode["result"]["frame_count"],
-                "stopping_reason": episode["result"]["stopping_reason"],
-                "pieces_placed": episode["pieces_placed"],
-                "final_state_hash": episode["result"]["final_state_hash"],
-            } for episode in record["episodes"]]
-            if outcomes != manifest["outcomes"]:
-                problems.append(f"{directory.name}: manifest outcomes differ from the record")
-            coverage: dict[str, list[int]] = {}
-            for episode in record["episodes"]:
-                coverage.setdefault(episode["agent"], []).append(episode["seed"])
-            if coverage != manifest["coverage"]:
-                problems.append(f"{directory.name}: manifest coverage differs from the record")
-        for replay in manifest["replays"]:
-            path = directory / replay["file"]
-            if not path.is_file() or _sha256(path) != replay["sha256"]:
-                problems.append(f"{directory.name}: replay {replay['file']} is missing or changed")
+        try:
+            checked_retained(directory)
+        except (ValueError, KeyError, OSError) as error:
+            problems.append(f"{directory.name}: {error}")
         checked += 1
     if not DEVELOPMENT_PROBE.is_file():
         problems.append("the development-probe summary is not retained")
@@ -452,6 +610,7 @@ def command_check_retained(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Experiment 005 evidence generators and checks")
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("select-holdout", help="freeze ten seeds with distinct native initial states")
     fingerprint = commands.add_parser("fingerprint", help="write the engine dependency manifest")
     fingerprint.add_argument("--output", type=Path, default=ENGINE)
     predeclare = commands.add_parser("predeclare", help="capture the objective before the run")
@@ -462,8 +621,6 @@ def main(argv: list[str] | None = None) -> int:
     retain.add_argument("--search", type=Path, required=True)
     retain.add_argument("--predeclared", type=Path, default=PREDECLARED)
     retain.add_argument("--engine", type=Path, default=ENGINE)
-    retain.add_argument("--superseded-baseline", type=Path, default=None)
-    retain.add_argument("--superseded-search", type=Path, default=None)
     retain.add_argument("--output", type=Path, default=RESULT)
     check = commands.add_parser("check-record", help="check result.json without the engine")
     check.add_argument("record", type=Path, nargs="?", default=RESULT)
@@ -485,7 +642,8 @@ def main(argv: list[str] | None = None) -> int:
                                   help="regenerate the development probe from the retained records")
     summary.add_argument("--output", type=Path, default=DEVELOPMENT_PROBE)
     args = parser.parse_args(argv)
-    return {"fingerprint": command_fingerprint, "predeclare": command_predeclare,
+    return {"select-holdout": command_select_holdout,
+            "fingerprint": command_fingerprint, "predeclare": command_predeclare,
             "retain": command_retain, "check-record": command_check_record,
             "reproduce": command_reproduce,
             "retain-records": command_retain_records,
