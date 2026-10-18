@@ -13,8 +13,9 @@ engine RNG. The shared runner, agent factory, well plan and Experiment 004 recor
 remain byte-identical to the PR base.
 
 The dedicated launcher registers the search at runtime so those older source
-identities remain valid. Use `python -m block_stack_ai.experiment005`; the stock
-`block-stack-ai` commands do not register `search_plan`.
+identities remain valid. Use `python -m block_stack_ai.experiment005` for the
+frozen evidence path; the normal `block-stack-ai` commands register the agent at
+runtime too (see the tooling addendum below).
 
 ## Fresh evaluation protocol
 
@@ -147,6 +148,20 @@ manifest includes its own decompression and verification commands. Historical
 sets must use the source commit their manifests name. The pre-fix baseline sets
 still document their original objective-section defect and expected verification
 failure; their inputs and outcomes remain supported by native replays.
+
+## Normal launcher access (tooling addendum, no re-measurement)
+
+The normal `block-stack-ai` commands now load this experiment's module and
+register `search_plan` in the runner's runtime dispatch for the duration of the
+command, then restore it. The interactive launcher therefore offers Experiment
+005 and its search agent, `play --experiment 005` defaults to `search_plan` and
+saves a live search game through a live session that records the search
+objective's well-plan-plus-controller identity, and `verify`, `watch` and
+`export-replay` dispatch search records — headless or live — to the dedicated
+verifier. The source files Experiment 004's retained identity covers are
+unchanged, and no measurement is re-run: this addendum is wording- and
+tooling-only. The limitation recorded in `result.json` about the stock CLI
+describes the commands as they stood when the comparison was measured.
 
 ## Limitations
 

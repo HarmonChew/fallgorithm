@@ -2,14 +2,30 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 import shlex
 
+from . import searchplan
 from .agents import default_agent
 from .runner import SuiteConfig, load_config
 
 
 PLAY_SPEEDS = ("0.25", "0.5", "1", "2", "4", "8")
+
+
+def default_live_agent(agents: Sequence[str]) -> str:
+    """The agent a live game starts with when none was named.
+
+    The established rule is ``greedy`` when the experiment offers it, otherwise
+    the first configured agent. An experiment that offers the budgeted search
+    planner is asking for that planner, so it wins over the first configured
+    agent; the constant comes from the module that declares the agent, so a
+    rename moves both sides together.
+    """
+    if searchplan.SEARCH_AGENT in agents:
+        return searchplan.SEARCH_AGENT
+    return default_agent(agents)
 
 
 class _Cancelled(Exception):
@@ -90,7 +106,8 @@ def select_command(experiments: dict[str, Path]) -> list[str] | None:
             live = isinstance(config, SuiteConfig) and action == actions[0]
             command = ["play" if live else "run", "--experiment", name]
             if live:
-                agent = _choose("Agent", list(config.agents), default=default_agent(config.agents))
+                agent = _choose("Agent", list(config.agents),
+                                default=default_live_agent(list(config.agents)))
                 frame_limit = _frame_limit(config.frame_limit)
                 seed = _seed()
                 speed = _choose("Speed", [f"{value}x" for value in PLAY_SPEEDS], default="1x")

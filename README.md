@@ -16,8 +16,9 @@ spend-or-abandon rule at a self-tracked I-drought bound, on the same reachable
 set, with the declared objective of whichever agent a suite selects recorded and
 replayed. Experiment 005 adds a budgeted search planner: it keeps Experiment
 004's well plan as its leaf evaluation and searches one piece deeper over
-plausible unseen pieces under a deterministic integer node budget, and it runs
-through a dedicated launcher of its own. There is no machine learning yet.
+plausible unseen pieces under a deterministic integer node budget; its agent
+file is registered at runtime by the normal launcher so the sources Experiment
+004's retained identity covers stay untouched. There is no machine learning yet.
 Development proceeds one measured experiment at a time, reusing this engine
 connection and recording path.
 
@@ -85,11 +86,18 @@ name (for example, `001` or `001-greedy-heuristic`). The selected name and resol
 config path are printed before starting. `--config path/to/config.json` remains
 available for a custom configuration; it cannot be combined with `--experiment`.
 
-Experiment 005 is the one exception to the shared `run` command: its
-`search_plan` agent is registered at runtime so that the source files Experiment
-004's retained identity covers stay byte-identical, and the stock configuration
-parser does not know that name. Run and verify that experiment through its
-dedicated launcher:
+Experiment 005's `search_plan` agent is declared in its own module rather than
+the shared agent factory and runner, so the source files Experiment 004's
+retained identity covers stay byte-identical. The normal commands load the
+experiment's module and register the agent in the runner's runtime dispatch for
+the duration of the command, then put the dispatch back: the launcher offers
+the search agent, `run --experiment 005` writes the search record through the
+experiment's writer, and `verify`, `watch` and `export-replay` dispatch a
+search record to the experiment's own verifier. The normal `run` uses the
+experiment's `config-search.json` (its new agent's comparison configuration);
+the plain `config.json` baseline remains runnable by explicit path and through
+the dedicated launcher, which is still the exact path the retained manifests
+name:
 
 ```sh
 .venv/bin/python -m block_stack_ai.experiment005 run experiments/005-search-plan/config-search.json
@@ -215,8 +223,9 @@ limit bounds the live session and is what the saved record carries; the
 experiment's configuration file is never edited. Launched from the menu, a live
 game starts paused by default so the first board is visible before the game
 runs; the direct `play` command starts playing unless `--paused` is given.
-`--agent` chooses an algorithm within that experiment (default: `greedy` when
-the experiment offers it, otherwise the experiment's first agent). Experiment
+`--agent` chooses an algorithm within that experiment (default: `search_plan`
+when the experiment offers it, otherwise `greedy` when it offers that, otherwise
+the experiment's first agent). Experiment
 000 is a fixed controller script and supports `run` and replay rather than live
 placement play.
 
@@ -232,10 +241,12 @@ To choose the seed, watch faster, or compare the random baseline:
 ```
 
 Each completed game or frame-limit stop saves a normal one-episode suite record
-under `runs/`; use the printed path with `block-stack-ai verify`. The controller
-checks every desktop state against the native library's predicted next state
-before choosing another input. Closing or restarting an incomplete game excludes
-it from experiment results; the desktop can still save its inputs with F5.
+under `runs/`; use the printed path with `block-stack-ai verify`, then
+`block-stack-ai watch` or `block-stack-ai export-replay` to replay the game in
+the desktop client. The controller checks every desktop state against the native
+library's predicted next state before choosing another input. Closing or
+restarting an incomplete game excludes it from experiment results; the desktop
+can still save its inputs with F5.
 
 Live play requires the sibling game's `--controller-stdio` support. Rebuild
 the desktop after updating that checkout. If SDL3 headers are unpacked locally,
@@ -269,9 +280,9 @@ For an existing run, or to export without opening a window:
 Experiment 000 lasts only 31 frames (about half a second at normal speed).
 You will see its fixed left/rotate/right/drop script, not a full-game AI player.
 This is visual playback of a completed run; the current controller does not
-make decisions live in the window. The commands in this section currently
-handle the single-episode format used by experiment 000; experiment 001 stores
-a suite of episodes.
+make decisions live in the window. The commands handle the scripted format used
+by experiment 000 and a saved live game, which is a one-episode suite record; a
+headless comparison suite of several episodes is not replayed as one game.
 
 If SDL3's runtime is installed but its headers are in a local directory, use
 the following command with the directory containing `SDL3/`:
