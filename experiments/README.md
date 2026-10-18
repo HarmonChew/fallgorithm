@@ -48,8 +48,10 @@ For a fresh game controlled live, use `block-stack-ai play --experiment NNN`.
 `search_plan` when the experiment offers it, otherwise `greedy` when it offers
 that, otherwise the experiment's first agent, so an experiment without greedy
 starts with an agent it has; fixed-script experiments support `run` and replay
-only. The search player starts paused so its first board is visible before it
-moves; `--no-paused`, or Playing in the launcher, starts it immediately. An
+only. The launcher starts every live agent paused by default. The direct `play`
+command starts the search agent paused and other agents playing; `--paused` or
+`--no-paused` chooses explicitly. Select Playing in the launcher to start
+immediately. `--frame-limit N` overrides the saved limit for this live game. An
 explicit `--config` file is also accepted by both commands in place of
 `--experiment`.
 

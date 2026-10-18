@@ -92,19 +92,20 @@ def test_explicit_agent_overrides_the_experiment_default(experiment_root, monkey
     assert calls[0][1] == "tetris"
 
 
-def test_play_experiment_005_offers_and_defaults_to_the_search_agent(experiment_root, monkeypatch):
+@pytest.mark.parametrize("pause_flags,paused", [
+    ([], True), (["--no-paused"], False), (["--paused"], True),
+])
+@pytest.mark.parametrize("frame_limit", [None, 12])
+def test_play_experiment_005_offers_and_defaults_to_the_search_agent(
+        experiment_root, monkeypatch, pause_flags, paused, frame_limit):
     calls = []
     monkeypatch.setattr(cli.experiment005, "play_search_live",
                         lambda *args: calls.append(args))
-    assert cli.main(["play", "--experiment", "005", "--seed", "3"]) == 0
-    assert cli.main(["play", "--experiment", "005", "--agent", "search_plan",
-                     "--no-paused", "--seed", "3"]) == 0
-    assert cli.main(["play", "--experiment", "005", "--agent", "search_plan",
-                     "--paused", "--seed", "3"]) == 0
+    limit_flags = [] if frame_limit is None else ["--frame-limit", str(frame_limit)]
+    assert cli.main(["play", "--experiment", "005", "--seed", "3",
+                     *pause_flags, *limit_flags]) == 0
     config = experiment_root / "experiments/005-search-plan/config-search.json"
-    assert calls == [(config, "search_plan", 3, "1", True),
-                     (config, "search_plan", 3, "1", False),
-                     (config, "search_plan", 3, "1", True)]
+    assert calls == [(config, "search_plan", 3, "1", paused, frame_limit)]
 
 
 def test_play_paused_flags_are_explicit_for_every_agent(experiment_root, monkeypatch):
@@ -115,8 +116,8 @@ def test_play_paused_flags_are_explicit_for_every_agent(experiment_root, monkeyp
     assert cli.main(["play", "--experiment", "001", "--agent", "random",
                      "--paused"]) == 0
     config = experiment_root / "experiments/001-greedy-heuristic/config.json"
-    assert calls == [(config, "random", None, "1", False),
-                     (config, "random", None, "1", True)]
+    assert calls == [(config, "random", None, "1", False, None),
+                     (config, "random", None, "1", True, None)]
 
 
 def test_run_uses_the_dedicated_writer_for_the_search_config(experiment_root, monkeypatch, capsys):
@@ -342,15 +343,15 @@ def test_menu_experiment_005_prefers_its_search_agent_and_starts_paused(
     calls = []
     monkeypatch.setattr(cli.experiment005, "play_search_live",
                         lambda *args: calls.append(args))
-    menu_input("6", "1", "", "", "", "", "")
+    menu_input("6", "1", "", "", "", "", "", "")
     assert cli.main(["menu"]) == 0
     config = experiment_root / "experiments/005-search-plan/config-search.json"
-    assert calls == [(config, "search_plan", None, "1", True)]
+    assert calls == [(config, "search_plan", None, "1", True, 200000)]
     output = capsys.readouterr().out
     assert "search_plan (default)" in output
     assert "Paused (default)" in output
     assert "Agent: search_plan; seed: fresh random; speed: 1x; start: paused" in output
-    assert "--agent search_plan --speed 1 --paused" in output
+    assert "--agent search_plan --speed 1 --frame-limit 200000 --paused" in output
 
 
 def test_menu_experiment_005_can_start_playing_explicitly(
@@ -358,13 +359,15 @@ def test_menu_experiment_005_can_start_playing_explicitly(
     calls = []
     monkeypatch.setattr(cli.experiment005, "play_search_live",
                         lambda *args: calls.append(args))
-    menu_input("6", "1", "", "", "", "1", "")
+    menu_input("6", "1", "", "17", "", "", "1", "")
     assert cli.main(["menu"]) == 0
     config = experiment_root / "experiments/005-search-plan/config-search.json"
-    assert calls == [(config, "search_plan", None, "1", False)]
+    assert calls == [(config, "search_plan", None, "1", False, 17)]
     output = capsys.readouterr().out
     assert "Playing (default)" not in output
     assert "start: playing" in output
+    assert "Frame limit: 17" in output
+    assert "--frame-limit 17" in output
     assert "--no-paused" in output
 
 

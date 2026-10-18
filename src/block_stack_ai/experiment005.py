@@ -482,7 +482,8 @@ def play_search_live(
     ``play_live`` game whose record :func:`verify_record` accepts. The game
     starts paused by default so the first board is visible before the search
     makes its first placement; the caller can pass ``paused=False`` to start
-    immediately.
+    immediately. ``frame_limit`` overrides the experiment's saved bound for
+    this game and its record.
     """
     with searchplan.registered():
         return live.play_live(config_path, agent, seed, speed, paused, frame_limit,

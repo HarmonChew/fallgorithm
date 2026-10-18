@@ -130,54 +130,63 @@ raise SystemExit(cli.main(['play', '--experiment', '001', '--agent', 'greedy',
     verify_run(records[0])
 
 
-
 @pytest.mark.desktop
-def test_live_search_play_through_the_normal_launcher_saves_and_replays(tmp_path, desktop_environment):
-    """The owner's flow: normal launcher, search live game, verify, replay.
-
-    The game is played through ``block-stack-ai play`` with the desktop smoke
-    mode, which pauses, steps and restarts before running the game to its end;
-    the saved record is then verified and exported to the desktop replay format
-    by the same normal commands, and the engine's own replay verifier confirms
-    the replay reaches the recorded frame count and final state hash.
-    """
+@pytest.mark.parametrize("pause_flags,paused", [
+    ([], True), (["--paused"], True), (["--no-paused"], False),
+])
+@pytest.mark.parametrize("frame_limit", [3, 17])
+def test_live_search_play_through_the_normal_launcher_respects_limit_and_pause(
+        tmp_path, desktop_environment, pause_flags, paused, frame_limit):
+    """The real search launcher keeps paused games at zero and saves at the chosen bound."""
     project = tmp_path / "project"
     directory = project / "experiments" / "005-search-plan"
     directory.mkdir(parents=True)
-    directory.joinpath("config.json").write_text(json.dumps({
+    config_path = directory / "config.json"
+    config_path.write_text(json.dumps({
         "game": GAME, "frame_limit": 600, "seeds": [2], "agents": ["search_plan"],
     }), encoding="utf-8")
+    original_config = config_path.read_bytes()
     runs = tmp_path / "runs"
     code = """
 import sys
 from pathlib import Path
 from block_stack_ai import cli, experiment005
-from block_stack_ai.live import play_live
 
 root = Path(sys.argv[1])
 runs = Path(sys.argv[2])
 cli.PROJECT_ROOT = root
 
-def play_search_live(config_path, agent, seed, speed, paused):
-    return play_live(config_path, agent, seed, speed, paused, runs_dir=runs,
-                     desktop_arguments=("--controller-smoke",),
-                     session_class=experiment005.SearchLiveSession)
+original_play_search_live = experiment005.play_search_live
+def play_search_live(*args, **kwargs):
+    return original_play_search_live(*args, **kwargs, runs_dir=runs,
+                                     desktop_arguments=("--smoke-frames", "90"))
 
 experiment005.play_search_live = play_search_live
 raise SystemExit(cli.main(["play", "--experiment", "005-search-plan",
-                           "--agent", "search_plan", "--seed", "2"]))
+                           "--seed", "2", "--speed", "8",
+                           "--frame-limit", sys.argv[3], *sys.argv[4:]]))
 """
     completed = subprocess.run(
-        [sys.executable, "-c", code, str(project), str(runs)],
+        [sys.executable, "-c", code, str(project), str(runs), str(frame_limit), *pause_flags],
         capture_output=True, text=True, timeout=120,
     )
     assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert config_path.read_bytes() == original_config
+    assert "Live search_plan: seed 2" in completed.stdout
     records = list(runs.glob("*/run.json"))
+    if paused:
+        assert "Stopped at frame 0; incomplete game excluded" in completed.stdout
+        assert records == []
+        return
     assert len(records) == 1
     record = json.loads(records[0].read_text(encoding="utf-8"))
     episode = record["episodes"][0]
     assert record["configuration"]["agents"] == ["search_plan"]
     assert record["configuration"]["seeds"] == [2]
+    assert record["configuration"]["frame_limit"] == frame_limit
+    assert len(episode["inputs"]) == frame_limit
+    assert episode["result"]["frame_count"] == frame_limit
+    assert episode["result"]["stopping_reason"] == "frame_limit"
     assert cli.main(["verify", str(records[0])]) == 0
     assert cli.main(["export-replay", str(records[0])]) == 0
     replay_path = records[0].with_suffix(".rep")
@@ -187,7 +196,6 @@ raise SystemExit(cli.main(["play", "--experiment", "005-search-plan",
     )
     assert f"{episode['result']['frame_count']} frames" in verification.stdout
     assert f"hash {int(episode['result']['final_state_hash'], 16):x}" in verification.stdout
-
 
 
 @pytest.mark.desktop

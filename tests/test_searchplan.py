@@ -179,7 +179,7 @@ def test_play_search_live_starts_paused_by_default(monkeypatch):
     monkeypatch.setattr(e5.live, "play_live",
                         lambda *args, **kwargs: calls.append((args, kwargs)))
     e5.play_search_live("config.json")
-    assert calls == [(("config.json", searchplan.SEARCH_AGENT, None, "1", True),
+    assert calls == [(("config.json", searchplan.SEARCH_AGENT, None, "1", True, None),
                       {"session_class": e5.SearchLiveSession})]
 
 
