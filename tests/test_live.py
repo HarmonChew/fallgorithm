@@ -11,7 +11,8 @@ import pytest
 
 from block_stack_ai.engine import create_game, engine_executable, engine_root, native_library_path
 from block_stack_ai.live import LiveSession
-from block_stack_ai import runner
+from block_stack_ai import cli, experiment005 as e5, runner, searchplan
+from block_stack_ai.replay import export_replay
 from block_stack_ai.runner import SuiteConfig, VerificationError, verify_run
 from block_stack_ai.tetris import weights_record as tetris_weights_record
 
@@ -130,6 +131,74 @@ raise SystemExit(cli.main(['play', '--experiment', '001', '--agent', 'greedy',
 
 
 @pytest.mark.desktop
+@pytest.mark.parametrize("pause_flags,paused", [
+    ([], True), (["--paused"], True), (["--no-paused"], False),
+])
+@pytest.mark.parametrize("frame_limit", [3, 17])
+def test_live_search_play_through_the_normal_launcher_respects_limit_and_pause(
+        tmp_path, desktop_environment, pause_flags, paused, frame_limit):
+    """The real search launcher keeps paused games at zero and saves at the chosen bound."""
+    project = tmp_path / "project"
+    directory = project / "experiments" / "005-search-plan"
+    directory.mkdir(parents=True)
+    config_path = directory / "config.json"
+    config_path.write_text(json.dumps({
+        "game": GAME, "frame_limit": 600, "seeds": [2], "agents": ["search_plan"],
+    }), encoding="utf-8")
+    original_config = config_path.read_bytes()
+    runs = tmp_path / "runs"
+    code = """
+import sys
+from pathlib import Path
+from block_stack_ai import cli, experiment005
+
+root = Path(sys.argv[1])
+runs = Path(sys.argv[2])
+cli.PROJECT_ROOT = root
+
+original_play_search_live = experiment005.play_search_live
+def play_search_live(*args, **kwargs):
+    return original_play_search_live(*args, **kwargs, runs_dir=runs,
+                                     desktop_arguments=("--smoke-frames", "90"))
+
+experiment005.play_search_live = play_search_live
+raise SystemExit(cli.main(["play", "--experiment", "005-search-plan",
+                           "--seed", "2", "--speed", "8",
+                           "--frame-limit", sys.argv[3], *sys.argv[4:]]))
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", code, str(project), str(runs), str(frame_limit), *pause_flags],
+        capture_output=True, text=True, timeout=120,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert config_path.read_bytes() == original_config
+    assert "Live search_plan: seed 2" in completed.stdout
+    records = list(runs.glob("*/run.json"))
+    if paused:
+        assert "Stopped at frame 0; incomplete game excluded" in completed.stdout
+        assert records == []
+        return
+    assert len(records) == 1
+    record = json.loads(records[0].read_text(encoding="utf-8"))
+    episode = record["episodes"][0]
+    assert record["configuration"]["agents"] == ["search_plan"]
+    assert record["configuration"]["seeds"] == [2]
+    assert record["configuration"]["frame_limit"] == frame_limit
+    assert len(episode["inputs"]) == frame_limit
+    assert episode["result"]["frame_count"] == frame_limit
+    assert episode["result"]["stopping_reason"] == "frame_limit"
+    assert cli.main(["verify", str(records[0])]) == 0
+    assert cli.main(["export-replay", str(records[0])]) == 0
+    replay_path = records[0].with_suffix(".rep")
+    verification = subprocess.run(
+        [str(engine_executable("block_stack_replay")), str(replay_path)],
+        check=True, capture_output=True, text=True,
+    )
+    assert f"{episode['result']['frame_count']} frames" in verification.stdout
+    assert f"hash {int(episode['result']['final_state_hash'], 16):x}" in verification.stdout
+
+
+@pytest.mark.desktop
 @pytest.mark.parametrize("response", ["32\n", "-1\n", "1x\n"])
 def test_native_controller_rejects_invalid_masks(desktop_environment, response):
     completed = subprocess.run(
@@ -152,6 +221,103 @@ def test_native_controller_exits_when_input_pipe_closes(desktop_environment):
     with create_game() as game:
         state = game.load_state(bytes.fromhex(messages[-1].split(" ", 1)[1]))
         assert state.frame == 0
+
+
+def test_live_search_session_records_the_augmented_objective_and_verifies(tmp_path):
+    """The search's live identity names the well plan and the live module.
+
+    The stock live walk deliberately excludes the other declared objectives, so
+    a plain ``LiveSession`` of the search agent would omit the well-plan leaf
+    every search value runs through. ``SearchLiveSession`` records the headless
+    augmented map plus ``block_stack_ai.live``, and the dedicated verifier the
+    normal CLI dispatches to re-derives it. The stock verifier keeps reporting
+    the missing half rather than certifying the record, and the exported
+    desktop replay re-runs the recorded masks through the native writer.
+    """
+    limit = 60
+    config = SuiteConfig(GAME, limit, (2,), ("search_plan",))
+    # The session builds the search agent, which the runtime dispatch has to
+    # know; the public ``play_search_live`` entry point registers around it.
+    with searchplan.registered():
+        session = e5.SearchLiveSession(config, tmp_path / "runs")
+        try:
+            with create_game(**GAME, seed=2) as desktop:
+                snapshot = desktop.save_state()
+                session.receive("BEGIN", snapshot)
+                while not desktop.state.terminal and desktop.state.frame < limit:
+                    mask = session.receive("STATE", snapshot)
+                    desktop.step(mask)
+                    snapshot = desktop.save_state()
+                session.receive("END", snapshot)
+        finally:
+            session.close()
+    records = list((tmp_path / "runs").glob("*/run.json"))
+    assert len(records) == 1
+    record = json.loads(records[0].read_text(encoding="utf-8"))
+    assert record["format_version"] == runner.LIVE_SUITE_FORMAT_VERSION
+    assert record["objective"] == e5.search_live_objective_record(loaded=False)
+    assert "block_stack_ai.wellplan" in record["objective"]["sources"]
+    assert "block_stack_ai.live" in record["objective"]["sources"]
+    assert record["controller"] == runner._controller_identity()
+    # The normal command dispatches to the dedicated verifier and replays it.
+    assert cli.main(["verify", str(records[0])]) == 0
+    replay_path, _ = export_replay(records[0], verifier=e5.verify_record)
+    assert replay_path.is_file()
+    verification = subprocess.run(
+        [str(engine_executable("block_stack_replay")), str(replay_path)],
+        check=True, capture_output=True, text=True,
+    )
+    episode = record["episodes"][0]
+    assert f"{episode['result']['frame_count']} frames" in verification.stdout
+    assert f"hash {int(episode['result']['final_state_hash'], 16):x}" in verification.stdout
+    # A record that dropped the well-plan leaf is no longer certified.
+    rebuilt = json.loads(json.dumps(record))
+    del rebuilt["objective"]["sources"]["block_stack_ai.wellplan"]
+    tampered = tmp_path / "tampered.json"
+    tampered.write_text(json.dumps(rebuilt), encoding="utf-8")
+    with pytest.raises(VerificationError, match="objective.sources"):
+        e5.verify_record(tampered)
+    # The stock verifier cannot certify it either: the well plan is exactly the
+    # half the stock walk drops, which is why the command dispatches.
+    with searchplan.registered():
+        with pytest.raises(VerificationError, match="objective.sources"):
+            verify_run(records[0])
+
+
+def test_export_replay_handles_the_live_suite_record(tmp_path):
+    """A saved live game is one suite episode and replays as one game.
+
+    Live records are suite records, and the replay writer previously accepted
+    only scripted ones. A one-episode record carries the game settings, the
+    seed, the executed masks and the expected result the desktop replay needs;
+    a multi-episode headless comparison still refuses to be exported as one
+    game.
+    """
+    limit = 600
+    config = SuiteConfig(GAME, limit, (2,), ("greedy",))
+    session = LiveSession(config, tmp_path / "runs")
+    try:
+        with create_game(**GAME, seed=2) as desktop:
+            snapshot = desktop.save_state()
+            session.receive("BEGIN", snapshot)
+            while not desktop.state.terminal and desktop.state.frame < limit:
+                mask = session.receive("STATE", snapshot)
+                desktop.step(mask)
+                snapshot = desktop.save_state()
+            session.receive("END", snapshot)
+    finally:
+        session.close()
+    records = list((tmp_path / "runs").glob("*/run.json"))
+    assert len(records) == 1
+    replay_path, _ = export_replay(records[0])
+    record = json.loads(records[0].read_text(encoding="utf-8"))
+    episode = record["episodes"][0]
+    verification = subprocess.run(
+        [str(engine_executable("block_stack_replay")), str(replay_path)],
+        check=True, capture_output=True, text=True,
+    )
+    assert f"{episode['result']['frame_count']} frames" in verification.stdout
+    assert f"hash {int(episode['result']['final_state_hash'], 16):x}" in verification.stdout
 
 
 def test_live_session_records_the_clear_size_histogram_and_verifies(tmp_path, monkeypatch):

@@ -11,24 +11,33 @@ search agent in the runner's runtime dispatch instead
 (:func:`block_stack_ai.searchplan.register`), then drives the runner's own
 record, replay and summary code through the dedicated commands below.
 
-That is the experiment's documented CLI limitation: ``block-stack-ai run
---experiment 005`` cannot build ``search_plan`` because the configuration parser
-reads the source-registered agent names, and the project keeps Experiment 004's
-evidence intact rather than widening that registry. The commands here are the
-supported path:
+The normal ``block-stack-ai`` commands load this module and register the agent
+in the runner's runtime dispatch for the duration of the command, so the
+launcher offers Experiment 005 and its search agent, ``run`` writes the search
+record through this module's writer, ``verify`` replays it through this module's
+verifier, and a live game plays through :class:`SearchLiveSession`. The source
+files Experiment 004's retained identity covers stay byte-identical; only the
+in-memory dispatch changes, and it is restored when the command returns. The
+dedicated commands remain for scripted evidence work and are the exact path the
+retained manifests name:
 
     python -m block_stack_ai.experiment005 predeclare CONFIG --output PATH
     python -m block_stack_ai.experiment005 run CONFIG [--runs-dir DIR]
     python -m block_stack_ai.experiment005 verify RECORD
     python -m block_stack_ai.experiment005 fingerprint-engine --output PATH
 
-A record written here carries the standard version-7 suite sections plus the
-declared decision-budget block (:func:`block_stack_ai.searchplan.budget_report`).
-Its objective sources are Experiment 004's dispatch-seeded walk plus the well
-plan dependency that walk omits, so ``runner.verify_run`` reports the well plan
-as an unexpected source for this record while :func:`verify_record` accepts and
-checks exactly that superset. The dedicated verifier is the one this experiment
-publishes; the notes state the limitation rather than hiding it.
+A headless record written here carries the standard version-7 suite sections
+plus the declared decision-budget block
+(:func:`block_stack_ai.searchplan.budget_report`). Its objective sources are
+Experiment 004's dispatch-seeded walk plus the well plan dependency that walk
+omits, so ``runner.verify_run`` reports the well plan as an unexpected source
+for this record while :func:`verify_record` accepts and checks exactly that
+superset. A live game is written by :class:`SearchLiveSession` under the live
+writer's version 8: it carries the controller section every live game has plus
+the search objective's live-seeded identity, and :func:`verify_record` checks
+that shape too. The normal CLI dispatches search records to this verifier, so
+the dedicated one is what ``block-stack-ai verify`` runs for them; the notes
+describe the historical limitation rather than hiding it.
 """
 
 from __future__ import annotations
@@ -42,8 +51,10 @@ import sys
 import time
 from typing import Any, Callable
 
+from . import live
 from . import runner
 from . import searchplan
+from . import wellplan
 
 EXPERIMENT_ROOT = runner.PROJECT_ROOT / "experiments" / "005-search-plan"
 BUDGET_SCHEMA = searchplan._BUDGET_SCHEMA
@@ -169,11 +180,19 @@ def _verify_record_registered(
     record = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(record, dict):
         raise runner.VerificationError(f"Unsupported run record format in {path}")
-    if type(record.get("format_version")) is not int or \
-            record["format_version"] != runner.SUITE_FORMAT_VERSION:
+    version = record.get("format_version")
+    if type(version) is not int:
         raise runner.VerificationError(
-            f"Experiment 005 records are version {runner.SUITE_FORMAT_VERSION}, "
-            f"not {record.get('format_version')!r}")
+            f"Recorded format_version in {path} must be an integer, not {version!r}")
+    if version == runner.LIVE_SUITE_FORMAT_VERSION:
+        # A live search game is saved by ``SearchLiveSession`` under the live
+        # writer's version. It carries the controller section instead of the
+        # headless decision-budget block, so it has its own comparison.
+        return _verify_live_record(record, path, game_factory)
+    if version != runner.SUITE_FORMAT_VERSION:
+        raise runner.VerificationError(
+            f"Experiment 005 records are version {runner.SUITE_FORMAT_VERSION} or the "
+            f"live version {runner.LIVE_SUITE_FORMAT_VERSION}, not {version!r}")
     try:
         config = runner.parse_config(record["configuration"])
     except (KeyError, TypeError, ValueError) as error:
@@ -194,19 +213,8 @@ def _verify_record_registered(
             f"Malformed search record in {path}: missing {error}") from error
     differences = runner._compare_fields(record.get("heuristic"), runner.weights_record(),
                                          "heuristic")
-    expected_objective = searchplan.objective_record(loaded=False)
-    recorded_objective = record.get("objective")
-    if not isinstance(recorded_objective, dict):
-        raise runner.VerificationError("Recorded objective must be a mapping")
-    differences.extend(runner._compare_fields(
-        {key: value for key, value in recorded_objective.items()
-         if key != "sources"},
-        {key: value for key, value in expected_objective.items()
-         if key != "sources"},
-        "objective"))
-    differences.extend(runner._compare_section(
-        recorded_objective, "sources", expected_objective["sources"],
-        "objective.sources", required=True))
+    differences.extend(_objective_differences(
+        record, searchplan.objective_record(loaded=False)))
     if differences:
         raise runner.VerificationError(
             "Recorded identity differs from the current experiment:\n  "
@@ -215,27 +223,7 @@ def _verify_record_registered(
     if not isinstance(episodes, list) or len(episodes) != len(expected_pairs):
         raise runner.VerificationError("Recorded episodes do not match the configured agents and seeds")
     replay, budget_rows = run_suite_with_budget(config, game_factory)
-    for index, (episode, actual, identity) in enumerate(zip(episodes, replay, expected_pairs)):
-        if (episode.get("agent"), episode.get("seed")) != identity:
-            raise runner.VerificationError(
-                f"Episode {index} is not the configured suite entry: "
-                f"{(episode.get('agent'), episode.get('seed'))!r} != {identity!r}")
-        episode_differences = []
-        if episode.get("initial_state_hash") != actual["initial_state_hash"]:
-            episode_differences.append("initial_state_hash differs")
-        if episode.get("inputs") != actual["inputs"]:
-            episode_differences.append("inputs differ")
-        episode_differences.extend(
-            runner._compare_fields(episode.get("result"), actual["result"],
-                                   f"episode {index} result"))
-        episode_differences.extend(runner._compare_fields(
-            {key: episode.get(key) for key in ("pieces_placed", "clear_sizes")},
-            {key: actual.get(key) for key in ("pieces_placed", "clear_sizes")},
-            f"episode {index} sections"))
-        if episode_differences:
-            raise runner.VerificationError(
-                f"Replay mismatch in episode {index} {identity}:\n  "
-                + "\n  ".join(episode_differences))
+    _compare_episode_rows(episodes, replay, expected_pairs)
     summary_differences = runner._compare_summary(summary, runner._summarize(replay),
                                                   "summary", replay, True)
     if summary_differences:
@@ -251,6 +239,134 @@ def _verify_record_registered(
         raise runner.VerificationError(
             "Recorded decision budget differs from the replay:\n  "
             + "\n  ".join(budget_differences))
+    return runner._engine_warnings(record.get("versions", {}).get("engine"))
+
+
+def _objective_differences(record: dict[str, Any], expected_objective: dict[str, Any]) -> list[str]:
+    """Differences for a search record's declared-objective section.
+
+    The writer and the verifier pass the shape their own path emitted: the
+    headless map from :func:`block_stack_ai.searchplan.objective_record`, or the
+    live-shaped map for a version-8 game. Comparing the sections in one place
+    keeps the headless and live checks from drifting apart.
+    """
+    recorded_objective = record.get("objective")
+    if not isinstance(recorded_objective, dict):
+        raise runner.VerificationError("Recorded objective must be a mapping")
+    differences = runner._compare_fields(
+        {key: value for key, value in recorded_objective.items()
+         if key != "sources"},
+        {key: value for key, value in expected_objective.items()
+         if key != "sources"},
+        "objective")
+    differences.extend(runner._compare_section(
+        recorded_objective, "sources", expected_objective["sources"],
+        "objective.sources", required=True))
+    return differences
+
+
+def _compare_episode_rows(
+    episodes: list[dict[str, Any]],
+    replayed: list[dict[str, Any]],
+    expected_pairs: list[tuple[str, int]],
+) -> None:
+    """Raise on the first difference between recorded and replayed episodes.
+
+    Both the headless and the live verifier replay the configured
+    (agent, seed) pairs in order and compare each episode's identity, initial
+    hash, executed masks, result, placed-piece count and clear-size histogram.
+    """
+    for index, (episode, actual, identity) in enumerate(zip(episodes, replayed, expected_pairs)):
+        if (episode.get("agent"), episode.get("seed")) != identity:
+            raise runner.VerificationError(
+                f"Episode {index} is not the configured suite entry: "
+                f"{(episode.get('agent'), episode.get('seed'))!r} != {identity!r}")
+        episode_differences = []
+        if episode.get("initial_state_hash") != actual["initial_state_hash"]:
+            episode_differences.append("initial_state_hash differs")
+        # JSON booleans compare equal to the 0/1 masks, so the types are checked
+        # before the values, exactly as the stock verifier checks them.
+        inputs = episode.get("inputs")
+        if not isinstance(inputs, list) or any(
+                type(mask) is not int or not 0 <= mask <= 31 for mask in inputs):
+            raise runner.VerificationError(
+                f"Recorded inputs in episode {index} must be a list of gameplay "
+                "masks from 0 to 31")
+        if inputs != actual["inputs"]:
+            episode_differences.append("inputs differ")
+        episode_differences.extend(
+            runner._compare_fields(episode.get("result"), actual["result"],
+                                   f"episode {index} result"))
+        episode_differences.extend(runner._compare_fields(
+            {key: episode.get(key) for key in ("pieces_placed", "clear_sizes")},
+            {key: actual.get(key) for key in ("pieces_placed", "clear_sizes")},
+            f"episode {index} sections"))
+        if episode_differences:
+            raise runner.VerificationError(
+                f"Replay mismatch in episode {index} {identity}:\n  "
+                + "\n  ".join(episode_differences))
+
+
+def _verify_live_record(
+    record: dict[str, Any],
+    path: Path,
+    game_factory: Callable[..., Any],
+) -> list[str]:
+    """Verify a version-8 live game written by :class:`SearchLiveSession`.
+
+    A live search record carries the controller identity every live game has
+    plus the search objective's live-seeded identity, the headless augmented
+    walk with ``block_stack_ai.live`` beside it. It configures exactly one agent
+    and one seed because the session plays exactly one game. The replay is the
+    same fresh-agent regeneration the headless verifier uses, so the recorded
+    masks, outcome, histogram and summary are re-derived rather than read back.
+    The headless decision-budget block is not written by a live game, so it is
+    not required here.
+    """
+    try:
+        config = runner.parse_config(record["configuration"])
+        episodes = record["episodes"]
+        summary = record["summary"]
+    except (KeyError, TypeError, ValueError) as error:
+        raise runner.VerificationError(f"Malformed run record in {path}: {error}") from error
+    if not isinstance(config, runner.SuiteConfig):
+        raise runner.VerificationError(f"Malformed run record in {path}: not a suite configuration")
+    if len(config.agents) != 1 or len(config.seeds) != 1:
+        raise runner.VerificationError(
+            "A live search record must configure exactly one agent and one seed: "
+            f"this record configures {len(config.agents)} agents and "
+            f"{len(config.seeds)} seeds")
+    declared = runner._declared_agent(config)
+    if declared != searchplan.SEARCH_AGENT:
+        raise runner.VerificationError(
+            f"{path} is not a search record: its configuration declares {declared!r}, "
+            "so the stock verifier is the right check")
+    differences = runner._compare_fields(record.get("heuristic"), runner.weights_record(),
+                                         "heuristic")
+    differences.extend(_objective_differences(
+        record, search_live_objective_record(loaded=False)))
+    if differences:
+        raise runner.VerificationError(
+            "Recorded identity differs from the current experiment:\n  "
+            + "\n  ".join(differences))
+    controller_differences = runner._compare_fields(
+        record.get("controller"), runner._controller_identity(), "controller")
+    if controller_differences:
+        raise runner.VerificationError(
+            "Recorded controller differs from the current experiment:\n  "
+            + "\n  ".join(controller_differences))
+    expected_pairs = [(name, seed) for name in config.agents for seed in config.seeds]
+    if not isinstance(episodes, list) or len(episodes) != len(expected_pairs):
+        raise runner.VerificationError(
+            "Recorded episodes do not match the configured agent and seed")
+    replay, _ = run_suite_with_budget(config, game_factory)
+    _compare_episode_rows(episodes, replay, expected_pairs)
+    summary_differences = runner._compare_summary(summary, runner._summarize(replay),
+                                                  "summary", replay, True)
+    if summary_differences:
+        raise runner.VerificationError(
+            "Recorded summary does not match the replayed episode:\n  "
+            + "\n  ".join(summary_differences))
     return runner._engine_warnings(record.get("versions", {}).get("engine"))
 
 
@@ -290,6 +406,87 @@ def compare_fields(recorded: Any, expected: Any, where: str) -> list[str]:
         return [problem for index, (left, right) in enumerate(zip(recorded, expected))
                 for problem in compare_fields(left, right, f"{where}[{index}]")]
     return [] if recorded == expected else [f"{where}: {recorded!r} != {expected!r}"]
+
+
+def search_live_objective_record(*, loaded: bool = False) -> dict[str, Any]:
+    """The search objective's live identity: the headless map plus the live module.
+
+    :func:`block_stack_ai.searchplan.objective_sources` is the dispatch-seeded
+    walk plus the well-plan leaf the stock walk deliberately drops; the live
+    shape adds ``block_stack_ai.live``, which hands every observation to the
+    agent. A live search record needs both halves, and this union is the map the
+    live writer records and the live verifier re-derives. The loaded view runs
+    the inconsistent-closure check over the complete augmented map, so a partial
+    reload is refused before the record is written.
+    """
+    # The walk needs the search agent in the runtime dispatch; register for the
+    # call and put the dispatch back afterwards, exactly as the verifier does,
+    # so the helper is safe to call without the caller knowing about it.
+    with searchplan.registered():
+        sources = searchplan.objective_sources(loaded=loaded)
+        sources.update(runner._objective_sources(runner._IDENTITY_LIVE,
+                                                 agent=searchplan.SEARCH_AGENT,
+                                                 loaded=loaded))
+        if loaded:
+            excluded = runner._sibling_objective_modules(searchplan.SEARCH_AGENT) - {id(wellplan)}
+            stale = runner._stale_loaded_references(sources, excluded)
+            if stale:
+                raise runner.VerificationError(
+                    "The loaded modules a live search choice runs through are inconsistent: "
+                    + ", ".join(stale)
+                    + "; a partial reload left callers on earlier objects. Reload their "
+                    "importers too, or start a fresh process before recording the run.")
+        return {
+            "module": searchplan.__name__,
+            "weights": searchplan.weights_record(),
+            "sources": {name: sources[name] for name in sorted(sources)},
+        }
+
+
+class SearchLiveSession(live.LiveSession):
+    """A live search game with the experiment's honest objective identity.
+
+    The shared session records the stock live-seeded walk for the configured
+    agent, which excludes the other declared objectives' modules — the well plan
+    among them — while every search value runs through the well plan's leaf
+    evaluation. This session keeps the desktop protocol, the drift checks and
+    the saved record shape of the shared session and overrides only the
+    objective capture: the record names the well plan and the live controller,
+    and :func:`verify_record` compares exactly that map.
+
+    The class lives beside the dedicated launcher rather than in
+    :mod:`block_stack_ai.live` because the shared module is the controller every
+    version-8 record hashes; putting the experiment's agent there would make
+    every live game carry the experiment's code.
+    """
+
+    def _capture_objective(self) -> dict[str, Any]:
+        return {"objective": search_live_objective_record(loaded=True)}
+
+
+def play_search_live(
+    config_path: Path,
+    agent: str = searchplan.SEARCH_AGENT,
+    seed: int | None = None,
+    speed: str = "1",
+    paused: bool = True,
+    frame_limit: int | None = None,
+    **kwargs: Any,
+) -> list[Path]:
+    """Play one live search game through the shared desktop protocol.
+
+    Registers the agent for the session and hands the shared launcher the
+    session class that records the search identity. The protocol, the drift
+    checks and the run layout are the shared ones, so a live search game is one
+    ``play_live`` game whose record :func:`verify_record` accepts. The game
+    starts paused by default so the first board is visible before the search
+    makes its first placement; the caller can pass ``paused=False`` to start
+    immediately. ``frame_limit`` overrides the experiment's saved bound for
+    this game and its record.
+    """
+    with searchplan.registered():
+        return live.play_live(config_path, agent, seed, speed, paused, frame_limit,
+                              session_class=SearchLiveSession, **kwargs)
 
 
 def predeclaration(config_path: Path) -> dict[str, Any]:
