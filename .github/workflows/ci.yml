@@ -19,6 +19,13 @@ jobs:
           # commit/tree pairings from this repository's own objects, so a checkout
           # carrying only the tip cannot make the claim they check.
           fetch-depth: 0
+      - name: Fetch pull-request refs for retained producer commits
+        # A squash-merged experiment branch can leave the producer commit a
+        # retention manifest names reachable only through that experiment's
+        # pull-request ref, which a default checkout does not fetch. Fetching the
+        # refs keeps the record checks comparing against the measured commit
+        # rather than against a softened substitute.
+        run: git fetch --no-tags origin '+refs/pull/*/head:refs/remotes/origin/pr/*'
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
