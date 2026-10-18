@@ -28,10 +28,12 @@ disposable ignored output. Deliberately copy any artifact needed for a lasting
 experiment into a suitable retained location; do not depend on the temporary
 run directory remaining available.
 
-Experiment 005's search suite is the exception to the shared `run` command: its
-`search_plan` agent is registered at runtime so the source files Experiment 004's
-retained identity covers stay byte-identical, so run it with the dedicated
-launcher:
+Experiment 005's `search_plan` agent is registered at runtime so the source files
+Experiment 004's retained identity covers stay byte-identical. The normal
+`run`, `play`, `verify`, `watch` and `export-replay` commands load the
+experiment's module and register the agent for the duration of the command, so
+Experiment 005 is a normal launcher choice; the dedicated launcher remains the
+exact path the retained manifests name:
 
 ```sh
 python -m block_stack_ai.experiment005 run experiments/005-search-plan/config-search.json
@@ -43,10 +45,11 @@ manifests with the exact verification commands.
 
 For a fresh game controlled live, use `block-stack-ai play --experiment NNN`.
 `--agent` selects one of that experiment's placement agents, and defaults to
-`greedy` when the experiment offers it and otherwise to the experiment's first
-agent, so an experiment without greedy starts with an agent it has; fixed-script
-experiments support `run` and replay only. An explicit `--config` file is also
-accepted by both commands in place of `--experiment`.
+`search_plan` when the experiment offers it, otherwise `greedy` when it offers
+that, otherwise the experiment's first agent, so an experiment without greedy
+starts with an agent it has; fixed-script experiments support `run` and replay
+only. An explicit `--config` file is also accepted by both commands in place of
+`--experiment`.
 
 Future "best" references can point to a selected experiment for each approach.
 Choose one using a stated evaluation over enough games, rather than one lucky

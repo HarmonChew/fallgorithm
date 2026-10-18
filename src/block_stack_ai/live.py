@@ -55,15 +55,30 @@ class LiveSession:
     def close(self) -> None:
         self.game.close()
 
+    def _capture_objective(self) -> dict[str, Any]:
+        """The objective section this session saves for the game it plays.
+
+        The default is the runner's live-seeded walk for the configured agent:
+        the dispatch-seeded identity plus ``block_stack_ai.live``, the module
+        whose ``receive`` hands every observation to the agent. A session for an
+        objective whose choices run through code the stock walk deliberately
+        excludes — the search planner's well-plan leaf — overrides this to
+        record that objective's own augmented identity; the rest of the record
+        is unchanged, and the verifier compares the same section the writer
+        chose.
+        """
+        return _objective_section(self.config, loaded=True, shape=_IDENTITY_LIVE)
+
     def receive(self, kind: str, snapshot: bytes) -> int | None:
-        if type(self) is not LiveSession:
-            # ``importlib.reload(live)`` replaces the class while an existing
-            # session keeps executing the previous class's ``receive``; every
-            # global name resolved below would come from the reloaded module, so
-            # an identity captured here would name controller bytes that did not
-            # drive the inputs. Refuse rather than record, exactly as a partial
-            # reload of the objective's modules is refused: only a new session
-            # runs the current class.
+        # A subclass is a session of this class (the search planner's live
+        # session is one). Anything else is a stale instance: ``importlib.reload``
+        # of this module replaces ``LiveSession`` while an existing session keeps
+        # executing the previous class's ``receive``, whose globals now come from
+        # the reloaded module, so an identity captured here would name controller
+        # bytes that did not drive the inputs. Refuse rather than record, exactly
+        # as a partial reload of the objective's modules is refused: only a
+        # session built from the current class runs the current code.
+        if LiveSession not in type(self).__mro__:
             raise VerificationError(
                 "The live module was reloaded after this session was built: the "
                 "session still executes the previous LiveSession.receive, so a "
@@ -86,8 +101,7 @@ class LiveSession:
             # controller section is separate from the objective: it is the one
             # every live record carries, including the games whose agents
             # declare no objective at all.
-            self.objective = _objective_section(
-                self.config, loaded=True, shape=_IDENTITY_LIVE)
+            self.objective = self._capture_objective()
             self.controller = _controller_section(loaded=True)
             self.agent = build_agent(self.name, self.seed)
             self.inputs = []
@@ -177,6 +191,7 @@ def play_live(
     *,
     runs_dir: Path = PROJECT_ROOT / "runs",
     desktop_arguments: tuple[str, ...] = (),
+    session_class: type[LiveSession] = LiveSession,
 ) -> list[Path]:
     source = load_config(config_path)
     if not isinstance(source, SuiteConfig):
@@ -204,7 +219,7 @@ def play_live(
         "--seed", str(seed), "--frames", str(config.frame_limit), "--speed", speed,
         *(["--paused"] if paused else []), *desktop_arguments,
     ]
-    session = LiveSession(config, runs_dir)
+    session = session_class(config, runs_dir)
     process: Any = None
     try:
         process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1)

@@ -12,12 +12,14 @@ from block_stack_ai.engine import PROJECT_ROOT
 @pytest.fixture
 def experiment_root(tmp_path, monkeypatch):
     for name in ("000-connection", "001-greedy-heuristic", "002-path-aware-lookahead",
-                 "003-tetris-aware-agent", "004-bounded-well-plan"):
+                 "003-tetris-aware-agent", "004-bounded-well-plan", "005-search-plan"):
         directory = tmp_path / "experiments" / name
         directory.mkdir(parents=True)
-        directory.joinpath("config.json").write_bytes(
-            (PROJECT_ROOT / "experiments" / name / "config.json").read_bytes()
-        )
+        source = PROJECT_ROOT / "experiments" / name
+        # Experiment 005 keeps its search comparison beside the baseline; the
+        # launcher prefers that one, so the copy carries both configurations.
+        for config in sorted(source.glob("config*.json")):
+            directory.joinpath(config.name).write_bytes(config.read_bytes())
     monkeypatch.setattr(cli, "PROJECT_ROOT", tmp_path)
     return tmp_path
 
@@ -28,6 +30,7 @@ def test_experiments_lists_live_and_scripted_choices_without_engine(experiment_r
     output = capsys.readouterr().out
     assert "000-connection: scripted" in output
     assert "001-greedy-heuristic: live agents: random, greedy" in output
+    assert "005-search-plan: live agents: lookahead, search_plan" in output
 
 
 @pytest.mark.parametrize("selection", ["001", "1", "001-greedy-heuristic"])
@@ -87,6 +90,75 @@ def test_explicit_agent_overrides_the_experiment_default(experiment_root, monkey
     monkeypatch.setattr(cli, "play_live", lambda *args: calls.append(args))
     assert cli.main(["play", "--experiment", "003", "--agent", "tetris"]) == 0
     assert calls[0][1] == "tetris"
+
+
+def test_play_experiment_005_offers_and_defaults_to_the_search_agent(experiment_root, monkeypatch):
+    calls = []
+    monkeypatch.setattr(cli.experiment005, "play_search_live",
+                        lambda *args: calls.append(args))
+    assert cli.main(["play", "--experiment", "005", "--seed", "3"]) == 0
+    assert cli.main(["play", "--experiment", "005", "--agent", "search_plan",
+                     "--seed", "3"]) == 0
+    config = experiment_root / "experiments/005-search-plan/config-search.json"
+    assert calls == [(config, "search_plan", 3, "1", False)] * 2
+
+
+def test_run_uses_the_dedicated_writer_for_the_search_config(experiment_root, monkeypatch, capsys):
+    config = json.loads((experiment_root / "experiments/005-search-plan/config-search.json").read_text())
+    record = {
+        "configuration": config,
+        "episodes": [],
+        "summary": {
+            name: {"games": len(config["seeds"]),
+                   "stopping_reasons": {"game_over": len(config["seeds"])},
+                   **{metric: {"mean": 0} for metric in ("score", "lines", "frames")}}
+            for name in config["agents"]
+        },
+    }
+    path = experiment_root / "search-run.json"
+    path.write_text(json.dumps(record))
+    calls = []
+    monkeypatch.setattr(cli.experiment005, "build_record", lambda p: calls.append(p) or path)
+    monkeypatch.setattr(cli, "run_and_save", lambda p: pytest.fail("the stock writer ran"))
+    assert cli.main(["run", "--experiment", "005"]) == 0
+    assert calls == [experiment_root / "experiments/005-search-plan/config-search.json"]
+    assert "search_plan: 10 games" in capsys.readouterr().out
+
+
+def test_run_keeps_the_stock_writer_for_the_baseline_config(experiment_root, monkeypatch):
+    path = experiment_root / "baseline-run.json"
+    path.write_text(json.dumps({"result": {
+        "stopping_reason": "game_over", "frame_count": 1, "score": 0,
+        "lines": 0, "final_state_hash": "0" * 16,
+    }}))
+    calls = []
+    monkeypatch.setattr(cli.experiment005, "build_record",
+                        lambda p: pytest.fail("the search writer ran"))
+    monkeypatch.setattr(cli, "run_and_save", lambda p: calls.append(p) or path)
+    assert cli.main(["run", "--config",
+                     str(experiment_root / "experiments/005-search-plan/config.json")]) == 0
+    assert calls == [experiment_root / "experiments/005-search-plan/config.json"]
+
+
+def test_verify_uses_the_dedicated_verifier_for_search_records(experiment_root, monkeypatch):
+    record = experiment_root / "search-run.json"
+    record.write_text(json.dumps({"configuration": {"agents": ["lookahead", "search_plan"]}}))
+    calls = []
+    monkeypatch.setattr(cli.experiment005, "verify_record", lambda p: calls.append(p) or [])
+    monkeypatch.setattr(cli, "verify_run", lambda p: pytest.fail("the stock verifier ran"))
+    assert cli.main(["verify", str(record)]) == 0
+    assert calls == [record]
+
+
+def test_verify_keeps_the_stock_verifier_for_other_records(experiment_root, monkeypatch):
+    record = experiment_root / "baseline-run.json"
+    record.write_text(json.dumps({"configuration": {"agents": ["lookahead", "tetris_plan"]}}))
+    calls = []
+    monkeypatch.setattr(cli.experiment005, "verify_record",
+                        lambda p: pytest.fail("the search verifier ran"))
+    monkeypatch.setattr(cli, "verify_run", lambda p: calls.append(p) or [])
+    assert cli.main(["verify", str(record)]) == 0
+    assert calls == [record]
 
 
 def test_play_rejects_an_agent_the_experiment_does_not_offer(experiment_root, capsys):
@@ -247,6 +319,19 @@ def test_menu_default_agent_is_the_experiment_default(experiment_root, menu_inpu
     assert cli.main(["menu"]) == 0
     config = experiment_root / "experiments/003-tetris-aware-agent/config.json"
     assert launched == [("play", (config, "lookahead", None, "1", True, 200000))]
+
+
+def test_menu_experiment_005_prefers_its_search_agent(experiment_root, menu_input, monkeypatch, capsys):
+    calls = []
+    monkeypatch.setattr(cli.experiment005, "play_search_live",
+                        lambda *args: calls.append(args))
+    menu_input("6", "1", "", "", "", "", "")
+    assert cli.main(["menu"]) == 0
+    config = experiment_root / "experiments/005-search-plan/config-search.json"
+    assert calls == [(config, "search_plan", None, "1", False)]
+    output = capsys.readouterr().out
+    assert "search_plan (default)" in output
+    assert "Agent: search_plan; seed: fresh random; speed: 1x; start: playing" in output
 
 
 @pytest.mark.parametrize("seed", ["0", "65535"])

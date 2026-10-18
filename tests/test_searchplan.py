@@ -30,6 +30,7 @@ from block_stack_ai import experiment005 as e5
 from block_stack_ai import runner, searchplan, wellplan
 from block_stack_ai.agents import PlacementAgent
 from block_stack_ai.pieces import PIECES
+from block_stack_ai.replay import export_replay
 
 WIDTH = 10
 ROWS = 22
@@ -150,6 +151,37 @@ def test_nested_registration_preserves_the_outer_dispatch():
         assert runner.DECLARED_OBJECTIVES[searchplan.SEARCH_AGENT] is before
     assert runner.AGENT_NAMES is names
     assert runner.DECLARED_OBJECTIVES[searchplan.SEARCH_AGENT] is before
+
+
+def test_the_live_search_identity_adds_the_well_plan_and_the_live_module():
+    """A live search record names its leaf code and its controller.
+
+    The headless search identity adds the well-plan leaf the stock walk drops;
+    the live shape adds ``block_stack_ai.live``. ``search_live_objective_record``
+    is the union both the live writer and the live verifier use, so neither half
+    can be dropped without failing the comparison.
+    """
+    sources = e5.search_live_objective_record(loaded=False)["sources"]
+    headless = searchplan.objective_sources()
+    live = runner._objective_sources(runner._IDENTITY_LIVE, agent=searchplan.SEARCH_AGENT)
+    assert sources == {**headless, **live}
+    assert "block_stack_ai.wellplan" in sources
+    assert "block_stack_ai.live" in sources
+    # The writer's loaded view names the same modules on a tree that has not
+    # moved, so a live record and its replay compare the same map.
+    assert e5.search_live_objective_record(loaded=True) == \
+        e5.search_live_objective_record(loaded=False)
+
+
+def test_export_replay_refuses_a_multi_episode_suite(tmp_path):
+    """A headless comparison has no single game to replay; a live one does."""
+    record = tmp_path / "run.json"
+    record.write_text(json.dumps({
+        "configuration": {"game": {}},
+        "episodes": [{"seed": 1}, {"seed": 2}],
+    }))
+    with pytest.raises(ValueError, match="single-game"):
+        export_replay(record, verifier=lambda path: [])
 
 
 def test_the_search_budget_is_deterministic_and_never_exceeded():
@@ -537,8 +569,8 @@ def test_configs_are_declared_for_the_held_out_seeds():
     assert len(held_out) == 10 and len(set(held_out)) == 10
     assert baseline["agents"] == ["lookahead", "tetris_plan"]
     assert search["agents"] == ["lookahead", "search_plan"]
-    # The baseline config is parseable by the stock runner, which is what keeps
-    # `block-stack-ai experiments` working despite the 005 search config needing
-    # the dedicated launcher.
+    # The baseline config stays parseable by the stock runner and runnable by
+    # explicit path; the normal launcher prefers the search config and registers
+    # the agent at runtime.
     parsed = runner.parse_config(baseline)
     assert parsed.agents == ("lookahead", "tetris_plan")

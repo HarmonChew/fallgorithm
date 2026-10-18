@@ -3,18 +3,18 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 from importlib import metadata
 import json
 from pathlib import Path
 import sys
 
-from .agents import default_agent
+from . import experiment005, runner, searchplan
 from .engine import EngineError, PROJECT_ROOT, engine_root, git_info, load_binding
 from .live import play_live
-from .menu import PLAY_SPEEDS, select_command
+from .menu import PLAY_SPEEDS, default_live_agent, select_command
 from .replay import export_replay, watch_run
 from .runner import (
-    AGENT_NAMES,
     SuiteConfig,
     VerificationError,
     load_config,
@@ -28,13 +28,60 @@ def _version_label(info: dict[str, object]) -> str:
     return f"{commit} ({info['kind']}, dirty={info['dirty']})"
 
 
+# Experiment 005 keeps two configurations: the retained baseline
+# (config.json) and the search comparison (config-search.json). The normal
+# launcher offers the search one so the experiment's new agent is a normal
+# live choice; the baseline stays runnable by explicit path and through the
+# dedicated launcher, and no retained artifact moves.
+_PREFERRED_CONFIGS = {"005-search-plan": "config-search.json"}
+
+
 def _experiments() -> dict[str, Path]:
     """Use the existing experiment directories as the source of available runs."""
-    return {
-        path.parent.name: path
-        for path in sorted((PROJECT_ROOT / "experiments").glob("[0-9]*-*/config.json"))
-        if path.parent.name.partition("-")[0].isdecimal()
-    }
+    experiments: dict[str, Path] = {}
+    for path in sorted((PROJECT_ROOT / "experiments").glob("[0-9]*-*/config.json")):
+        name = path.parent.name
+        if not name.partition("-")[0].isdecimal():
+            continue
+        preferred = path.parent / _PREFERRED_CONFIGS.get(name, "config.json")
+        experiments[name] = preferred if preferred.is_file() else path
+    return experiments
+
+
+def _config_selects_search(config_path: Path) -> bool:
+    """Whether the raw configuration names the Experiment 005 search agent.
+
+    Read from the file rather than through the runner's parser: an unknown agent
+    name is exactly what the stock parser rejects, and this decides which parse
+    path runs. An unreadable or malformed configuration falls through to the
+    stock path, whose error the command reports.
+    """
+    try:
+        value = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    agents = value.get("agents") if isinstance(value, dict) else None
+    return isinstance(agents, list) and searchplan.SEARCH_AGENT in agents
+
+
+def _record_verifier(record_path: Path) -> Callable[[Path], list[str]]:
+    """The verifier the record's own configuration publishes.
+
+    A record that configures the search agent is checked by Experiment 005's
+    dedicated verifier, which re-derives the augmented objective identity and,
+    for a live game, the controller section; every other record keeps the stock
+    verifier. A record whose configuration cannot be read is left to the stock
+    verifier, whose error the command reports.
+    """
+    try:
+        record = json.loads(record_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return verify_run
+    configuration = record.get("configuration") if isinstance(record, dict) else None
+    agents = configuration.get("agents") if isinstance(configuration, dict) else None
+    if isinstance(agents, list) and searchplan.SEARCH_AGENT in agents:
+        return experiment005.verify_record
+    return verify_run
 
 
 def _experiment_config(selection: str) -> Path:
@@ -102,6 +149,15 @@ def doctor() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # The search agent is registered in the runner's runtime dispatch rather
+    # than any source-covered file, so every normal command sees it while it
+    # runs and the dispatch is put back before returning. Registering before the
+    # parser is built also puts ``search_plan`` in ``--agent``'s choices.
+    with searchplan.registered():
+        return _main(argv)
+
+
+def _main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="block-stack-ai", description="Run without a command to open the interactive experiment menu.",
     )
@@ -121,7 +177,7 @@ def main(argv: list[str] | None = None) -> int:
     watch_parser.add_argument("record", type=Path)
     play_parser = subcommands.add_parser("play", help="start a fresh desktop game controlled live by an experiment agent")
     _add_experiment_selection(play_parser)
-    play_parser.add_argument("--agent", choices=AGENT_NAMES, default=None, help="agent within the selected experiment (default: greedy when the experiment offers it, otherwise its first agent)")
+    play_parser.add_argument("--agent", choices=runner.AGENT_NAMES, default=None, help="agent within the selected experiment (default: search_plan when the experiment offers it, otherwise greedy when it offers that, otherwise its first agent)")
     play_parser.add_argument("--seed", type=int, help="fixed seed; otherwise choose a fresh random seed")
     play_parser.add_argument("--frame-limit", type=int, default=None, metavar="N",
                              help="stop and save this live game at N frames (default: the experiment's configured limit)")
@@ -147,18 +203,28 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Config: {config_path.resolve()}", flush=True)
             if args.command == "play" and args.agent is None:
                 # The default is per experiment, resolved only after the config
-                # is known: an experiment that does not offer greedy starts with
-                # the first agent it configures. A scripted config keeps the
-                # default unset and play_live names it as unsupported.
+                # is known: Experiment 005 prefers its search agent, an
+                # experiment that does not offer greedy starts with the first
+                # agent it configures. A scripted config keeps the default unset
+                # and play_live names it as unsupported.
                 source = load_config(config_path)
                 if isinstance(source, SuiteConfig):
-                    args.agent = default_agent(source.agents)
+                    args.agent = default_live_agent(source.agents)
         if args.command == "experiments":
             _print_experiments()
         elif args.command == "play":
-            play_live(config_path, args.agent, args.seed, args.speed, args.paused, args.frame_limit)
+            if args.agent == searchplan.SEARCH_AGENT:
+                # The live session that records the search objective's honest
+                # identity, restored to the shared protocol and run layout.
+                experiment005.play_search_live(config_path, args.agent, args.seed,
+                                               args.speed, args.paused, args.frame_limit)
+            else:
+                play_live(config_path, args.agent, args.seed, args.speed, args.paused,
+                          args.frame_limit)
         elif args.command == "run":
-            path = run_and_save(config_path)
+            path = (experiment005.build_record(config_path)
+                    if _config_selects_search(config_path)
+                    else run_and_save(config_path))
             record = json.loads(path.read_text(encoding="utf-8"))
             if "episodes" in record:
                 for name in record["configuration"]["agents"]:
@@ -182,16 +248,24 @@ def main(argv: list[str] | None = None) -> int:
                 )
             print(f"Record: {path}")
             if args.watch:
-                return watch_run(path)
+                verifier = _record_verifier(path)
+                return (watch_run(path) if verifier is verify_run
+                        else watch_run(path, verifier=verifier))
         elif args.command == "watch":
-            return watch_run(args.record)
+            verifier = _record_verifier(args.record)
+            return (watch_run(args.record) if verifier is verify_run
+                    else watch_run(args.record, verifier=verifier))
         elif args.command == "export-replay":
-            path, warnings = export_replay(args.record)
+            verifier = _record_verifier(args.record)
+            if verifier is verify_run:
+                path, warnings = export_replay(args.record)
+            else:
+                path, warnings = export_replay(args.record, verifier=verifier)
             print(f"Replay: {path}")
             for warning in warnings:
                 print(f"Warning: {warning}", file=sys.stderr)
         else:
-            warnings = verify_run(args.record)
+            warnings = _record_verifier(args.record)(args.record)
             print(f"Verified: {args.record}")
             for warning in warnings:
                 print(f"Warning: {warning}", file=sys.stderr)
