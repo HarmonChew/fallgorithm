@@ -373,6 +373,16 @@ def _check_run_binding(record: dict, config: dict, objective: dict, captured_at:
                                 cwd=runner.PROJECT_ROOT, capture_output=True, check=True)
         require_equal(hashlib.sha256(result.stdout).hexdigest(), digest,
                       f"producer source {module}")
+    # The clean producer commit contains the declaration and selection before
+    # it ran. A later edit cannot silently replace that capture or its config.
+    config_name = "config-search.json" if searchplan.SEARCH_AGENT in config["agents"] else "config.json"
+    for relative in (config_name, "probes/predeclared_objective.json",
+                     "probes/seed_protocol.json", "probes/engine_fingerprint.json"):
+        source = f"experiments/005-search-plan/{relative}"
+        result = subprocess.run(["git", "show", f"{version['commit']}:{source}"],
+                                cwd=runner.PROJECT_ROOT, capture_output=True, check=True)
+        require_equal(json.loads(result.stdout), _load(PROBES.parent / relative),
+                      f"producer capture {relative}")
 
 
 def expected_result_document() -> dict:

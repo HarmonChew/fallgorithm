@@ -82,10 +82,50 @@ result is retained as negative, with each rule reported separately.
 
 ## Results
 
-The fresh evaluation is pending at the source-freeze commit. Its measurement
-commit will add `result.json` and the two `records/fresh-*` sets without changing
-the frozen search source or constants. Earlier results are preserved under
-`archive/pre-review-*` and the six original record directories.
+Measured on 2026-10-18 from clean producer commit
+`2313f0e6c02f1c91b18a72fae2544f3f6bbd60e3`, after the seed protocol and
+objective capture were committed and before any new evaluation outcome was
+inspected. The search constants and decision procedure were not tuned against
+these games. The retained complete records are `records/fresh-baseline` and
+`records/fresh-search`; their original temporary paths are
+`runs/20261018T023956995888Z-ed7e5a18/run.json` and
+`runs/20261018T024450969236Z-bb7f1d1d/run.json`.
+
+| agent | mean lines | mean score | Tetris line rate | Tetris lines / lines | top-outs | cap stops | mean pieces |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `lookahead` | 1,227.6 | 4,343,957.8 | 0.003258 | 40 / 12276 | 9 | 1 | 3,102.0 |
+| `tetris_plan` | 557.9 | 1,404,505.7 | 0.032264 | 180 / 5579 | 10 | 0 | 1,430.1 |
+| `search_plan` | 1,654.8 | 10,260,122.2 | 0.051003 | 844 / 16548 | 6 | 4 | 4,160.1 |
+
+Both unchanged predeclared rules are met: search mean lines exceed the plan
+by 2.97x, and its Tetris line rate is at least the plan's. Lookahead remains
+a reported comparison without a threshold. Four search games and one lookahead
+game stopped at 200,000 frames; none of the plan games did. Those line and score
+totals are lower bounds, and the reported rates describe the observed prefixes.
+This finite ten-seed result is not a statistical generalization.
+
+The search made 41,609 decisions and expanded 1,584,531 reachable-set
+nodes, with 0 truncated decisions. The generated budget retains one ordered row
+per search seed and is replay-checked in full except for advisory elapsed seconds.
+
+Eight retained record sets and 132 native replay files preserve the fresh
+comparison and every superseded measurement. The old even-seed comparison is
+kept in the new result as an explicitly exploratory superseded block; its
+original complete result, including the earlier frozen-prefix block, is
+preserved under `archive/pre-review-result.json`.
+
+## Validation
+
+All 300 unit tests and 38 non-desktop native integration tests passed. Both
+fresh 20-episode suites were then verified by regenerating their decisions and
+comparing every recorded input and outcome; the search replay also compared the
+complete deterministic budget. All 132 retained `.rep` files were independently
+checked with the native replay verifier against their recorded frame counts and
+final hashes. `check-retained`, the artifact-bound `check-record`, and Experiment
+004's retained-record check passed; the current engine fingerprint matches its
+capture. Experiment 004's ignored original run directories are absent from this
+checkout, which its existing checker reports; its covered source and retained
+files remain unchanged. The six desktop tests were not run for this correction.
 
 ## Verification and reproduction
 

@@ -484,12 +484,39 @@ def test_retained_reader_checks_the_compressed_bytes_before_using_rows(tmp_path,
         evidence_module.checked_retained(tmp_path / "record")
 
 
+def test_predeclaration_cannot_be_replaced_after_its_producer_commit(tmp_path, evidence_module, monkeypatch):
+    path = e5.EXPERIMENT_ROOT / "result.json"
+    if not path.is_file():
+        pytest.skip("the fresh measurement is retained after freezing its source")
+    document = json.loads(path.read_text())
+    document["predeclared_objective"]["acceptance"]["primary"] = "a different acceptance rule"
+    forged = tmp_path / "forged-capture.json"
+    forged.write_text(json.dumps(document))
+    original_load = evidence_module._load
+
+    def replaced_capture(filename):
+        value = original_load(filename)
+        if filename == evidence_module.PREDECLARED:
+            value["acceptance"]["primary"] = "a different acceptance rule"
+        return value
+
+    monkeypatch.setattr(evidence_module, "_load", replaced_capture)
+    # The edited result and edited capture agree with each other, but neither
+    # can replace the declaration already committed before measurement.
+    assert evidence_module.command_check_record(argparse.Namespace(record=forged)) == 1
+
+
 def test_the_seed_protocol_rejects_aliases_even_when_seed_numbers_are_distinct(evidence_module):
     protocol = json.loads(evidence_module.SEED_PROTOCOL.read_text())
     evidence_module.check_seed_protocol(protocol)
     protocol["selected"][0]["initial_state_sha256"] = protocol["excluded"][0]["initial_state_sha256"]
     with pytest.raises(ValueError, match="native states overlap"):
         evidence_module.check_seed_protocol(protocol)
+
+
+def test_a_frozen_holdout_cannot_be_selected_again(evidence_module):
+    with pytest.raises(ValueError, match="already frozen"):
+        evidence_module.command_select_holdout(argparse.Namespace())
 
 
 def test_evidence_comparison_rejects_boolean_numbers_inside_lists():

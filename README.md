@@ -97,6 +97,10 @@ dedicated launcher:
 Its retained records under `experiments/005-search-plan/records/` each carry a
 manifest with the exact verification commands, including the commit to use for
 the superseded pre-fix sets.
+The current comparison uses ten fresh seeds selected by native state identity;
+the original even-seed comparison is retained as exploratory because two of its
+games duplicate development games. See [Experiment 005](experiments/005-search-plan/notes.md)
+for the frozen protocol, retained evidence and current results.
 
 `doctor` prints the resolved checkout, Git version, binding and library paths,
 and performs a create/read/step/close smoke check. `run` prints the stopping
