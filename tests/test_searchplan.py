@@ -173,6 +173,16 @@ def test_the_live_search_identity_adds_the_well_plan_and_the_live_module():
         e5.search_live_objective_record(loaded=False)
 
 
+def test_play_search_live_starts_paused_by_default(monkeypatch):
+    """The search player pauses before its first move unless told otherwise."""
+    calls = []
+    monkeypatch.setattr(e5.live, "play_live",
+                        lambda *args, **kwargs: calls.append((args, kwargs)))
+    e5.play_search_live("config.json")
+    assert calls == [(("config.json", searchplan.SEARCH_AGENT, None, "1", True),
+                      {"session_class": e5.SearchLiveSession})]
+
+
 def test_export_replay_refuses_a_multi_episode_suite(tmp_path):
     """A headless comparison has no single game to replay; a live one does."""
     record = tmp_path / "run.json"

@@ -154,8 +154,9 @@ failure; their inputs and outcomes remain supported by native replays.
 The normal `block-stack-ai` commands now load this experiment's module and
 register `search_plan` in the runner's runtime dispatch for the duration of the
 command, then restore it. The interactive launcher therefore offers Experiment
-005 and its search agent, `play --experiment 005` defaults to `search_plan` and
-saves a live search game through a live session that records the search
+005 and its search agent, `play --experiment 005` defaults to `search_plan`,
+starts it paused so the first board is visible (`--no-paused` starts playing),
+and saves a live search game through a live session that records the search
 objective's well-plan-plus-controller identity, and `verify`, `watch` and
 `export-replay` dispatch search records — headless or live — to the dedicated
 verifier. The source files Experiment 004's retained identity covers are

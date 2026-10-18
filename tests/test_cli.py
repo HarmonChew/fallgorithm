@@ -98,9 +98,25 @@ def test_play_experiment_005_offers_and_defaults_to_the_search_agent(experiment_
                         lambda *args: calls.append(args))
     assert cli.main(["play", "--experiment", "005", "--seed", "3"]) == 0
     assert cli.main(["play", "--experiment", "005", "--agent", "search_plan",
-                     "--seed", "3"]) == 0
+                     "--no-paused", "--seed", "3"]) == 0
+    assert cli.main(["play", "--experiment", "005", "--agent", "search_plan",
+                     "--paused", "--seed", "3"]) == 0
     config = experiment_root / "experiments/005-search-plan/config-search.json"
-    assert calls == [(config, "search_plan", 3, "1", False)] * 2
+    assert calls == [(config, "search_plan", 3, "1", True),
+                     (config, "search_plan", 3, "1", False),
+                     (config, "search_plan", 3, "1", True)]
+
+
+def test_play_paused_flags_are_explicit_for_every_agent(experiment_root, monkeypatch):
+    calls = []
+    monkeypatch.setattr(cli, "play_live", lambda *args: calls.append(args))
+    assert cli.main(["play", "--experiment", "001", "--agent", "random",
+                     "--no-paused"]) == 0
+    assert cli.main(["play", "--experiment", "001", "--agent", "random",
+                     "--paused"]) == 0
+    config = experiment_root / "experiments/001-greedy-heuristic/config.json"
+    assert calls == [(config, "random", None, "1", False),
+                     (config, "random", None, "1", True)]
 
 
 def test_run_uses_the_dedicated_writer_for_the_search_config(experiment_root, monkeypatch, capsys):
@@ -321,17 +337,35 @@ def test_menu_default_agent_is_the_experiment_default(experiment_root, menu_inpu
     assert launched == [("play", (config, "lookahead", None, "1", True, 200000))]
 
 
-def test_menu_experiment_005_prefers_its_search_agent(experiment_root, menu_input, monkeypatch, capsys):
+def test_menu_experiment_005_prefers_its_search_agent_and_starts_paused(
+        experiment_root, menu_input, monkeypatch, capsys):
     calls = []
     monkeypatch.setattr(cli.experiment005, "play_search_live",
                         lambda *args: calls.append(args))
     menu_input("6", "1", "", "", "", "", "")
     assert cli.main(["menu"]) == 0
     config = experiment_root / "experiments/005-search-plan/config-search.json"
-    assert calls == [(config, "search_plan", None, "1", False)]
+    assert calls == [(config, "search_plan", None, "1", True)]
     output = capsys.readouterr().out
     assert "search_plan (default)" in output
-    assert "Agent: search_plan; seed: fresh random; speed: 1x; start: playing" in output
+    assert "Paused (default)" in output
+    assert "Agent: search_plan; seed: fresh random; speed: 1x; start: paused" in output
+    assert "--agent search_plan --speed 1 --paused" in output
+
+
+def test_menu_experiment_005_can_start_playing_explicitly(
+        experiment_root, menu_input, monkeypatch, capsys):
+    calls = []
+    monkeypatch.setattr(cli.experiment005, "play_search_live",
+                        lambda *args: calls.append(args))
+    menu_input("6", "1", "", "", "", "1", "")
+    assert cli.main(["menu"]) == 0
+    config = experiment_root / "experiments/005-search-plan/config-search.json"
+    assert calls == [(config, "search_plan", None, "1", False)]
+    output = capsys.readouterr().out
+    assert "Playing (default)" not in output
+    assert "start: playing" in output
+    assert "--no-paused" in output
 
 
 @pytest.mark.parametrize("seed", ["0", "65535"])

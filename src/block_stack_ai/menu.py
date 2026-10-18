@@ -118,7 +118,9 @@ def select_command(experiments: dict[str, Path]) -> list[str] | None:
                             "--frame-limit", str(frame_limit)]
                 if seed is not None:
                     command += ["--seed", str(seed)]
-                if paused:
+                if agent == searchplan.SEARCH_AGENT:
+                    command.append("--paused" if paused else "--no-paused")
+                elif paused:
                     command.append("--paused")
             elif not isinstance(config, SuiteConfig) and action == actions[1]:
                 command.append("--watch")

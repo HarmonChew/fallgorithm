@@ -182,7 +182,9 @@ def _main(argv: list[str] | None = None) -> int:
     play_parser.add_argument("--frame-limit", type=int, default=None, metavar="N",
                              help="stop and save this live game at N frames (default: the experiment's configured limit)")
     play_parser.add_argument("--speed", choices=PLAY_SPEEDS, default="1")
-    play_parser.add_argument("--paused", action="store_true", help="start paused for frame stepping")
+    play_parser.add_argument(
+        "--paused", action=argparse.BooleanOptionalAction, default=None,
+        help="start paused for frame stepping (default: paused for the search agent, otherwise playing); --no-paused starts playing")
     args = parser.parse_args(argv)
     if args.command == "doctor":
         return doctor()
@@ -210,6 +212,10 @@ def _main(argv: list[str] | None = None) -> int:
                 source = load_config(config_path)
                 if isinstance(source, SuiteConfig):
                     args.agent = default_live_agent(source.agents)
+            if args.command == "play" and args.paused is None:
+                # The search player starts paused so its first board is visible
+                # before it moves; --paused and --no-paused override either way.
+                args.paused = args.agent == searchplan.SEARCH_AGENT
         if args.command == "experiments":
             _print_experiments()
         elif args.command == "play":
