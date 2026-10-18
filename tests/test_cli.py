@@ -39,7 +39,7 @@ def test_play_resolves_experiment_from_project_not_current_directory(experiment_
     monkeypatch.chdir(elsewhere)
     assert cli.main(["play", "--experiment", selection, "--agent", "random", "--seed", "2"]) == 0
     config = experiment_root / "experiments/001-greedy-heuristic/config.json"
-    assert calls == [(config, "random", 2, "1", False)]
+    assert calls == [(config, "random", 2, "1", False, None)]
     assert "Experiment: 001-greedy-heuristic" in capsys.readouterr().out
 
 
@@ -79,7 +79,7 @@ def test_play_default_agent_uses_an_explicit_config(experiment_root, monkeypatch
     monkeypatch.setattr(cli, "play_live", lambda *args: calls.append(args))
     config = experiment_root / "experiments/003-tetris-aware-agent/config.json"
     assert cli.main(["play", "--config", str(config)]) == 0
-    assert calls == [(config, "lookahead", None, "1", False)]
+    assert calls == [(config, "lookahead", None, "1", False, None)]
 
 
 def test_explicit_agent_overrides_the_experiment_default(experiment_root, monkeypatch):
@@ -189,30 +189,64 @@ def launched(monkeypatch, tmp_path):
 
 @pytest.mark.parametrize("arguments", [[], ["menu"]])
 def test_menu_launches_selected_live_options(experiment_root, menu_input, launched, capsys, arguments):
-    menu_input("2", "1", "1", "42", "5", "2", "1")
+    menu_input("2", "1", "1", "30000", "42", "5", "1", "1")
     assert cli.main(arguments) == 0
     config = experiment_root / "experiments/001-greedy-heuristic/config.json"
-    assert launched == [("play", (config, "random", 42, "4", True))]
+    assert launched == [("play", (config, "random", 42, "4", False, 30000))]
     output = capsys.readouterr().out
-    assert "Agent: random; seed: 42; speed: 4x; start: paused" in output
+    assert "Frame limit: 30000" in output
+    assert "Agent: random; seed: 42; speed: 4x; start: playing" in output
     assert "Command: block-stack-ai play --experiment 001-greedy-heuristic" in output
+    assert "--frame-limit 30000" in output
+
+
+def test_play_frame_limit_passes_through_and_defaults_to_the_experiment(experiment_root, monkeypatch):
+    calls = []
+    monkeypatch.setattr(cli, "play_live", lambda *args: calls.append(args))
+    assert cli.main(["play", "--experiment", "001", "--seed", "2", "--frame-limit", "12"]) == 0
+    assert cli.main(["play", "--experiment", "001", "--seed", "2"]) == 0
+    config = experiment_root / "experiments/001-greedy-heuristic/config.json"
+    assert calls == [(config, "greedy", 2, "1", False, 12),
+                     (config, "greedy", 2, "1", False, None)]
+
+
+@pytest.mark.parametrize("limit", ["0", "-5"])
+def test_play_rejects_a_nonpositive_frame_limit_before_the_engine(experiment_root, capsys, limit):
+    assert cli.main(["play", "--experiment", "001", "--frame-limit", limit]) == 1
+    assert "frame_limit must be a positive integer" in capsys.readouterr().err
 
 
 def test_menu_requires_experiment_and_action_but_defaults_live_settings(experiment_root, menu_input, launched, capsys):
-    menu_input("", "not a number", "99", "2", "", "1", "", "", "", "", "")
+    menu_input("", "not a number", "99", "2", "", "1", "", "0", "-1", "abc", "", "", "", "", "")
     assert cli.main([]) == 0
     config = experiment_root / "experiments/001-greedy-heuristic/config.json"
-    assert launched == [("play", (config, "greedy", None, "1", False))]
+    assert launched == [("play", (config, "greedy", None, "1", True, 60000))]
     output = capsys.readouterr().out
     assert output.count("Please enter an option number") == 4
+    assert output.count("Please enter a positive whole number of frames") == 3
+    assert "Frame limit: 60000" in output
+    assert "start: paused" in output
     assert "seed: fresh random" in output
 
 
+def test_menu_live_frame_limit_is_shown_and_does_not_touch_the_saved_config(experiment_root, menu_input, launched, capsys):
+    path = experiment_root / "experiments/001-greedy-heuristic/config.json"
+    original = path.read_bytes()
+    menu_input("2", "1", "2", "15", "", "", "", "")
+    assert cli.main(["menu"]) == 0
+    assert launched == [("play", (path, "greedy", None, "1", True, 15))]
+    assert path.read_bytes() == original
+    output = capsys.readouterr().out
+    assert "Frame limit: 15" in output
+    assert "start: paused" in output
+    assert "--frame-limit 15" in output
+
+
 def test_menu_default_agent_is_the_experiment_default(experiment_root, menu_input, launched):
-    menu_input("4", "1", "", "", "", "", "")
+    menu_input("4", "1", "", "", "", "", "", "")
     assert cli.main(["menu"]) == 0
     config = experiment_root / "experiments/003-tetris-aware-agent/config.json"
-    assert launched == [("play", (config, "lookahead", None, "1", False))]
+    assert launched == [("play", (config, "lookahead", None, "1", True, 200000))]
 
 
 @pytest.mark.parametrize("seed", ["0", "65535"])
@@ -221,9 +255,9 @@ def test_menu_uses_only_configured_agents_and_validates_seed(experiment_root, me
     config = json.loads(path.read_text())
     config["agents"] = ["random"]
     path.write_text(json.dumps(config))
-    menu_input("2", "1", "", "-1", "65536", "1.5", seed, "", "", "")
+    menu_input("2", "1", "", "", "-1", "65536", "1.5", seed, "", "", "")
     assert cli.main(["menu"]) == 0
-    assert launched == [("play", (path, "random", int(seed), "1", False))]
+    assert launched == [("play", (path, "random", int(seed), "1", True, 60000))]
     output = capsys.readouterr().out
     assert "greedy (default)" not in output
     assert output.count("Please enter a whole number") == 3
@@ -255,7 +289,7 @@ def test_menu_scripted_choices_run_and_optionally_watch(experiment_root, menu_in
 
 
 def test_menu_choose_again_discards_previous_selection(experiment_root, menu_input, launched):
-    menu_input("2", "1", "1", "42", "5", "2", "2", "1", "1", "")
+    menu_input("2", "1", "1", "30000", "42", "5", "2", "2", "1", "1", "")
     assert cli.main([]) == 0
     assert launched == [("run", experiment_root / "experiments/000-connection/config.json")]
 
@@ -264,7 +298,7 @@ def test_menu_choose_again_discards_previous_selection(experiment_root, menu_inp
     (("q",), 0),
     (("2", "quit"), 0),
     (("2", "1", "", "q"), 0),
-    (("2", "1", "", "", "", "", "q"), 0),
+    (("2", "1", "", "", "", "", "", "q"), 0),
     ((EOFError(),), 0),
     (("2", "2", EOFError()), 0),
     (("2", KeyboardInterrupt()), 130),

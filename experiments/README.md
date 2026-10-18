@@ -13,7 +13,10 @@ those edits. Keep small configurations and summaries here; the source code in
 Run `block-stack-ai` (or `block-stack-ai menu`) in a terminal for a selectable
 experiment launcher. It offers live-play options or the full evaluation with
 the experiment's configured agents and seeds, and shows the command before
-starting. It does not edit saved experiment configurations.
+starting. A live game also asks for a frame limit, defaulting to the
+experiment's configured value, and starts paused by default so the first board
+is visible before the game runs. It does not edit saved experiment
+configurations.
 
 Use `block-stack-ai experiments` to list the recorded experiments, and
 `block-stack-ai run --experiment NNN` (or the full `NNN-name`), then

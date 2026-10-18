@@ -88,6 +88,48 @@ raise SystemExit(cli.main(['play', '--experiment', '001', '--agent', sys.argv[2]
 
 
 @pytest.mark.desktop
+def test_live_desktop_chosen_frame_limit_stops_and_saves_without_touching_the_config(tmp_path, desktop_environment):
+    """A chosen live frame limit bounds the record while the config keeps its own.
+
+    The launcher's frame-limit choice reaches the desktop as ``--frames`` and the
+    session's own bound, and the record saves the limit the game actually played.
+    The saved experiment configuration must still name its original limit, so a
+    later evaluation is unchanged.
+    """
+    config = SuiteConfig(GAME, 1200, (2,), ("greedy",))
+    path = tmp_path / "experiments/001-test/config.json"
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(config.to_dict()), encoding="utf-8")
+    original = path.read_bytes()
+    runs = tmp_path / "runs"
+    code = """
+import sys
+from pathlib import Path
+from block_stack_ai import cli
+from block_stack_ai.live import play_live
+cli.PROJECT_ROOT = Path(sys.argv[1])
+def play(*args):
+    return play_live(*args, runs_dir=Path(sys.argv[3]), desktop_arguments=('--controller-smoke',))
+cli.play_live = play
+raise SystemExit(cli.main(['play', '--experiment', '001', '--agent', 'greedy',
+                           '--seed', '2', '--frame-limit', sys.argv[2]]))
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", code, str(tmp_path), "3", str(runs)],
+        capture_output=True, text=True, timeout=30,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    records = list(runs.glob("*/run.json"))
+    assert len(records) == 1
+    record = json.loads(records[0].read_text())
+    assert record["configuration"]["frame_limit"] == 3
+    assert record["episodes"][0]["result"]["stopping_reason"] == "frame_limit"
+    assert record["episodes"][0]["result"]["frame_count"] == 3
+    assert path.read_bytes() == original
+    verify_run(records[0])
+
+
+@pytest.mark.desktop
 @pytest.mark.parametrize("response", ["32\n", "-1\n", "1x\n"])
 def test_native_controller_rejects_invalid_masks(desktop_environment, response):
     completed = subprocess.run(
