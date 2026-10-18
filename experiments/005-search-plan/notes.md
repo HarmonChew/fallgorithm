@@ -164,6 +164,38 @@ unchanged, and no measurement is re-run: this addendum is wording- and
 tooling-only. The limitation recorded in `result.json` about the stock CLI
 describes the commands as they stood when the comparison was measured.
 
+### Launcher integration validation, 2026-10-19
+
+Rebasing the launcher onto PR 22 preserves its per-game frame limit and paused
+menu default. The search live-play wrapper accepts the chosen limit and forwards
+it to the shared session, whose saved record carries that limit without editing
+the experiment configuration. An explicit Playing selection emits `--no-paused`
+so the search agent's paused CLI default cannot override it.
+
+The desktop regression uses bounded render runs rather than controller smoke
+mode, which resets the initial pause state. With both 3- and 17-frame overrides,
+the default and explicit `--paused` cases remain at frame zero and save no
+incomplete record; `--no-paused` cases stop and save at the exact chosen limit.
+Both completed search records verify through the normal CLI, export to native
+replays, and match the native replay verifier's frame count and final hash. The
+CLI checks also exercise the menu's saved-limit default and an explicit
+17-frame Playing selection.
+
+Validation on the PR 22 merge base `05bcb94647fba32f38b6440fd4a0a1aca03a9541`:
+
+```sh
+.venv/bin/block-stack-ai doctor
+.venv/bin/python -m pytest -q -p no:cacheprovider -m 'not integration'
+.venv/bin/python -m pytest -q -p no:cacheprovider -m 'integration and not desktop'
+.venv/bin/python -m pytest -q -p no:cacheprovider -m desktop
+```
+
+Doctor passed; the suites passed 320, 40 and 13 tests respectively. Native and
+desktop tests used the existing local engine build and the dirty sibling
+checkout at `8ca4158711c2d6339cab1ee8d78aa65bd624c89d`; the engine reproducibility
+limitation below still applies. This validates launcher integration only and
+does not re-measure or replace the retained experiment results.
+
 ## Limitations
 
 The engine fingerprint identifies the dirty sibling engine working tree

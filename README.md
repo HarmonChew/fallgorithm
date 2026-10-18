@@ -226,8 +226,8 @@ runs. The direct `play` command starts the search agent paused and other agents
 playing. Pass `--paused` or `--no-paused` to choose explicitly.
 `--agent` chooses an algorithm within that experiment (default: `search_plan`
 when the experiment offers it, otherwise `greedy` when it offers that, otherwise
-the experiment's first agent). Experiment 000 is a fixed controller script and supports `run` and replay rather than live
-placement play.
+the experiment's first agent). Experiment 000 is a fixed controller script and
+supports `run` and replay rather than live placement play.
 
 **P** pauses, **.** advances one frame while paused, **R** restarts the same seed,
 **[ / ]** changes speed, and **Esc** quits. A new invocation chooses a fresh seed.
