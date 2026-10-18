@@ -55,6 +55,22 @@ def _seed() -> int | None:
         print("Please enter a whole number from 0 to 65535, or press Enter for a fresh seed.")
 
 
+def _frame_limit(default: int) -> int:
+    """The live game's frame bound, defaulting to the experiment's own limit."""
+    while True:
+        answer = _answer(f"Frame limit [positive integer; Enter = {default}; q = quit]: ")
+        if not answer:
+            return default
+        try:
+            limit = int(answer)
+        except ValueError:
+            limit = 0
+        if limit > 0:
+            return limit
+        print("Please enter a positive whole number of frames, or press Enter "
+              "to keep the experiment's limit.")
+
+
 def select_command(experiments: dict[str, Path]) -> list[str] | None:
     """Return normal CLI arguments only after the user selects Start."""
     if not experiments:
@@ -75,10 +91,14 @@ def select_command(experiments: dict[str, Path]) -> list[str] | None:
             command = ["play" if live else "run", "--experiment", name]
             if live:
                 agent = _choose("Agent", list(config.agents), default=default_agent(config.agents))
+                frame_limit = _frame_limit(config.frame_limit)
                 seed = _seed()
                 speed = _choose("Speed", [f"{value}x" for value in PLAY_SPEEDS], default="1x")
-                paused = _choose("Start the game", ["Playing", "Paused"], default="Playing") == "Paused"
-                command += ["--agent", agent, "--speed", speed.removesuffix("x")]
+                # Paused by default: the first board is visible before the game
+                # runs, and an explicit Playing selection starts immediately.
+                paused = _choose("Start the game", ["Playing", "Paused"], default="Paused") == "Paused"
+                command += ["--agent", agent, "--speed", speed.removesuffix("x"),
+                            "--frame-limit", str(frame_limit)]
                 if seed is not None:
                     command += ["--seed", str(seed)]
                 if paused:
@@ -87,7 +107,7 @@ def select_command(experiments: dict[str, Path]) -> list[str] | None:
                 command.append("--watch")
 
             print(f"\nReady: {name} — {action}")
-            print(f"Frame limit: {config.frame_limit}")
+            print(f"Frame limit: {frame_limit if live else config.frame_limit}")
             if live:
                 print(f"Agent: {agent}; seed: {seed if seed is not None else 'fresh random'}; "
                       f"speed: {speed}; start: {'paused' if paused else 'playing'}")
