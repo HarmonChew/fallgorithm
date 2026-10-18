@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import copy
 import importlib.util
 import json
 from pathlib import Path
@@ -13,6 +14,8 @@ import pytest
 from block_stack_ai.agents import DOWN, create_agent
 from block_stack_ai.engine import PROJECT_ROOT, create_game, engine_executable
 from block_stack_ai.replay import export_replay
+from block_stack_ai import experiment005 as e5
+from block_stack_ai import searchplan
 from block_stack_ai import wellplan
 from block_stack_ai.heuristic import (
     SPAWN_ORIGIN_Y,
@@ -997,3 +1000,148 @@ def test_suite_record_with_the_tetris_agent_declares_its_objective(tmp_path: Pat
     without_identity["format_version"] = PRIOR_SUITE_FORMAT_VERSION
     path.write_text(json.dumps(without_identity), encoding="utf-8")
     verify_run(path)
+
+
+def test_search_agent_ignores_a_native_hidden_stack_through_the_inherited_act_path():
+    """The search's observation ignores the engine's hidden buffer end to end.
+
+    ``_spawn_template(seed_hidden=True)`` locks an O above the ceiling, so the
+    engine holds minos the rendered field cannot show. The search agent is driven
+    through the inherited ``PlacementAgent.act`` on that state and its emitted
+    mask and chosen placement are compared with the choice derived from the
+    rendered field alone, so the base controller's whole-grid observation cannot
+    reach the decision.
+    """
+    suite = load_config(PLAN_CONFIG)
+    configuration = {**suite.game, "seed": 1}
+    template, _ = _spawn_template(configuration, [[0] * WIDTH for _ in range(20)], False,
+                                  seed_hidden=True)
+    with template, searchplan.registered():
+        whole = board_grid(template.state.board, template.state.hidden_rows)
+        assert all(cell == 0 for row in whole[2:] for cell in row)
+        assert whole[0][8:10] == (1, 1) and whole[1][8:10] == (1, 1)
+        observed = wellplan.visible_grid(template.state.board)
+        assert observed != whole
+        agent = runner.build_agent("search_plan", configuration["seed"])
+        mask = agent.act(template.state)
+        assert type(mask) is int and 0 <= mask <= 31
+        expected = searchplan.search_choice(
+            observed, template.state.current_piece, template.state.next_piece,
+            drought=agent._drought, level=template.state.level,
+            lines=template.state.lines, start_level=template.state.start_level,
+            first_delay_remaining=template.state.first_delay_remaining,
+            ruleset=template.state.ruleset, mode=template.state.mode).placement
+        assert expected is not None
+        assert agent._placement is not None
+        assert (agent._placement.orientation, agent._placement.x) == \
+            (expected.orientation, expected.x)
+        assert mask == plan_mask(0, 5, (expected.orientation, expected.x), False,
+                                 orientation_count(template.state.current_piece))[0]
+
+
+def test_search_suite_record_runs_and_verifies_on_the_dedicated_path(tmp_path: Path):
+    """The dedicated launcher writes and replays a search record, budget and all.
+
+    The record names the search objective and its source identity, including the
+    well plan dependency the stock walk drops; its decision-budget block covers
+    every configured search seed; and the dedicated verifier replays the episodes
+    and compares the deterministic decision and node counts. A baseline
+    configuration written by the same launcher keeps the stock objective section
+    and no budget block, and verifies through the ordinary path. The stock
+    verifier cannot parse the runtime-registered search agent, which is the
+    documented CLI limitation rather than a silent acceptance.
+    """
+    raw = json.loads((PROJECT_ROOT / "experiments" / "005-search-plan"
+                      / "config-search.json").read_text(encoding="utf-8"))
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps({**raw, "frame_limit": 400, "seeds": [41],
+                    "agents": ["lookahead", "search_plan"]}),
+        encoding="utf-8",
+    )
+    path = e5.build_record(config_path, runs_dir=tmp_path / "runs")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["format_version"] == SUITE_FORMAT_VERSION
+    assert record["objective"]["module"] == "block_stack_ai.searchplan"
+    assert "block_stack_ai.wellplan" in record["objective"]["sources"]
+    budget = record["decision_budget"]
+    assert budget["coverage"]["all_configured_episodes"]
+    assert budget["coverage"]["all_configured_seeds"]
+    assert [row["seed"] for row in budget["per_episode"]] == [41]
+    assert all(type(row["decisions"]) is int and type(row["nodes_expanded"]) is int
+               for row in budget["per_episode"])
+    e5.verify_record(path)
+    # The baseline configuration carries the stock objective section and no
+    # decision-budget block, so the dedicated verifier delegates it to the stock
+    # one and the ordinary verify path accepts it.
+    baseline_path = tmp_path / "baseline.json"
+    baseline_path.write_text(json.dumps({
+        "game": raw["game"], "frame_limit": 300, "seeds": [42],
+        "agents": ["lookahead", "tetris_plan"],
+    }), encoding="utf-8")
+    baseline_record_path = e5.build_record(baseline_path, runs_dir=tmp_path / "runs")
+    baseline_record = json.loads(baseline_record_path.read_text(encoding="utf-8"))
+    assert baseline_record["objective"]["module"] == "block_stack_ai.wellplan"
+    assert "decision_budget" not in baseline_record
+    e5.verify_record(baseline_record_path)
+    verify_run(baseline_record_path)
+    # The stock verifier does not know the runtime-registered agent, so it cannot
+    # even parse the search configuration; the dedicated verifier above is the
+    # published path. The unit suite separately shows the stock identity walk also
+    # drops the well plan dependency the dedicated record deliberately covers.
+    with pytest.raises(VerificationError, match="agents must be chosen from"):
+        verify_run(path)
+
+
+def test_search_verifier_checks_the_entire_budget_report(tmp_path: Path):
+    config = json.loads((e5.EXPERIMENT_ROOT / "config-search.json").read_text())
+    config.update(frame_limit=200, seeds=[41, 43], agents=[searchplan.SEARCH_AGENT])
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps(config))
+    path = e5.build_record(config_path, runs_dir=tmp_path / "runs")
+    record = json.loads(path.read_text())
+    e5.verify_record(path)
+
+    def row(field, value):
+        return lambda budget: budget["per_episode"][0].update({field: value})
+
+    mutations = [
+        lambda b: b.update(node_budget=1),
+        lambda b: b.update(depth=999),
+        lambda b: b.update(beam_width=999),
+        lambda b: b.update(agents=[], seeds=[], expected_episodes=[]),
+        lambda b: b["totals"].update(decisions=999999, nodes_expanded=999999),
+        lambda b: b["coverage"].update(all_configured_episodes=1),
+        lambda b: b["coverage"].update(budget_exhausted_decisions=True),
+        lambda b: b["per_episode"].append(copy.deepcopy(b["per_episode"][0])),
+        lambda b: b["per_episode"].reverse(),
+        row("nodes_per_decision", 999999.0),
+        row("budget_exhausted_decisions", False),  # false == 0 is still the wrong JSON type
+        row("seed", 41.0),
+    ]
+    for mutate in mutations:
+        tampered = copy.deepcopy(record)
+        mutate(tampered["decision_budget"])
+        path.write_text(json.dumps(tampered))
+        with pytest.raises(VerificationError, match="decision budget"):
+            e5.verify_record(path)
+    advisory = copy.deepcopy(record)
+    for item in advisory["decision_budget"]["per_episode"]:
+        item["episode_seconds"] = 12345.0
+    path.write_text(json.dumps(advisory))
+    e5.verify_record(path)
+
+
+def test_fresh_seed_protocol_matches_native_states_and_excludes_known_aliases():
+    spec = importlib.util.spec_from_file_location(
+        "experiment005_seed_evidence", e5.EXPERIMENT_ROOT / "probes" / "evidence.py")
+    evidence = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(evidence)
+    protocol = json.loads(evidence.SEED_PROTOCOL.read_text())
+    evidence.check_seed_protocol(protocol)
+    game = protocol["game"]
+    assert evidence.native_initial_identity(game, 42) == evidence.native_initial_identity(game, 43)
+    assert evidence.native_initial_identity(game, 44) == evidence.native_initial_identity(game, 45)
+    for row in protocol["excluded"] + protocol["selected"]:
+        assert evidence.native_initial_identity(game, row["seed"]) == row["initial_state_sha256"]
+    assert e5.engine_fingerprint()["combined_sha256"] == protocol["engine_fingerprint"]

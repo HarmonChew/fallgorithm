@@ -1,0 +1,412 @@
+{
+  "configuration": {
+    "agents": [
+      "lookahead",
+      "tetris_plan"
+    ],
+    "frame_limit": 200000,
+    "game": {
+      "height": 0,
+      "mode": "endless",
+      "ruleset": "classic_ntsc_extended",
+      "start_level": 18
+    },
+    "seeds": [
+      39497,
+      2918,
+      42114,
+      18319,
+      54626,
+      22909,
+      30033,
+      53641,
+      8833,
+      62362
+    ]
+  },
+  "coverage": {
+    "lookahead": [
+      39497,
+      2918,
+      42114,
+      18319,
+      54626,
+      22909,
+      30033,
+      53641,
+      8833,
+      62362
+    ],
+    "tetris_plan": [
+      39497,
+      2918,
+      42114,
+      18319,
+      54626,
+      22909,
+      30033,
+      53641,
+      8833,
+      62362
+    ]
+  },
+  "engine_fingerprint": "7b4a71e9698de3e3d4a3b2bad0e7edee17fd9ecb7805506182806899343dbadf",
+  "kind": "suite",
+  "label": "fresh-baseline",
+  "note": "Fresh native-state-disjoint evaluation from the clean source-freeze commit, after independent review corrections. Full suite replay verification passed before retention.",
+  "outcomes": [
+    {
+      "agent": "lookahead",
+      "final_state_hash": "4adf61f9041f2f3c",
+      "frames": 60089,
+      "lines": 549,
+      "pieces_placed": 1410,
+      "score": 834429,
+      "seed": 39497,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "b9d9f2331ac37dfd",
+      "frames": 85969,
+      "lines": 838,
+      "pieces_placed": 2132,
+      "score": 1797474,
+      "seed": 2918,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "eed8d16d63138a5c",
+      "frames": 169693,
+      "lines": 1780,
+      "pieces_placed": 4484,
+      "score": 7447600,
+      "seed": 42114,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "84fa53edd1361827",
+      "frames": 103293,
+      "lines": 1035,
+      "pieces_placed": 2622,
+      "score": 2719826,
+      "seed": 18319,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "ce40d39cfcd7a09d",
+      "frames": 200000,
+      "lines": 2121,
+      "pieces_placed": 5309,
+      "score": 10511794,
+      "seed": 54626,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "45fd83b8d8caca19",
+      "frames": 152389,
+      "lines": 1589,
+      "pieces_placed": 4010,
+      "score": 5927314,
+      "seed": 22909,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "ee82ecd7a37da5bb",
+      "frames": 96053,
+      "lines": 951,
+      "pieces_placed": 2414,
+      "score": 2365293,
+      "seed": 30033,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "8bed25d350cf6419",
+      "frames": 183772,
+      "lines": 1945,
+      "pieces_placed": 4898,
+      "score": 8982091,
+      "seed": 53641,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "ba07cb3e4c5d189b",
+      "frames": 71222,
+      "lines": 668,
+      "pieces_placed": 1705,
+      "score": 1190748,
+      "seed": 8833,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "135070faf923a984",
+      "frames": 82108,
+      "lines": 800,
+      "pieces_placed": 2036,
+      "score": 1663009,
+      "seed": 62362,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "final_state_hash": "b4e01addf1e57ebb",
+      "frames": 45457,
+      "lines": 390,
+      "pieces_placed": 1007,
+      "score": 551916,
+      "seed": 39497,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "final_state_hash": "3e5f77b85914d031",
+      "frames": 73248,
+      "lines": 736,
+      "pieces_placed": 1876,
+      "score": 1668401,
+      "seed": 2918,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "final_state_hash": "2d8b62fe4dc428fb",
+      "frames": 38663,
+      "lines": 307,
+      "pieces_placed": 803,
+      "score": 359112,
+      "seed": 42114,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "final_state_hash": "8b36863ed2e647b8",
+      "frames": 43626,
+      "lines": 365,
+      "pieces_placed": 948,
+      "score": 601370,
+      "seed": 18319,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "final_state_hash": "6eae22c8872ece5b",
+      "frames": 50584,
+      "lines": 448,
+      "pieces_placed": 1154,
+      "score": 751261,
+      "seed": 54626,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "final_state_hash": "01752f58db7e5f5a",
+      "frames": 33286,
+      "lines": 243,
+      "pieces_placed": 644,
+      "score": 337246,
+      "seed": 22909,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "final_state_hash": "c82542cac8e88ed4",
+      "frames": 144765,
+      "lines": 1516,
+      "pieces_placed": 3826,
+      "score": 6675085,
+      "seed": 30033,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "final_state_hash": "a3bd2feff4856d2a",
+      "frames": 46823,
+      "lines": 404,
+      "pieces_placed": 1045,
+      "score": 647193,
+      "seed": 53641,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "final_state_hash": "1340a23b571b8cfe",
+      "frames": 44085,
+      "lines": 372,
+      "pieces_placed": 968,
+      "score": 450638,
+      "seed": 8833,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "tetris_plan",
+      "final_state_hash": "abe1cd08668a20e8",
+      "frames": 80653,
+      "lines": 798,
+      "pieces_placed": 2030,
+      "score": 2002835,
+      "seed": 62362,
+      "stopping_reason": "game_over"
+    }
+  ],
+  "record_bytes": 19888517,
+  "record_file": "run.json.gz",
+  "record_sha256": "0538d4a957082e1c279180908368b5a912797580f5868b32f861361ff93334fa",
+  "replays": [
+    {
+      "agent": "lookahead",
+      "file": "seed-39497-lookahead.rep",
+      "seed": 39497,
+      "sha256": "a2bfdd002e93d48ea10de1d0e309d366af4dc2395943b795b7eb9fe7aaf0456b"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-2918-lookahead.rep",
+      "seed": 2918,
+      "sha256": "e93ce0adf7eeb7a89e0c16692b6f63c12c1bc7f231e98ecd5c222dab19cbed0f"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-42114-lookahead.rep",
+      "seed": 42114,
+      "sha256": "0ef9e5e72fd856cd1ef9674d95c588118de47b8c9bc3e9de4a18cbebc1d381f1"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-18319-lookahead.rep",
+      "seed": 18319,
+      "sha256": "719e553c46281e8cd45d07c7786db1ab6b9c2a3f3aa33b614d013098ab34d4ff"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-54626-lookahead.rep",
+      "seed": 54626,
+      "sha256": "f3a6a9b37c38e5c6eaf401fb0699908652d672309ef3868c62ec404718163288"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-22909-lookahead.rep",
+      "seed": 22909,
+      "sha256": "229821d4d077efc2226cf16b7f72703cf682cb6a14e9d0e58cad664fe27a4e0f"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-30033-lookahead.rep",
+      "seed": 30033,
+      "sha256": "c55a45285654d00505c655462544877a9d0ed84e7bc2c0e1ab3e7e43e45863fa"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-53641-lookahead.rep",
+      "seed": 53641,
+      "sha256": "2ca22ae3e4f98c6459cf88120bbb5a12210b0b7b8ebb0b84ba354ab29c347e55"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-8833-lookahead.rep",
+      "seed": 8833,
+      "sha256": "819e841c42e25b0e4904e86a0e60861cc42c6df55efcb56f063c02c146df1c88"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-62362-lookahead.rep",
+      "seed": 62362,
+      "sha256": "3e4647cf02d1f3a0ecbc0a57c39590ffee04f083d0edd3ee3429c12194ecc849"
+    },
+    {
+      "agent": "tetris_plan",
+      "file": "seed-39497-tetris_plan.rep",
+      "seed": 39497,
+      "sha256": "f335ceee9f19be1c6391c3c7ecc8207cb57698571c9a882a57296d154717b059"
+    },
+    {
+      "agent": "tetris_plan",
+      "file": "seed-2918-tetris_plan.rep",
+      "seed": 2918,
+      "sha256": "6ebe7ebd9848527110e1ce799104a482460ca7e148b585d61e02f7be240d7841"
+    },
+    {
+      "agent": "tetris_plan",
+      "file": "seed-42114-tetris_plan.rep",
+      "seed": 42114,
+      "sha256": "4cea3001b8f8fc03a4b68bc14e5b9a9e136b16372569954bb841c7cdec4ac7f4"
+    },
+    {
+      "agent": "tetris_plan",
+      "file": "seed-18319-tetris_plan.rep",
+      "seed": 18319,
+      "sha256": "14f1d688f3a84116df64947bc0a6259f67cf466bf27d93f7772e8b0f9707058b"
+    },
+    {
+      "agent": "tetris_plan",
+      "file": "seed-54626-tetris_plan.rep",
+      "seed": 54626,
+      "sha256": "4908a4bdb8422b012642d32cbaa50980161dd3a252f021d13910c7afb4dd7ef6"
+    },
+    {
+      "agent": "tetris_plan",
+      "file": "seed-22909-tetris_plan.rep",
+      "seed": 22909,
+      "sha256": "31e2df5fba70b46baa7ad072fa2818f646b246d25167631df9bdb7de1e01d642"
+    },
+    {
+      "agent": "tetris_plan",
+      "file": "seed-30033-tetris_plan.rep",
+      "seed": 30033,
+      "sha256": "cc8da0970ceda37b44316894883d3e713241833a3e7ea6cfd19be2f8ab0d10d2"
+    },
+    {
+      "agent": "tetris_plan",
+      "file": "seed-53641-tetris_plan.rep",
+      "seed": 53641,
+      "sha256": "b1f019123b53bbb5874d0f231edb4956902691abe4e17d8f452330d75be586a2"
+    },
+    {
+      "agent": "tetris_plan",
+      "file": "seed-8833-tetris_plan.rep",
+      "seed": 8833,
+      "sha256": "a1306f144ef2b91dbc8fab5f73c2111775813b6cd9127f85a13a0e0cbffe12e1"
+    },
+    {
+      "agent": "tetris_plan",
+      "file": "seed-62362-tetris_plan.rep",
+      "seed": 62362,
+      "sha256": "c23b2d2648a04b7c858b9a48e61fa366e9f9f23032acff95152fb2dc9b154db2"
+    }
+  ],
+  "retained_at": "2026-10-18T02:49:31.191187+00:00",
+  "schema": "fallgorithm.experiment005.retained-record/1",
+  "source_run": "20261018T023956995888Z-ed7e5a18",
+  "verify": {
+    "cleanup": null,
+    "decompress": "gunzip -c experiments/005-search-plan/records/fresh-baseline/run.json.gz > /tmp/run.json",
+    "defect": null,
+    "expected": "pass",
+    "historical": false,
+    "prepare": null,
+    "python_note": "the interpreter is the project's virtual environment, which a checkout set up by the project README has at .venv/bin/python; if the environment lives outside the checkout, run the same PYTHONPATH and module command with that interpreter.",
+    "record": "PYTHONPATH=src .venv/bin/python -m block_stack_ai.experiment005 verify /tmp/run.json",
+    "replay": "each .rep was exported by `export-replay` after a full Python replay verify and a native headless final-hash comparison",
+    "source_commit": "2313f0e6c02f1c91b18a72fae2544f3f6bbd60e3",
+    "source_note": "the current candidate verifies this record; its source_commit names the measured base, which is an ancestor of the candidate."
+  },
+  "versions": {
+    "engine": {
+      "commit": "8ca4158711c2d6339cab1ee8d78aa65bd624c89d",
+      "dirty": true,
+      "kind": "working-tree"
+    },
+    "fallgorithm": {
+      "commit": "2313f0e6c02f1c91b18a72fae2544f3f6bbd60e3",
+      "dirty": false,
+      "kind": "committed"
+    }
+  }
+}

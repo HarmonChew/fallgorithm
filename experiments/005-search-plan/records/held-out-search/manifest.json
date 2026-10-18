@@ -1,0 +1,412 @@
+{
+  "configuration": {
+    "agents": [
+      "lookahead",
+      "search_plan"
+    ],
+    "frame_limit": 200000,
+    "game": {
+      "height": 0,
+      "mode": "endless",
+      "ruleset": "classic_ntsc_extended",
+      "start_level": 18
+    },
+    "seeds": [
+      42,
+      44,
+      46,
+      48,
+      50,
+      52,
+      54,
+      56,
+      58,
+      60
+    ]
+  },
+  "coverage": {
+    "lookahead": [
+      42,
+      44,
+      46,
+      48,
+      50,
+      52,
+      54,
+      56,
+      58,
+      60
+    ],
+    "search_plan": [
+      42,
+      44,
+      46,
+      48,
+      50,
+      52,
+      54,
+      56,
+      58,
+      60
+    ]
+  },
+  "engine_fingerprint": "7b4a71e9698de3e3d4a3b2bad0e7edee17fd9ecb7805506182806899343dbadf",
+  "kind": "suite",
+  "label": "held-out-search",
+  "note": "Exploratory pre-review comparison: seeds 42 and 44 alias development seeds 43 and 45. All original run and replay bytes are preserved; these are not fresh held-out evidence.",
+  "outcomes": [
+    {
+      "agent": "lookahead",
+      "final_state_hash": "587397a790f656c9",
+      "frames": 36710,
+      "lines": 284,
+      "pieces_placed": 744,
+      "score": 299115,
+      "seed": 42,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "8ff7ffdce4a81bc3",
+      "frames": 71210,
+      "lines": 673,
+      "pieces_placed": 1717,
+      "score": 1229342,
+      "seed": 44,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "72badb9a05c900ae",
+      "frames": 57539,
+      "lines": 519,
+      "pieces_placed": 1334,
+      "score": 774889,
+      "seed": 46,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "5703b814b388aeff",
+      "frames": 54776,
+      "lines": 486,
+      "pieces_placed": 1250,
+      "score": 726172,
+      "seed": 48,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "6e33a44ddc40c2bf",
+      "frames": 84576,
+      "lines": 816,
+      "pieces_placed": 2075,
+      "score": 1693725,
+      "seed": 50,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "e659e881cbff6efc",
+      "frames": 200000,
+      "lines": 2133,
+      "pieces_placed": 5339,
+      "score": 10369614,
+      "seed": 52,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "2d3c55334890daca",
+      "frames": 69813,
+      "lines": 651,
+      "pieces_placed": 1664,
+      "score": 1112253,
+      "seed": 54,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "56b0ed940b3c9f97",
+      "frames": 72057,
+      "lines": 699,
+      "pieces_placed": 1782,
+      "score": 1356268,
+      "seed": 56,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "93d1eff41f7c2e45",
+      "frames": 119933,
+      "lines": 1243,
+      "pieces_placed": 3142,
+      "score": 3753396,
+      "seed": 58,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "lookahead",
+      "final_state_hash": "89a7aa5d65b0dd65",
+      "frames": 200000,
+      "lines": 2126,
+      "pieces_placed": 5332,
+      "score": 10524413,
+      "seed": 60,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "59a14318861546c2",
+      "frames": 200000,
+      "lines": 2142,
+      "pieces_placed": 5359,
+      "score": 13772345,
+      "seed": 42,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "1a3a34bf2e2cc831",
+      "frames": 200000,
+      "lines": 2156,
+      "pieces_placed": 5396,
+      "score": 13441977,
+      "seed": 44,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "36aaefb87d6cec09",
+      "frames": 200000,
+      "lines": 2169,
+      "pieces_placed": 5428,
+      "score": 15438367,
+      "seed": 46,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "23c8ff78f5a78b35",
+      "frames": 200000,
+      "lines": 2144,
+      "pieces_placed": 5365,
+      "score": 13540709,
+      "seed": 48,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "e4fc79d38adde961",
+      "frames": 200000,
+      "lines": 2154,
+      "pieces_placed": 5392,
+      "score": 14827447,
+      "seed": 50,
+      "stopping_reason": "frame_limit"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "93062b76e8f28105",
+      "frames": 142447,
+      "lines": 1483,
+      "pieces_placed": 3744,
+      "score": 6826113,
+      "seed": 52,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "847ecf602cded164",
+      "frames": 94626,
+      "lines": 936,
+      "pieces_placed": 2376,
+      "score": 2583620,
+      "seed": 54,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "016710e2e95b9181",
+      "frames": 74293,
+      "lines": 716,
+      "pieces_placed": 1827,
+      "score": 1804328,
+      "seed": 56,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "2550ddc46345d3d8",
+      "frames": 33572,
+      "lines": 250,
+      "pieces_placed": 660,
+      "score": 299523,
+      "seed": 58,
+      "stopping_reason": "game_over"
+    },
+    {
+      "agent": "search_plan",
+      "final_state_hash": "0f2717ee6c4c16d9",
+      "frames": 41379,
+      "lines": 338,
+      "pieces_placed": 881,
+      "score": 608187,
+      "seed": 60,
+      "stopping_reason": "game_over"
+    }
+  ],
+  "record_bytes": 25913102,
+  "record_file": "run.json.gz",
+  "record_sha256": "da1b90b777f2c94bedc2a973d4ceef79d9c620bbd06a35d98c6a3f33b4e19f7d",
+  "replays": [
+    {
+      "agent": "lookahead",
+      "file": "seed-42-lookahead.rep",
+      "seed": 42,
+      "sha256": "d6c78885417285d7d61588305ae2e4cbd05dec560fdade8909e944112d8abb5f"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-44-lookahead.rep",
+      "seed": 44,
+      "sha256": "e7938060ca60de7f08aa0d047ce1b5029110178f3c3196dff3e4aedcc3760dcd"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-46-lookahead.rep",
+      "seed": 46,
+      "sha256": "1db6c11d41124b01433065c3a0c58c5e0e054ce4b140c198b16fd45530d60812"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-48-lookahead.rep",
+      "seed": 48,
+      "sha256": "5833cbdcf1701dba696e396c801bcecca3366c670513bb4daa63dd4e4f16e20d"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-50-lookahead.rep",
+      "seed": 50,
+      "sha256": "12215f0feae2f94e8fbcb364ba27b2febe93ada198b9b2be30a0b851ce1eddc1"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-52-lookahead.rep",
+      "seed": 52,
+      "sha256": "7798e36125abf79ad972449876869dbc997cc3781ef058a9b9c827f82d655ffe"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-54-lookahead.rep",
+      "seed": 54,
+      "sha256": "39b104c886614af3db534336dee1d3703687ff3902263d5def94cbe836354f78"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-56-lookahead.rep",
+      "seed": 56,
+      "sha256": "c3740ae022aa76ad08edcfabcc8d5224db78312341aebc97131dcb448a8db989"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-58-lookahead.rep",
+      "seed": 58,
+      "sha256": "f8f56938bd337d707f02a18bbf003e5ef903d6ae7b55c2b3d3b54fde77619bd1"
+    },
+    {
+      "agent": "lookahead",
+      "file": "seed-60-lookahead.rep",
+      "seed": 60,
+      "sha256": "841ed9519b6d3786cccba1ad76747a80f8219e81fdeea0b1f7b427d79cfe2ee3"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-42-search_plan.rep",
+      "seed": 42,
+      "sha256": "329e37499c3b25f28b51f07c85e299bec846bc5ccbd448515eecbf3e04c456ea"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-44-search_plan.rep",
+      "seed": 44,
+      "sha256": "c021ec99bb0e111708620d71be88da4eaa609fd031c0aaf29911dddf4a753508"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-46-search_plan.rep",
+      "seed": 46,
+      "sha256": "6283eaf6945a2b9930194bb3898faddc9a9644b616bde71ad6888426d6d143b3"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-48-search_plan.rep",
+      "seed": 48,
+      "sha256": "ff129afa8aea686568f82c2c313d8ccc70434928516e8e436b7039b42b80a11b"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-50-search_plan.rep",
+      "seed": 50,
+      "sha256": "98a3192e738358feb20933cc85fae23a83d8a8ad504fc9a4a8a55973f964af29"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-52-search_plan.rep",
+      "seed": 52,
+      "sha256": "16b4226eafbd16c905185223d5b8cad5c04b70dd54a48ba87a38e7e42c453659"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-54-search_plan.rep",
+      "seed": 54,
+      "sha256": "e3011598b4b38f08a2041ffb890171b5597bd7a5d9d3709b7601dd17124a9181"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-56-search_plan.rep",
+      "seed": 56,
+      "sha256": "b57be178c2f4013a5329be6356f93e9fcaeef7f31ab8186df64def8c7d349ec9"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-58-search_plan.rep",
+      "seed": 58,
+      "sha256": "d55b01774110d64ab5d999e2daad25b8fe521d67c69381690c28c7b19a6b5e68"
+    },
+    {
+      "agent": "search_plan",
+      "file": "seed-60-search_plan.rep",
+      "seed": 60,
+      "sha256": "068f083c390d09c931ae15bede6322f041f13337f23a58fd4350b8989fcfe0fc"
+    }
+  ],
+  "retained_at": "2026-10-17T17:31:27.814192+00:00",
+  "schema": "fallgorithm.experiment005.retained-record/1",
+  "source_run": "20261017T163207453359Z-dfc36928",
+  "verify": {
+    "cleanup": "git worktree remove /tmp/exp005-verify-held-out-search",
+    "decompress": "gunzip -c experiments/005-search-plan/records/held-out-search/run.json.gz > /tmp/run.json",
+    "defect": null,
+    "expected": "pass",
+    "historical": true,
+    "prepare": "git worktree add /tmp/exp005-verify-held-out-search 795712f4c061f5aab95998aba3fa16bd3c89904e",
+    "python_note": "the interpreter is the project's virtual environment, which a checkout set up by the project README has at .venv/bin/python; if the environment lives outside the checkout, run the same PYTHONPATH and module command with that interpreter.",
+    "record": "PYTHONPATH=/tmp/exp005-verify-held-out-search/src .venv/bin/python -m block_stack_ai.experiment005 verify /tmp/run.json",
+    "replay": "each .rep was exported by `export-replay` after a full Python replay verify and a native headless final-hash comparison",
+    "source_commit": "795712f4c061f5aab95998aba3fa16bd3c89904e",
+    "source_note": "This exploratory record verifies against its original source_commit. Use the prepare/record/cleanup commands; the current search source has stricter identity checks."
+  },
+  "versions": {
+    "engine": {
+      "commit": "8ca4158711c2d6339cab1ee8d78aa65bd624c89d",
+      "dirty": true,
+      "kind": "working-tree"
+    },
+    "fallgorithm": {
+      "commit": "795712f4c061f5aab95998aba3fa16bd3c89904e",
+      "dirty": false,
+      "kind": "committed"
+    }
+  }
+}
