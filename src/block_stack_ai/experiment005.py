@@ -470,7 +470,7 @@ def play_search_live(
     agent: str = searchplan.SEARCH_AGENT,
     seed: int | None = None,
     speed: str = "1",
-    paused: bool = False,
+    paused: bool = True,
     frame_limit: int | None = None,
     **kwargs: Any,
 ) -> list[Path]:
@@ -479,7 +479,10 @@ def play_search_live(
     Registers the agent for the session and hands the shared launcher the
     session class that records the search identity. The protocol, the drift
     checks and the run layout are the shared ones, so a live search game is one
-    ``play_live`` game whose record :func:`verify_record` accepts.
+    ``play_live`` game whose record :func:`verify_record` accepts. The game
+    starts paused by default so the first board is visible before the search
+    makes its first placement; the caller can pass ``paused=False`` to start
+    immediately.
     """
     with searchplan.registered():
         return live.play_live(config_path, agent, seed, speed, paused, frame_limit,
