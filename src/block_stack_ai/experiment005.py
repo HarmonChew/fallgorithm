@@ -366,17 +366,6 @@ def engine_fingerprint() -> dict[str, Any]:
 RESULT_SCHEMA = "fallgorithm.experiment005.result/1"
 
 
-def _metric(values: list[int]) -> dict[str, Any]:
-    ordered = sorted(values)
-    return {
-        "mean": round(sum(values) / len(values), 3),
-        "median": ordered[len(ordered) // 2] if len(ordered) % 2 else
-        round((ordered[len(ordered) // 2 - 1] + ordered[len(ordered) // 2]) / 2, 3),
-        "min": min(values),
-        "max": max(values),
-    }
-
-
 def metrics_for(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Per-agent metrics derived from the retained per-episode rows.
 
