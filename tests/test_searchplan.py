@@ -542,3 +542,11 @@ def test_configs_are_declared_for_the_held_out_seeds():
     # the dedicated launcher.
     parsed = runner.parse_config(baseline)
     assert parsed.agents == ("lookahead", "tetris_plan")
+
+
+def test_verify_cli_reports_a_missing_record_without_a_traceback(tmp_path, capsys):
+    """Exercise the command's except tuple through a missing record path."""
+    assert e5.main(["verify", str(tmp_path / "missing.json")]) == 1
+    error = capsys.readouterr().err
+    assert error.startswith("verify failed:")
+    assert "missing.json" in error

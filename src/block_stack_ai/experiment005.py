@@ -44,6 +44,7 @@ from typing import Any, Callable
 
 from . import runner
 from . import searchplan
+from .engine import EngineError
 
 EXPERIMENT_ROOT = runner.PROJECT_ROOT / "experiments" / "005-search-plan"
 BUDGET_SCHEMA = searchplan._BUDGET_SCHEMA
@@ -686,7 +687,7 @@ def main(argv: list[str] | None = None) -> int:
                                    encoding="utf-8")
             print(f"Fingerprint: {args.output} ({document['file_count']} files)")
             return 0
-    except (runner.VerificationError, runner.EngineError, ValueError, OSError,
+    except (runner.VerificationError, EngineError, ValueError, OSError,
             KeyError, json.JSONDecodeError) as error:
         print(f"{args.command} failed: {error}", file=sys.stderr)
         return 1
