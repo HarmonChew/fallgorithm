@@ -484,6 +484,55 @@ def test_retained_reader_checks_the_compressed_bytes_before_using_rows(tmp_path,
         evidence_module.checked_retained(tmp_path / "record")
 
 
+def test_a_producer_tree_cannot_claim_to_be_its_commit(tmp_path, evidence_module, monkeypatch, capsys):
+    """The producer id must be a commit, not a tree that names the same paths.
+
+    ``git show <tree>:<path>`` succeeds for a commit's own root tree, so a
+    record that swaps only its producer commit for that tree would pass the
+    source and capture comparisons without naming any commit. The retained
+    records are copied and given that tree id, with their record digests, byte
+    counts and manifest versions updated so only the object type distinguishes
+    them.
+    """
+    result = e5.EXPERIMENT_ROOT / "result.json"
+    if not result.is_file():
+        pytest.skip("the fresh measurement is retained after freezing its source")
+    copied = {}
+    for label in ("fresh-baseline", "fresh-search"):
+        target = tmp_path / label
+        shutil.copytree(e5.EXPERIMENT_ROOT / "records" / label, target)
+        manifest_path = target / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        commit = manifest["versions"]["fallgorithm"]["commit"]
+        tree = subprocess.run(
+            ["git", "rev-parse", f"{commit}^{{tree}}"], cwd=runner.PROJECT_ROOT,
+            capture_output=True, text=True, check=True).stdout.strip()
+        assert subprocess.run(
+            ["git", "cat-file", "-t", tree], cwd=runner.PROJECT_ROOT,
+            capture_output=True, text=True, check=True).stdout.strip() == "tree"
+        record_path = target / manifest["record_file"]
+        record = json.loads(gzip.decompress(record_path.read_bytes()))
+        record["versions"]["fallgorithm"]["commit"] = tree
+        raw = (json.dumps(record, indent=2, sort_keys=True) + "\n").encode()
+        record_path.write_bytes(gzip.compress(raw, mtime=0))
+        manifest["versions"]["fallgorithm"]["commit"] = tree
+        manifest["record_sha256"] = hashlib.sha256(record_path.read_bytes()).hexdigest()
+        manifest["record_bytes"] = len(raw)
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        copied[label] = target
+    original_retained = evidence_module._retained
+
+    def retained(label):
+        if label in copied:
+            return evidence_module.checked_retained(copied[label])
+        return original_retained(label)
+
+    monkeypatch.setattr(evidence_module, "_retained", retained)
+    assert evidence_module.command_check_record(argparse.Namespace(record=result)) == 1
+    assert "not a commit object" in capsys.readouterr().err
+
+
 def test_predeclaration_cannot_be_replaced_after_its_producer_commit(tmp_path, evidence_module, monkeypatch):
     path = e5.EXPERIMENT_ROOT / "result.json"
     if not path.is_file():

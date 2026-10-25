@@ -355,6 +355,26 @@ def checked_retained(directory: Path) -> tuple[dict, dict]:
     return record, manifest
 
 
+def _require_commit_object(commit: str) -> None:
+    """Refuse a recorded producer id that is not a commit object.
+
+    ``git show <object>:<path>`` resolves paths from any tree-ish, so a commit's
+    own root tree would satisfy every source and capture comparison while naming
+    no commit at all. The object type is checked first, mirroring Experiment
+    003's tree resolver, and a missing or differently typed object reports the
+    Git command and its answer rather than continuing.
+    """
+    result = subprocess.run(["git", "cat-file", "-t", commit],
+                            cwd=runner.PROJECT_ROOT, capture_output=True,
+                            text=True, check=False)
+    answer = result.stdout.strip()
+    if result.returncode != 0 or answer != "commit":
+        detail = (result.stdout + result.stderr).strip()
+        raise ValueError(
+            f"The recorded producer {commit} is not a commit object: "
+            f"git cat-file -t exited {result.returncode} with {detail!r}")
+
+
 def _check_run_binding(record: dict, config: dict, objective: dict, captured_at: str) -> None:
     require_equal(record["configuration"], config, "run.configuration")
     require_equal(record["objective"], objective, "run.objective")
@@ -367,6 +387,7 @@ def _check_run_binding(record: dict, config: dict, objective: dict, captured_at:
     version = record["versions"]["fallgorithm"]
     if version["dirty"] is not False or version["kind"] != "committed" or not version["commit"]:
         raise ValueError("The fresh evaluation must name a clean producer commit")
+    _require_commit_object(version["commit"])
     for module, digest in record["objective"]["sources"].items():
         source = "src/" + module.replace(".", "/") + ".py"
         result = subprocess.run(["git", "show", f"{version['commit']}:{source}"],
