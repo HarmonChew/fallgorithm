@@ -1,0 +1,1060 @@
+{
+ "experiment": "006-level29-survival",
+ "question": "Does lowering the well plan's height budget from 8 to 5 at level 28 reduce top-outs without lowering mean lines?",
+ "record": {
+  "path": "experiments/006-level29-survival/records/run.json.gz",
+  "sha256": "7b7556717c36e2871053bc8085cfae29bd8dccfca45af7b0fa180c6c9eaa4ffb",
+  "created_at": "2026-10-27T10:25:55.102213+00:00"
+ },
+ "versions": {
+  "engine": {
+   "commit": "8ca4158711c2d6339cab1ee8d78aa65bd624c89d",
+   "dirty": true,
+   "kind": "working-tree"
+  },
+  "fallgorithm": {
+   "commit": "e5eff7d872595631cc41221e163e6cb46a9f9cc8",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "engine_fingerprint": "7b4a71e9698de3e3d4a3b2bad0e7edee17fd9ecb7805506182806899343dbadf",
+ "configuration": {
+  "game": {
+   "ruleset": "classic_ntsc_extended",
+   "mode": "endless",
+   "start_level": 18,
+   "height": 0
+  },
+  "frame_limit": 400000,
+  "seeds": [
+   33713,
+   26334,
+   42134,
+   44777,
+   2716,
+   7951,
+   17416,
+   61148,
+   1235,
+   46150,
+   33162,
+   5981,
+   28221,
+   32910,
+   28762,
+   13245,
+   56486,
+   23484,
+   14841,
+   34028,
+   14398,
+   15707,
+   8328,
+   4153,
+   55751,
+   49731,
+   50604,
+   46408,
+   53146,
+   62632
+  ],
+  "agents": [
+   "search_plan",
+   "survival_plan"
+  ]
+ },
+ "metrics": {
+  "search_plan": {
+   "games": 30,
+   "top_outs": 30,
+   "frame_limit_stops": 0,
+   "mean_lines": 1737.3,
+   "min_lines": 260,
+   "mean_score": 12281644.8,
+   "tetris_line_rate": 0.045665,
+   "mean_pieces": 4378.7
+  },
+  "survival_plan": {
+   "games": 30,
+   "top_outs": 13,
+   "frame_limit_stops": 17,
+   "mean_lines": 3446.2,
+   "min_lines": 589,
+   "mean_score": 32036534.8,
+   "tetris_line_rate": 0.006693,
+   "mean_pieces": 8633.9
+  }
+ },
+ "paired_lines": {
+  "survival_more": 23,
+  "search_more": 7,
+  "equal": 0
+ },
+ "acceptance": {
+  "primary_fewer_top_outs": true,
+  "secondary_mean_lines_not_lower": true
+ },
+ "episodes": [
+  {
+   "agent": "search_plan",
+   "seed": 33713,
+   "pieces_placed": 9306,
+   "clear_sizes": {
+    "singles": 2708,
+    "doubles": 358,
+    "triples": 48,
+    "tetrises": 35
+   },
+   "lines": 3708,
+   "score": 38917005,
+   "frame_count": 338347,
+   "stopping_reason": "game_over",
+   "final_state_hash": "d7773715197a7f6d"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 26334,
+   "pieces_placed": 6449,
+   "clear_sizes": {
+    "singles": 1816,
+    "doubles": 239,
+    "triples": 45,
+    "tetrises": 34
+   },
+   "lines": 2565,
+   "score": 20791985,
+   "frame_count": 236377,
+   "stopping_reason": "game_over",
+   "final_state_hash": "981f53778d02d37d"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 42134,
+   "pieces_placed": 2292,
+   "clear_sizes": {
+    "singles": 664,
+    "doubles": 75,
+    "triples": 19,
+    "tetrises": 8
+   },
+   "lines": 903,
+   "score": 2570262,
+   "frame_count": 91327,
+   "stopping_reason": "game_over",
+   "final_state_hash": "1303bdb9e88a6ccb"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 44777,
+   "pieces_placed": 3496,
+   "clear_sizes": {
+    "singles": 956,
+    "doubles": 133,
+    "triples": 33,
+    "tetrises": 16
+   },
+   "lines": 1385,
+   "score": 6013366,
+   "frame_count": 132761,
+   "stopping_reason": "game_over",
+   "final_state_hash": "9b8cea3c2f41e0f6"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 2716,
+   "pieces_placed": 2225,
+   "clear_sizes": {
+    "singles": 605,
+    "doubles": 72,
+    "triples": 24,
+    "tetrises": 14
+   },
+   "lines": 877,
+   "score": 2974664,
+   "frame_count": 87930,
+   "stopping_reason": "game_over",
+   "final_state_hash": "cbdfed3209ef1d9f"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 7951,
+   "pieces_placed": 4795,
+   "clear_sizes": {
+    "singles": 1351,
+    "doubles": 187,
+    "triples": 29,
+    "tetrises": 23
+   },
+   "lines": 1904,
+   "score": 10913667,
+   "frame_count": 179291,
+   "stopping_reason": "game_over",
+   "final_state_hash": "28828b6a88b3b01e"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 17416,
+   "pieces_placed": 800,
+   "clear_sizes": {
+    "singles": 210,
+    "doubles": 30,
+    "triples": 8,
+    "tetrises": 3
+   },
+   "lines": 306,
+   "score": 421694,
+   "frame_count": 38155,
+   "stopping_reason": "game_over",
+   "final_state_hash": "34b68c5c40b3e182"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 61148,
+   "pieces_placed": 2438,
+   "clear_sizes": {
+    "singles": 679,
+    "doubles": 77,
+    "triples": 24,
+    "tetrises": 14
+   },
+   "lines": 961,
+   "score": 3298389,
+   "frame_count": 95895,
+   "stopping_reason": "game_over",
+   "final_state_hash": "f244d2c675ab304d"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 1235,
+   "pieces_placed": 5281,
+   "clear_sizes": {
+    "singles": 1534,
+    "doubles": 208,
+    "triples": 36,
+    "tetrises": 10
+   },
+   "lines": 2098,
+   "score": 11837748,
+   "frame_count": 197299,
+   "stopping_reason": "game_over",
+   "final_state_hash": "7bb4de8cf5bed128"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 46150,
+   "pieces_placed": 6076,
+   "clear_sizes": {
+    "singles": 1712,
+    "doubles": 224,
+    "triples": 48,
+    "tetrises": 28
+   },
+   "lines": 2416,
+   "score": 17802381,
+   "frame_count": 223679,
+   "stopping_reason": "game_over",
+   "final_state_hash": "da536136ad2a71cb"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 33162,
+   "pieces_placed": 5373,
+   "clear_sizes": {
+    "singles": 1526,
+    "doubles": 218,
+    "triples": 28,
+    "tetrises": 22
+   },
+   "lines": 2134,
+   "score": 13584270,
+   "frame_count": 199519,
+   "stopping_reason": "game_over",
+   "final_state_hash": "d87a5e23758210d9"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 5981,
+   "pieces_placed": 7620,
+   "clear_sizes": {
+    "singles": 2086,
+    "doubles": 295,
+    "triples": 73,
+    "tetrises": 35
+   },
+   "lines": 3035,
+   "score": 28337993,
+   "frame_count": 276807,
+   "stopping_reason": "game_over",
+   "final_state_hash": "bc2b22a87902d5f8"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 28221,
+   "pieces_placed": 5530,
+   "clear_sizes": {
+    "singles": 1526,
+    "doubles": 219,
+    "triples": 46,
+    "tetrises": 24
+   },
+   "lines": 2198,
+   "score": 14582004,
+   "frame_count": 203556,
+   "stopping_reason": "game_over",
+   "final_state_hash": "fe52dfdbffc01b68"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 32910,
+   "pieces_placed": 10661,
+   "clear_sizes": {
+    "singles": 2936,
+    "doubles": 421,
+    "triples": 96,
+    "tetrises": 46
+   },
+   "lines": 4250,
+   "score": 54002568,
+   "frame_count": 383535,
+   "stopping_reason": "game_over",
+   "final_state_hash": "129a00b24a5eae35"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 28762,
+   "pieces_placed": 2036,
+   "clear_sizes": {
+    "singles": 584,
+    "doubles": 66,
+    "triples": 16,
+    "tetrises": 9
+   },
+   "lines": 800,
+   "score": 2253691,
+   "frame_count": 82464,
+   "stopping_reason": "game_over",
+   "final_state_hash": "473308d7bb2bf976"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 13245,
+   "pieces_placed": 4717,
+   "clear_sizes": {
+    "singles": 1371,
+    "doubles": 171,
+    "triples": 24,
+    "tetrises": 22
+   },
+   "lines": 1873,
+   "score": 10346555,
+   "frame_count": 176456,
+   "stopping_reason": "game_over",
+   "final_state_hash": "a553bafab968a0f6"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 56486,
+   "pieces_placed": 1863,
+   "clear_sizes": {
+    "singles": 538,
+    "doubles": 62,
+    "triples": 15,
+    "tetrises": 6
+   },
+   "lines": 731,
+   "score": 1760287,
+   "frame_count": 76281,
+   "stopping_reason": "game_over",
+   "final_state_hash": "45bdebc43d75e495"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 23484,
+   "pieces_placed": 3718,
+   "clear_sizes": {
+    "singles": 1078,
+    "doubles": 113,
+    "triples": 27,
+    "tetrises": 22
+   },
+   "lines": 1473,
+   "score": 7013173,
+   "frame_count": 141514,
+   "stopping_reason": "game_over",
+   "final_state_hash": "d6e0d7015fd01e06"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 14841,
+   "pieces_placed": 4579,
+   "clear_sizes": {
+    "singles": 1347,
+    "doubles": 167,
+    "triples": 31,
+    "tetrises": 11
+   },
+   "lines": 1818,
+   "score": 9101721,
+   "frame_count": 171239,
+   "stopping_reason": "game_over",
+   "final_state_hash": "cde34ed949eff8ba"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 34028,
+   "pieces_placed": 2910,
+   "clear_sizes": {
+    "singles": 817,
+    "doubles": 120,
+    "triples": 20,
+    "tetrises": 8
+   },
+   "lines": 1149,
+   "score": 4003998,
+   "frame_count": 112689,
+   "stopping_reason": "game_over",
+   "final_state_hash": "4b481708ff97143e"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 14398,
+   "pieces_placed": 8586,
+   "clear_sizes": {
+    "singles": 2412,
+    "doubles": 311,
+    "triples": 70,
+    "tetrises": 44
+   },
+   "lines": 3420,
+   "score": 35134113,
+   "frame_count": 312037,
+   "stopping_reason": "game_over",
+   "final_state_hash": "51aaa10862558204"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 15707,
+   "pieces_placed": 2718,
+   "clear_sizes": {
+    "singles": 764,
+    "doubles": 102,
+    "triples": 15,
+    "tetrises": 15
+   },
+   "lines": 1073,
+   "score": 4003262,
+   "frame_count": 104951,
+   "stopping_reason": "game_over",
+   "final_state_hash": "ccfcafece631be6c"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 8328,
+   "pieces_placed": 5533,
+   "clear_sizes": {
+    "singles": 1575,
+    "doubles": 191,
+    "triples": 42,
+    "tetrises": 29
+   },
+   "lines": 2199,
+   "score": 14759070,
+   "frame_count": 204776,
+   "stopping_reason": "game_over",
+   "final_state_hash": "b5f3bfbd568e4cf7"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 4153,
+   "pieces_placed": 2425,
+   "clear_sizes": {
+    "singles": 693,
+    "doubles": 82,
+    "triples": 9,
+    "tetrises": 18
+   },
+   "lines": 956,
+   "score": 3140722,
+   "frame_count": 95641,
+   "stopping_reason": "game_over",
+   "final_state_hash": "dd482c56ef7d61f8"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 55751,
+   "pieces_placed": 4515,
+   "clear_sizes": {
+    "singles": 1291,
+    "doubles": 160,
+    "triples": 32,
+    "tetrises": 21
+   },
+   "lines": 1791,
+   "score": 10442762,
+   "frame_count": 168356,
+   "stopping_reason": "game_over",
+   "final_state_hash": "715d6b577cb91c4e"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 49731,
+   "pieces_placed": 8137,
+   "clear_sizes": {
+    "singles": 2279,
+    "doubles": 302,
+    "triples": 62,
+    "tetrises": 43
+   },
+   "lines": 3241,
+   "score": 31419271,
+   "frame_count": 295968,
+   "stopping_reason": "game_over",
+   "final_state_hash": "71d19037f3193f7f"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 50604,
+   "pieces_placed": 2459,
+   "clear_sizes": {
+    "singles": 720,
+    "doubles": 85,
+    "triples": 17,
+    "tetrises": 7
+   },
+   "lines": 969,
+   "score": 2833384,
+   "frame_count": 97662,
+   "stopping_reason": "game_over",
+   "final_state_hash": "606766870247b627"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 46408,
+   "pieces_placed": 1189,
+   "clear_sizes": {
+    "singles": 304,
+    "doubles": 43,
+    "triples": 16,
+    "tetrises": 6
+   },
+   "lines": 462,
+   "score": 899899,
+   "frame_count": 51964,
+   "stopping_reason": "game_over",
+   "final_state_hash": "e5830b9b855a482a"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 53146,
+   "pieces_placed": 2947,
+   "clear_sizes": {
+    "singles": 781,
+    "doubles": 122,
+    "triples": 21,
+    "tetrises": 19
+   },
+   "lines": 1164,
+   "score": 4960453,
+   "frame_count": 113420,
+   "stopping_reason": "game_over",
+   "final_state_hash": "06e59ee9369e3c7d"
+  },
+  {
+   "agent": "search_plan",
+   "seed": 62632,
+   "pieces_placed": 686,
+   "clear_sizes": {
+    "singles": 198,
+    "doubles": 19,
+    "triples": 4,
+    "tetrises": 3
+   },
+   "lines": 260,
+   "score": 328988,
+   "frame_count": 34543,
+   "stopping_reason": "game_over",
+   "final_state_hash": "a3a13eaed2c8da6d"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 33713,
+   "pieces_placed": 6443,
+   "clear_sizes": {
+    "singles": 1966,
+    "doubles": 245,
+    "triples": 34,
+    "tetrises": 1
+   },
+   "lines": 2562,
+   "score": 15450330,
+   "frame_count": 239411,
+   "stopping_reason": "game_over",
+   "final_state_hash": "a71f184a72a5dff6"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 26334,
+   "pieces_placed": 2920,
+   "clear_sizes": {
+    "singles": 853,
+    "doubles": 125,
+    "triples": 14,
+    "tetrises": 2
+   },
+   "lines": 1153,
+   "score": 3333183,
+   "frame_count": 113509,
+   "stopping_reason": "game_over",
+   "final_state_hash": "364572489d659c1d"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 42134,
+   "pieces_placed": 3697,
+   "clear_sizes": {
+    "singles": 1049,
+    "doubles": 170,
+    "triples": 21,
+    "tetrises": 3
+   },
+   "lines": 1464,
+   "score": 5465729,
+   "frame_count": 140837,
+   "stopping_reason": "game_over",
+   "final_state_hash": "32c20767bd3fd3c7"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 44777,
+   "pieces_placed": 10936,
+   "clear_sizes": {
+    "singles": 3346,
+    "doubles": 419,
+    "triples": 50,
+    "tetrises": 10
+   },
+   "lines": 4374,
+   "score": 44547820,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "238dd5631a3621a4"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 2716,
+   "pieces_placed": 9125,
+   "clear_sizes": {
+    "singles": 2785,
+    "doubles": 338,
+    "triples": 49,
+    "tetrises": 7
+   },
+   "lines": 3636,
+   "score": 31440470,
+   "frame_count": 335328,
+   "stopping_reason": "game_over",
+   "final_state_hash": "5cb8274d5eb2f96c"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 7951,
+   "pieces_placed": 10927,
+   "clear_sizes": {
+    "singles": 3342,
+    "doubles": 426,
+    "triples": 45,
+    "tetrises": 10
+   },
+   "lines": 4369,
+   "score": 44465712,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "a5fd7547c136c801"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 17416,
+   "pieces_placed": 10923,
+   "clear_sizes": {
+    "singles": 3453,
+    "doubles": 384,
+    "triples": 42,
+    "tetrises": 5
+   },
+   "lines": 4367,
+   "score": 43435458,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "21f02af4f0932113"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 61148,
+   "pieces_placed": 10510,
+   "clear_sizes": {
+    "singles": 3309,
+    "doubles": 376,
+    "triples": 35,
+    "tetrises": 6
+   },
+   "lines": 4190,
+   "score": 40256187,
+   "frame_count": 385692,
+   "stopping_reason": "game_over",
+   "final_state_hash": "13a4805db1bae65d"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 1235,
+   "pieces_placed": 10909,
+   "clear_sizes": {
+    "singles": 3387,
+    "doubles": 423,
+    "triples": 40,
+    "tetrises": 2
+   },
+   "lines": 4361,
+   "score": 42695695,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "18226165d21bdf6f"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 46150,
+   "pieces_placed": 10934,
+   "clear_sizes": {
+    "singles": 3401,
+    "doubles": 405,
+    "triples": 42,
+    "tetrises": 9
+   },
+   "lines": 4373,
+   "score": 44710542,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "a3555e87d8f2148b"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 33162,
+   "pieces_placed": 10898,
+   "clear_sizes": {
+    "singles": 3392,
+    "doubles": 402,
+    "triples": 45,
+    "tetrises": 6
+   },
+   "lines": 4355,
+   "score": 43920462,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "6ada8303ecb4e326"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 5981,
+   "pieces_placed": 10897,
+   "clear_sizes": {
+    "singles": 3401,
+    "doubles": 395,
+    "triples": 49,
+    "tetrises": 5
+   },
+   "lines": 4358,
+   "score": 44075340,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "3b092337563cae05"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 28221,
+   "pieces_placed": 10542,
+   "clear_sizes": {
+    "singles": 3238,
+    "doubles": 400,
+    "triples": 43,
+    "tetrises": 9
+   },
+   "lines": 4203,
+   "score": 41355022,
+   "frame_count": 385873,
+   "stopping_reason": "game_over",
+   "final_state_hash": "a39a6cef75323c20"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 32910,
+   "pieces_placed": 3189,
+   "clear_sizes": {
+    "singles": 934,
+    "doubles": 124,
+    "triples": 21,
+    "tetrises": 4
+   },
+   "lines": 1261,
+   "score": 4218303,
+   "frame_count": 122824,
+   "stopping_reason": "game_over",
+   "final_state_hash": "fc01e0339235aeb9"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 28762,
+   "pieces_placed": 10899,
+   "clear_sizes": {
+    "singles": 3381,
+    "doubles": 405,
+    "triples": 54,
+    "tetrises": 1
+   },
+   "lines": 4357,
+   "score": 43079614,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "6bfb9b4ad6067509"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 13245,
+   "pieces_placed": 10943,
+   "clear_sizes": {
+    "singles": 3366,
+    "doubles": 401,
+    "triples": 58,
+    "tetrises": 8
+   },
+   "lines": 4374,
+   "score": 44681492,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "64ea303d7e2e2197"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 56486,
+   "pieces_placed": 10937,
+   "clear_sizes": {
+    "singles": 3330,
+    "doubles": 437,
+    "triples": 51,
+    "tetrises": 4
+   },
+   "lines": 4373,
+   "score": 44384113,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "a6eb68fc7537d50b"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 23484,
+   "pieces_placed": 1509,
+   "clear_sizes": {
+    "singles": 448,
+    "doubles": 53,
+    "triples": 9,
+    "tetrises": 2
+   },
+   "lines": 589,
+   "score": 1018806,
+   "frame_count": 64172,
+   "stopping_reason": "game_over",
+   "final_state_hash": "2baeac6195e7888a"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 14841,
+   "pieces_placed": 10949,
+   "clear_sizes": {
+    "singles": 3400,
+    "doubles": 421,
+    "triples": 32,
+    "tetrises": 10
+   },
+   "lines": 4378,
+   "score": 43969654,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "d0afc788adbd7b69"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 34028,
+   "pieces_placed": 2364,
+   "clear_sizes": {
+    "singles": 698,
+    "doubles": 102,
+    "triples": 10,
+    "tetrises": 0
+   },
+   "lines": 932,
+   "score": 2219193,
+   "frame_count": 94424,
+   "stopping_reason": "game_over",
+   "final_state_hash": "b65adc3ad7826f08"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 14398,
+   "pieces_placed": 10915,
+   "clear_sizes": {
+    "singles": 3387,
+    "doubles": 404,
+    "triples": 50,
+    "tetrises": 5
+   },
+   "lines": 4365,
+   "score": 43483092,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "5e859cfce7aeb75e"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 15707,
+   "pieces_placed": 2214,
+   "clear_sizes": {
+    "singles": 689,
+    "doubles": 77,
+    "triples": 6,
+    "tetrises": 3
+   },
+   "lines": 873,
+   "score": 2053459,
+   "frame_count": 88677,
+   "stopping_reason": "game_over",
+   "final_state_hash": "ffbf581b4d7bd681"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 8328,
+   "pieces_placed": 10913,
+   "clear_sizes": {
+    "singles": 3375,
+    "doubles": 404,
+    "triples": 49,
+    "tetrises": 8
+   },
+   "lines": 4362,
+   "score": 44061273,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "1bbf7f053310227b"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 4153,
+   "pieces_placed": 10933,
+   "clear_sizes": {
+    "singles": 3385,
+    "doubles": 407,
+    "triples": 45,
+    "tetrises": 9
+   },
+   "lines": 4370,
+   "score": 43656683,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "7982fdf390934c2b"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 55751,
+   "pieces_placed": 3497,
+   "clear_sizes": {
+    "singles": 1082,
+    "doubles": 126,
+    "triples": 14,
+    "tetrises": 2
+   },
+   "lines": 1384,
+   "score": 4699205,
+   "frame_count": 134781,
+   "stopping_reason": "game_over",
+   "final_state_hash": "a135b352cd2fd962"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 49731,
+   "pieces_placed": 10928,
+   "clear_sizes": {
+    "singles": 3327,
+    "doubles": 426,
+    "triples": 45,
+    "tetrises": 14
+   },
+   "lines": 4370,
+   "score": 45552408,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "c07916e59db56c75"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 50604,
+   "pieces_placed": 6681,
+   "clear_sizes": {
+    "singles": 2001,
+    "doubles": 268,
+    "triples": 31,
+    "tetrises": 7
+   },
+   "lines": 2658,
+   "score": 17215883,
+   "frame_count": 248443,
+   "stopping_reason": "game_over",
+   "final_state_hash": "694c54564b8a8242"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 46408,
+   "pieces_placed": 10640,
+   "clear_sizes": {
+    "singles": 3167,
+    "doubles": 421,
+    "triples": 60,
+    "tetrises": 13
+   },
+   "lines": 4241,
+   "score": 43847638,
+   "frame_count": 388205,
+   "stopping_reason": "game_over",
+   "final_state_hash": "877d254831c17378"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 53146,
+   "pieces_placed": 10927,
+   "clear_sizes": {
+    "singles": 3305,
+    "doubles": 453,
+    "triples": 50,
+    "tetrises": 2
+   },
+   "lines": 4369,
+   "score": 43775809,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "ebccc0b432682361"
+  },
+  {
+   "agent": "survival_plan",
+   "seed": 62632,
+   "pieces_placed": 10918,
+   "clear_sizes": {
+    "singles": 3395,
+    "doubles": 394,
+    "triples": 53,
+    "tetrises": 6
+   },
+   "lines": 4366,
+   "score": 44027469,
+   "frame_count": 400000,
+   "stopping_reason": "frame_limit",
+   "final_state_hash": "0d2c8a24490d0e18"
+  }
+ ]
+}

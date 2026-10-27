@@ -79,7 +79,35 @@ with the agent reproduces the chosen variant's lines and score in every game.
 
 ## Results
 
-Pending.
+Measured on 2026-10-27 from clean commit `e5eff7d`, which fixed the protocol
+before any evaluation game was played. The retained record is
+`records/run.json.gz` (originally `runs/20261027T102555111733Z-006/run.json.gz`);
+`result.json` is generated from it.
+
+| agent | top-outs | cap stops | mean lines | min lines | mean score | Tetris line rate | mean pieces |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `search_plan` | 30 | 0 | 1,737.3 | 260 | 12,281,644.8 | 0.045665 | 4,378.7 |
+| `survival_plan` | 13 | 17 | 3,446.2 | 589 | 32,036,534.8 | 0.006693 | 8,633.9 |
+
+Both rules are met. `survival_plan` topped out in 13 of 30 games against all
+30, cleared 1.98x the mean lines and scored 2.6x as much, and outlasted
+`search_plan` on 23 of the 30 seeds. Seventeen of its games reached the
+400,000-frame cap, so its line and score totals are lower bounds.
+
+The cost is the expected one: the Tetris line rate fell from 4.6% to 0.7%.
+The higher score comes from playing much longer at level 29 or later, not from
+better scoring per line.
+
+`survival_plan` is not uniformly better: on 7 seeds it died earlier than
+`search_plan`, three of them below 1,000 lines (589, 873, 932). Its 13 remaining
+deaths are the next thing to look at.
+
+## Validation
+
+`verify` replayed all 60 games' inputs and matched every outcome and final
+hash, and `verify --decisions` re-ran both agents and reproduced every input.
+The unit (328), native integration (40) and desktop (13) suites passed on
+this branch, against the same dirty engine checkout.
 
 ## Reproduce
 
