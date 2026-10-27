@@ -1,6 +1,6 @@
-"""Replay retained Experiment 005 search games and print the board at each spawn.
+"""Replay a retained Experiment 005 or 006 game and print the board at each spawn.
 
-Usage: autopsy.py RECORD.json.gz SEED [LAST_N]
+Usage: autopsy.py RECORD.json.gz SEED [LAST_N] [AGENT]
 """
 
 import gzip
@@ -45,7 +45,8 @@ def spawn_rows(record_path, seed, agent="search_plan"):
 def main():
     path, seed = sys.argv[1], int(sys.argv[2])
     last = int(sys.argv[3]) if len(sys.argv) > 3 else 30
-    rows = spawn_rows(path, seed)
+    agent = sys.argv[4] if len(sys.argv) > 4 else "search_plan"
+    rows = spawn_rows(path, seed, agent)
     for row in rows[-last:]:
         print(json.dumps(row))
 

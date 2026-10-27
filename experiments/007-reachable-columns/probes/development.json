@@ -1,0 +1,1788 @@
+{
+ "game": {
+  "ruleset": "classic_ntsc_extended",
+  "mode": "endless",
+  "start_level": 18,
+  "height": 0
+ },
+ "frame_limit": 200000,
+ "seeds": [
+  33713,
+  26334,
+  42134,
+  44777,
+  2716,
+  7951,
+  17416,
+  61148,
+  1235,
+  46150,
+  33162,
+  5981,
+  28221,
+  32910,
+  28762,
+  13245,
+  56486,
+  23484,
+  14841,
+  34028,
+  14398,
+  15707,
+  8328,
+  4153,
+  55751,
+  49731,
+  50604,
+  46408,
+  53146,
+  62632
+ ],
+ "summary": {
+  "base": {
+   "weight": 0.0,
+   "beam": 2,
+   "top_outs": 7,
+   "mean_lines": 1884.1,
+   "min_lines": 589,
+   "mean_score": 9118707.866666667,
+   "tetris_line_rate": 0.008492118252746669
+  },
+  "w0_b4": {
+   "weight": 0.0,
+   "beam": 4,
+   "top_outs": 4,
+   "mean_lines": 1997.4666666666667,
+   "min_lines": 643,
+   "mean_score": 9922325.3,
+   "tetris_line_rate": 0.008343902276216541
+  },
+  "w0_b8": {
+   "weight": 0.0,
+   "beam": 8,
+   "top_outs": 4,
+   "mean_lines": 2043.9666666666667,
+   "min_lines": 1112,
+   "mean_score": 10210021.533333333,
+   "tetris_line_rate": 0.00874117320895644
+  },
+  "w5": {
+   "weight": 5.0,
+   "beam": 2,
+   "top_outs": 5,
+   "mean_lines": 1939.0,
+   "min_lines": 586,
+   "mean_score": 9596940.733333332,
+   "tetris_line_rate": 0.008733023895478769
+  },
+  "w20": {
+   "weight": 20.0,
+   "beam": 2,
+   "top_outs": 5,
+   "mean_lines": 1947.2,
+   "min_lines": 599,
+   "mean_score": 9664924.733333332,
+   "tetris_line_rate": 0.009038619556285949
+  },
+  "w5_b8": {
+   "weight": 5.0,
+   "beam": 8,
+   "top_outs": 3,
+   "mean_lines": 2040.7,
+   "min_lines": 1091,
+   "mean_score": 10230753.566666666,
+   "tetris_line_rate": 0.008820502768657814
+  },
+  "w20_b8": {
+   "weight": 20.0,
+   "beam": 8,
+   "top_outs": 4,
+   "mean_lines": 2018.4,
+   "min_lines": 1096,
+   "mean_score": 10048156.966666667,
+   "tetris_line_rate": 0.008851895891134892
+  }
+ },
+ "episodes": [
+  {
+   "variant": "base",
+   "seed": 33713,
+   "lines": 2118,
+   "score": 10597362,
+   "stopping_reason": "frame_limit",
+   "tetrises": 0
+  },
+  {
+   "variant": "base",
+   "seed": 26334,
+   "lines": 1153,
+   "score": 3333183,
+   "stopping_reason": "game_over",
+   "tetrises": 2
+  },
+  {
+   "variant": "base",
+   "seed": 42134,
+   "lines": 1464,
+   "score": 5465729,
+   "stopping_reason": "game_over",
+   "tetrises": 3
+  },
+  {
+   "variant": "base",
+   "seed": 44777,
+   "lines": 2128,
+   "score": 11072170,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  },
+  {
+   "variant": "base",
+   "seed": 2716,
+   "lines": 2128,
+   "score": 11164376,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "base",
+   "seed": 7951,
+   "lines": 2124,
+   "score": 10776700,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "base",
+   "seed": 17416,
+   "lines": 2121,
+   "score": 10545099,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "base",
+   "seed": 61148,
+   "lines": 2119,
+   "score": 10577838,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "base",
+   "seed": 1235,
+   "lines": 2118,
+   "score": 10581526,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "base",
+   "seed": 46150,
+   "lines": 2126,
+   "score": 10815772,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "base",
+   "seed": 33162,
+   "lines": 2125,
+   "score": 10907298,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "base",
+   "seed": 5981,
+   "lines": 2114,
+   "score": 10441877,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "base",
+   "seed": 28221,
+   "lines": 2130,
+   "score": 11053909,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "base",
+   "seed": 32910,
+   "lines": 1261,
+   "score": 4218303,
+   "stopping_reason": "game_over",
+   "tetrises": 4
+  },
+  {
+   "variant": "base",
+   "seed": 28762,
+   "lines": 2117,
+   "score": 10618034,
+   "stopping_reason": "frame_limit",
+   "tetrises": 0
+  },
+  {
+   "variant": "base",
+   "seed": 13245,
+   "lines": 2128,
+   "score": 10916083,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "base",
+   "seed": 56486,
+   "lines": 2127,
+   "score": 10674316,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "base",
+   "seed": 23484,
+   "lines": 589,
+   "score": 1018806,
+   "stopping_reason": "game_over",
+   "tetrises": 2
+  },
+  {
+   "variant": "base",
+   "seed": 14841,
+   "lines": 2137,
+   "score": 11062088,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  },
+  {
+   "variant": "base",
+   "seed": 34028,
+   "lines": 932,
+   "score": 2219193,
+   "stopping_reason": "game_over",
+   "tetrises": 0
+  },
+  {
+   "variant": "base",
+   "seed": 14398,
+   "lines": 2124,
+   "score": 10771472,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "base",
+   "seed": 15707,
+   "lines": 873,
+   "score": 2053459,
+   "stopping_reason": "game_over",
+   "tetrises": 3
+  },
+  {
+   "variant": "base",
+   "seed": 8328,
+   "lines": 2125,
+   "score": 10835260,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "base",
+   "seed": 4153,
+   "lines": 2130,
+   "score": 11260287,
+   "stopping_reason": "frame_limit",
+   "tetrises": 9
+  },
+  {
+   "variant": "base",
+   "seed": 55751,
+   "lines": 1384,
+   "score": 4699205,
+   "stopping_reason": "game_over",
+   "tetrises": 2
+  },
+  {
+   "variant": "base",
+   "seed": 49731,
+   "lines": 2126,
+   "score": 11237086,
+   "stopping_reason": "frame_limit",
+   "tetrises": 9
+  },
+  {
+   "variant": "base",
+   "seed": 50604,
+   "lines": 2126,
+   "score": 11518887,
+   "stopping_reason": "frame_limit",
+   "tetrises": 7
+  },
+  {
+   "variant": "base",
+   "seed": 46408,
+   "lines": 2128,
+   "score": 11451816,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  },
+  {
+   "variant": "base",
+   "seed": 53146,
+   "lines": 2122,
+   "score": 10729542,
+   "stopping_reason": "frame_limit",
+   "tetrises": 1
+  },
+  {
+   "variant": "base",
+   "seed": 62632,
+   "lines": 2126,
+   "score": 10944560,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 33713,
+   "lines": 2116,
+   "score": 10880115,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 26334,
+   "lines": 2127,
+   "score": 10932565,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 42134,
+   "lines": 2127,
+   "score": 10829770,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 44777,
+   "lines": 643,
+   "score": 1380896,
+   "stopping_reason": "game_over",
+   "tetrises": 7
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 2716,
+   "lines": 2124,
+   "score": 10444980,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 7951,
+   "lines": 2130,
+   "score": 11156586,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 17416,
+   "lines": 2131,
+   "score": 11090288,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 61148,
+   "lines": 2124,
+   "score": 10829048,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 1235,
+   "lines": 1295,
+   "score": 4324482,
+   "stopping_reason": "game_over",
+   "tetrises": 4
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 46150,
+   "lines": 2121,
+   "score": 10603478,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 33162,
+   "lines": 2121,
+   "score": 10611950,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 5981,
+   "lines": 2117,
+   "score": 10840810,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 28221,
+   "lines": 2124,
+   "score": 11167883,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 32910,
+   "lines": 2128,
+   "score": 10755022,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 28762,
+   "lines": 2114,
+   "score": 10477376,
+   "stopping_reason": "frame_limit",
+   "tetrises": 0
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 13245,
+   "lines": 2127,
+   "score": 11164652,
+   "stopping_reason": "frame_limit",
+   "tetrises": 7
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 56486,
+   "lines": 1314,
+   "score": 4353347,
+   "stopping_reason": "game_over",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 23484,
+   "lines": 2121,
+   "score": 10769189,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 14841,
+   "lines": 2133,
+   "score": 11255295,
+   "stopping_reason": "frame_limit",
+   "tetrises": 7
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 34028,
+   "lines": 2125,
+   "score": 10839315,
+   "stopping_reason": "frame_limit",
+   "tetrises": 1
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 14398,
+   "lines": 2123,
+   "score": 10707708,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 15707,
+   "lines": 2125,
+   "score": 10908340,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 8328,
+   "lines": 2125,
+   "score": 11328140,
+   "stopping_reason": "frame_limit",
+   "tetrises": 9
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 4153,
+   "lines": 2120,
+   "score": 10563226,
+   "stopping_reason": "frame_limit",
+   "tetrises": 7
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 55751,
+   "lines": 2126,
+   "score": 10825627,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 49731,
+   "lines": 2133,
+   "score": 11197012,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 50604,
+   "lines": 2117,
+   "score": 10646822,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 46408,
+   "lines": 2121,
+   "score": 10858933,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 53146,
+   "lines": 2122,
+   "score": 10786616,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w0_b4",
+   "seed": 62632,
+   "lines": 1450,
+   "score": 5140288,
+   "stopping_reason": "game_over",
+   "tetrises": 4
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 33713,
+   "lines": 2117,
+   "score": 10688837,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 26334,
+   "lines": 2131,
+   "score": 10651009,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 42134,
+   "lines": 2131,
+   "score": 11234231,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 44777,
+   "lines": 2127,
+   "score": 11206001,
+   "stopping_reason": "frame_limit",
+   "tetrises": 9
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 2716,
+   "lines": 2127,
+   "score": 10938342,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 7951,
+   "lines": 2119,
+   "score": 10748266,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 17416,
+   "lines": 2126,
+   "score": 10790207,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 61148,
+   "lines": 2114,
+   "score": 10481875,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 1235,
+   "lines": 2115,
+   "score": 10737118,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 46150,
+   "lines": 2123,
+   "score": 11028234,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 33162,
+   "lines": 1652,
+   "score": 6893105,
+   "stopping_reason": "game_over",
+   "tetrises": 4
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 5981,
+   "lines": 2116,
+   "score": 10715933,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 28221,
+   "lines": 2133,
+   "score": 10881497,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 32910,
+   "lines": 2129,
+   "score": 10551564,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 28762,
+   "lines": 2109,
+   "score": 10537088,
+   "stopping_reason": "frame_limit",
+   "tetrises": 1
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 13245,
+   "lines": 1460,
+   "score": 5475641,
+   "stopping_reason": "game_over",
+   "tetrises": 7
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 56486,
+   "lines": 2122,
+   "score": 11782011,
+   "stopping_reason": "frame_limit",
+   "tetrises": 9
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 23484,
+   "lines": 2122,
+   "score": 10540210,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 14841,
+   "lines": 2132,
+   "score": 11137745,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 34028,
+   "lines": 2122,
+   "score": 10487800,
+   "stopping_reason": "frame_limit",
+   "tetrises": 1
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 14398,
+   "lines": 2129,
+   "score": 11210383,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 15707,
+   "lines": 2123,
+   "score": 10606669,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 8328,
+   "lines": 1112,
+   "score": 3170942,
+   "stopping_reason": "game_over",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 4153,
+   "lines": 2121,
+   "score": 10815824,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 55751,
+   "lines": 2124,
+   "score": 10587726,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 49731,
+   "lines": 2121,
+   "score": 10951587,
+   "stopping_reason": "frame_limit",
+   "tetrises": 7
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 50604,
+   "lines": 2110,
+   "score": 10750009,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 46408,
+   "lines": 2126,
+   "score": 10975927,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 53146,
+   "lines": 1905,
+   "score": 8640740,
+   "stopping_reason": "game_over",
+   "tetrises": 3
+  },
+  {
+   "variant": "w0_b8",
+   "seed": 62632,
+   "lines": 2121,
+   "score": 11084125,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  },
+  {
+   "variant": "w5",
+   "seed": 33713,
+   "lines": 2118,
+   "score": 10597362,
+   "stopping_reason": "frame_limit",
+   "tetrises": 0
+  },
+  {
+   "variant": "w5",
+   "seed": 26334,
+   "lines": 1157,
+   "score": 3352701,
+   "stopping_reason": "game_over",
+   "tetrises": 2
+  },
+  {
+   "variant": "w5",
+   "seed": 42134,
+   "lines": 1470,
+   "score": 5505560,
+   "stopping_reason": "game_over",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5",
+   "seed": 44777,
+   "lines": 2128,
+   "score": 11072170,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  },
+  {
+   "variant": "w5",
+   "seed": 2716,
+   "lines": 2128,
+   "score": 11164376,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w5",
+   "seed": 7951,
+   "lines": 2124,
+   "score": 10776700,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w5",
+   "seed": 17416,
+   "lines": 2127,
+   "score": 10952528,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w5",
+   "seed": 61148,
+   "lines": 2119,
+   "score": 10577838,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w5",
+   "seed": 1235,
+   "lines": 2118,
+   "score": 10581526,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w5",
+   "seed": 46150,
+   "lines": 2126,
+   "score": 10815772,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w5",
+   "seed": 33162,
+   "lines": 2125,
+   "score": 10907298,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5",
+   "seed": 5981,
+   "lines": 2114,
+   "score": 10441877,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w5",
+   "seed": 28221,
+   "lines": 2139,
+   "score": 11201200,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w5",
+   "seed": 32910,
+   "lines": 2139,
+   "score": 11289108,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w5",
+   "seed": 28762,
+   "lines": 2117,
+   "score": 10618034,
+   "stopping_reason": "frame_limit",
+   "tetrises": 0
+  },
+  {
+   "variant": "w5",
+   "seed": 13245,
+   "lines": 2128,
+   "score": 10916083,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w5",
+   "seed": 56486,
+   "lines": 2123,
+   "score": 11275042,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w5",
+   "seed": 23484,
+   "lines": 586,
+   "score": 1011002,
+   "stopping_reason": "game_over",
+   "tetrises": 2
+  },
+  {
+   "variant": "w5",
+   "seed": 14841,
+   "lines": 2137,
+   "score": 11062088,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  },
+  {
+   "variant": "w5",
+   "seed": 34028,
+   "lines": 932,
+   "score": 2219193,
+   "stopping_reason": "game_over",
+   "tetrises": 0
+  },
+  {
+   "variant": "w5",
+   "seed": 14398,
+   "lines": 2124,
+   "score": 10771472,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w5",
+   "seed": 15707,
+   "lines": 885,
+   "score": 2098837,
+   "stopping_reason": "game_over",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5",
+   "seed": 8328,
+   "lines": 2125,
+   "score": 10835260,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w5",
+   "seed": 4153,
+   "lines": 2130,
+   "score": 11260287,
+   "stopping_reason": "frame_limit",
+   "tetrises": 9
+  },
+  {
+   "variant": "w5",
+   "seed": 55751,
+   "lines": 2123,
+   "score": 10723017,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5",
+   "seed": 49731,
+   "lines": 2126,
+   "score": 11237086,
+   "stopping_reason": "frame_limit",
+   "tetrises": 9
+  },
+  {
+   "variant": "w5",
+   "seed": 50604,
+   "lines": 2126,
+   "score": 11518887,
+   "stopping_reason": "frame_limit",
+   "tetrises": 7
+  },
+  {
+   "variant": "w5",
+   "seed": 46408,
+   "lines": 2128,
+   "score": 11451816,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  },
+  {
+   "variant": "w5",
+   "seed": 53146,
+   "lines": 2122,
+   "score": 10729542,
+   "stopping_reason": "frame_limit",
+   "tetrises": 1
+  },
+  {
+   "variant": "w5",
+   "seed": 62632,
+   "lines": 2126,
+   "score": 10944560,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w20",
+   "seed": 33713,
+   "lines": 2118,
+   "score": 10597362,
+   "stopping_reason": "frame_limit",
+   "tetrises": 0
+  },
+  {
+   "variant": "w20",
+   "seed": 26334,
+   "lines": 1157,
+   "score": 3352701,
+   "stopping_reason": "game_over",
+   "tetrises": 2
+  },
+  {
+   "variant": "w20",
+   "seed": 42134,
+   "lines": 2137,
+   "score": 10959387,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w20",
+   "seed": 44777,
+   "lines": 2128,
+   "score": 11072170,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  },
+  {
+   "variant": "w20",
+   "seed": 2716,
+   "lines": 2128,
+   "score": 11164376,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w20",
+   "seed": 7951,
+   "lines": 2124,
+   "score": 10776700,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w20",
+   "seed": 17416,
+   "lines": 2127,
+   "score": 10952528,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w20",
+   "seed": 61148,
+   "lines": 2119,
+   "score": 10577838,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w20",
+   "seed": 1235,
+   "lines": 2118,
+   "score": 10581526,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w20",
+   "seed": 46150,
+   "lines": 2126,
+   "score": 10815772,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w20",
+   "seed": 33162,
+   "lines": 2125,
+   "score": 10907298,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w20",
+   "seed": 5981,
+   "lines": 2114,
+   "score": 10441877,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w20",
+   "seed": 28221,
+   "lines": 2131,
+   "score": 10824551,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w20",
+   "seed": 32910,
+   "lines": 2139,
+   "score": 11289108,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w20",
+   "seed": 28762,
+   "lines": 2119,
+   "score": 11250553,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w20",
+   "seed": 13245,
+   "lines": 2128,
+   "score": 10916083,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w20",
+   "seed": 56486,
+   "lines": 2123,
+   "score": 11275042,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w20",
+   "seed": 23484,
+   "lines": 599,
+   "score": 1047867,
+   "stopping_reason": "game_over",
+   "tetrises": 2
+  },
+  {
+   "variant": "w20",
+   "seed": 14841,
+   "lines": 2137,
+   "score": 11062088,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  },
+  {
+   "variant": "w20",
+   "seed": 34028,
+   "lines": 935,
+   "score": 2231196,
+   "stopping_reason": "game_over",
+   "tetrises": 0
+  },
+  {
+   "variant": "w20",
+   "seed": 14398,
+   "lines": 2126,
+   "score": 11069065,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w20",
+   "seed": 15707,
+   "lines": 883,
+   "score": 2091231,
+   "stopping_reason": "game_over",
+   "tetrises": 3
+  },
+  {
+   "variant": "w20",
+   "seed": 8328,
+   "lines": 2125,
+   "score": 10835260,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w20",
+   "seed": 4153,
+   "lines": 1697,
+   "score": 7430946,
+   "stopping_reason": "game_over",
+   "tetrises": 9
+  },
+  {
+   "variant": "w20",
+   "seed": 55751,
+   "lines": 2125,
+   "score": 10543326,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w20",
+   "seed": 49731,
+   "lines": 2126,
+   "score": 11237086,
+   "stopping_reason": "frame_limit",
+   "tetrises": 9
+  },
+  {
+   "variant": "w20",
+   "seed": 50604,
+   "lines": 2126,
+   "score": 11518887,
+   "stopping_reason": "frame_limit",
+   "tetrises": 7
+  },
+  {
+   "variant": "w20",
+   "seed": 46408,
+   "lines": 2128,
+   "score": 11451816,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  },
+  {
+   "variant": "w20",
+   "seed": 53146,
+   "lines": 2122,
+   "score": 10729542,
+   "stopping_reason": "frame_limit",
+   "tetrises": 1
+  },
+  {
+   "variant": "w20",
+   "seed": 62632,
+   "lines": 2126,
+   "score": 10944560,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 33713,
+   "lines": 2117,
+   "score": 10688837,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 26334,
+   "lines": 2131,
+   "score": 10651009,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 42134,
+   "lines": 1143,
+   "score": 3532743,
+   "stopping_reason": "game_over",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 44777,
+   "lines": 2124,
+   "score": 10948944,
+   "stopping_reason": "frame_limit",
+   "tetrises": 7
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 2716,
+   "lines": 2127,
+   "score": 10938342,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 7951,
+   "lines": 2119,
+   "score": 10748266,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 17416,
+   "lines": 2126,
+   "score": 10790207,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 61148,
+   "lines": 2114,
+   "score": 10481875,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 1235,
+   "lines": 2115,
+   "score": 10737118,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 46150,
+   "lines": 2123,
+   "score": 11028234,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 33162,
+   "lines": 1684,
+   "score": 7122159,
+   "stopping_reason": "game_over",
+   "tetrises": 4
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 5981,
+   "lines": 2116,
+   "score": 10715933,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 28221,
+   "lines": 2133,
+   "score": 10881497,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 32910,
+   "lines": 2129,
+   "score": 10551564,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 28762,
+   "lines": 2109,
+   "score": 10537088,
+   "stopping_reason": "frame_limit",
+   "tetrises": 1
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 13245,
+   "lines": 2124,
+   "score": 11271603,
+   "stopping_reason": "frame_limit",
+   "tetrises": 9
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 56486,
+   "lines": 2122,
+   "score": 11782011,
+   "stopping_reason": "frame_limit",
+   "tetrises": 9
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 23484,
+   "lines": 2125,
+   "score": 11265622,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 14841,
+   "lines": 2132,
+   "score": 11137745,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 34028,
+   "lines": 2122,
+   "score": 10487800,
+   "stopping_reason": "frame_limit",
+   "tetrises": 1
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 14398,
+   "lines": 2129,
+   "score": 11210383,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 15707,
+   "lines": 2123,
+   "score": 10606669,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 8328,
+   "lines": 1091,
+   "score": 3068135,
+   "stopping_reason": "game_over",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 4153,
+   "lines": 2121,
+   "score": 10815824,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 55751,
+   "lines": 2124,
+   "score": 10587726,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 49731,
+   "lines": 2121,
+   "score": 10951587,
+   "stopping_reason": "frame_limit",
+   "tetrises": 7
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 50604,
+   "lines": 2110,
+   "score": 10750009,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 46408,
+   "lines": 2126,
+   "score": 10975927,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 53146,
+   "lines": 2120,
+   "score": 10573625,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w5_b8",
+   "seed": 62632,
+   "lines": 2121,
+   "score": 11084125,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 33713,
+   "lines": 2117,
+   "score": 10688837,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 26334,
+   "lines": 2131,
+   "score": 10651009,
+   "stopping_reason": "frame_limit",
+   "tetrises": 2
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 42134,
+   "lines": 1138,
+   "score": 3508578,
+   "stopping_reason": "game_over",
+   "tetrises": 3
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 44777,
+   "lines": 2124,
+   "score": 10948944,
+   "stopping_reason": "frame_limit",
+   "tetrises": 7
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 2716,
+   "lines": 2127,
+   "score": 10938342,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 7951,
+   "lines": 2132,
+   "score": 11032622,
+   "stopping_reason": "frame_limit",
+   "tetrises": 7
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 17416,
+   "lines": 2126,
+   "score": 10790207,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 61148,
+   "lines": 2114,
+   "score": 10481875,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 1235,
+   "lines": 2115,
+   "score": 10737118,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 46150,
+   "lines": 2123,
+   "score": 11028234,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 33162,
+   "lines": 1647,
+   "score": 6858766,
+   "stopping_reason": "game_over",
+   "tetrises": 4
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 5981,
+   "lines": 2116,
+   "score": 10715933,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 28221,
+   "lines": 2133,
+   "score": 10881497,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 32910,
+   "lines": 2129,
+   "score": 10551564,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 28762,
+   "lines": 2109,
+   "score": 10537088,
+   "stopping_reason": "frame_limit",
+   "tetrises": 1
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 13245,
+   "lines": 1476,
+   "score": 5573879,
+   "stopping_reason": "game_over",
+   "tetrises": 7
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 56486,
+   "lines": 2122,
+   "score": 11782011,
+   "stopping_reason": "frame_limit",
+   "tetrises": 9
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 23484,
+   "lines": 2125,
+   "score": 11265622,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 14841,
+   "lines": 2132,
+   "score": 11137745,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 34028,
+   "lines": 2122,
+   "score": 10487800,
+   "stopping_reason": "frame_limit",
+   "tetrises": 1
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 14398,
+   "lines": 2129,
+   "score": 11210383,
+   "stopping_reason": "frame_limit",
+   "tetrises": 5
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 15707,
+   "lines": 2123,
+   "score": 10606669,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 8328,
+   "lines": 1096,
+   "score": 3093665,
+   "stopping_reason": "game_over",
+   "tetrises": 3
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 4153,
+   "lines": 2121,
+   "score": 10815824,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 55751,
+   "lines": 2124,
+   "score": 10587726,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 49731,
+   "lines": 2121,
+   "score": 10951587,
+   "stopping_reason": "frame_limit",
+   "tetrises": 7
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 50604,
+   "lines": 2110,
+   "score": 10750009,
+   "stopping_reason": "frame_limit",
+   "tetrises": 4
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 46408,
+   "lines": 2126,
+   "score": 10975927,
+   "stopping_reason": "frame_limit",
+   "tetrises": 6
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 53146,
+   "lines": 2123,
+   "score": 10771123,
+   "stopping_reason": "frame_limit",
+   "tetrises": 3
+  },
+  {
+   "variant": "w20_b8",
+   "seed": 62632,
+   "lines": 2121,
+   "score": 11084125,
+   "stopping_reason": "frame_limit",
+   "tetrises": 8
+  }
+ ]
+}
