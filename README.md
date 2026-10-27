@@ -18,7 +18,9 @@ replayed. Experiment 005 adds a budgeted search planner: it keeps Experiment
 004's well plan as its leaf evaluation and searches one piece deeper over
 plausible unseen pieces under a deterministic integer node budget; its agent
 file is registered at runtime by the normal launcher so the sources Experiment
-004's retained identity covers stay untouched. There is no machine learning yet.
+004's retained identity covers stay untouched. Experiment 006 adds
+`survival_plan`: the same search with a lower stack-height budget from level 28,
+where pieces start falling one row per frame. There is no machine learning yet.
 Development proceeds one measured experiment at a time, reusing this engine
 connection and recording path.
 
@@ -43,6 +45,18 @@ native library is selected from that build directory on the local platform.
 `BLOCKS_NATIVE_LIB` overrides the selected library if the engine already has
 a suitable build elsewhere. Setup does not change tracked files in the game
 checkout.
+
+## Experiment 006
+
+Experiment 006 has its own small harness rather than launcher integration:
+
+```sh
+.venv/bin/python -m block_stack_ai.experiment006 run
+.venv/bin/python -m block_stack_ai.experiment006 verify experiments/006-level29-survival/records/run.json.gz
+```
+
+See [its notes](experiments/006-level29-survival/notes.md) for the protocol and
+results.
 
 ## Interactive launcher
 
@@ -374,7 +388,7 @@ The runner can keep supplying observations and accepting one frame mask at a
 time. Experiment 001 adds the hand-written greedy placement heuristic and its
 random baseline, Experiment 002 the path-aware one-piece-lookahead agent,
 Experiment 003 the Tetris-oriented objective on 002's reachable set,
-Experiment 004 the bounded well plan, and Experiment 005 the budgeted search
-planner; later experiments can add a learned evaluator or a learned frame
+Experiment 004 the bounded well plan, Experiment 005 the budgeted search
+planner, and Experiment 006 the level-29 survival budget; later experiments can add a learned evaluator or a learned frame
 controller on the same engine connection and run-recording workflow. None of
 those later stages is implemented yet.
