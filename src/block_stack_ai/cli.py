@@ -44,8 +44,25 @@ def _experiments() -> dict[str, Path]:
         if not name.partition("-")[0].isdecimal():
             continue
         preferred = path.parent / _PREFERRED_CONFIGS.get(name, "config.json")
-        experiments[name] = preferred if preferred.is_file() else path
+        chosen = preferred if preferred.is_file() else path
+        # An experiment with its own harness is listed once the launcher knows it.
+        if name.partition("-")[0] not in quickplay.EXPERIMENTS and _own_harness(chosen):
+            continue
+        experiments[name] = chosen
     return experiments
+
+
+def _own_harness(path: Path) -> bool:
+    """A harness config (agent and line cap, no frame limit), not a suite or script one.
+
+    Anything else, including a config that does not parse, is kept so the runner's
+    own error reports it.
+    """
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return isinstance(value, dict) and "frame_limit" not in value and {"agent", "line_cap"} <= value.keys()
 
 
 def _config_selects_search(config_path: Path) -> bool:

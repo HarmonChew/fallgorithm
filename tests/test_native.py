@@ -6,15 +6,16 @@ first with ``.venv/bin/python scripts/build_native.py``.
 
 from __future__ import annotations
 
+import gzip
 import json
 import math
 import random
 
 import pytest
 
-from block_stack_ai import native, reach, tunedplan, wellplan
+from block_stack_ai import benchplan, experiment011, native, reach, reachplan, searchplan, tunedplan, wellplan
 from block_stack_ai.heuristic import GRID_ROWS, HIDDEN_ROWS, WIDTH
-from block_stack_ai.limits import DOUBLE_KILLSCREEN, Flight, gravity
+from block_stack_ai.limits import DOUBLE_KILLSCREEN, Flight, Limits, gravity
 from block_stack_ai.pathaware import level_for_lines, settle_columns
 from block_stack_ai.pieces import PIECES, cells, orientation_count
 
@@ -248,3 +249,186 @@ def test_reach_locks_on_the_last_frame_before_the_cap_and_not_after_it():
             assert bool(expected) == (first_delay < 600)
             assert native.reachable(nearly_full, piece, flight, period=48, rows=1,
                                     interval=2) == expected
+
+
+# ---------------------------------------------------------------- search (step 3)
+
+REFERENCE = native.PROJECT_ROOT / "experiments" / "011-native-speed" / "records" / "reference.json.gz"
+
+
+def _python_choice(columns, piece, next_piece, kwargs, values):
+    option = reachplan.search(columns, piece, next_piece, params=values, **kwargs)
+    return None if option is None else (option[0].orientation, option[0].x, option[0].y,
+                                        option[0].masks)
+
+
+@pytest.mark.integration  # replays recorded games on the engine
+def test_search_matches_the_python_on_recorded_decisions():
+    record = json.loads(gzip.decompress(REFERENCE.read_bytes()))
+    config = record["configuration"]
+    values = config["params"]
+    native_params = native.params(values)
+    by_format = {}
+    for episode in record["episodes"]:
+        by_format.setdefault(episode["format"], []).append(episode)
+    checked = {"commit": 0, "adjust": 0, "full": 0}
+    for fmt, episodes in by_format.items():
+        limits = Limits(config["formats"][fmt]["tap_hz"], config["formats"][fmt]["reaction_ms"])
+        for episode in episodes[:3 if fmt == 0 else 1]:
+            for decision in experiment011.decisions(episode, config)[::23]:
+                kwargs = dict(flight=decision["flight"], drought=decision["drought"],
+                              level=decision["level"], lines=decision["lines"],
+                              start_level=decision["start_level"], ruleset=decision["ruleset"],
+                              limits=limits)
+                expected = _python_choice(decision["columns"], decision["piece"],
+                                          decision["next_piece"], kwargs, values)
+                assert native.search(decision["columns"], decision["piece"],
+                                     decision["next_piece"], params=native_params,
+                                     **kwargs) == expected, decision
+                checked[decision["kind"]] += 1
+    assert min(checked.values()) > 30, checked
+
+
+def test_search_matches_the_python_on_random_boards_at_the_level_changes():
+    """Round weights (many ties) and random ones; lines just before levels 29 and 39."""
+    rng = random.Random(6)
+    sets = _param_sets()[:2] + _param_sets()[2:6]
+    found = 0
+    for index in range(160):
+        values = sets[index % len(sets)]
+        columns = _cave_columns(rng)
+        piece, preview = rng.choice(PIECES), rng.choice(PIECES + (None,))
+        level, lines = rng.choice(((28, rng.randint(224, 229)), (38, rng.randint(324, 329)),
+                                   (18, rng.randint(0, 129)), (39, rng.randint(330, 339))))
+        limits = Limits(rng.choice((30, 15)), 300)
+        period, _ = gravity(level, DOUBLE_KILLSCREEN)
+        flight = _random_flight(rng, piece, period, limits.tap_interval)
+        kwargs = dict(flight=flight, drought=rng.randint(0, 12), level=level, lines=lines,
+                      start_level=18, ruleset=DOUBLE_KILLSCREEN, limits=limits)
+        expected = _python_choice(columns, piece, preview, kwargs, values)
+        assert native.search(columns, piece, preview, params=native.params(values),
+                             **kwargs) == expected, (columns, piece, preview, kwargs, values)
+        found += expected is not None
+    assert found > 100
+
+
+def test_search_returns_none_where_the_python_does():
+    full = tuple((1 << GRID_ROWS) - 1 for _ in range(WIDTH))
+    kwargs = dict(flight=Flight(), drought=0, level=18, lines=0, start_level=18,
+                  ruleset=DOUBLE_KILLSCREEN, limits=Limits(30, 300))
+    for preview in (None, "T"):
+        assert _python_choice(full, "L", preview, kwargs, None) is None
+        assert native.search(full, "L", preview, params=native.params(None), **kwargs) is None
+
+
+def _python_unknown_average(settled, base_drought, unknown_level, level, values, limits):
+    """reachplan.search's ``unknown_average`` closure, written out with the same helpers."""
+    value_of, phase_rule = tunedplan.make_rules(values)
+    phase_of = phase_rule(level)
+    leaves = []
+    for unknown in searchplan.unknown_pieces():
+        unknown_phase = phase_of(wellplan.next_drought(base_drought, unknown), settled)
+        options = reachplan.reach_options(settled, unknown, benchplan.SPAWN, unknown_level,
+                                          DOUBLE_KILLSCREEN, limits)
+        leaves.append(tunedplan._best(options, unknown_phase, value_of)[1])
+    return searchplan.unknown_value(leaves)
+
+
+def test_the_unknown_average_is_exact_and_uses_the_real_level_for_the_phase():
+    rng = random.Random(8)
+    values = json.loads(FINAL_PARAMS.read_text())["resolved"]  # survival_level 29
+    native_params = native.params(values)
+    budgets_differ = 0
+    for _ in range(300):
+        settled = (_cave_columns if rng.random() < 0.5 else _random_columns)(rng)
+        level, unknown_level = rng.choice(((28, 29),) * 4 + ((28, 28), (18, 19), (38, 39), (39, 40)))
+        limits = Limits(rng.choice((30, 15)), 300)
+        drought = rng.randint(0, 12)
+        expected = _python_unknown_average(settled, drought, unknown_level, level, values, limits)
+        found = native.unknown_average(settled, drought, unknown_level, level=level,
+                                       ruleset=DOUBLE_KILLSCREEN, limits=limits,
+                                       params=native_params)
+        assert found == expected, (settled, drought, level, unknown_level)
+        # Boards where the ply's level would have given a different height budget:
+        budgets_differ += level == 28 and unknown_level == 29 and \
+            values["survival_budget"] <= wellplan.stack_height(settled) < values["height_budget"]
+    assert budgets_differ > 10
+
+
+def test_commit_search_ties_keep_the_first_placement():
+    """With the hand-picked weights the best commit totals sometimes tie exactly."""
+    rng = random.Random(9)
+    limits = Limits(30, 300)
+    value_of, phase_rule = tunedplan.make_rules(None)
+    native_params = native.params(None)
+    ties = 0
+    for _ in range(200):
+        columns = (_cave_columns if rng.random() < 0.5 else _random_columns)(rng)
+        piece, drought = rng.choice(PIECES), rng.randint(0, 12)
+        kwargs = dict(flight=Flight(), drought=drought, level=18, lines=0, start_level=18,
+                      ruleset=DOUBLE_KILLSCREEN, limits=limits)
+        options = reachplan.reach_options(columns, piece, benchplan.SPAWN, 18, DOUBLE_KILLSCREEN,
+                                          limits)
+        phase = phase_rule(18)(drought, columns)
+        totals = [value_of(phase, cleared, settled) +
+                  _python_unknown_average(settled, drought, level_for_lines(cleared, 18), 18,
+                                          None, limits)
+                  for _, cleared, settled in options]
+        ties += bool(totals) and totals.count(max(totals)) > 1
+        assert native.search(columns, piece, None, params=native_params, **kwargs) == \
+            _python_choice(columns, piece, None, kwargs, None)
+    assert ties >= 4
+
+
+def _clearing_columns(rng: random.Random) -> tuple[int, ...]:
+    """Nearly full rows at the bottom, so most placements clear one to four lines."""
+    rows = rng.randint(1, 6)
+    gap = rng.randrange(WIDTH)
+    columns = [0] * WIDTH
+    for row in range(GRID_ROWS - rows, GRID_ROWS):
+        hole = gap if rng.random() < 0.7 else rng.randrange(WIDTH)
+        for column in range(WIDTH):
+            if column != hole:
+                columns[column] |= 1 << row
+    for column in range(WIDTH):  # a ragged layer on top
+        for row in range(GRID_ROWS - rows - rng.randint(0, 4), GRID_ROWS - rows):
+            if rng.random() < 0.6:
+                columns[column] |= 1 << row
+    return tuple(columns)
+
+
+# Found by the step 3 review: each fails a search that takes a ply's level wrongly.
+_LEVEL_CASES = (
+    # the preview's phase from the real level, not the level after the clear
+    ((4177920, 4161536, 4063232, 3932160, 4177920, 4161536, 3670016, 524288, 4128768, 3670016),
+     "Z", "T", 6, 28, 229, 15, Flight()),
+    # the beam's unknown ply at the level after both clears
+    ((1046528, 1833984, 2359168, 3669952, 2621376, 2621312, 1309696, 4192256, 1838080, 3931136),
+     "T", "I", 5, 28, 228, 30, Flight()),
+    # the commit search's unknown ply at the level after the clear
+    ((1964032, 1620992, 491008, 4180992, 3898880, 2883328, 4143104, 2965376, 457728, 4144128),
+     "S", None, 3, 38, 329, 15, Flight(gravity_counter=1)),
+)
+
+
+def test_search_takes_each_ply_level_as_the_python_does():
+    values = json.loads(FINAL_PARAMS.read_text())["resolved"]
+    native_params = native.params(values)
+    for columns, piece, preview, drought, level, lines, hz, flight in _LEVEL_CASES:
+        kwargs = dict(flight=flight, drought=drought, level=level, lines=lines, start_level=18,
+                      ruleset=DOUBLE_KILLSCREEN, limits=Limits(hz, 300))
+        assert native.search(columns, piece, preview, params=native_params, **kwargs) == \
+            _python_choice(columns, piece, preview, kwargs, values)
+    rng = random.Random(10)
+    for _ in range(150):
+        columns = _clearing_columns(rng)
+        piece, preview = rng.choice(PIECES), rng.choice(PIECES + (None,))
+        level, lines = rng.choice(((18, rng.randint(126, 129)), (28, rng.randint(226, 229)),
+                                   (38, rng.randint(326, 329))))
+        limits = Limits(rng.choice((30, 15)), 300)
+        period, _ = gravity(level, DOUBLE_KILLSCREEN)
+        kwargs = dict(flight=_random_flight(rng, piece, period, limits.tap_interval),
+                      drought=rng.randint(0, 12), level=level, lines=lines, start_level=18,
+                      ruleset=DOUBLE_KILLSCREEN, limits=limits)
+        assert native.search(columns, piece, preview, params=native_params, **kwargs) == \
+            _python_choice(columns, piece, preview, kwargs, values)

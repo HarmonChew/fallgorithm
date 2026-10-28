@@ -167,7 +167,8 @@ in 008-010). Coding steps can go to Sonnet subagents with narrow, file-level bri
 3. **Python reference games, then the search.** 009 kept only the score and lines of
    its training games, so first play the 24 training seeds with Python `reach_plan`
    (about 3 minutes on 24 workers; 010's `_play`) and keep that record: it is the
-   reference for step 4 and the Python timing for the speed rule. Then port
+   reference for step 4. (Its timing is not the speed baseline: other work ran on the
+   machine during it. Step 5 times Python and C++ back to back.) Then port
    `reachplan.search` (commit and adjust). Test: positions taken from that record with
    010's `spawns()`, with and without the preview, and mid-flight adjust states; the
    same chosen placement and masks.
@@ -195,8 +196,8 @@ in 008-010). Coding steps can go to Sonnet subagents with narrow, file-level bri
 Same machine, same session, nothing else heavy running, training seeds only:
 
 * **Per game:** mean seconds per game for the 24 training seeds on 24 workers, Python
-  `reach_plan` against C++ (the C++ figure includes the ctypes call, not the Python
-  replay). This is the number the success rule uses.
+  `reach_plan` against C++, the two batches run back to back (the C++ figure includes
+  the ctypes call, not the Python replay). This is the number the success rule uses.
 * **Per decision:** one process, the same sampled positions for both, by level band
   (18-28, 29-38, 39+), commit plus adjust, caches emptied first as in 010.
 * **Reported as well:** wall-clock time of the 300-game held-out evaluation at 30

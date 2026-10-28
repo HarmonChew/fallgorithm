@@ -19,12 +19,12 @@ from typing import Any
 
 from . import tunedplan, wellplan
 from .heuristic import WIDTH
-from .limits import DOUBLE_KILLSCREEN, Flight
+from .limits import DOUBLE_KILLSCREEN, Flight, Limits
 from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 2
+ABI_VERSION = 4
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
 
@@ -80,14 +80,28 @@ def library_path() -> Path:
 SOURCE_DIR = PROJECT_ROOT / "native"
 
 
+def _build_sources() -> set[Path]:
+    """``native/CMakeLists.txt``, ``c_api.cpp`` and every ``native/`` header it includes."""
+    found = {SOURCE_DIR / "CMakeLists.txt"}
+    pending = [SOURCE_DIR / "c_api.cpp"]
+    while pending:
+        source = pending.pop()
+        if source in found or not source.is_file():
+            continue
+        found.add(source)
+        for line in source.read_text(encoding="utf-8").splitlines():
+            if line.startswith('#include "'):
+                pending.append(SOURCE_DIR / line.split('"')[1])
+    return found
+
+
 def _check_fresh(path: Path) -> None:
-    """Refuse a library built before the latest edit to ``native/``.
+    """Refuse a library built before the latest edit to a source it is built from.
 
     Otherwise a C++ edit without a rebuild would be tested as the old code.
     """
     built = path.stat().st_mtime
-    newer = [source.name for source in SOURCE_DIR.iterdir()
-             if source.is_file() and source.stat().st_mtime > built]
+    newer = [source.name for source in _build_sources() if source.stat().st_mtime > built]
     if newer:
         raise NativeError(f"{path} is older than native/{', native/'.join(sorted(newer))}. "
                           "Rebuild with `.venv/bin/python scripts/build_native.py`.")
@@ -119,6 +133,12 @@ def load() -> Any:
                              C.POINTER(C.c_int), C.c_int, C.POINTER(C.c_uint8), C.c_int,
                              C.POINTER(C.c_int)]
     lib.fn_reach.restype = C.c_int
+    lib.fn_decide.argtypes = [C.POINTER(Params), Columns, C.POINTER(C.c_int), C.POINTER(C.c_int),
+                              C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int)]
+    lib.fn_decide.restype = C.c_int
+    lib.fn_unknown_average.argtypes = [C.POINTER(Params), Columns, C.POINTER(C.c_int), C.c_int,
+                                       C.c_int]
+    lib.fn_unknown_average.restype = C.c_double
     if lib.fn_abi_version() != ABI_VERSION:
         raise NativeError(f"{path} has ABI version {lib.fn_abi_version()}, expected "
                           f"{ABI_VERSION}. Rebuild with scripts/build_native.py.")
@@ -184,3 +204,42 @@ def reachable(columns: tuple[int, ...], piece: str, flight: Flight, *, period: i
                       tuple(masks[used:used + length])))
         used += length
     return found
+
+
+def _position(piece: str, next_piece: str | None, flight: Flight, drought: int, level: int,
+              lines: int, start_level: int, ruleset: str, limits: Limits) -> Any:
+    return (C.c_int * 15)(
+        PIECES.index(piece), -1 if next_piece is None else PIECES.index(next_piece),
+        flight.orientation, flight.x, flight.y, flight.gravity_counter, flight.first_delay,
+        flight.shift_wait, flight.rotate_wait, drought, level, lines, start_level,
+        ruleset == DOUBLE_KILLSCREEN, limits.tap_interval)
+
+
+def unknown_average(settled: tuple[int, ...], base_drought: int, unknown_level: int, *,
+                    level: int, ruleset: str, limits: Limits, params: Params) -> float:
+    """The search's average over the seven unknown pieces on one board, from the C++."""
+    position = _position("I", None, Flight(), 0, level, 0, 0, ruleset, limits)
+    return load().fn_unknown_average(C.byref(params), Columns(*settled), position, base_drought,
+                                     unknown_level)
+
+
+def search(columns: tuple[int, ...], piece: str, next_piece: str | None, *, flight: Flight,
+           drought: int, level: int, lines: int, start_level: int, ruleset: str,
+           limits: Limits, params: Params) -> tuple[int, int, int, tuple[int, ...]] | None:
+    """:func:`block_stack_ai.reachplan.search`, computed by the C++.
+
+    Returns the chosen placement as ``(orientation, x, y, masks)``, or ``None`` when
+    the Python returns ``None``. ``params`` is a :class:`Params` (see :func:`params`).
+    """
+    position = _position(piece, next_piece, flight, drought, level, lines, start_level, ruleset,
+                         limits)
+    out = (C.c_int * 3)()
+    masks = (C.c_uint8 * 600)()
+    length = C.c_int()
+    found = load().fn_decide(C.byref(params), Columns(*columns), position, out, masks, 600,
+                             C.byref(length))
+    if found < 0:
+        raise NativeError(f"fn_decide failed with {found}")
+    if not found:
+        return None
+    return out[0], out[1], out[2], tuple(masks[:length.value])

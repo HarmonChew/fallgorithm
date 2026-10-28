@@ -8,6 +8,7 @@
 #include "board.hpp"
 #include "eval.hpp"
 #include "reach.hpp"
+#include "search.hpp"
 
 #if defined(_WIN32)
 #define FN_API extern "C" __declspec(dllexport)
@@ -19,7 +20,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 2;
+constexpr int abi_version = 4;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -135,4 +136,59 @@ FN_API int fn_reach(const std::uint32_t* columns, int piece, const int* flight, 
         used += length;
     }
     return count;
+}
+
+// One reachplan.search decision. ``position`` is (piece, next_piece or -1,
+// orientation, x, y, gravity_counter, first_delay, shift_wait, rotate_wait, drought,
+// level, lines, start_level, double_killscreen, tap_interval). Writes the chosen
+// (orientation, x, y) and its masks. Returns 1, or 0 when no placement is reachable
+// (the Python's None), -1 for bad arguments, -2 if ``masks`` is too small, -3 if the
+// walk back lost its path.
+FN_API int fn_decide(const Params* params, const std::uint32_t* columns, const int* position,
+                     int* out, std::uint8_t* masks, int mask_capacity, int* mask_length) {
+    const int* flight = position + 2;
+    if (position[0] < 0 || position[0] >= piece_types || position[1] < -1 ||
+        position[1] >= piece_types || flight[0] < 0 ||
+        flight[0] >= orientation_counts[position[0]] || flight[1] < -1 || flight[1] > width ||
+        flight[2] < 0 || flight[2] >= grid_rows || flight[3] < 0 || flight[4] < 0 ||
+        flight[5] < 0 || flight[6] < 0 || position[9] < 0 || position[10] < 0 ||
+        position[11] < 0 || position[12] < 0 || position[12] >= 20 || position[14] < 1) {
+        return -1;
+    }
+    Position at{load_columns(columns), position[0], position[1],
+                Flight{flight[0], flight[1], flight[2], flight[3], flight[4], flight[5], flight[6]},
+                position[9], position[10], position[11], position[12], position[13] != 0,
+                position[14]};
+    thread_local Searcher searcher;
+    searcher.set_params(*params);
+    Choice choice;
+    if (!searcher.search(at, choice)) {
+        return -3;
+    }
+    if (!choice.found) {
+        return 0;
+    }
+    const int length = static_cast<int>(choice.masks.size());
+    if (length > mask_capacity) {
+        return -2;
+    }
+    out[0] = choice.orientation;
+    out[1] = choice.x;
+    out[2] = choice.y;
+    *mask_length = length;
+    for (int k = 0; k < length; ++k) {
+        masks[k] = choice.masks[k];
+    }
+    return 1;
+}
+
+// The search's unknown-piece average for one settled board, for the tests.
+// ``position`` as fn_decide's (only level, double_killscreen and tap_interval are used).
+FN_API double fn_unknown_average(const Params* params, const std::uint32_t* settled,
+                                 const int* position, int base_drought, int unknown_level) {
+    Position at{load_columns(settled), I, -1, Flight{}, 0, position[10], 0, 0,
+                position[13] != 0, position[14]};
+    thread_local Searcher searcher;
+    searcher.set_params(*params);
+    return searcher.expected_unknown(at, at.columns, base_drought, unknown_level);
 }
