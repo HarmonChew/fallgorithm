@@ -1,0 +1,116 @@
+{
+ "load_average_before": [
+  7.91,
+  3.86,
+  3.91
+ ],
+ "workers": 24,
+ "format": {
+  "tap_hz": 30,
+  "reaction_ms": 300
+ },
+ "seeds": [
+  12043,
+  45609,
+  49281,
+  48167,
+  64754,
+  16467,
+  31619,
+  19344,
+  54813,
+  3564,
+  33357,
+  17706,
+  2546,
+  2751,
+  830,
+  38672,
+  31287,
+  11846,
+  19702,
+  8904,
+  61188,
+  36426,
+  27208,
+  12401
+ ],
+ "python_seconds_per_game": 107.24,
+ "cpp_seconds_per_game": 0.805,
+ "per_game_speedup": 133.3,
+ "python_batch_wall_seconds": 120.1,
+ "cpp_batch_wall_seconds": 1.5,
+ "cpp_batch_identical_to_python_batch": true,
+ "differences": [],
+ "per_decision": {
+  "level_18_28": {
+   "pieces": 356,
+   "python_ms": 69.93,
+   "cpp_ms": 0.864,
+   "speedup": 81.0
+  },
+  "level_29_38": {
+   "pieces": 141,
+   "python_ms": 59.17,
+   "cpp_ms": 0.67,
+   "speedup": 88.3
+  },
+  "level_39_plus": {
+   "pieces": 25,
+   "python_ms": 35.28,
+   "cpp_ms": 0.397,
+   "speedup": 88.8
+  }
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "e855a710d3a5c1c63a57e2145b2823123cc355a7",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "sources": {
+  "__init__.py": "fab62082661198b8ee6197ea21e74caab84ee69e2fbb0ee2d9c283e3552694b9",
+  "agents.py": "2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329",
+  "benchplan.py": "a2daf8df071ad3cc67951af65a829e80df7fc292dcecdd15cbc314ec938e7805",
+  "cli.py": "bdfbad925d6317b4f5186ba67ee3cf8b998273e8a703b9a04f868aedd376ae61",
+  "engine.py": "6c6ababa0e527053892a5a77fecf58e7c5079473f6c0c51647c38c6fab0ac60b",
+  "experiment005.py": "ad72546ec12462f4c947a706afa15b5cbb0f8d0f9f67991711ec9b0aecc9756f",
+  "experiment006.py": "d8240dab232db31ab97677c1983a362c59f7b00cef4a7eb1bee5953cf4ff98b0",
+  "experiment008.py": "90d8a5bbbcf654433e1db22dac93c4857567b62ef46cd7a7a8ca90d01bc8cdba",
+  "experiment009.py": "fc984c198d111ebeec2082096ee4ac8049e0a12090b53106ca5d5e4a49ee0b01",
+  "experiment010.py": "4441c9ed105e917e7017859634a6e479e81e1d525d06d15943bf95549ddeb794",
+  "experiment011.py": "75a76761e91884bdca137e5ec0192c2f97f7ad30dd2a5429ad09c13a53d346fc",
+  "heuristic.py": "7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea",
+  "limits.py": "13239d3672bd7cae510f4a873d2c1d5b5c50a27d1ff635df7621bb624c280db8",
+  "live.py": "6a59750b460ca3988aadda82f2d98f7e6a3279c143504dd8f5ae199be4a20b89",
+  "menu.py": "ae40b4d27c5346a03cecd35b71ad219e20a252e94be2ba214746f5271f2470d0",
+  "native.py": "7868a77bd1e76241c0e84f8102a4fe9dcafa768923ee5b244fe1e4a358b68003",
+  "pathaware.py": "c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884",
+  "pieces.py": "434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad",
+  "quickplay.py": "a733be74b6bbdbfbb1f789aa270e0004822c6905089c005ea8fbf28d5a5d0c60",
+  "reach.py": "be2a5bc6d5a951919bf5e867e788dd044743ec65dcf846daa004a087c70ccb0e",
+  "reachplan.py": "5d284e77118c44fa8c56a7579fbdc655986d066eae268643639f5f063d21ac75",
+  "replay.py": "0aad64f3236d423bef1fc7f67ae796b42d91dd0884a8e94d9e2282247caee803",
+  "runner.py": "4b7e610b64d7f3d1f92cf4145e1659d187911d3abffc3e19b688f798a27915d7",
+  "searchplan.py": "9e8eee4045b85cb1b3a444c3d80c99e0c15fb93ba904bd37b94b62d756a27d09",
+  "sourceidentity.py": "81bad6f3626f46b2e102b61ec5ce934cecc99ef8fdc29a85759321b1c0748cac",
+  "survivalplan.py": "ca941cc2a4c5dcc6091dce367aefb68aed6b28ebcc2a67c34d88a39f6fdd5ea4",
+  "tetris.py": "3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e",
+  "tunedplan.py": "b49c771e0c1c1868c8c0595886170a59f2037aa31135e4b9f43a78b7da6779f6",
+  "watchrecord.py": "0d26e9e42361e1c6cf65ade5125da9105013181410d813773bce53dd20b7a2b1",
+  "wellplan.py": "6bafa2dd9de2f5c1dcaed6cda68c03dcaf73fd712e3082bc9a06160ecd4aecd7",
+  "native/CMakeLists.txt": "77219c93637ea48c55a17703cbecb8185f94eba8b252556e7383985a2e570011",
+  "native/agent.hpp": "aaea2f7cdc6406b5e672f3b50d7d922de465086f3ad592de5959ad8de2025842",
+  "native/board.hpp": "67abefb6807559108dc733546f979b0015b2b8d9ed505918cf4fe706228481f3",
+  "native/c_api.cpp": "4475c606011b893ed7fc19e677335349c8bf409ee0126394a1b9e691e984df50",
+  "native/eval.hpp": "885e4aa4703dd680c6001ab7c2163abd644382c8cbd7d0da2388ccf983dc305e",
+  "native/reach.hpp": "7fbdb6112ebe19dbc981298486173fcfdc8cd494b46b420bb068ebab4b1d8ea2",
+  "native/search.hpp": "e0b0ff3fa713da3566230db5c030844cb4b3d724c25bea8a62679c5104fbedd8"
+ }
+}

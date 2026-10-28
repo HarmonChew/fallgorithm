@@ -1,0 +1,105 @@
+{
+ "experiment": "011-native-speed",
+ "question": "Does the C++ reach_plan play exactly the same games as the Python reach_plan of Experiment 010, at least 50 times faster?",
+ "record": {
+  "path": "experiments/011-native-speed/records/run.json.gz",
+  "sha256": "1ee4481148063a5d630cc7141d645323a28015f25363eedafdf45d24ff08c981",
+  "created_at": "2026-10-28T12:27:19.035523+00:00"
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "e855a710d3a5c1c63a57e2145b2823123cc355a7",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "engine_fingerprint": "f63c80b5400d4b14415c53e5034dfec8f292ff331e86785a6be5a04a9614ac31",
+ "baseline": "experiments/010-complete-reach/records/run.json.gz",
+ "heldout_games": 300,
+ "identical_games": 300,
+ "differences": [],
+ "replay_problems": [],
+ "speed": {
+  "load_average_before": [
+   7.91,
+   3.86,
+   3.91
+  ],
+  "workers": 24,
+  "python_seconds_per_game": 107.24,
+  "cpp_seconds_per_game": 0.805,
+  "per_game_speedup": 133.3,
+  "python_batch_wall_seconds": 120.1,
+  "cpp_batch_wall_seconds": 1.5,
+  "cpp_batch_identical_to_python_batch": true,
+  "per_decision": {
+   "level_18_28": {
+    "pieces": 356,
+    "python_ms": 69.93,
+    "cpp_ms": 0.864,
+    "speedup": 81.0
+   },
+   "level_29_38": {
+    "pieces": 141,
+    "python_ms": 59.17,
+    "cpp_ms": 0.67,
+    "speedup": 88.3
+   },
+   "level_39_plus": {
+    "pieces": 25,
+    "python_ms": 35.28,
+    "cpp_ms": 0.397,
+    "speedup": 88.8
+   }
+  }
+ },
+ "heldout_run": {
+  "workers": 30,
+  "wall_seconds_with_replay": 16.2,
+  "cpp_seconds_per_game_mean": 0.908,
+  "cpp_seconds_summed_per_worker": 9.1,
+  "python_010_decision_seconds_per_game_mean": 140.0
+ },
+ "cem_iteration_seconds_projected": 23.2,
+ "success_rule": "exact: all 300 held-out games identical to Experiment 010's record and verified on the engine; fast: per-game speed-up on the training seeds at least 50",
+ "success": {
+  "exact": true,
+  "fast": true,
+  "both": true
+ },
+ "metrics": {
+  "games": 300,
+  "lines": {
+   "mean": 330.9,
+   "median": 335.0,
+   "p5": 271.4,
+   "p10": 330.0,
+   "p90": 348.0
+  },
+  "score": {
+   "mean": 607113.4,
+   "median": 605280.0,
+   "p5": 482446.0,
+   "p10": 512792.0,
+   "p90": 717952.0
+  },
+  "top_out_pct": 100.0,
+  "reached_level_29_pct": 98.3,
+  "reached_level_39_pct": 92.7,
+  "reached_line_cap_pct": 0.0,
+  "frame_limit_stops": 0,
+  "adjust_switch_pct": 12.0,
+  "clear_sizes": {
+   "singles": 59016,
+   "doubles": 10323,
+   "triples": 2826,
+   "tetrises": 2786
+  },
+  "tetris_rate": 0.1122
+ }
+}

@@ -24,7 +24,8 @@ where pieces start falling one row per frame. Experiment 008 measures that
 evaluation in BetaTetris's benchmark format, with human-like tap speed and
 reaction time. Experiment 009 is the first machine learning: it tunes the evaluation
 numbers with the cross-entropy method (CEM). Experiment 010 swaps the fixed-route
-movement model for a complete reachability search (`reach.py`).
+movement model for a complete reachability search (`reach.py`). Experiment 011 ports
+that agent to C++ (`native/`): the same games, about 130 times faster.
 Development proceeds one measured experiment at a time, reusing this engine
 connection and recording path.
 
@@ -66,6 +67,7 @@ this machine with Python 3.12:
 python3.12 -m venv .venv
 .venv/bin/python scripts/setup_engine.py
 .venv/bin/python -m pip install -e . pytest
+.venv/bin/python scripts/build_native.py   # Experiment 011's C++ agent
 ```
 
 The setup script configures a Release headless build, builds `blocks_native`
@@ -139,6 +141,24 @@ score with Experiment 009's numbers unchanged. The agent is `reach_plan`.
 Watch a recorded game with `fallgorithm watch-record experiments/010-complete-reach/records/run.json.gz --seed N --format 30hz-300ms`.
 See [its notes](experiments/010-complete-reach/notes.md); the protocol is in
 `experiments/010-complete-reach/predeclared.md`.
+
+## Experiment 011
+
+Experiment 011 is `reach_plan` in C++ (`native/`, built by
+`scripts/build_native.py`). It plays exactly Experiment 010's games, about 130 times
+faster per game. The Python agent stays the reference, and the tests compare the two.
+
+```sh
+.venv/bin/python scripts/build_native.py
+.venv/bin/python -m block_stack_ai.experiment011 parity                 # C++ against the Python reference games
+.venv/bin/python -m block_stack_ai.experiment011 bench --jobs 24        # the speed measurement
+.venv/bin/python -m block_stack_ai.experiment011 evaluate               # 300 held-out games, about 20 s
+.venv/bin/python -m block_stack_ai.experiment011 summarize experiments/011-native-speed/records/run.json.gz
+```
+
+`fallgorithm play-game --experiment 011` plays a new game in C++ (in a second or two).
+See [its notes](experiments/011-native-speed/notes.md); the protocol is in
+`experiments/011-native-speed/predeclared.md`.
 
 ## Watch a game from an experiment record
 

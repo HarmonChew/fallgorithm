@@ -1,7 +1,7 @@
 # Experiment 011 - plan: a native (C++) reach_plan
 
-Status: plan, written 2026-10-28 and revised after an independent review the same
-day. Progress through the steps is in the Git history. Before the held-out run,
+Status: done 2026-10-28; see `notes.md` for the result. Written and revised after an
+independent review the same day; progress through the steps is in the Git history. Before the held-out run,
 `predeclared.md` is written from the "Success rule" section and is not edited
 afterwards.
 
