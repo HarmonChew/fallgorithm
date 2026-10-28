@@ -23,7 +23,8 @@ file is registered at runtime by the normal launcher so the sources Experiment
 where pieces start falling one row per frame. Experiment 008 measures that
 evaluation in BetaTetris's benchmark format, with human-like tap speed and
 reaction time. Experiment 009 is the first machine learning: it tunes the evaluation
-numbers with the cross-entropy method (CEM).
+numbers with the cross-entropy method (CEM). Experiment 010 swaps the fixed-route
+movement model for a complete reachability search (`reach.py`).
 Development proceeds one measured experiment at a time, reusing this engine
 connection and recording path.
 
@@ -122,6 +123,23 @@ Watch a recorded game with `fallgorithm watch-record experiments/009-cem-score/r
 See [its notes](experiments/009-cem-score/notes.md); the protocol was written
 down before training in `experiments/009-cem-score/predeclared.md`.
 
+## Experiment 010
+
+Experiment 010 asks whether a complete reachability search (every placement the tap
+and reaction limits allow, `src/block_stack_ai/reach.py`) raises `tuned_plan`'s
+score with Experiment 009's numbers unchanged. The agent is `reach_plan`.
+
+```sh
+.venv/bin/python -m block_stack_ai.experiment010 evaluate --jobs 30   # about 25 minutes
+.venv/bin/python -m block_stack_ai.experiment010 verify experiments/010-complete-reach/records/run.json.gz
+.venv/bin/python -m block_stack_ai.experiment010 summarize experiments/010-complete-reach/records/run.json.gz
+.venv/bin/python -m block_stack_ai.experiment010 autopsy
+```
+
+Watch a recorded game with `fallgorithm watch-record experiments/010-complete-reach/records/run.json.gz --seed N --format 30hz-300ms`.
+See [its notes](experiments/010-complete-reach/notes.md); the protocol is in
+`experiments/010-complete-reach/predeclared.md`.
+
 ## Watch a game from an experiment record
 
 Experiments 006 and later keep their own records, so `block-stack-ai watch`
@@ -143,7 +161,7 @@ speed. `--export-only` writes the `.rep` under `runs/watch/` without opening it.
 ## Interactive launcher
 
 Launch without arguments (`fallgorithm` or `block-stack-ai`) to choose options
-in a terminal; `menu` opens the same launcher. Experiments 006, 008 and 009 offer
+in a terminal; `menu` opens the same launcher. Experiments 006, 008, 009 and 010 offer
 watching a new game, watching a recorded game and a full evaluation (see Quick
 start); the rest of this section describes experiments 000-005. Type a menu option's number and
 press Enter to select an experiment, then choose live play or full evaluation.

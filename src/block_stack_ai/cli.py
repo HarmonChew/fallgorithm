@@ -125,7 +125,7 @@ def _print_experiments() -> None:
             detail = f"scripted, up to {frames} frames; run/replay only"
         print(f"{name}: {detail}")
     print("Choose a number or full name with --experiment; use --agent to choose an agent within it.")
-    print("006, 008 and 009 use `play-game`, `watch-record` and `evaluate` instead of play/run.")
+    print("006, 008, 009 and 010 use `play-game`, `watch-record` and `evaluate` instead of play/run.")
 
 
 def _add_experiment_selection(parser: argparse.ArgumentParser) -> None:
@@ -195,19 +195,19 @@ def _main(argv: list[str] | None = None) -> int:
     play_parser.add_argument(
         "--paused", action=argparse.BooleanOptionalAction, default=None,
         help="start paused for frame stepping (default: paused for the search agent, otherwise playing); --no-paused starts playing")
-    game_parser = subcommands.add_parser("play-game", help="play one fresh Experiment 006, 008 or 009 game, then watch it paused")
-    game_parser.add_argument("--experiment", required=True, metavar="006|008|009")
+    game_parser = subcommands.add_parser("play-game", help="play one fresh Experiment 006, 008, 009 or 010 game, then watch it paused")
+    game_parser.add_argument("--experiment", required=True, metavar="006|008|009|010")
     game_parser.add_argument("--seed", type=int, help="fixed seed 0-65535; otherwise random")
     game_parser.add_argument("--agent", help=f"006 only (default: {quickplay.SURVIVAL})")
     game_parser.add_argument("--frame-limit", type=int, metavar="N", help="frame limit (default: the config's)")
-    game_parser.add_argument("--tap-hz", type=float, help=f"008/009, above 0 and at most {quickplay.MAX_TAP_HZ} (default: {quickplay.TAP_HZ})")
-    game_parser.add_argument("--reaction-ms", type=float, help=f"008/009, 0 or more (default: {quickplay.REACTION_MS})")
+    game_parser.add_argument("--tap-hz", type=float, help=f"008/009/010, above 0 and at most {quickplay.MAX_TAP_HZ} (default: {quickplay.TAP_HZ})")
+    game_parser.add_argument("--reaction-ms", type=float, help=f"008/009/010, 0 or more (default: {quickplay.REACTION_MS})")
     game_parser.add_argument("--export-only", action="store_true", help="write the .rep under runs/watch/ without opening it")
-    record_parser = subcommands.add_parser("watch-record", help="watch one game from a 006/008/009 record, paused; "
+    record_parser = subcommands.add_parser("watch-record", help="watch one game from a 006/008/009/010 record, paused; "
                                            "put RECORD first; the options are those of `python -m block_stack_ai.watchrecord`")
     record_parser.add_argument("watch_args", nargs=argparse.REMAINDER, metavar="RECORD [--seed N --agent A|--format F --list --export-only]")
-    evaluate_parser = subcommands.add_parser("evaluate", help="run the full 006, 008 or 009 evaluation")
-    evaluate_parser.add_argument("--experiment", required=True, metavar="006|008|009")
+    evaluate_parser = subcommands.add_parser("evaluate", help="run the full 006, 008, 009 or 010 evaluation")
+    evaluate_parser.add_argument("--experiment", required=True, metavar="006|008|009|010")
     evaluate_parser.add_argument("--jobs", type=int, default=quickplay.JOBS)
     args = parser.parse_args(argv)
     if args.command == "doctor":

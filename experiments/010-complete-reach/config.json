@@ -1,0 +1,21 @@
+{
+ "game": {
+  "ruleset": "classic_ntsc_double_killscreen",
+  "mode": "endless",
+  "start_level": 18,
+  "height": 0
+ },
+ "line_cap": 430,
+ "frame_cap": 150000,
+ "agent": "reach_plan",
+ "formats": [
+  {
+   "tap_hz": 30,
+   "reaction_ms": 300
+  }
+ ],
+ "seed_count": 300,
+ "params_source": "experiments/009-cem-score/final_params.json (resolved), unchanged",
+ "heldout": "the first seed_count seeds of experiments/008-benchmark-format/config.json",
+ "baseline": "experiments/009-cem-score/records/run.json.gz (tuned_plan, same seeds)"
+}
