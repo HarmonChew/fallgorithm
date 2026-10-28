@@ -1,4 +1,4 @@
-"""One-game and full-evaluation helpers for Experiments 006 and 008.
+"""One-game and full-evaluation helpers for Experiments 006, 008 and 009.
 
 Those experiments have their own harnesses and configs, so the stock runner
 cannot play them. This module plays one game with the harness's own single-game
@@ -13,9 +13,9 @@ import math
 from pathlib import Path
 import random
 
-from . import experiment006, experiment008, watchrecord
+from . import experiment006, experiment008, experiment009, watchrecord
 
-EXPERIMENTS = {"006": experiment006, "008": experiment008}
+EXPERIMENTS = {"006": experiment006, "008": experiment008, "009": experiment009}
 SURVIVAL = "survival_plan"
 TAP_HZ, REACTION_MS, JOBS = 30, 300, 30
 MAX_TAP_HZ = 30  # limits.py silently caps faster rates
@@ -26,7 +26,7 @@ def experiment_id(selection: str) -> str:
     number = selection.partition("-")[0]
     if number.isdecimal() and f"{int(number):03d}" in EXPERIMENTS:
         return f"{int(number):03d}"
-    raise ValueError(f"Experiment {selection!r} has no single-game command; choose 006 or 008.")
+    raise ValueError(f"Experiment {selection!r} has no single-game command; choose 006, 008 or 009.")
 
 
 def record_path(experiment: str) -> Path:
@@ -50,8 +50,8 @@ def play_game(experiment: str, *, seed: int | None = None, agent: str | None = N
               reaction_ms: float | None = None, export_only: bool = False) -> int:
     """Play one fresh game headless, then show it paused in the desktop window.
 
-    006 takes an agent; 008 takes tap speed and reaction time. The other
-    experiment's options are rejected rather than ignored.
+    006 takes an agent; 008 and 009 take tap speed and reaction time (009 plays
+    its trained parameters). Options that do not apply are rejected, not ignored.
     """
     experiment = experiment_id(experiment)
     module = EXPERIMENTS[experiment]
@@ -64,7 +64,7 @@ def play_game(experiment: str, *, seed: int | None = None, agent: str | None = N
     game = config["game"]
     if experiment == "006":
         if tap_hz is not None or reaction_ms is not None:
-            raise ValueError("--tap-hz and --reaction-ms apply to Experiment 008 only.")
+            raise ValueError("--tap-hz and --reaction-ms apply to Experiments 008 and 009 only.")
         agent = agent or SURVIVAL
         if agent not in module.AGENTS:
             raise ValueError(f"Agent must be one of: {', '.join(module.AGENTS)}")
@@ -85,7 +85,11 @@ def play_game(experiment: str, *, seed: int | None = None, agent: str | None = N
             raise ValueError("Reaction time must be 0 ms or more.")
         fmt = {"tap_hz": tap_hz, "reaction_ms": reaction_ms}
         settings = dict(config, frame_cap=frame_limit or config["frame_cap"])
-        print(f"Playing 008 at {tap_hz:g} Hz, {reaction_ms:g} ms reaction, seed {seed}, "
+        if experiment == "009":
+            if not module.FINAL_PARAMS.exists():
+                raise ValueError("Experiment 009 has no trained parameters yet (final_params.json).")
+            settings["params"] = module._load(module.FINAL_PARAMS)["resolved"]
+        print(f"Playing {experiment} at {tap_hz:g} Hz, {reaction_ms:g} ms reaction, seed {seed}, "
               f"up to {settings['line_cap']} lines. This can take a minute or two...", flush=True)
         episode = module._play((0, fmt, seed, settings))
         record = {"configuration": dict(settings, formats=[fmt]), "episodes": [episode]}
@@ -101,4 +105,6 @@ def play_game(experiment: str, *, seed: int | None = None, agent: str | None = N
 
 def evaluate(experiment: str, jobs: int = JOBS) -> int:
     """Run the harness's full evaluation (it prints where the record went)."""
-    return EXPERIMENTS[experiment_id(experiment)].main(["run", "--jobs", str(jobs)])
+    number = experiment_id(experiment)
+    command = "evaluate" if number == "009" else "run"
+    return EXPERIMENTS[number].main([command, "--jobs", str(jobs)])

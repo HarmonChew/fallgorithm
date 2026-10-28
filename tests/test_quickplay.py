@@ -1,4 +1,4 @@
-"""Menu flows and commands for Experiments 006 and 008."""
+"""Menu flows and commands for Experiments 006, 008 and 009."""
 
 from __future__ import annotations
 
@@ -112,8 +112,8 @@ def test_watch_record_finds_the_record_from_another_directory(tmp_path, monkeypa
     (["--experiment", "008", "--reaction-ms", "-1"], "0 ms or more"),
     (["--experiment", "008", "--reaction-ms", "inf"], "0 ms or more"),
     (["--experiment", "008", "--agent", "survival_plan"], "006 only"),
-    (["--experiment", "006", "--tap-hz", "30"], "008 only"),
-    (["--experiment", "006", "--reaction-ms", "0"], "008 only"),
+    (["--experiment", "006", "--tap-hz", "30"], "008 and 009 only"),
+    (["--experiment", "006", "--reaction-ms", "0"], "008 and 009 only"),
 ])
 def test_play_game_rejects_bad_or_inapplicable_options(arguments, message, capsys):
     assert cli.main(["play-game", *arguments]) == 1
@@ -127,7 +127,7 @@ def test_start_level_is_gone():
 
 def test_bad_experiment_is_reported(capsys):
     assert cli.main(["play-game", "--experiment", "001"]) == 1
-    assert "choose 006 or 008" in capsys.readouterr().err
+    assert "choose 006, 008 or 009" in capsys.readouterr().err
 
 
 def test_experiments_lists_006_and_008(capsys):
@@ -148,3 +148,42 @@ def test_play_game_export_only_writes_a_checked_replay(capsys, arguments, label)
     assert "frame_limit" in capsys.readouterr().out
     replay = watchrecord.WATCH_DIR / f"{label}-f1500.rep"
     assert replay.is_file() and replay.stat().st_size > 0
+
+
+REC009 = "experiments/009-cem-score/records/run.json.gz"
+
+
+def test_009_is_wired_into_the_launcher(menu, monkeypatch):
+    assert quickplay.experiment_id("9") == "009"
+    assert quickplay.record_path("009").name == "run.json.gz"
+    assert menu("9", "1", "", "", "", "") == [
+        "play-game", "--experiment", "009", "--tap-hz", "30", "--reaction-ms", "300"]
+    assert menu("9", "1", "9", "3", "4", "200", "") == [
+        "play-game", "--experiment", "009", "--tap-hz", "15", "--reaction-ms", "200", "--seed", "9"]
+    assert menu("9", "3", "") == ["evaluate", "--experiment", "009", "--jobs", "30"]
+    calls = []
+    monkeypatch.setattr(quickplay.experiment009, "main", lambda argv: calls.append(argv) or 0)
+    assert quickplay.evaluate("009", 5) == 0
+    assert calls == [["evaluate", "--jobs", "5"]]
+
+
+def test_009_recorded_game_in_the_menu(menu):
+    seed = _top_seed(REC009, format=0)
+    assert menu("9", "2", "", "", "") == [
+        "watch-record", REC009, "--seed", str(seed), "--format", "30hz-300ms"]
+
+
+def test_009_is_listed_and_new_game_needs_trained_parameters(capsys, monkeypatch, tmp_path):
+    assert cli.main(["experiments"]) == 0
+    assert "009-cem-score: tuned_plan in 1 tap/reaction formats" in capsys.readouterr().out
+    monkeypatch.setattr(quickplay.experiment009, "FINAL_PARAMS", tmp_path / "missing.json")
+    assert cli.main(["play-game", "--experiment", "009", "--seed", "3"]) == 1
+    assert "no trained parameters" in capsys.readouterr().err
+
+
+@pytest.mark.integration
+def test_watch_record_exports_a_009_game(tmp_path):
+    seed = _top_seed(REC009, format=0)
+    record = watchrecord.load_record(PROJECT_ROOT / REC009)
+    episode = watchrecord.select_episode(record, seed, format_value="30hz-300ms")
+    assert watchrecord.export(record, episode, tmp_path / "game.rep").exists()

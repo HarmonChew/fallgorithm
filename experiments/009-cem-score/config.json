@@ -1,0 +1,27 @@
+{
+ "game": {
+  "ruleset": "classic_ntsc_double_killscreen",
+  "mode": "endless",
+  "start_level": 18,
+  "height": 0
+ },
+ "line_cap": 430,
+ "frame_cap": 150000,
+ "agent": "tuned_plan",
+ "formats": [
+  {
+   "tap_hz": 30,
+   "reaction_ms": 300
+  }
+ ],
+ "train": {
+  "population": 32,
+  "elite": 8,
+  "iterations": 4,
+  "rng_seed": 9,
+  "spread_floor": 0.05,
+  "seed_label": "fallgorithm009/train/v1/{i}",
+  "train_seed_count": 24
+ },
+ "heldout": "the 300 seeds of experiments/008-benchmark-format/config.json"
+}

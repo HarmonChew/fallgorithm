@@ -1,0 +1,6131 @@
+{
+ "experiment": "009-cem-score",
+ "question": "Can CEM-learned evaluation parameters raise bench_plan's mean score at 30 Hz / 300 ms on held-out seeds?",
+ "record": {
+  "path": "experiments/009-cem-score/records/run.json.gz",
+  "sha256": "4ec4caf13cb4e781b01ef1a5fd85d9b5af5b48168d9383d4d99c3584e1fcec8b",
+  "created_at": "2026-10-28T06:37:32.928023+00:00"
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "92f8214f1d6c505d35c53c8930e77bac83e95ecf",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "engine_fingerprint": "f63c80b5400d4b14415c53e5034dfec8f292ff331e86785a6be5a04a9614ac31",
+ "params": {
+  "build_tetrises": 11.276062783045742,
+  "build_premature_clear": -1.2923964075008532,
+  "build_holes": -3.8736611116795414,
+  "build_aggregate_height": -0.3786423001541908,
+  "build_bumpiness": -0.6116473961319185,
+  "build_max_height": -1.0871378118557218,
+  "build_reserve": 7.099340928741832,
+  "build_overflow": -0.9204396578464832,
+  "spend_lines_cleared": 1.3668683628754859,
+  "spend_holes": -1.2687167246387228,
+  "spend_aggregate_height": -0.441362578547331,
+  "spend_bumpiness": -0.5543259311442118,
+  "spend_max_height": -0.8355097888135256,
+  "spend_row_transitions": -0.3097803977693202,
+  "spend_column_transitions": -1.6965352288609223,
+  "spend_edge_depth": -0.40362914426961755,
+  "height_budget": 9,
+  "survival_budget": 6,
+  "survival_level": 29,
+  "drought_bound": 9
+ },
+ "tuned_plan": {
+  "games": 300,
+  "lines": {
+   "mean": 332.8,
+   "median": 335.0,
+   "p5": 289.8,
+   "p10": 330.0,
+   "p90": 348.0
+  },
+  "score": {
+   "mean": 590202.5,
+   "median": 588990.0,
+   "p5": 445979.0,
+   "p10": 474984.0,
+   "p90": 691974.0
+  },
+  "top_out_pct": 100.0,
+  "reached_level_29_pct": 100.0,
+  "reached_level_39_pct": 92.7,
+  "reached_line_cap_pct": 0.0,
+  "frame_limit_stops": 0,
+  "adjust_switch_pct": 11.7,
+  "clear_sizes": {
+   "singles": 60846,
+   "doubles": 10431,
+   "triples": 2640,
+   "tetrises": 2556
+  },
+  "tetris_rate": 0.1024
+ },
+ "bench_plan_008": {
+  "games": 300,
+  "lines": {
+   "mean": 319.8,
+   "median": 331.0,
+   "p5": 242.8,
+   "p10": 268.8,
+   "p90": 346.1
+  },
+  "score": {
+   "mean": 411675.7,
+   "median": 423200.0,
+   "p5": 269518.0,
+   "p10": 307584.0,
+   "p90": 489314.0
+  },
+  "top_out_pct": 100.0,
+  "reached_level_29_pct": 97.0,
+  "reached_level_39_pct": 69.7,
+  "reached_line_cap_pct": 0.0,
+  "frame_limit_stops": 0,
+  "adjust_switch_pct": 13.0,
+  "clear_sizes": {
+   "singles": 72765,
+   "doubles": 7947,
+   "triples": 1396,
+   "tetrises": 775
+  },
+  "tetris_rate": 0.0323
+ },
+ "paired_score_difference": {
+  "mean": 178526.8,
+  "ci95_low": 165371.13333333333,
+  "ci95_high": 191224.8,
+  "resamples": 10000,
+  "rng_seed": 9
+ },
+ "paired_lines_difference": {
+  "mean": 13.016666666666667,
+  "ci95_low": 8.16,
+  "ci95_high": 17.906666666666666,
+  "resamples": 10000,
+  "rng_seed": 9
+ },
+ "paired_score_wins": {
+  "tuned_higher": 286,
+  "bench_higher": 14,
+  "equal": 0
+ },
+ "success_rule": "95% CI of the paired mean score difference entirely above 0",
+ "success": true,
+ "training_baseline": {
+  "mean_score": 391318.3333333333,
+  "mean_lines": 309.0
+ },
+ "episodes": [
+  {
+   "seed": 9103,
+   "lines": 338,
+   "score": 628180,
+   "frames": 45651,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 394980,
+   "level_39_score": 614580,
+   "final_state_hash": "d874b937881a2f77",
+   "pieces": 876,
+   "adjusts": 642,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 215,
+    "doubles": 32,
+    "triples": 9,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 2620,
+   "lines": 251,
+   "score": 621700,
+   "frames": 36376,
+   "stopping_reason": "game_over",
+   "level": 31,
+   "level_29_score": 595940,
+   "level_39_score": null,
+   "final_state_hash": "fc4901173b02ce8e",
+   "pieces": 666,
+   "adjusts": 593,
+   "switches": 117,
+   "clear_sizes": {
+    "singles": 109,
+    "doubles": 24,
+    "triples": 10,
+    "tetrises": 16
+   }
+  },
+  {
+   "seed": 21893,
+   "lines": 340,
+   "score": 539880,
+   "frames": 43911,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 352340,
+   "level_39_score": 516640,
+   "final_state_hash": "b360ccf264f51e06",
+   "pieces": 881,
+   "adjusts": 651,
+   "switches": 114,
+   "clear_sizes": {
+    "singles": 208,
+    "doubles": 41,
+    "triples": 10,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 36866,
+   "lines": 346,
+   "score": 555840,
+   "frames": 43839,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 365640,
+   "level_39_score": 527540,
+   "final_state_hash": "27cfde3f18e0369e",
+   "pieces": 894,
+   "adjusts": 628,
+   "switches": 112,
+   "clear_sizes": {
+    "singles": 216,
+    "doubles": 41,
+    "triples": 8,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 41612,
+   "lines": 333,
+   "score": 592900,
+   "frames": 44445,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 435220,
+   "level_39_score": 588100,
+   "final_state_hash": "022dac4d2954d349",
+   "pieces": 864,
+   "adjusts": 615,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 198,
+    "doubles": 41,
+    "triples": 7,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 33887,
+   "lines": 317,
+   "score": 592700,
+   "frames": 43589,
+   "stopping_reason": "game_over",
+   "level": 37,
+   "level_29_score": 461120,
+   "level_39_score": null,
+   "final_state_hash": "1ee515792465a4bb",
+   "pieces": 830,
+   "adjusts": 585,
+   "switches": 91,
+   "clear_sizes": {
+    "singles": 190,
+    "doubles": 24,
+    "triples": 13,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 39327,
+   "lines": 348,
+   "score": 556520,
+   "frames": 43241,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 375520,
+   "level_39_score": 526540,
+   "final_state_hash": "154f312103984832",
+   "pieces": 901,
+   "adjusts": 621,
+   "switches": 93,
+   "clear_sizes": {
+    "singles": 213,
+    "doubles": 39,
+    "triples": 11,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 27035,
+   "lines": 347,
+   "score": 673600,
+   "frames": 43613,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 440380,
+   "level_39_score": 642860,
+   "final_state_hash": "53b324405a18473a",
+   "pieces": 900,
+   "adjusts": 600,
+   "switches": 100,
+   "clear_sizes": {
+    "singles": 196,
+    "doubles": 39,
+    "triples": 11,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 4686,
+   "lines": 336,
+   "score": 608180,
+   "frames": 45523,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 431000,
+   "level_39_score": 598580,
+   "final_state_hash": "edda1583e7ab4162",
+   "pieces": 872,
+   "adjusts": 592,
+   "switches": 111,
+   "clear_sizes": {
+    "singles": 211,
+    "doubles": 32,
+    "triples": 7,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 2399,
+   "lines": 330,
+   "score": 584260,
+   "frames": 43149,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 419820,
+   "level_39_score": 584260,
+   "final_state_hash": "dcdef1d45c0edf1c",
+   "pieces": 858,
+   "adjusts": 618,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 190,
+    "doubles": 40,
+    "triples": 8,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 55105,
+   "lines": 333,
+   "score": 446140,
+   "frames": 44684,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 263020,
+   "level_39_score": 441340,
+   "final_state_hash": "3cb4c1696324b678",
+   "pieces": 863,
+   "adjusts": 643,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 222,
+    "doubles": 41,
+    "triples": 7,
+    "tetrises": 2
+   }
+  },
+  {
+   "seed": 10379,
+   "lines": 344,
+   "score": 468180,
+   "frames": 45177,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 295500,
+   "level_39_score": 445580,
+   "final_state_hash": "1f543919419e7a60",
+   "pieces": 893,
+   "adjusts": 588,
+   "switches": 87,
+   "clear_sizes": {
+    "singles": 250,
+    "doubles": 32,
+    "triples": 6,
+    "tetrises": 3
+   }
+  },
+  {
+   "seed": 10730,
+   "lines": 333,
+   "score": 509540,
+   "frames": 45374,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 360900,
+   "level_39_score": 504740,
+   "final_state_hash": "72e2dfd01139d5d5",
+   "pieces": 864,
+   "adjusts": 595,
+   "switches": 103,
+   "clear_sizes": {
+    "singles": 243,
+    "doubles": 24,
+    "triples": 6,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 57304,
+   "lines": 230,
+   "score": 586660,
+   "frames": 35262,
+   "stopping_reason": "game_over",
+   "level": 29,
+   "level_29_score": 586660,
+   "level_39_score": null,
+   "final_state_hash": "7c61909d8c079ed4",
+   "pieces": 612,
+   "adjusts": 592,
+   "switches": 115,
+   "clear_sizes": {
+    "singles": 102,
+    "doubles": 23,
+    "triples": 6,
+    "tetrises": 16
+   }
+  },
+  {
+   "seed": 34069,
+   "lines": 333,
+   "score": 505940,
+   "frames": 44967,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 316180,
+   "level_39_score": 504340,
+   "final_state_hash": "3eb0cf3e3bdc4016",
+   "pieces": 864,
+   "adjusts": 596,
+   "switches": 94,
+   "clear_sizes": {
+    "singles": 209,
+    "doubles": 40,
+    "triples": 8,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 23022,
+   "lines": 339,
+   "score": 682360,
+   "frames": 44034,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 472100,
+   "level_39_score": 667160,
+   "final_state_hash": "cc71e27335fd6016",
+   "pieces": 878,
+   "adjusts": 599,
+   "switches": 98,
+   "clear_sizes": {
+    "singles": 211,
+    "doubles": 27,
+    "triples": 10,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 20995,
+   "lines": 331,
+   "score": 582240,
+   "frames": 43637,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 419940,
+   "level_39_score": 580640,
+   "final_state_hash": "1fcbe24e1f006606",
+   "pieces": 861,
+   "adjusts": 599,
+   "switches": 118,
+   "clear_sizes": {
+    "singles": 199,
+    "doubles": 37,
+    "triples": 6,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 6624,
+   "lines": 359,
+   "score": 701700,
+   "frames": 45512,
+   "stopping_reason": "game_over",
+   "level": 41,
+   "level_29_score": 344340,
+   "level_39_score": 596660,
+   "final_state_hash": "23273e8ce39cd45b",
+   "pieces": 930,
+   "adjusts": 649,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 230,
+    "doubles": 30,
+    "triples": 11,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 19475,
+   "lines": 332,
+   "score": 560660,
+   "frames": 44343,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 360100,
+   "level_39_score": 557460,
+   "final_state_hash": "a889eeb93e4195c4",
+   "pieces": 860,
+   "adjusts": 627,
+   "switches": 102,
+   "clear_sizes": {
+    "singles": 192,
+    "doubles": 44,
+    "triples": 8,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 52399,
+   "lines": 331,
+   "score": 710640,
+   "frames": 43046,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 476500,
+   "level_39_score": 709040,
+   "final_state_hash": "c84fc0848db6a15a",
+   "pieces": 859,
+   "adjusts": 657,
+   "switches": 105,
+   "clear_sizes": {
+    "singles": 183,
+    "doubles": 34,
+    "triples": 8,
+    "tetrises": 14
+   }
+  },
+  {
+   "seed": 51681,
+   "lines": 335,
+   "score": 494720,
+   "frames": 44471,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 318020,
+   "level_39_score": 486720,
+   "final_state_hash": "26facc81e54d75b3",
+   "pieces": 869,
+   "adjusts": 599,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 214,
+    "doubles": 36,
+    "triples": 11,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 57526,
+   "lines": 332,
+   "score": 636360,
+   "frames": 44188,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 410640,
+   "level_39_score": 633160,
+   "final_state_hash": "07d0c9cc9e2d0e46",
+   "pieces": 862,
+   "adjusts": 593,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 206,
+    "doubles": 31,
+    "triples": 8,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 33606,
+   "lines": 343,
+   "score": 680280,
+   "frames": 44169,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 506760,
+   "level_39_score": 657720,
+   "final_state_hash": "c7a1d4f2639621b8",
+   "pieces": 893,
+   "adjusts": 605,
+   "switches": 103,
+   "clear_sizes": {
+    "singles": 201,
+    "doubles": 26,
+    "triples": 14,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 33834,
+   "lines": 343,
+   "score": 571720,
+   "frames": 44388,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 355420,
+   "level_39_score": 552360,
+   "final_state_hash": "4685a7aec6e9f68a",
+   "pieces": 892,
+   "adjusts": 614,
+   "switches": 91,
+   "clear_sizes": {
+    "singles": 210,
+    "doubles": 42,
+    "triples": 7,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 44308,
+   "lines": 335,
+   "score": 477040,
+   "frames": 44555,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 314860,
+   "level_39_score": 470640,
+   "final_state_hash": "e7f6ab400bc18884",
+   "pieces": 870,
+   "adjusts": 670,
+   "switches": 89,
+   "clear_sizes": {
+    "singles": 213,
+    "doubles": 44,
+    "triples": 6,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 17451,
+   "lines": 343,
+   "score": 495280,
+   "frames": 43944,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 323920,
+   "level_39_score": 473500,
+   "final_state_hash": "43f9f3891e339dcf",
+   "pieces": 889,
+   "adjusts": 609,
+   "switches": 113,
+   "clear_sizes": {
+    "singles": 225,
+    "doubles": 42,
+    "triples": 6,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 2882,
+   "lines": 334,
+   "score": 688820,
+   "frames": 43035,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 531140,
+   "level_39_score": 681620,
+   "final_state_hash": "90a4c8740b405ae4",
+   "pieces": 867,
+   "adjusts": 583,
+   "switches": 98,
+   "clear_sizes": {
+    "singles": 193,
+    "doubles": 32,
+    "triples": 7,
+    "tetrises": 14
+   }
+  },
+  {
+   "seed": 58924,
+   "lines": 255,
+   "score": 524900,
+   "frames": 36622,
+   "stopping_reason": "game_over",
+   "level": 31,
+   "level_29_score": 493340,
+   "level_39_score": null,
+   "final_state_hash": "40c1b3216983a6b6",
+   "pieces": 674,
+   "adjusts": 590,
+   "switches": 114,
+   "clear_sizes": {
+    "singles": 125,
+    "doubles": 34,
+    "triples": 6,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 64792,
+   "lines": 335,
+   "score": 560580,
+   "frames": 42853,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 409020,
+   "level_39_score": 552580,
+   "final_state_hash": "291560ea17c78d1d",
+   "pieces": 868,
+   "adjusts": 624,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 215,
+    "doubles": 35,
+    "triples": 6,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 30819,
+   "lines": 290,
+   "score": 479060,
+   "frames": 40753,
+   "stopping_reason": "game_over",
+   "level": 35,
+   "level_29_score": 363900,
+   "level_39_score": null,
+   "final_state_hash": "05fec697e340bcf9",
+   "pieces": 765,
+   "adjusts": 599,
+   "switches": 102,
+   "clear_sizes": {
+    "singles": 181,
+    "doubles": 33,
+    "triples": 5,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 6937,
+   "lines": 337,
+   "score": 532520,
+   "frames": 43759,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 376540,
+   "level_39_score": 520520,
+   "final_state_hash": "55885c9a1b22accd",
+   "pieces": 875,
+   "adjusts": 614,
+   "switches": 108,
+   "clear_sizes": {
+    "singles": 210,
+    "doubles": 39,
+    "triples": 7,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 1223,
+   "lines": 331,
+   "score": 740420,
+   "frames": 43046,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 562140,
+   "level_39_score": 738820,
+   "final_state_hash": "b2800cd1aaa1de92",
+   "pieces": 861,
+   "adjusts": 587,
+   "switches": 98,
+   "clear_sizes": {
+    "singles": 190,
+    "doubles": 25,
+    "triples": 9,
+    "tetrises": 16
+   }
+  },
+  {
+   "seed": 19544,
+   "lines": 340,
+   "score": 571080,
+   "frames": 43906,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 358080,
+   "level_39_score": 553440,
+   "final_state_hash": "a642daab6ddc9be4",
+   "pieces": 881,
+   "adjusts": 614,
+   "switches": 81,
+   "clear_sizes": {
+    "singles": 229,
+    "doubles": 31,
+    "triples": 7,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 24413,
+   "lines": 331,
+   "score": 618540,
+   "frames": 44094,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 462080,
+   "level_39_score": 616940,
+   "final_state_hash": "22b21e02717f9d1f",
+   "pieces": 859,
+   "adjusts": 585,
+   "switches": 108,
+   "clear_sizes": {
+    "singles": 199,
+    "doubles": 31,
+    "triples": 10,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 43037,
+   "lines": 339,
+   "score": 597240,
+   "frames": 46006,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 430720,
+   "level_39_score": 582840,
+   "final_state_hash": "8a7f05b50415a044",
+   "pieces": 878,
+   "adjusts": 612,
+   "switches": 91,
+   "clear_sizes": {
+    "singles": 228,
+    "doubles": 32,
+    "triples": 5,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 28415,
+   "lines": 330,
+   "score": 645100,
+   "frames": 43519,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 493000,
+   "level_39_score": 645100,
+   "final_state_hash": "ba015d0d2863f7bf",
+   "pieces": 858,
+   "adjusts": 663,
+   "switches": 113,
+   "clear_sizes": {
+    "singles": 188,
+    "doubles": 29,
+    "triples": 12,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 17629,
+   "lines": 336,
+   "score": 549500,
+   "frames": 44232,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 354340,
+   "level_39_score": 539100,
+   "final_state_hash": "97f9e47cdaaed563",
+   "pieces": 870,
+   "adjusts": 607,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 200,
+    "doubles": 41,
+    "triples": 10,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 2003,
+   "lines": 349,
+   "score": 934580,
+   "frames": 43881,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 674040,
+   "level_39_score": 894900,
+   "final_state_hash": "39f9d2300fb94b37",
+   "pieces": 906,
+   "adjusts": 665,
+   "switches": 108,
+   "clear_sizes": {
+    "singles": 170,
+    "doubles": 33,
+    "triples": 11,
+    "tetrises": 20
+   }
+  },
+  {
+   "seed": 32961,
+   "lines": 255,
+   "score": 405200,
+   "frames": 35653,
+   "stopping_reason": "game_over",
+   "level": 31,
+   "level_29_score": 373100,
+   "level_39_score": null,
+   "final_state_hash": "98eb02e47a010972",
+   "pieces": 675,
+   "adjusts": 589,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 153,
+    "doubles": 28,
+    "triples": 6,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 7964,
+   "lines": 339,
+   "score": 447140,
+   "frames": 45162,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 280280,
+   "level_39_score": 425540,
+   "final_state_hash": "b0c6c40c5f17eb4f",
+   "pieces": 880,
+   "adjusts": 639,
+   "switches": 107,
+   "clear_sizes": {
+    "singles": 243,
+    "doubles": 36,
+    "triples": 4,
+    "tetrises": 3
+   }
+  },
+  {
+   "seed": 29058,
+   "lines": 341,
+   "score": 527640,
+   "frames": 44836,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 352100,
+   "level_39_score": 509160,
+   "final_state_hash": "c6a2927d6d46e64f",
+   "pieces": 883,
+   "adjusts": 616,
+   "switches": 116,
+   "clear_sizes": {
+    "singles": 219,
+    "doubles": 33,
+    "triples": 12,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 4793,
+   "lines": 331,
+   "score": 644300,
+   "frames": 42953,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 496800,
+   "level_39_score": 642700,
+   "final_state_hash": "4020453d08a65c98",
+   "pieces": 856,
+   "adjusts": 606,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 194,
+    "doubles": 34,
+    "triples": 7,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 37931,
+   "lines": 341,
+   "score": 721620,
+   "frames": 44315,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 546460,
+   "level_39_score": 703140,
+   "final_state_hash": "82ede9e1d5e22c93",
+   "pieces": 884,
+   "adjusts": 608,
+   "switches": 96,
+   "clear_sizes": {
+    "singles": 197,
+    "doubles": 31,
+    "triples": 10,
+    "tetrises": 13
+   }
+  },
+  {
+   "seed": 24658,
+   "lines": 331,
+   "score": 777320,
+   "frames": 42881,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 618300,
+   "level_39_score": 775720,
+   "final_state_hash": "d6455afc71db9950",
+   "pieces": 861,
+   "adjusts": 597,
+   "switches": 100,
+   "clear_sizes": {
+    "singles": 168,
+    "doubles": 34,
+    "triples": 9,
+    "tetrises": 17
+   }
+  },
+  {
+   "seed": 47189,
+   "lines": 332,
+   "score": 542840,
+   "frames": 43662,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 386840,
+   "level_39_score": 539640,
+   "final_state_hash": "96d7c4f2860de73a",
+   "pieces": 862,
+   "adjusts": 607,
+   "switches": 105,
+   "clear_sizes": {
+    "singles": 193,
+    "doubles": 41,
+    "triples": 11,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 10482,
+   "lines": 342,
+   "score": 682120,
+   "frames": 43910,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 477980,
+   "level_39_score": 657200,
+   "final_state_hash": "4fc093339f8397d2",
+   "pieces": 888,
+   "adjusts": 606,
+   "switches": 94,
+   "clear_sizes": {
+    "singles": 179,
+    "doubles": 40,
+    "triples": 13,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 3163,
+   "lines": 330,
+   "score": 602120,
+   "frames": 43876,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 449020,
+   "level_39_score": 602120,
+   "final_state_hash": "686588936192116b",
+   "pieces": 859,
+   "adjusts": 606,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 190,
+    "doubles": 35,
+    "triples": 10,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 29292,
+   "lines": 334,
+   "score": 543460,
+   "frames": 42293,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 351020,
+   "level_39_score": 537060,
+   "final_state_hash": "5c408bfb48c645ba",
+   "pieces": 870,
+   "adjusts": 559,
+   "switches": 71,
+   "clear_sizes": {
+    "singles": 209,
+    "doubles": 38,
+    "triples": 7,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 50337,
+   "lines": 356,
+   "score": 609660,
+   "frames": 45606,
+   "stopping_reason": "game_over",
+   "level": 41,
+   "level_29_score": 392080,
+   "level_39_score": 560680,
+   "final_state_hash": "32048414b2751a05",
+   "pieces": 921,
+   "adjusts": 649,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 201,
+    "doubles": 47,
+    "triples": 11,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 54803,
+   "lines": 336,
+   "score": 498940,
+   "frames": 44050,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 289040,
+   "level_39_score": 489340,
+   "final_state_hash": "9e7074a697b08d93",
+   "pieces": 873,
+   "adjusts": 594,
+   "switches": 102,
+   "clear_sizes": {
+    "singles": 215,
+    "doubles": 42,
+    "triples": 7,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 22817,
+   "lines": 330,
+   "score": 440860,
+   "frames": 44931,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 287280,
+   "level_39_score": 440860,
+   "final_state_hash": "ffafc112ae5fbdcc",
+   "pieces": 857,
+   "adjusts": 623,
+   "switches": 106,
+   "clear_sizes": {
+    "singles": 237,
+    "doubles": 30,
+    "triples": 7,
+    "tetrises": 3
+   }
+  },
+  {
+   "seed": 47751,
+   "lines": 277,
+   "score": 442920,
+   "frames": 38751,
+   "stopping_reason": "game_over",
+   "level": 33,
+   "level_29_score": 379600,
+   "level_39_score": null,
+   "final_state_hash": "98ebce8943ce770f",
+   "pieces": 732,
+   "adjusts": 584,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 167,
+    "doubles": 28,
+    "triples": 10,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 16245,
+   "lines": 332,
+   "score": 586200,
+   "frames": 43942,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 427380,
+   "level_39_score": 584600,
+   "final_state_hash": "3ac986b2adb9fabe",
+   "pieces": 861,
+   "adjusts": 621,
+   "switches": 112,
+   "clear_sizes": {
+    "singles": 204,
+    "doubles": 33,
+    "triples": 10,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 33051,
+   "lines": 332,
+   "score": 574740,
+   "frames": 42719,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 386880,
+   "level_39_score": 570740,
+   "final_state_hash": "064b01a0e736a0b6",
+   "pieces": 862,
+   "adjusts": 614,
+   "switches": 88,
+   "clear_sizes": {
+    "singles": 213,
+    "doubles": 27,
+    "triples": 11,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 34864,
+   "lines": 335,
+   "score": 588580,
+   "frames": 43979,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 423600,
+   "level_39_score": 579780,
+   "final_state_hash": "fb5a41ee6521222d",
+   "pieces": 869,
+   "adjusts": 632,
+   "switches": 115,
+   "clear_sizes": {
+    "singles": 198,
+    "doubles": 37,
+    "triples": 9,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 25261,
+   "lines": 335,
+   "score": 638560,
+   "frames": 43499,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 483100,
+   "level_39_score": 632160,
+   "final_state_hash": "a30144b241b31754",
+   "pieces": 871,
+   "adjusts": 588,
+   "switches": 109,
+   "clear_sizes": {
+    "singles": 195,
+    "doubles": 42,
+    "triples": 4,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 11999,
+   "lines": 333,
+   "score": 630440,
+   "frames": 43769,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 442900,
+   "level_39_score": 625640,
+   "final_state_hash": "5554294b143f980d",
+   "pieces": 864,
+   "adjusts": 593,
+   "switches": 103,
+   "clear_sizes": {
+    "singles": 219,
+    "doubles": 29,
+    "triples": 4,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 36457,
+   "lines": 347,
+   "score": 655900,
+   "frames": 44587,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 440200,
+   "level_39_score": 626740,
+   "final_state_hash": "02e9a947223ad853",
+   "pieces": 899,
+   "adjusts": 619,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 210,
+    "doubles": 36,
+    "triples": 7,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 56181,
+   "lines": 331,
+   "score": 661900,
+   "frames": 42756,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 460740,
+   "level_39_score": 660300,
+   "final_state_hash": "fdf70c04f4daeb11",
+   "pieces": 858,
+   "adjusts": 626,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 170,
+    "doubles": 39,
+    "triples": 13,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 7062,
+   "lines": 333,
+   "score": 525340,
+   "frames": 43850,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 377340,
+   "level_39_score": 520540,
+   "final_state_hash": "fedf5c4600c28e4e",
+   "pieces": 863,
+   "adjusts": 590,
+   "switches": 107,
+   "clear_sizes": {
+    "singles": 221,
+    "doubles": 32,
+    "triples": 8,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 27491,
+   "lines": 338,
+   "score": 735280,
+   "frames": 42550,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 525660,
+   "level_39_score": 722480,
+   "final_state_hash": "461f3b55d7810d67",
+   "pieces": 879,
+   "adjusts": 596,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 190,
+    "doubles": 31,
+    "triples": 10,
+    "tetrises": 14
+   }
+  },
+  {
+   "seed": 63135,
+   "lines": 339,
+   "score": 510420,
+   "frames": 44743,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 348860,
+   "level_39_score": 496020,
+   "final_state_hash": "8db49683f0080e32",
+   "pieces": 881,
+   "adjusts": 657,
+   "switches": 94,
+   "clear_sizes": {
+    "singles": 236,
+    "doubles": 30,
+    "triples": 9,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 6196,
+   "lines": 331,
+   "score": 623580,
+   "frames": 44116,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 425340,
+   "level_39_score": 623580,
+   "final_state_hash": "7975d0d33537d132",
+   "pieces": 860,
+   "adjusts": 593,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 196,
+    "doubles": 36,
+    "triples": 9,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 32345,
+   "lines": 336,
+   "score": 667420,
+   "frames": 42951,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 489120,
+   "level_39_score": 659420,
+   "final_state_hash": "e9da2b7a2a0874fb",
+   "pieces": 872,
+   "adjusts": 644,
+   "switches": 96,
+   "clear_sizes": {
+    "singles": 196,
+    "doubles": 33,
+    "triples": 10,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 18198,
+   "lines": 344,
+   "score": 501880,
+   "frames": 42881,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 323320,
+   "level_39_score": 479280,
+   "final_state_hash": "f6a6a57b9dee954f",
+   "pieces": 894,
+   "adjusts": 608,
+   "switches": 79,
+   "clear_sizes": {
+    "singles": 227,
+    "doubles": 34,
+    "triples": 11,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 48625,
+   "lines": 341,
+   "score": 816980,
+   "frames": 42848,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 606960,
+   "level_39_score": 797700,
+   "final_state_hash": "f12120ac41b373aa",
+   "pieces": 886,
+   "adjusts": 608,
+   "switches": 106,
+   "clear_sizes": {
+    "singles": 154,
+    "doubles": 45,
+    "triples": 11,
+    "tetrises": 16
+   }
+  },
+  {
+   "seed": 18266,
+   "lines": 331,
+   "score": 523980,
+   "frames": 44502,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 361920,
+   "level_39_score": 522380,
+   "final_state_hash": "3635408312eee9ad",
+   "pieces": 861,
+   "adjusts": 655,
+   "switches": 86,
+   "clear_sizes": {
+    "singles": 219,
+    "doubles": 31,
+    "triples": 10,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 31473,
+   "lines": 332,
+   "score": 669120,
+   "frames": 42205,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 512880,
+   "level_39_score": 665920,
+   "final_state_hash": "23db198f004e863a",
+   "pieces": 864,
+   "adjusts": 627,
+   "switches": 98,
+   "clear_sizes": {
+    "singles": 178,
+    "doubles": 41,
+    "triples": 8,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 38041,
+   "lines": 333,
+   "score": 676180,
+   "frames": 43665,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 441100,
+   "level_39_score": 671380,
+   "final_state_hash": "9bb46ad16d5c4915",
+   "pieces": 865,
+   "adjusts": 616,
+   "switches": 96,
+   "clear_sizes": {
+    "singles": 207,
+    "doubles": 29,
+    "triples": 8,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 35472,
+   "lines": 362,
+   "score": 641920,
+   "frames": 47124,
+   "stopping_reason": "game_over",
+   "level": 42,
+   "level_29_score": 415800,
+   "level_39_score": 577500,
+   "final_state_hash": "75ef5e4bd26f0ab2",
+   "pieces": 937,
+   "adjusts": 608,
+   "switches": 85,
+   "clear_sizes": {
+    "singles": 210,
+    "doubles": 46,
+    "triples": 8,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 11124,
+   "lines": 338,
+   "score": 480520,
+   "frames": 45741,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 316740,
+   "level_39_score": 467720,
+   "final_state_hash": "db0162bdf2a1847d",
+   "pieces": 874,
+   "adjusts": 635,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 225,
+    "doubles": 38,
+    "triples": 7,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 4446,
+   "lines": 332,
+   "score": 687240,
+   "frames": 43061,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 494340,
+   "level_39_score": 684040,
+   "final_state_hash": "6080139fc59593c9",
+   "pieces": 864,
+   "adjusts": 603,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 182,
+    "doubles": 36,
+    "triples": 10,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 18592,
+   "lines": 330,
+   "score": 768080,
+   "frames": 43908,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 610960,
+   "level_39_score": 768080,
+   "final_state_hash": "3cd5445ed1fcc82b",
+   "pieces": 856,
+   "adjusts": 607,
+   "switches": 105,
+   "clear_sizes": {
+    "singles": 174,
+    "doubles": 31,
+    "triples": 10,
+    "tetrises": 16
+   }
+  },
+  {
+   "seed": 59382,
+   "lines": 335,
+   "score": 530960,
+   "frames": 45131,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 318980,
+   "level_39_score": 522960,
+   "final_state_hash": "99b1ace2d070f1c8",
+   "pieces": 870,
+   "adjusts": 583,
+   "switches": 89,
+   "clear_sizes": {
+    "singles": 230,
+    "doubles": 35,
+    "triples": 5,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 18470,
+   "lines": 336,
+   "score": 599440,
+   "frames": 43116,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 421520,
+   "level_39_score": 593040,
+   "final_state_hash": "3bc784f33920bec7",
+   "pieces": 871,
+   "adjusts": 625,
+   "switches": 94,
+   "clear_sizes": {
+    "singles": 181,
+    "doubles": 43,
+    "triples": 11,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 21274,
+   "lines": 259,
+   "score": 459600,
+   "frames": 37352,
+   "stopping_reason": "game_over",
+   "level": 31,
+   "level_29_score": 423600,
+   "level_39_score": null,
+   "final_state_hash": "944d13021f7ed819",
+   "pieces": 687,
+   "adjusts": 590,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 166,
+    "doubles": 20,
+    "triples": 7,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 22322,
+   "lines": 337,
+   "score": 648440,
+   "frames": 43096,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 457680,
+   "level_39_score": 636440,
+   "final_state_hash": "40ed679d7bd4d206",
+   "pieces": 875,
+   "adjusts": 597,
+   "switches": 107,
+   "clear_sizes": {
+    "singles": 196,
+    "doubles": 40,
+    "triples": 3,
+    "tetrises": 13
+   }
+  },
+  {
+   "seed": 6782,
+   "lines": 326,
+   "score": 462080,
+   "frames": 42849,
+   "stopping_reason": "game_over",
+   "level": 38,
+   "level_29_score": 313160,
+   "level_39_score": null,
+   "final_state_hash": "2f8cd09d2a57a9ed",
+   "pieces": 851,
+   "adjusts": 631,
+   "switches": 93,
+   "clear_sizes": {
+    "singles": 210,
+    "doubles": 38,
+    "triples": 8,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 52754,
+   "lines": 331,
+   "score": 462280,
+   "frames": 42510,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 296420,
+   "level_39_score": 460680,
+   "final_state_hash": "dec5f9b505b57420",
+   "pieces": 860,
+   "adjusts": 608,
+   "switches": 85,
+   "clear_sizes": {
+    "singles": 220,
+    "doubles": 33,
+    "triples": 11,
+    "tetrises": 3
+   }
+  },
+  {
+   "seed": 17084,
+   "lines": 332,
+   "score": 691920,
+   "frames": 43590,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 537180,
+   "level_39_score": 688720,
+   "final_state_hash": "286cd9fdd44ad7b1",
+   "pieces": 865,
+   "adjusts": 623,
+   "switches": 84,
+   "clear_sizes": {
+    "singles": 182,
+    "doubles": 37,
+    "triples": 8,
+    "tetrises": 13
+   }
+  },
+  {
+   "seed": 33118,
+   "lines": 335,
+   "score": 466980,
+   "frames": 43753,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 308600,
+   "level_39_score": 458980,
+   "final_state_hash": "241286fa7aef5d31",
+   "pieces": 869,
+   "adjusts": 582,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 236,
+    "doubles": 31,
+    "triples": 7,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 58549,
+   "lines": 345,
+   "score": 777220,
+   "frames": 44107,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 596220,
+   "level_39_score": 752980,
+   "final_state_hash": "9ed9f6ac38849d72",
+   "pieces": 895,
+   "adjusts": 611,
+   "switches": 86,
+   "clear_sizes": {
+    "singles": 186,
+    "doubles": 25,
+    "triples": 15,
+    "tetrises": 16
+   }
+  },
+  {
+   "seed": 43364,
+   "lines": 330,
+   "score": 505080,
+   "frames": 41987,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 312460,
+   "level_39_score": 505080,
+   "final_state_hash": "b57e84620f66c54f",
+   "pieces": 858,
+   "adjusts": 630,
+   "switches": 100,
+   "clear_sizes": {
+    "singles": 213,
+    "doubles": 35,
+    "triples": 9,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 18182,
+   "lines": 339,
+   "score": 511400,
+   "frames": 44856,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 349380,
+   "level_39_score": 496200,
+   "final_state_hash": "e730de6333bb6aef",
+   "pieces": 879,
+   "adjusts": 603,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 228,
+    "doubles": 33,
+    "triples": 7,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 50121,
+   "lines": 331,
+   "score": 576400,
+   "frames": 43002,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 386420,
+   "level_39_score": 574800,
+   "final_state_hash": "3e50bdf58b4695c1",
+   "pieces": 860,
+   "adjusts": 669,
+   "switches": 103,
+   "clear_sizes": {
+    "singles": 195,
+    "doubles": 40,
+    "triples": 8,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 35227,
+   "lines": 332,
+   "score": 605560,
+   "frames": 43448,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 459880,
+   "level_39_score": 602360,
+   "final_state_hash": "3de931f34b4f78a0",
+   "pieces": 863,
+   "adjusts": 611,
+   "switches": 103,
+   "clear_sizes": {
+    "singles": 199,
+    "doubles": 38,
+    "triples": 7,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 34074,
+   "lines": 332,
+   "score": 554760,
+   "frames": 43300,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 384400,
+   "level_39_score": 551560,
+   "final_state_hash": "4ce5c02bacdcdedc",
+   "pieces": 860,
+   "adjusts": 633,
+   "switches": 109,
+   "clear_sizes": {
+    "singles": 219,
+    "doubles": 26,
+    "triples": 11,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 50061,
+   "lines": 342,
+   "score": 641200,
+   "frames": 43867,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 466680,
+   "level_39_score": 621880,
+   "final_state_hash": "861941bef564bc77",
+   "pieces": 887,
+   "adjusts": 628,
+   "switches": 117,
+   "clear_sizes": {
+    "singles": 208,
+    "doubles": 36,
+    "triples": 6,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 39233,
+   "lines": 343,
+   "score": 505760,
+   "frames": 45482,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 333920,
+   "level_39_score": 484000,
+   "final_state_hash": "d89a89caba267ab7",
+   "pieces": 888,
+   "adjusts": 609,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 207,
+    "doubles": 45,
+    "triples": 10,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 10832,
+   "lines": 339,
+   "score": 614740,
+   "frames": 44657,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 371660,
+   "level_39_score": 593140,
+   "final_state_hash": "b9d07f90af9a5135",
+   "pieces": 880,
+   "adjusts": 645,
+   "switches": 96,
+   "clear_sizes": {
+    "singles": 202,
+    "doubles": 43,
+    "triples": 5,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 48712,
+   "lines": 331,
+   "score": 536400,
+   "frames": 44381,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 322860,
+   "level_39_score": 536400,
+   "final_state_hash": "8dfc74cbcb8806d0",
+   "pieces": 861,
+   "adjusts": 622,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 222,
+    "doubles": 33,
+    "triples": 5,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 606,
+   "lines": 335,
+   "score": 534360,
+   "frames": 43696,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 331480,
+   "level_39_score": 527960,
+   "final_state_hash": "79c6f92ca5071596",
+   "pieces": 869,
+   "adjusts": 611,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 200,
+    "doubles": 45,
+    "triples": 7,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 29672,
+   "lines": 330,
+   "score": 606560,
+   "frames": 42799,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 455720,
+   "level_39_score": 606560,
+   "final_state_hash": "29376c2184ef9c8e",
+   "pieces": 858,
+   "adjusts": 595,
+   "switches": 98,
+   "clear_sizes": {
+    "singles": 178,
+    "doubles": 38,
+    "triples": 12,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 33061,
+   "lines": 346,
+   "score": 633440,
+   "frames": 43352,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 418660,
+   "level_39_score": 606740,
+   "final_state_hash": "d56bed59904c9268",
+   "pieces": 899,
+   "adjusts": 614,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 210,
+    "doubles": 36,
+    "triples": 8,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 8803,
+   "lines": 331,
+   "score": 525400,
+   "frames": 43773,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 371980,
+   "level_39_score": 523800,
+   "final_state_hash": "bb3f881fada8ea02",
+   "pieces": 857,
+   "adjusts": 629,
+   "switches": 113,
+   "clear_sizes": {
+    "singles": 199,
+    "doubles": 42,
+    "triples": 8,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 51796,
+   "lines": 276,
+   "score": 433180,
+   "frames": 38999,
+   "stopping_reason": "game_over",
+   "level": 33,
+   "level_29_score": 371220,
+   "level_39_score": null,
+   "final_state_hash": "76cc0070b006cf2e",
+   "pieces": 730,
+   "adjusts": 589,
+   "switches": 85,
+   "clear_sizes": {
+    "singles": 183,
+    "doubles": 24,
+    "triples": 7,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 29897,
+   "lines": 335,
+   "score": 604660,
+   "frames": 45238,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 443140,
+   "level_39_score": 596660,
+   "final_state_hash": "863dba7aab51ad04",
+   "pieces": 872,
+   "adjusts": 592,
+   "switches": 82,
+   "clear_sizes": {
+    "singles": 207,
+    "doubles": 34,
+    "triples": 8,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 39222,
+   "lines": 330,
+   "score": 712900,
+   "frames": 42146,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 462680,
+   "level_39_score": 712900,
+   "final_state_hash": "bc3916b07e729d79",
+   "pieces": 856,
+   "adjusts": 617,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 189,
+    "doubles": 29,
+    "triples": 9,
+    "tetrises": 14
+   }
+  },
+  {
+   "seed": 36788,
+   "lines": 332,
+   "score": 641340,
+   "frames": 42906,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 401260,
+   "level_39_score": 638140,
+   "final_state_hash": "198843fc541270ae",
+   "pieces": 862,
+   "adjusts": 627,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 187,
+    "doubles": 40,
+    "triples": 7,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 52607,
+   "lines": 299,
+   "score": 504640,
+   "frames": 41929,
+   "stopping_reason": "game_over",
+   "level": 35,
+   "level_29_score": 412420,
+   "level_39_score": null,
+   "final_state_hash": "14f447ee81819c8b",
+   "pieces": 788,
+   "adjusts": 601,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 184,
+    "doubles": 33,
+    "triples": 7,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 26238,
+   "lines": 335,
+   "score": 560780,
+   "frames": 44227,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 351780,
+   "level_39_score": 552780,
+   "final_state_hash": "1bf8b746ecca2665",
+   "pieces": 870,
+   "adjusts": 614,
+   "switches": 114,
+   "clear_sizes": {
+    "singles": 210,
+    "doubles": 38,
+    "triples": 7,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 46832,
+   "lines": 330,
+   "score": 584060,
+   "frames": 42584,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 431300,
+   "level_39_score": 584060,
+   "final_state_hash": "ba519d726acd32ff",
+   "pieces": 856,
+   "adjusts": 591,
+   "switches": 98,
+   "clear_sizes": {
+    "singles": 201,
+    "doubles": 29,
+    "triples": 13,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 27534,
+   "lines": 339,
+   "score": 527800,
+   "frames": 43648,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 367140,
+   "level_39_score": 511800,
+   "final_state_hash": "f8d37718bd29286b",
+   "pieces": 881,
+   "adjusts": 584,
+   "switches": 90,
+   "clear_sizes": {
+    "singles": 223,
+    "doubles": 37,
+    "triples": 6,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 45079,
+   "lines": 335,
+   "score": 541560,
+   "frames": 43763,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 376980,
+   "level_39_score": 533560,
+   "final_state_hash": "11268df382d99203",
+   "pieces": 870,
+   "adjusts": 660,
+   "switches": 102,
+   "clear_sizes": {
+    "singles": 189,
+    "doubles": 46,
+    "triples": 10,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 57837,
+   "lines": 336,
+   "score": 548680,
+   "frames": 43010,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 390720,
+   "level_39_score": 538280,
+   "final_state_hash": "6e453f70014b2179",
+   "pieces": 873,
+   "adjusts": 580,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 214,
+    "doubles": 32,
+    "triples": 10,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 39732,
+   "lines": 331,
+   "score": 698820,
+   "frames": 43968,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 540980,
+   "level_39_score": 698820,
+   "final_state_hash": "5f3a13c737d51226",
+   "pieces": 861,
+   "adjusts": 667,
+   "switches": 117,
+   "clear_sizes": {
+    "singles": 180,
+    "doubles": 27,
+    "triples": 15,
+    "tetrises": 13
+   }
+  },
+  {
+   "seed": 52063,
+   "lines": 330,
+   "score": 531440,
+   "frames": 44848,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 385560,
+   "level_39_score": 531440,
+   "final_state_hash": "0f1ecb725a80e206",
+   "pieces": 858,
+   "adjusts": 587,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 207,
+    "doubles": 39,
+    "triples": 7,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 34490,
+   "lines": 332,
+   "score": 801580,
+   "frames": 42829,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 641200,
+   "level_39_score": 798380,
+   "final_state_hash": "de0451efde357a2b",
+   "pieces": 862,
+   "adjusts": 590,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 180,
+    "doubles": 22,
+    "triples": 12,
+    "tetrises": 18
+   }
+  },
+  {
+   "seed": 54589,
+   "lines": 334,
+   "score": 636300,
+   "frames": 45026,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 475640,
+   "level_39_score": 629900,
+   "final_state_hash": "465db9d6b6d80419",
+   "pieces": 867,
+   "adjusts": 732,
+   "switches": 94,
+   "clear_sizes": {
+    "singles": 197,
+    "doubles": 35,
+    "triples": 9,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 2309,
+   "lines": 330,
+   "score": 551720,
+   "frames": 45015,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 348960,
+   "level_39_score": 551720,
+   "final_state_hash": "b241c90c131bae6f",
+   "pieces": 856,
+   "adjusts": 651,
+   "switches": 100,
+   "clear_sizes": {
+    "singles": 218,
+    "doubles": 32,
+    "triples": 8,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 5781,
+   "lines": 335,
+   "score": 642820,
+   "frames": 44941,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 449600,
+   "level_39_score": 634820,
+   "final_state_hash": "a79bdc0833af55a4",
+   "pieces": 868,
+   "adjusts": 605,
+   "switches": 102,
+   "clear_sizes": {
+    "singles": 208,
+    "doubles": 33,
+    "triples": 7,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 39389,
+   "lines": 363,
+   "score": 611500,
+   "frames": 44869,
+   "stopping_reason": "game_over",
+   "level": 42,
+   "level_29_score": 347440,
+   "level_39_score": 541440,
+   "final_state_hash": "2a511007b5869928",
+   "pieces": 940,
+   "adjusts": 617,
+   "switches": 91,
+   "clear_sizes": {
+    "singles": 231,
+    "doubles": 36,
+    "triples": 12,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 33619,
+   "lines": 331,
+   "score": 668040,
+   "frames": 42660,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 522080,
+   "level_39_score": 666440,
+   "final_state_hash": "304900d84a8cfac4",
+   "pieces": 859,
+   "adjusts": 668,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 195,
+    "doubles": 32,
+    "triples": 8,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 22270,
+   "lines": 345,
+   "score": 446380,
+   "frames": 45426,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 272920,
+   "level_39_score": 422140,
+   "final_state_hash": "af13d34250a3debc",
+   "pieces": 896,
+   "adjusts": 607,
+   "switches": 94,
+   "clear_sizes": {
+    "singles": 245,
+    "doubles": 33,
+    "triples": 10,
+    "tetrises": 1
+   }
+  },
+  {
+   "seed": 63361,
+   "lines": 336,
+   "score": 618800,
+   "frames": 42531,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 438060,
+   "level_39_score": 609200,
+   "final_state_hash": "3712a8ae489f25ef",
+   "pieces": 875,
+   "adjusts": 655,
+   "switches": 107,
+   "clear_sizes": {
+    "singles": 201,
+    "doubles": 37,
+    "triples": 7,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 19580,
+   "lines": 330,
+   "score": 662140,
+   "frames": 43329,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 469440,
+   "level_39_score": 662140,
+   "final_state_hash": "fcfb222bb34d89a4",
+   "pieces": 858,
+   "adjusts": 640,
+   "switches": 91,
+   "clear_sizes": {
+    "singles": 197,
+    "doubles": 25,
+    "triples": 13,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 54672,
+   "lines": 332,
+   "score": 577100,
+   "frames": 43654,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 396060,
+   "level_39_score": 573900,
+   "final_state_hash": "584d236e98adc637",
+   "pieces": 859,
+   "adjusts": 608,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 196,
+    "doubles": 34,
+    "triples": 12,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 47431,
+   "lines": 336,
+   "score": 604540,
+   "frames": 42296,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 393420,
+   "level_39_score": 594940,
+   "final_state_hash": "24c210b09dbde2f2",
+   "pieces": 873,
+   "adjusts": 606,
+   "switches": 107,
+   "clear_sizes": {
+    "singles": 197,
+    "doubles": 30,
+    "triples": 17,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 37659,
+   "lines": 341,
+   "score": 682860,
+   "frames": 43099,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 520360,
+   "level_39_score": 663580,
+   "final_state_hash": "fec94bd5f1e3324d",
+   "pieces": 883,
+   "adjusts": 609,
+   "switches": 111,
+   "clear_sizes": {
+    "singles": 189,
+    "doubles": 31,
+    "triples": 14,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 49673,
+   "lines": 334,
+   "score": 462200,
+   "frames": 45017,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 306880,
+   "level_39_score": 455800,
+   "final_state_hash": "208a6ad578b0646a",
+   "pieces": 867,
+   "adjusts": 582,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 230,
+    "doubles": 35,
+    "triples": 6,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 46372,
+   "lines": 344,
+   "score": 596340,
+   "frames": 45177,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 412920,
+   "level_39_score": 572940,
+   "final_state_hash": "5b2c92c2c8f7dc40",
+   "pieces": 894,
+   "adjusts": 626,
+   "switches": 100,
+   "clear_sizes": {
+    "singles": 200,
+    "doubles": 42,
+    "triples": 8,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 2108,
+   "lines": 333,
+   "score": 645960,
+   "frames": 43067,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 482880,
+   "level_39_score": 641160,
+   "final_state_hash": "a14b30481f4e73e9",
+   "pieces": 866,
+   "adjusts": 614,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 184,
+    "doubles": 36,
+    "triples": 11,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 42317,
+   "lines": 330,
+   "score": 561540,
+   "frames": 43504,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 384020,
+   "level_39_score": 561540,
+   "final_state_hash": "9b80e0011f5a5acd",
+   "pieces": 856,
+   "adjusts": 603,
+   "switches": 106,
+   "clear_sizes": {
+    "singles": 189,
+    "doubles": 40,
+    "triples": 11,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 46082,
+   "lines": 334,
+   "score": 549140,
+   "frames": 43818,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 351060,
+   "level_39_score": 542740,
+   "final_state_hash": "639ea4b4cb6fbe78",
+   "pieces": 866,
+   "adjusts": 623,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 195,
+    "doubles": 44,
+    "triples": 9,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 38150,
+   "lines": 333,
+   "score": 615340,
+   "frames": 43075,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 461600,
+   "level_39_score": 612140,
+   "final_state_hash": "6437b084b7b42047",
+   "pieces": 862,
+   "adjusts": 602,
+   "switches": 90,
+   "clear_sizes": {
+    "singles": 203,
+    "doubles": 39,
+    "triples": 4,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 63588,
+   "lines": 335,
+   "score": 555960,
+   "frames": 43199,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 382720,
+   "level_39_score": 549560,
+   "final_state_hash": "9a3d84b4ec32c937",
+   "pieces": 868,
+   "adjusts": 626,
+   "switches": 98,
+   "clear_sizes": {
+    "singles": 210,
+    "doubles": 35,
+    "triples": 9,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 49922,
+   "lines": 236,
+   "score": 348740,
+   "frames": 33929,
+   "stopping_reason": "game_over",
+   "level": 29,
+   "level_29_score": 341540,
+   "level_39_score": null,
+   "final_state_hash": "8550c377d7213977",
+   "pieces": 629,
+   "adjusts": 583,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 151,
+    "doubles": 25,
+    "triples": 5,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 16218,
+   "lines": 331,
+   "score": 647920,
+   "frames": 43494,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 492440,
+   "level_39_score": 646320,
+   "final_state_hash": "1802ba1e7e9a019b",
+   "pieces": 859,
+   "adjusts": 640,
+   "switches": 111,
+   "clear_sizes": {
+    "singles": 178,
+    "doubles": 41,
+    "triples": 9,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 7162,
+   "lines": 334,
+   "score": 563220,
+   "frames": 44168,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 396540,
+   "level_39_score": 556820,
+   "final_state_hash": "630b030a1937710c",
+   "pieces": 867,
+   "adjusts": 619,
+   "switches": 103,
+   "clear_sizes": {
+    "singles": 214,
+    "doubles": 35,
+    "triples": 6,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 46076,
+   "lines": 348,
+   "score": 469260,
+   "frames": 44796,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 294480,
+   "level_39_score": 438480,
+   "final_state_hash": "94f1920a6476e326",
+   "pieces": 903,
+   "adjusts": 618,
+   "switches": 109,
+   "clear_sizes": {
+    "singles": 245,
+    "doubles": 41,
+    "triples": 3,
+    "tetrises": 3
+   }
+  },
+  {
+   "seed": 46119,
+   "lines": 339,
+   "score": 561160,
+   "frames": 43868,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 379820,
+   "level_39_score": 545960,
+   "final_state_hash": "9d6a9c80df5965da",
+   "pieces": 880,
+   "adjusts": 646,
+   "switches": 111,
+   "clear_sizes": {
+    "singles": 201,
+    "doubles": 36,
+    "triples": 14,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 4987,
+   "lines": 345,
+   "score": 536460,
+   "frames": 44183,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 352200,
+   "level_39_score": 513000,
+   "final_state_hash": "774bd7ab0c007421",
+   "pieces": 894,
+   "adjusts": 619,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 207,
+    "doubles": 44,
+    "triples": 10,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 45896,
+   "lines": 334,
+   "score": 706240,
+   "frames": 42723,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 549720,
+   "level_39_score": 699040,
+   "final_state_hash": "1e74d06be0f44ac9",
+   "pieces": 866,
+   "adjusts": 591,
+   "switches": 98,
+   "clear_sizes": {
+    "singles": 188,
+    "doubles": 34,
+    "triples": 6,
+    "tetrises": 15
+   }
+  },
+  {
+   "seed": 56974,
+   "lines": 292,
+   "score": 526720,
+   "frames": 39962,
+   "stopping_reason": "game_over",
+   "level": 35,
+   "level_29_score": 430140,
+   "level_39_score": null,
+   "final_state_hash": "a3f9ab79069c9031",
+   "pieces": 769,
+   "adjusts": 590,
+   "switches": 93,
+   "clear_sizes": {
+    "singles": 158,
+    "doubles": 33,
+    "triples": 12,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 2243,
+   "lines": 330,
+   "score": 516220,
+   "frames": 42711,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 331740,
+   "level_39_score": 516220,
+   "final_state_hash": "7ce37b163cc78296",
+   "pieces": 858,
+   "adjusts": 631,
+   "switches": 76,
+   "clear_sizes": {
+    "singles": 201,
+    "doubles": 38,
+    "triples": 11,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 47848,
+   "lines": 341,
+   "score": 660400,
+   "frames": 43121,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 474400,
+   "level_39_score": 642720,
+   "final_state_hash": "20f37fa53b4cc624",
+   "pieces": 883,
+   "adjusts": 627,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 202,
+    "doubles": 30,
+    "triples": 13,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 46173,
+   "lines": 337,
+   "score": 506560,
+   "frames": 44645,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 329680,
+   "level_39_score": 488160,
+   "final_state_hash": "da59c8bfe8708080",
+   "pieces": 874,
+   "adjusts": 642,
+   "switches": 105,
+   "clear_sizes": {
+    "singles": 219,
+    "doubles": 37,
+    "triples": 8,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 41012,
+   "lines": 342,
+   "score": 673060,
+   "frames": 44323,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 500620,
+   "level_39_score": 653740,
+   "final_state_hash": "47a41e4024c21353",
+   "pieces": 888,
+   "adjusts": 668,
+   "switches": 102,
+   "clear_sizes": {
+    "singles": 202,
+    "doubles": 31,
+    "triples": 10,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 15082,
+   "lines": 338,
+   "score": 576280,
+   "frames": 44197,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 374120,
+   "level_39_score": 561880,
+   "final_state_hash": "5f960e1ec94cb7af",
+   "pieces": 875,
+   "adjusts": 590,
+   "switches": 111,
+   "clear_sizes": {
+    "singles": 222,
+    "doubles": 33,
+    "triples": 6,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 58208,
+   "lines": 331,
+   "score": 454080,
+   "frames": 44788,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 305420,
+   "level_39_score": 452480,
+   "final_state_hash": "44e44fbc8836e8f2",
+   "pieces": 861,
+   "adjusts": 585,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 230,
+    "doubles": 37,
+    "triples": 5,
+    "tetrises": 3
+   }
+  },
+  {
+   "seed": 25462,
+   "lines": 337,
+   "score": 564160,
+   "frames": 43555,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 369080,
+   "level_39_score": 552960,
+   "final_state_hash": "2ef6975a43aa458f",
+   "pieces": 872,
+   "adjusts": 612,
+   "switches": 115,
+   "clear_sizes": {
+    "singles": 213,
+    "doubles": 36,
+    "triples": 8,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 35443,
+   "lines": 334,
+   "score": 569560,
+   "frames": 43300,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 410760,
+   "level_39_score": 563160,
+   "final_state_hash": "31f99dd7010d65f0",
+   "pieces": 865,
+   "adjusts": 599,
+   "switches": 93,
+   "clear_sizes": {
+    "singles": 195,
+    "doubles": 40,
+    "triples": 9,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 57104,
+   "lines": 330,
+   "score": 608060,
+   "frames": 43157,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 450340,
+   "level_39_score": 608060,
+   "final_state_hash": "20bb754c6f45584e",
+   "pieces": 858,
+   "adjusts": 631,
+   "switches": 85,
+   "clear_sizes": {
+    "singles": 206,
+    "doubles": 31,
+    "triples": 6,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 25827,
+   "lines": 368,
+   "score": 669440,
+   "frames": 46256,
+   "stopping_reason": "game_over",
+   "level": 42,
+   "level_29_score": 453440,
+   "level_39_score": 605420,
+   "final_state_hash": "11301761b3b195de",
+   "pieces": 953,
+   "adjusts": 663,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 236,
+    "doubles": 34,
+    "triples": 8,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 54974,
+   "lines": 337,
+   "score": 643920,
+   "frames": 44276,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 406500,
+   "level_39_score": 632720,
+   "final_state_hash": "b8c42137a2a5aeeb",
+   "pieces": 875,
+   "adjusts": 623,
+   "switches": 113,
+   "clear_sizes": {
+    "singles": 194,
+    "doubles": 35,
+    "triples": 11,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 8464,
+   "lines": 333,
+   "score": 590980,
+   "frames": 44134,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 399780,
+   "level_39_score": 586180,
+   "final_state_hash": "24c72c19ef798e04",
+   "pieces": 864,
+   "adjusts": 618,
+   "switches": 93,
+   "clear_sizes": {
+    "singles": 188,
+    "doubles": 44,
+    "triples": 7,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 45121,
+   "lines": 339,
+   "score": 795640,
+   "frames": 43316,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 597320,
+   "level_39_score": 781240,
+   "final_state_hash": "46896f1eceadab09",
+   "pieces": 880,
+   "adjusts": 619,
+   "switches": 117,
+   "clear_sizes": {
+    "singles": 185,
+    "doubles": 31,
+    "triples": 8,
+    "tetrises": 17
+   }
+  },
+  {
+   "seed": 9990,
+   "lines": 332,
+   "score": 560240,
+   "frames": 40884,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 410940,
+   "level_39_score": 557040,
+   "final_state_hash": "657e6a02002229a6",
+   "pieces": 860,
+   "adjusts": 613,
+   "switches": 93,
+   "clear_sizes": {
+    "singles": 229,
+    "doubles": 30,
+    "triples": 5,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 21960,
+   "lines": 340,
+   "score": 506900,
+   "frames": 44267,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 332460,
+   "level_39_score": 490860,
+   "final_state_hash": "2669be1c3ceded6b",
+   "pieces": 881,
+   "adjusts": 594,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 214,
+    "doubles": 37,
+    "triples": 12,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 40700,
+   "lines": 334,
+   "score": 674200,
+   "frames": 43428,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 489820,
+   "level_39_score": 667800,
+   "final_state_hash": "cee71767e8d26c30",
+   "pieces": 865,
+   "adjusts": 627,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 186,
+    "doubles": 31,
+    "triples": 14,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 41419,
+   "lines": 332,
+   "score": 610560,
+   "frames": 45155,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 429160,
+   "level_39_score": 607360,
+   "final_state_hash": "5a530a2f3cefbf51",
+   "pieces": 858,
+   "adjusts": 642,
+   "switches": 107,
+   "clear_sizes": {
+    "singles": 194,
+    "doubles": 39,
+    "triples": 8,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 61430,
+   "lines": 335,
+   "score": 413140,
+   "frames": 45581,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 254720,
+   "level_39_score": 405140,
+   "final_state_hash": "d6d65c32c3ea7bf5",
+   "pieces": 872,
+   "adjusts": 647,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 230,
+    "doubles": 40,
+    "triples": 7,
+    "tetrises": 1
+   }
+  },
+  {
+   "seed": 12269,
+   "lines": 365,
+   "score": 692460,
+   "frames": 44370,
+   "stopping_reason": "game_over",
+   "level": 42,
+   "level_29_score": 432140,
+   "level_39_score": 632020,
+   "final_state_hash": "adef356beb239089",
+   "pieces": 943,
+   "adjusts": 648,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 229,
+    "doubles": 34,
+    "triples": 8,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 36336,
+   "lines": 350,
+   "score": 643320,
+   "frames": 44029,
+   "stopping_reason": "game_over",
+   "level": 41,
+   "level_29_score": 455820,
+   "level_39_score": 609960,
+   "final_state_hash": "c1259bcd77d11393",
+   "pieces": 906,
+   "adjusts": 621,
+   "switches": 109,
+   "clear_sizes": {
+    "singles": 197,
+    "doubles": 44,
+    "triples": 11,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 52631,
+   "lines": 338,
+   "score": 657780,
+   "frames": 43964,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 484420,
+   "level_39_score": 637780,
+   "final_state_hash": "f81e7b80c7109e7c",
+   "pieces": 875,
+   "adjusts": 644,
+   "switches": 113,
+   "clear_sizes": {
+    "singles": 186,
+    "doubles": 39,
+    "triples": 10,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 28334,
+   "lines": 363,
+   "score": 570800,
+   "frames": 46153,
+   "stopping_reason": "game_over",
+   "level": 42,
+   "level_29_score": 338960,
+   "level_39_score": 491860,
+   "final_state_hash": "f1078d31f4aee02f",
+   "pieces": 940,
+   "adjusts": 610,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 228,
+    "doubles": 41,
+    "triples": 11,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 19735,
+   "lines": 338,
+   "score": 524620,
+   "frames": 43102,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 357360,
+   "level_39_score": 511820,
+   "final_state_hash": "f74e3c0febdb04a9",
+   "pieces": 878,
+   "adjusts": 595,
+   "switches": 123,
+   "clear_sizes": {
+    "singles": 204,
+    "doubles": 43,
+    "triples": 8,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 3529,
+   "lines": 344,
+   "score": 548340,
+   "frames": 45172,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 376320,
+   "level_39_score": 524920,
+   "final_state_hash": "5ab3df50b38de4b1",
+   "pieces": 894,
+   "adjusts": 582,
+   "switches": 109,
+   "clear_sizes": {
+    "singles": 214,
+    "doubles": 41,
+    "triples": 8,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 19100,
+   "lines": 330,
+   "score": 399780,
+   "frames": 44265,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 247660,
+   "level_39_score": 399780,
+   "final_state_hash": "f684815bcbe58e45",
+   "pieces": 857,
+   "adjusts": 590,
+   "switches": 91,
+   "clear_sizes": {
+    "singles": 242,
+    "doubles": 36,
+    "triples": 4,
+    "tetrises": 1
+   }
+  },
+  {
+   "seed": 64554,
+   "lines": 336,
+   "score": 547460,
+   "frames": 42667,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 331020,
+   "level_39_score": 539460,
+   "final_state_hash": "8fb45e8f789b68d7",
+   "pieces": 870,
+   "adjusts": 602,
+   "switches": 107,
+   "clear_sizes": {
+    "singles": 238,
+    "doubles": 28,
+    "triples": 6,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 28866,
+   "lines": 232,
+   "score": 401820,
+   "frames": 35613,
+   "stopping_reason": "game_over",
+   "level": 29,
+   "level_29_score": 399420,
+   "level_39_score": null,
+   "final_state_hash": "a4d82eee692f23b2",
+   "pieces": 619,
+   "adjusts": 592,
+   "switches": 94,
+   "clear_sizes": {
+    "singles": 129,
+    "doubles": 24,
+    "triples": 9,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 33791,
+   "lines": 330,
+   "score": 770740,
+   "frames": 42390,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 584560,
+   "level_39_score": 770740,
+   "final_state_hash": "7b21e110d8c00b5c",
+   "pieces": 857,
+   "adjusts": 585,
+   "switches": 112,
+   "clear_sizes": {
+    "singles": 186,
+    "doubles": 27,
+    "triples": 6,
+    "tetrises": 18
+   }
+  },
+  {
+   "seed": 17840,
+   "lines": 362,
+   "score": 566240,
+   "frames": 46441,
+   "stopping_reason": "game_over",
+   "level": 42,
+   "level_29_score": 358440,
+   "level_39_score": 511840,
+   "final_state_hash": "83b78369d5c49912",
+   "pieces": 936,
+   "adjusts": 662,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 247,
+    "doubles": 35,
+    "triples": 7,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 33772,
+   "lines": 344,
+   "score": 497800,
+   "frames": 44449,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 315580,
+   "level_39_score": 475200,
+   "final_state_hash": "1e47ca2fa25874c1",
+   "pieces": 891,
+   "adjusts": 614,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 226,
+    "doubles": 36,
+    "triples": 10,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 43527,
+   "lines": 332,
+   "score": 479620,
+   "frames": 41908,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 326000,
+   "level_39_score": 476420,
+   "final_state_hash": "81d02273375d0d0e",
+   "pieces": 863,
+   "adjusts": 596,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 210,
+    "doubles": 38,
+    "triples": 10,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 24336,
+   "lines": 348,
+   "score": 666180,
+   "frames": 44528,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 473380,
+   "level_39_score": 635420,
+   "final_state_hash": "eeed62b9b324bab9",
+   "pieces": 904,
+   "adjusts": 632,
+   "switches": 117,
+   "clear_sizes": {
+    "singles": 207,
+    "doubles": 36,
+    "triples": 7,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 59274,
+   "lines": 345,
+   "score": 515740,
+   "frames": 42731,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 325120,
+   "level_39_score": 482440,
+   "final_state_hash": "e35ae56616096ce6",
+   "pieces": 898,
+   "adjusts": 602,
+   "switches": 94,
+   "clear_sizes": {
+    "singles": 222,
+    "doubles": 37,
+    "triples": 11,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 16249,
+   "lines": 331,
+   "score": 572620,
+   "frames": 44774,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 387340,
+   "level_39_score": 571020,
+   "final_state_hash": "ebedcd116d5e099d",
+   "pieces": 861,
+   "adjusts": 593,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 221,
+    "doubles": 28,
+    "triples": 6,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 13696,
+   "lines": 333,
+   "score": 557800,
+   "frames": 43230,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 353320,
+   "level_39_score": 553000,
+   "final_state_hash": "3558401d546a9661",
+   "pieces": 867,
+   "adjusts": 627,
+   "switches": 89,
+   "clear_sizes": {
+    "singles": 205,
+    "doubles": 37,
+    "triples": 10,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 32222,
+   "lines": 330,
+   "score": 691200,
+   "frames": 43650,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 537200,
+   "level_39_score": 691200,
+   "final_state_hash": "ed9a3cffa195f20e",
+   "pieces": 855,
+   "adjusts": 659,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 182,
+    "doubles": 35,
+    "triples": 6,
+    "tetrises": 15
+   }
+  },
+  {
+   "seed": 15219,
+   "lines": 349,
+   "score": 590740,
+   "frames": 44492,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 404200,
+   "level_39_score": 558300,
+   "final_state_hash": "86ad38cc482fe487",
+   "pieces": 904,
+   "adjusts": 626,
+   "switches": 111,
+   "clear_sizes": {
+    "singles": 226,
+    "doubles": 35,
+    "triples": 7,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 8222,
+   "lines": 337,
+   "score": 495180,
+   "frames": 43593,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 331780,
+   "level_39_score": 483980,
+   "final_state_hash": "c90e3fe484e39172",
+   "pieces": 875,
+   "adjusts": 604,
+   "switches": 96,
+   "clear_sizes": {
+    "singles": 210,
+    "doubles": 36,
+    "triples": 13,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 24885,
+   "lines": 330,
+   "score": 616120,
+   "frames": 42270,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 454580,
+   "level_39_score": 616120,
+   "final_state_hash": "1246872a528e1d24",
+   "pieces": 858,
+   "adjusts": 583,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 166,
+    "doubles": 40,
+    "triples": 16,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 254,
+   "lines": 332,
+   "score": 772620,
+   "frames": 43288,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 618400,
+   "level_39_score": 769420,
+   "final_state_hash": "f0767fc63ab65462",
+   "pieces": 863,
+   "adjusts": 612,
+   "switches": 113,
+   "clear_sizes": {
+    "singles": 172,
+    "doubles": 33,
+    "triples": 10,
+    "tetrises": 16
+   }
+  },
+  {
+   "seed": 64873,
+   "lines": 340,
+   "score": 655760,
+   "frames": 45176,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 486280,
+   "level_39_score": 639720,
+   "final_state_hash": "7b17bdb6cbe6a133",
+   "pieces": 884,
+   "adjusts": 652,
+   "switches": 118,
+   "clear_sizes": {
+    "singles": 202,
+    "doubles": 34,
+    "triples": 10,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 361,
+   "lines": 348,
+   "score": 604580,
+   "frames": 45618,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 418760,
+   "level_39_score": 574620,
+   "final_state_hash": "fea825dc34348b6a",
+   "pieces": 901,
+   "adjusts": 617,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 217,
+    "doubles": 38,
+    "triples": 5,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 14567,
+   "lines": 335,
+   "score": 748980,
+   "frames": 44183,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 591000,
+   "level_39_score": 740980,
+   "final_state_hash": "d8990e8adc09199b",
+   "pieces": 871,
+   "adjusts": 659,
+   "switches": 85,
+   "clear_sizes": {
+    "singles": 184,
+    "doubles": 29,
+    "triples": 11,
+    "tetrises": 15
+   }
+  },
+  {
+   "seed": 41583,
+   "lines": 333,
+   "score": 558740,
+   "frames": 42754,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 392140,
+   "level_39_score": 553940,
+   "final_state_hash": "46fcc4cd0655e59e",
+   "pieces": 861,
+   "adjusts": 633,
+   "switches": 96,
+   "clear_sizes": {
+    "singles": 194,
+    "doubles": 40,
+    "triples": 9,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 48314,
+   "lines": 354,
+   "score": 728760,
+   "frames": 44694,
+   "stopping_reason": "game_over",
+   "level": 41,
+   "level_29_score": 529320,
+   "level_39_score": 687080,
+   "final_state_hash": "52fcec65f3f1d0f7",
+   "pieces": 917,
+   "adjusts": 625,
+   "switches": 100,
+   "clear_sizes": {
+    "singles": 205,
+    "doubles": 34,
+    "triples": 11,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 65039,
+   "lines": 336,
+   "score": 581800,
+   "frames": 44068,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 407700,
+   "level_39_score": 572200,
+   "final_state_hash": "664d9fac876ba98b",
+   "pieces": 870,
+   "adjusts": 601,
+   "switches": 94,
+   "clear_sizes": {
+    "singles": 206,
+    "doubles": 35,
+    "triples": 8,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 19018,
+   "lines": 332,
+   "score": 584140,
+   "frames": 43196,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 426640,
+   "level_39_score": 580940,
+   "final_state_hash": "93b911f027b48508",
+   "pieces": 862,
+   "adjusts": 594,
+   "switches": 112,
+   "clear_sizes": {
+    "singles": 207,
+    "doubles": 36,
+    "triples": 7,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 30465,
+   "lines": 332,
+   "score": 639260,
+   "frames": 42260,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 473660,
+   "level_39_score": 637660,
+   "final_state_hash": "aaff6e85af97cf31",
+   "pieces": 860,
+   "adjusts": 630,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 164,
+    "doubles": 42,
+    "triples": 16,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 932,
+   "lines": 333,
+   "score": 509900,
+   "frames": 44095,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 344680,
+   "level_39_score": 505100,
+   "final_state_hash": "45f8c384564c6085",
+   "pieces": 865,
+   "adjusts": 633,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 211,
+    "doubles": 38,
+    "triples": 10,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 28606,
+   "lines": 333,
+   "score": 676020,
+   "frames": 42958,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 516960,
+   "level_39_score": 671220,
+   "final_state_hash": "ad96474d13fbd726",
+   "pieces": 867,
+   "adjusts": 643,
+   "switches": 91,
+   "clear_sizes": {
+    "singles": 186,
+    "doubles": 34,
+    "triples": 9,
+    "tetrises": 13
+   }
+  },
+  {
+   "seed": 16148,
+   "lines": 348,
+   "score": 601920,
+   "frames": 44688,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 361460,
+   "level_39_score": 571940,
+   "final_state_hash": "c4147da226a6a748",
+   "pieces": 901,
+   "adjusts": 612,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 208,
+    "doubles": 38,
+    "triples": 12,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 62460,
+   "lines": 332,
+   "score": 587960,
+   "frames": 42734,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 439280,
+   "level_39_score": 584760,
+   "final_state_hash": "a2e862b65c034aa4",
+   "pieces": 862,
+   "adjusts": 610,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 189,
+    "doubles": 43,
+    "triples": 7,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 39986,
+   "lines": 364,
+   "score": 709480,
+   "frames": 46501,
+   "stopping_reason": "game_over",
+   "level": 42,
+   "level_29_score": 497300,
+   "level_39_score": 645820,
+   "final_state_hash": "0e1abeb651615798",
+   "pieces": 941,
+   "adjusts": 609,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 214,
+    "doubles": 37,
+    "triples": 8,
+    "tetrises": 13
+   }
+  },
+  {
+   "seed": 48208,
+   "lines": 331,
+   "score": 524100,
+   "frames": 43056,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 379120,
+   "level_39_score": 524100,
+   "final_state_hash": "7043754b8e8e809c",
+   "pieces": 860,
+   "adjusts": 579,
+   "switches": 83,
+   "clear_sizes": {
+    "singles": 231,
+    "doubles": 27,
+    "triples": 6,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 48824,
+   "lines": 332,
+   "score": 585420,
+   "frames": 42664,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 431240,
+   "level_39_score": 582220,
+   "final_state_hash": "2e8c0a5083c4fe43",
+   "pieces": 862,
+   "adjusts": 605,
+   "switches": 106,
+   "clear_sizes": {
+    "singles": 204,
+    "doubles": 31,
+    "triples": 10,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 62332,
+   "lines": 336,
+   "score": 585000,
+   "frames": 45125,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 431140,
+   "level_39_score": 577000,
+   "final_state_hash": "a7e477fa97e898e4",
+   "pieces": 875,
+   "adjusts": 632,
+   "switches": 112,
+   "clear_sizes": {
+    "singles": 236,
+    "doubles": 26,
+    "triples": 4,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 44472,
+   "lines": 331,
+   "score": 602100,
+   "frames": 43315,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 407800,
+   "level_39_score": 600500,
+   "final_state_hash": "b2d129bda89091b9",
+   "pieces": 860,
+   "adjusts": 647,
+   "switches": 103,
+   "clear_sizes": {
+    "singles": 197,
+    "doubles": 33,
+    "triples": 12,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 29430,
+   "lines": 334,
+   "score": 628900,
+   "frames": 42954,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 465500,
+   "level_39_score": 624100,
+   "final_state_hash": "b1ecc6e3f2aa595d",
+   "pieces": 864,
+   "adjusts": 665,
+   "switches": 89,
+   "clear_sizes": {
+    "singles": 198,
+    "doubles": 34,
+    "triples": 8,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 12084,
+   "lines": 332,
+   "score": 651920,
+   "frames": 42293,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 500060,
+   "level_39_score": 648720,
+   "final_state_hash": "beffb6c6f45f4b44",
+   "pieces": 863,
+   "adjusts": 620,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 187,
+    "doubles": 40,
+    "triples": 7,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 29081,
+   "lines": 335,
+   "score": 609020,
+   "frames": 43997,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 418780,
+   "level_39_score": 601020,
+   "final_state_hash": "a783bcefd8bd40f8",
+   "pieces": 868,
+   "adjusts": 620,
+   "switches": 107,
+   "clear_sizes": {
+    "singles": 189,
+    "doubles": 39,
+    "triples": 12,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 60487,
+   "lines": 359,
+   "score": 475620,
+   "frames": 45810,
+   "stopping_reason": "game_over",
+   "level": 41,
+   "level_29_score": 276940,
+   "level_39_score": 425560,
+   "final_state_hash": "c8ff127862bcd5c9",
+   "pieces": 928,
+   "adjusts": 587,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 261,
+    "doubles": 36,
+    "triples": 6,
+    "tetrises": 2
+   }
+  },
+  {
+   "seed": 52389,
+   "lines": 330,
+   "score": 558820,
+   "frames": 42257,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 411340,
+   "level_39_score": 558820,
+   "final_state_hash": "531e3a2e6e1a8729",
+   "pieces": 858,
+   "adjusts": 623,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 209,
+    "doubles": 28,
+    "triples": 11,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 40371,
+   "lines": 338,
+   "score": 535400,
+   "frames": 43865,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 341920,
+   "level_39_score": 521000,
+   "final_state_hash": "b9fb4a9688a55a4e",
+   "pieces": 877,
+   "adjusts": 607,
+   "switches": 109,
+   "clear_sizes": {
+    "singles": 241,
+    "doubles": 31,
+    "triples": 5,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 26363,
+   "lines": 334,
+   "score": 654420,
+   "frames": 43782,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 496420,
+   "level_39_score": 647220,
+   "final_state_hash": "1f60bb15fa866d34",
+   "pieces": 868,
+   "adjusts": 624,
+   "switches": 106,
+   "clear_sizes": {
+    "singles": 200,
+    "doubles": 28,
+    "triples": 10,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 257,
+   "lines": 351,
+   "score": 502060,
+   "frames": 45100,
+   "stopping_reason": "game_over",
+   "level": 41,
+   "level_29_score": 306140,
+   "level_39_score": 463820,
+   "final_state_hash": "8c2be874a087e650",
+   "pieces": 910,
+   "adjusts": 606,
+   "switches": 113,
+   "clear_sizes": {
+    "singles": 221,
+    "doubles": 47,
+    "triples": 8,
+    "tetrises": 3
+   }
+  },
+  {
+   "seed": 39374,
+   "lines": 337,
+   "score": 589080,
+   "frames": 43118,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 353380,
+   "level_39_score": 577880,
+   "final_state_hash": "2d0d92835626e3b2",
+   "pieces": 876,
+   "adjusts": 647,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 204,
+    "doubles": 26,
+    "triples": 19,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 34562,
+   "lines": 332,
+   "score": 594020,
+   "frames": 43149,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 401200,
+   "level_39_score": 590820,
+   "final_state_hash": "9fde809fb11a76f7",
+   "pieces": 862,
+   "adjusts": 618,
+   "switches": 113,
+   "clear_sizes": {
+    "singles": 208,
+    "doubles": 29,
+    "triples": 10,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 33507,
+   "lines": 334,
+   "score": 665740,
+   "frames": 44451,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 451940,
+   "level_39_score": 664140,
+   "final_state_hash": "96bb94c962b9d001",
+   "pieces": 870,
+   "adjusts": 641,
+   "switches": 88,
+   "clear_sizes": {
+    "singles": 208,
+    "doubles": 32,
+    "triples": 6,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 40071,
+   "lines": 333,
+   "score": 452100,
+   "frames": 42677,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 297140,
+   "level_39_score": 447300,
+   "final_state_hash": "c388c73ecb9c7e53",
+   "pieces": 865,
+   "adjusts": 606,
+   "switches": 87,
+   "clear_sizes": {
+    "singles": 218,
+    "doubles": 38,
+    "triples": 9,
+    "tetrises": 3
+   }
+  },
+  {
+   "seed": 64994,
+   "lines": 331,
+   "score": 686540,
+   "frames": 42582,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 482460,
+   "level_39_score": 684940,
+   "final_state_hash": "d5ef669dff3dec9f",
+   "pieces": 861,
+   "adjusts": 611,
+   "switches": 108,
+   "clear_sizes": {
+    "singles": 197,
+    "doubles": 29,
+    "triples": 8,
+    "tetrises": 13
+   }
+  },
+  {
+   "seed": 50000,
+   "lines": 335,
+   "score": 567740,
+   "frames": 43297,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 401080,
+   "level_39_score": 562940,
+   "final_state_hash": "0b99e068d062a0ca",
+   "pieces": 869,
+   "adjusts": 596,
+   "switches": 100,
+   "clear_sizes": {
+    "singles": 205,
+    "doubles": 34,
+    "triples": 10,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 20411,
+   "lines": 343,
+   "score": 501680,
+   "frames": 45004,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 329320,
+   "level_39_score": 479120,
+   "final_state_hash": "6f9b5c8ca939f0e4",
+   "pieces": 891,
+   "adjusts": 618,
+   "switches": 113,
+   "clear_sizes": {
+    "singles": 225,
+    "doubles": 40,
+    "triples": 6,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 4891,
+   "lines": 346,
+   "score": 562520,
+   "frames": 43978,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 318920,
+   "level_39_score": 536580,
+   "final_state_hash": "e75eb56aef1cd533",
+   "pieces": 899,
+   "adjusts": 625,
+   "switches": 111,
+   "clear_sizes": {
+    "singles": 220,
+    "doubles": 35,
+    "triples": 12,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 51145,
+   "lines": 348,
+   "score": 721860,
+   "frames": 44570,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 467800,
+   "level_39_score": 692700,
+   "final_state_hash": "f783402f01d3507d",
+   "pieces": 902,
+   "adjusts": 649,
+   "switches": 105,
+   "clear_sizes": {
+    "singles": 196,
+    "doubles": 38,
+    "triples": 8,
+    "tetrises": 13
+   }
+  },
+  {
+   "seed": 40646,
+   "lines": 339,
+   "score": 596940,
+   "frames": 43933,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 398720,
+   "level_39_score": 581740,
+   "final_state_hash": "869ce1f726a9d30f",
+   "pieces": 881,
+   "adjusts": 611,
+   "switches": 102,
+   "clear_sizes": {
+    "singles": 209,
+    "doubles": 34,
+    "triples": 10,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 63949,
+   "lines": 337,
+   "score": 488300,
+   "frames": 43514,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 297800,
+   "level_39_score": 477100,
+   "final_state_hash": "b1c19c1b3e5457be",
+   "pieces": 874,
+   "adjusts": 626,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 227,
+    "doubles": 38,
+    "triples": 6,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 20171,
+   "lines": 235,
+   "score": 376520,
+   "frames": 35462,
+   "stopping_reason": "game_over",
+   "level": 29,
+   "level_29_score": 370520,
+   "level_39_score": null,
+   "final_state_hash": "d6b468773e915f98",
+   "pieces": 627,
+   "adjusts": 577,
+   "switches": 89,
+   "clear_sizes": {
+    "singles": 145,
+    "doubles": 25,
+    "triples": 4,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 8962,
+   "lines": 333,
+   "score": 535960,
+   "frames": 42327,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 377060,
+   "level_39_score": 531160,
+   "final_state_hash": "f3efac418fd3158f",
+   "pieces": 866,
+   "adjusts": 612,
+   "switches": 123,
+   "clear_sizes": {
+    "singles": 198,
+    "doubles": 39,
+    "triples": 11,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 45343,
+   "lines": 341,
+   "score": 591300,
+   "frames": 43361,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 381880,
+   "level_39_score": 573560,
+   "final_state_hash": "eb2e8098496d0116",
+   "pieces": 886,
+   "adjusts": 642,
+   "switches": 111,
+   "clear_sizes": {
+    "singles": 215,
+    "doubles": 35,
+    "triples": 8,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 30686,
+   "lines": 339,
+   "score": 609580,
+   "frames": 43729,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 450740,
+   "level_39_score": 593580,
+   "final_state_hash": "624ff730f9746a8d",
+   "pieces": 880,
+   "adjusts": 621,
+   "switches": 98,
+   "clear_sizes": {
+    "singles": 201,
+    "doubles": 36,
+    "triples": 10,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 54207,
+   "lines": 338,
+   "score": 660780,
+   "frames": 44782,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 476200,
+   "level_39_score": 647180,
+   "final_state_hash": "1047122ef4a7df9a",
+   "pieces": 876,
+   "adjusts": 635,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 197,
+    "doubles": 35,
+    "triples": 9,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 63789,
+   "lines": 350,
+   "score": 616500,
+   "frames": 45563,
+   "stopping_reason": "game_over",
+   "level": 41,
+   "level_29_score": 430600,
+   "level_39_score": 583200,
+   "final_state_hash": "827ba2192e3e05cd",
+   "pieces": 909,
+   "adjusts": 650,
+   "switches": 109,
+   "clear_sizes": {
+    "singles": 207,
+    "doubles": 34,
+    "triples": 13,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 11845,
+   "lines": 331,
+   "score": 601180,
+   "frames": 43790,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 432920,
+   "level_39_score": 601180,
+   "final_state_hash": "735ba61fa72790c4",
+   "pieces": 862,
+   "adjusts": 594,
+   "switches": 102,
+   "clear_sizes": {
+    "singles": 184,
+    "doubles": 38,
+    "triples": 13,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 39207,
+   "lines": 334,
+   "score": 559640,
+   "frames": 42077,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 365160,
+   "level_39_score": 553240,
+   "final_state_hash": "ed4f97a688318315",
+   "pieces": 868,
+   "adjusts": 596,
+   "switches": 116,
+   "clear_sizes": {
+    "singles": 204,
+    "doubles": 39,
+    "triples": 8,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 28078,
+   "lines": 332,
+   "score": 648960,
+   "frames": 44153,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 495860,
+   "level_39_score": 645760,
+   "final_state_hash": "3156461b4e94377a",
+   "pieces": 861,
+   "adjusts": 637,
+   "switches": 93,
+   "clear_sizes": {
+    "singles": 194,
+    "doubles": 33,
+    "triples": 8,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 29944,
+   "lines": 331,
+   "score": 623880,
+   "frames": 43702,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 464100,
+   "level_39_score": 622280,
+   "final_state_hash": "0b1f5defa2d84999",
+   "pieces": 857,
+   "adjusts": 625,
+   "switches": 98,
+   "clear_sizes": {
+    "singles": 191,
+    "doubles": 38,
+    "triples": 8,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 7878,
+   "lines": 354,
+   "score": 772140,
+   "frames": 44512,
+   "stopping_reason": "game_over",
+   "level": 41,
+   "level_29_score": 530580,
+   "level_39_score": 725680,
+   "final_state_hash": "dadd54f2447a82a9",
+   "pieces": 920,
+   "adjusts": 602,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 193,
+    "doubles": 35,
+    "triples": 13,
+    "tetrises": 13
+   }
+  },
+  {
+   "seed": 50017,
+   "lines": 345,
+   "score": 660340,
+   "frames": 45025,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 408440,
+   "level_39_score": 627280,
+   "final_state_hash": "d2fc6d06dcff6719",
+   "pieces": 894,
+   "adjusts": 627,
+   "switches": 112,
+   "clear_sizes": {
+    "singles": 205,
+    "doubles": 37,
+    "triples": 10,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 59720,
+   "lines": 339,
+   "score": 706800,
+   "frames": 43607,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 506960,
+   "level_39_score": 692400,
+   "final_state_hash": "9c8ac8d8a61c66cf",
+   "pieces": 881,
+   "adjusts": 616,
+   "switches": 120,
+   "clear_sizes": {
+    "singles": 185,
+    "doubles": 40,
+    "triples": 6,
+    "tetrises": 14
+   }
+  },
+  {
+   "seed": 344,
+   "lines": 332,
+   "score": 586140,
+   "frames": 42751,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 424900,
+   "level_39_score": 582940,
+   "final_state_hash": "45b6c04cbe4ccf4c",
+   "pieces": 860,
+   "adjusts": 642,
+   "switches": 102,
+   "clear_sizes": {
+    "singles": 192,
+    "doubles": 34,
+    "triples": 12,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 42201,
+   "lines": 343,
+   "score": 515060,
+   "frames": 44488,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 349460,
+   "level_39_score": 493280,
+   "final_state_hash": "70c47e1f2559f69a",
+   "pieces": 891,
+   "adjusts": 597,
+   "switches": 105,
+   "clear_sizes": {
+    "singles": 219,
+    "doubles": 36,
+    "triples": 12,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 5235,
+   "lines": 330,
+   "score": 529360,
+   "frames": 42246,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 309080,
+   "level_39_score": 529360,
+   "final_state_hash": "47c66aa6fe4764e8",
+   "pieces": 858,
+   "adjusts": 604,
+   "switches": 96,
+   "clear_sizes": {
+    "singles": 232,
+    "doubles": 27,
+    "triples": 8,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 32705,
+   "lines": 336,
+   "score": 617420,
+   "frames": 43185,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 411880,
+   "level_39_score": 607820,
+   "final_state_hash": "52c3963bafb685ee",
+   "pieces": 871,
+   "adjusts": 594,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 204,
+    "doubles": 36,
+    "triples": 8,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 33620,
+   "lines": 344,
+   "score": 654460,
+   "frames": 44195,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 457540,
+   "level_39_score": 623040,
+   "final_state_hash": "f95a91feaaa1f4cf",
+   "pieces": 894,
+   "adjusts": 619,
+   "switches": 110,
+   "clear_sizes": {
+    "singles": 188,
+    "doubles": 37,
+    "triples": 14,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 57262,
+   "lines": 331,
+   "score": 592440,
+   "frames": 42284,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 401580,
+   "level_39_score": 592440,
+   "final_state_hash": "6583e19b2b3effc9",
+   "pieces": 858,
+   "adjusts": 603,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 192,
+    "doubles": 37,
+    "triples": 11,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 9479,
+   "lines": 286,
+   "score": 613000,
+   "frames": 39778,
+   "stopping_reason": "game_over",
+   "level": 34,
+   "level_29_score": 534480,
+   "level_39_score": null,
+   "final_state_hash": "7b1c6ddb4e9f5bf7",
+   "pieces": 753,
+   "adjusts": 591,
+   "switches": 87,
+   "clear_sizes": {
+    "singles": 176,
+    "doubles": 18,
+    "triples": 6,
+    "tetrises": 14
+   }
+  },
+  {
+   "seed": 5705,
+   "lines": 354,
+   "score": 673140,
+   "frames": 45069,
+   "stopping_reason": "game_over",
+   "level": 41,
+   "level_29_score": 460720,
+   "level_39_score": 624860,
+   "final_state_hash": "a3745d473b5769d9",
+   "pieces": 917,
+   "adjusts": 672,
+   "switches": 96,
+   "clear_sizes": {
+    "singles": 185,
+    "doubles": 48,
+    "triples": 11,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 20802,
+   "lines": 332,
+   "score": 578020,
+   "frames": 42302,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 420780,
+   "level_39_score": 576420,
+   "final_state_hash": "a05a36fb4f539bbf",
+   "pieces": 863,
+   "adjusts": 608,
+   "switches": 111,
+   "clear_sizes": {
+    "singles": 193,
+    "doubles": 33,
+    "triples": 15,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 4961,
+   "lines": 333,
+   "score": 610120,
+   "frames": 42615,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 415140,
+   "level_39_score": 605320,
+   "final_state_hash": "230a6cb344bffac1",
+   "pieces": 866,
+   "adjusts": 636,
+   "switches": 98,
+   "clear_sizes": {
+    "singles": 196,
+    "doubles": 37,
+    "triples": 9,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 51958,
+   "lines": 349,
+   "score": 526220,
+   "frames": 45153,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 304300,
+   "level_39_score": 494620,
+   "final_state_hash": "ed1b36fcb07a9af1",
+   "pieces": 906,
+   "adjusts": 598,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 241,
+    "doubles": 31,
+    "triples": 10,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 24590,
+   "lines": 342,
+   "score": 549700,
+   "frames": 45011,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 362400,
+   "level_39_score": 523180,
+   "final_state_hash": "8963f7fe32423dea",
+   "pieces": 886,
+   "adjusts": 629,
+   "switches": 93,
+   "clear_sizes": {
+    "singles": 220,
+    "doubles": 34,
+    "triples": 10,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 14124,
+   "lines": 335,
+   "score": 556740,
+   "frames": 44324,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 397160,
+   "level_39_score": 547940,
+   "final_state_hash": "421f533f83e3b293",
+   "pieces": 867,
+   "adjusts": 594,
+   "switches": 91,
+   "clear_sizes": {
+    "singles": 204,
+    "doubles": 38,
+    "triples": 9,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 41120,
+   "lines": 346,
+   "score": 667080,
+   "frames": 44880,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 479800,
+   "level_39_score": 641160,
+   "final_state_hash": "3d348c92b9aeae4a",
+   "pieces": 899,
+   "adjusts": 612,
+   "switches": 105,
+   "clear_sizes": {
+    "singles": 198,
+    "doubles": 40,
+    "triples": 8,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 4342,
+   "lines": 331,
+   "score": 545340,
+   "frames": 44267,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 360660,
+   "level_39_score": 543740,
+   "final_state_hash": "97e6525919185ece",
+   "pieces": 860,
+   "adjusts": 595,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 220,
+    "doubles": 28,
+    "triples": 9,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 22993,
+   "lines": 334,
+   "score": 625020,
+   "frames": 43913,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 471720,
+   "level_39_score": 618620,
+   "final_state_hash": "65315b4b2c3b29b1",
+   "pieces": 868,
+   "adjusts": 648,
+   "switches": 106,
+   "clear_sizes": {
+    "singles": 198,
+    "doubles": 33,
+    "triples": 10,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 60681,
+   "lines": 256,
+   "score": 393840,
+   "frames": 38148,
+   "stopping_reason": "game_over",
+   "level": 31,
+   "level_29_score": 360440,
+   "level_39_score": null,
+   "final_state_hash": "3933fa25aecbb99e",
+   "pieces": 681,
+   "adjusts": 588,
+   "switches": 108,
+   "clear_sizes": {
+    "singles": 161,
+    "doubles": 25,
+    "triples": 7,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 7030,
+   "lines": 340,
+   "score": 650040,
+   "frames": 44771,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 474160,
+   "level_39_score": 633200,
+   "final_state_hash": "1cd1c45271dd77e9",
+   "pieces": 884,
+   "adjusts": 648,
+   "switches": 106,
+   "clear_sizes": {
+    "singles": 197,
+    "doubles": 34,
+    "triples": 9,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 44829,
+   "lines": 341,
+   "score": 661000,
+   "frames": 44558,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 456060,
+   "level_39_score": 640900,
+   "final_state_hash": "5c18d057931e64ac",
+   "pieces": 883,
+   "adjusts": 617,
+   "switches": 109,
+   "clear_sizes": {
+    "singles": 201,
+    "doubles": 33,
+    "triples": 10,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 1358,
+   "lines": 333,
+   "score": 596600,
+   "frames": 43491,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 351680,
+   "level_39_score": 591800,
+   "final_state_hash": "c884507f3e7233cd",
+   "pieces": 866,
+   "adjusts": 627,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 207,
+    "doubles": 32,
+    "triples": 10,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 12339,
+   "lines": 335,
+   "score": 575060,
+   "frames": 43279,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 423360,
+   "level_39_score": 567060,
+   "final_state_hash": "9cf75c6c03b0ed2f",
+   "pieces": 871,
+   "adjusts": 620,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 209,
+    "doubles": 35,
+    "triples": 8,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 21090,
+   "lines": 332,
+   "score": 652300,
+   "frames": 42946,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 457580,
+   "level_39_score": 649100,
+   "final_state_hash": "ac0fef0be86db977",
+   "pieces": 864,
+   "adjusts": 593,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 206,
+    "doubles": 26,
+    "triples": 10,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 461,
+   "lines": 334,
+   "score": 628120,
+   "frames": 44121,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 436180,
+   "level_39_score": 620920,
+   "final_state_hash": "2bb39b1009581a1a",
+   "pieces": 867,
+   "adjusts": 636,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 201,
+    "doubles": 30,
+    "triples": 11,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 57944,
+   "lines": 331,
+   "score": 635040,
+   "frames": 43105,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 470020,
+   "level_39_score": 633440,
+   "final_state_hash": "ec3fd647da3263ea",
+   "pieces": 859,
+   "adjusts": 628,
+   "switches": 93,
+   "clear_sizes": {
+    "singles": 192,
+    "doubles": 33,
+    "triples": 11,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 14769,
+   "lines": 345,
+   "score": 626840,
+   "frames": 43807,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 453660,
+   "level_39_score": 603400,
+   "final_state_hash": "8b2abbd027831c44",
+   "pieces": 895,
+   "adjusts": 615,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 207,
+    "doubles": 39,
+    "triples": 8,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 15957,
+   "lines": 345,
+   "score": 556640,
+   "frames": 43402,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 383440,
+   "level_39_score": 529160,
+   "final_state_hash": "f2d15a8024fb8cf6",
+   "pieces": 896,
+   "adjusts": 555,
+   "switches": 91,
+   "clear_sizes": {
+    "singles": 225,
+    "doubles": 37,
+    "triples": 6,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 1573,
+   "lines": 331,
+   "score": 613080,
+   "frames": 42946,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 449620,
+   "level_39_score": 611480,
+   "final_state_hash": "f8d00c4cf705c11c",
+   "pieces": 858,
+   "adjusts": 633,
+   "switches": 88,
+   "clear_sizes": {
+    "singles": 203,
+    "doubles": 32,
+    "triples": 8,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 63531,
+   "lines": 345,
+   "score": 638640,
+   "frames": 43872,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 453600,
+   "level_39_score": 612800,
+   "final_state_hash": "c0d719d6321ed086",
+   "pieces": 894,
+   "adjusts": 575,
+   "switches": 88,
+   "clear_sizes": {
+    "singles": 218,
+    "doubles": 29,
+    "triples": 11,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 9700,
+   "lines": 343,
+   "score": 468920,
+   "frames": 44254,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 293980,
+   "level_39_score": 446360,
+   "final_state_hash": "2f781fb56f3af7c9",
+   "pieces": 889,
+   "adjusts": 646,
+   "switches": 111,
+   "clear_sizes": {
+    "singles": 246,
+    "doubles": 29,
+    "triples": 9,
+    "tetrises": 3
+   }
+  },
+  {
+   "seed": 36090,
+   "lines": 242,
+   "score": 419960,
+   "frames": 37605,
+   "stopping_reason": "game_over",
+   "level": 30,
+   "level_29_score": 404840,
+   "level_39_score": null,
+   "final_state_hash": "6f2c9e5acf51c5ae",
+   "pieces": 640,
+   "adjusts": 591,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 137,
+    "doubles": 31,
+    "triples": 5,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 2554,
+   "lines": 335,
+   "score": 550740,
+   "frames": 45345,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 394260,
+   "level_39_score": 542740,
+   "final_state_hash": "bb7aef1037545375",
+   "pieces": 872,
+   "adjusts": 622,
+   "switches": 89,
+   "clear_sizes": {
+    "singles": 212,
+    "doubles": 40,
+    "triples": 5,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 49854,
+   "lines": 331,
+   "score": 560080,
+   "frames": 42999,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 370780,
+   "level_39_score": 558480,
+   "final_state_hash": "9b393fc9e325752a",
+   "pieces": 861,
+   "adjusts": 627,
+   "switches": 83,
+   "clear_sizes": {
+    "singles": 208,
+    "doubles": 34,
+    "triples": 9,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 57941,
+   "lines": 330,
+   "score": 446840,
+   "frames": 43322,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 302140,
+   "level_39_score": 446840,
+   "final_state_hash": "91f7f01908f90a9c",
+   "pieces": 858,
+   "adjusts": 590,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 223,
+    "doubles": 34,
+    "triples": 9,
+    "tetrises": 3
+   }
+  },
+  {
+   "seed": 13174,
+   "lines": 300,
+   "score": 420400,
+   "frames": 40661,
+   "stopping_reason": "game_over",
+   "level": 36,
+   "level_29_score": 324980,
+   "level_39_score": null,
+   "final_state_hash": "2eca81aa7d74b3f7",
+   "pieces": 789,
+   "adjusts": 594,
+   "switches": 119,
+   "clear_sizes": {
+    "singles": 202,
+    "doubles": 29,
+    "triples": 8,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 43986,
+   "lines": 337,
+   "score": 583940,
+   "frames": 44527,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 417680,
+   "level_39_score": 572740,
+   "final_state_hash": "ea17ab7f96a13a03",
+   "pieces": 875,
+   "adjusts": 621,
+   "switches": 107,
+   "clear_sizes": {
+    "singles": 203,
+    "doubles": 46,
+    "triples": 2,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 20691,
+   "lines": 331,
+   "score": 517420,
+   "frames": 45239,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 354040,
+   "level_39_score": 515820,
+   "final_state_hash": "d5824a6ffa996e75",
+   "pieces": 859,
+   "adjusts": 598,
+   "switches": 101,
+   "clear_sizes": {
+    "singles": 217,
+    "doubles": 36,
+    "triples": 6,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 49836,
+   "lines": 342,
+   "score": 512360,
+   "frames": 43893,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 296640,
+   "level_39_score": 485840,
+   "final_state_hash": "5eecbf0a41706abd",
+   "pieces": 886,
+   "adjusts": 638,
+   "switches": 96,
+   "clear_sizes": {
+    "singles": 235,
+    "doubles": 32,
+    "triples": 9,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 49269,
+   "lines": 338,
+   "score": 639500,
+   "frames": 43052,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 486300,
+   "level_39_score": 626700,
+   "final_state_hash": "f4554b0a50a5151e",
+   "pieces": 878,
+   "adjusts": 581,
+   "switches": 90,
+   "clear_sizes": {
+    "singles": 204,
+    "doubles": 33,
+    "triples": 8,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 32487,
+   "lines": 333,
+   "score": 667280,
+   "frames": 42936,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 431160,
+   "level_39_score": 662480,
+   "final_state_hash": "da79ab55d2987374",
+   "pieces": 866,
+   "adjusts": 603,
+   "switches": 121,
+   "clear_sizes": {
+    "singles": 191,
+    "doubles": 39,
+    "triples": 8,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 32654,
+   "lines": 339,
+   "score": 678260,
+   "frames": 44232,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 507720,
+   "level_39_score": 663060,
+   "final_state_hash": "3fc25c08183fcb4d",
+   "pieces": 880,
+   "adjusts": 598,
+   "switches": 122,
+   "clear_sizes": {
+    "singles": 195,
+    "doubles": 32,
+    "triples": 12,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 367,
+   "lines": 347,
+   "score": 537960,
+   "frames": 45338,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 325100,
+   "level_39_score": 509640,
+   "final_state_hash": "2cfdd27c801409e8",
+   "pieces": 899,
+   "adjusts": 641,
+   "switches": 127,
+   "clear_sizes": {
+    "singles": 222,
+    "doubles": 36,
+    "triples": 11,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 30320,
+   "lines": 333,
+   "score": 708260,
+   "frames": 43398,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 520580,
+   "level_39_score": 703460,
+   "final_state_hash": "01fb926e3c241b46",
+   "pieces": 864,
+   "adjusts": 625,
+   "switches": 109,
+   "clear_sizes": {
+    "singles": 180,
+    "doubles": 36,
+    "triples": 7,
+    "tetrises": 15
+   }
+  },
+  {
+   "seed": 55971,
+   "lines": 367,
+   "score": 566060,
+   "frames": 46059,
+   "stopping_reason": "game_over",
+   "level": 42,
+   "level_29_score": 347580,
+   "level_39_score": 501360,
+   "final_state_hash": "8d90ec86cc2182bf",
+   "pieces": 952,
+   "adjusts": 645,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 247,
+    "doubles": 38,
+    "triples": 8,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 31546,
+   "lines": 346,
+   "score": 644740,
+   "frames": 44359,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 452580,
+   "level_39_score": 620440,
+   "final_state_hash": "7cf944be2f8a2cc6",
+   "pieces": 898,
+   "adjusts": 596,
+   "switches": 94,
+   "clear_sizes": {
+    "singles": 193,
+    "doubles": 36,
+    "triples": 15,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 45401,
+   "lines": 340,
+   "score": 639160,
+   "frames": 44448,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 430640,
+   "level_39_score": 622320,
+   "final_state_hash": "511fad5854a93f85",
+   "pieces": 882,
+   "adjusts": 622,
+   "switches": 100,
+   "clear_sizes": {
+    "singles": 193,
+    "doubles": 46,
+    "triples": 5,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 20693,
+   "lines": 349,
+   "score": 725380,
+   "frames": 44433,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 521800,
+   "level_39_score": 684760,
+   "final_state_hash": "7df1f7cd9e8632a5",
+   "pieces": 902,
+   "adjusts": 663,
+   "switches": 118,
+   "clear_sizes": {
+    "singles": 188,
+    "doubles": 43,
+    "triples": 9,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 50635,
+   "lines": 350,
+   "score": 675600,
+   "frames": 44177,
+   "stopping_reason": "game_over",
+   "level": 41,
+   "level_29_score": 459700,
+   "level_39_score": 641520,
+   "final_state_hash": "a1542b5823b952df",
+   "pieces": 908,
+   "adjusts": 609,
+   "switches": 106,
+   "clear_sizes": {
+    "singles": 208,
+    "doubles": 38,
+    "triples": 6,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 50519,
+   "lines": 334,
+   "score": 575320,
+   "frames": 44179,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 416900,
+   "level_39_score": 568920,
+   "final_state_hash": "20dba78f2e4a9be8",
+   "pieces": 867,
+   "adjusts": 584,
+   "switches": 105,
+   "clear_sizes": {
+    "singles": 209,
+    "doubles": 37,
+    "triples": 5,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 44027,
+   "lines": 332,
+   "score": 550660,
+   "frames": 44542,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 387760,
+   "level_39_score": 547460,
+   "final_state_hash": "490147a8d6f4b67c",
+   "pieces": 859,
+   "adjusts": 605,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 192,
+    "doubles": 44,
+    "triples": 8,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 28175,
+   "lines": 378,
+   "score": 909820,
+   "frames": 44215,
+   "stopping_reason": "game_over",
+   "level": 43,
+   "level_29_score": 638220,
+   "level_39_score": 803640,
+   "final_state_hash": "5a8318a71e75bab0",
+   "pieces": 976,
+   "adjusts": 631,
+   "switches": 87,
+   "clear_sizes": {
+    "singles": 192,
+    "doubles": 35,
+    "triples": 16,
+    "tetrises": 17
+   }
+  },
+  {
+   "seed": 12925,
+   "lines": 332,
+   "score": 435320,
+   "frames": 44016,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 282960,
+   "level_39_score": 432120,
+   "final_state_hash": "64e5c9cf5707f906",
+   "pieces": 861,
+   "adjusts": 593,
+   "switches": 117,
+   "clear_sizes": {
+    "singles": 229,
+    "doubles": 34,
+    "triples": 9,
+    "tetrises": 2
+   }
+  },
+  {
+   "seed": 36794,
+   "lines": 365,
+   "score": 774220,
+   "frames": 45808,
+   "stopping_reason": "game_over",
+   "level": 42,
+   "level_29_score": 551040,
+   "level_39_score": 713880,
+   "final_state_hash": "2d0196a42a8a73e8",
+   "pieces": 945,
+   "adjusts": 647,
+   "switches": 103,
+   "clear_sizes": {
+    "singles": 202,
+    "doubles": 35,
+    "triples": 11,
+    "tetrises": 15
+   }
+  },
+  {
+   "seed": 51559,
+   "lines": 339,
+   "score": 634620,
+   "frames": 43598,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 462340,
+   "level_39_score": 612220,
+   "final_state_hash": "84726e0fb6db52ba",
+   "pieces": 880,
+   "adjusts": 597,
+   "switches": 100,
+   "clear_sizes": {
+    "singles": 190,
+    "doubles": 37,
+    "triples": 13,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 39300,
+   "lines": 341,
+   "score": 538920,
+   "frames": 44019,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 381260,
+   "level_39_score": 521240,
+   "final_state_hash": "bcace5c5886ce09f",
+   "pieces": 883,
+   "adjusts": 631,
+   "switches": 110,
+   "clear_sizes": {
+    "singles": 218,
+    "doubles": 33,
+    "triples": 11,
+    "tetrises": 6
+   }
+  },
+  {
+   "seed": 56762,
+   "lines": 339,
+   "score": 574900,
+   "frames": 45162,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 374360,
+   "level_39_score": 560500,
+   "final_state_hash": "b5c08cd73c54862a",
+   "pieces": 880,
+   "adjusts": 609,
+   "switches": 107,
+   "clear_sizes": {
+    "singles": 236,
+    "doubles": 24,
+    "triples": 9,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 22176,
+   "lines": 332,
+   "score": 588900,
+   "frames": 44474,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 395540,
+   "level_39_score": 585700,
+   "final_state_hash": "83eeb7319b3f0225",
+   "pieces": 860,
+   "adjusts": 631,
+   "switches": 114,
+   "clear_sizes": {
+    "singles": 208,
+    "doubles": 32,
+    "triples": 8,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 22342,
+   "lines": 330,
+   "score": 640660,
+   "frames": 42784,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 463160,
+   "level_39_score": 640660,
+   "final_state_hash": "ca12bdfdf8380e19",
+   "pieces": 859,
+   "adjusts": 638,
+   "switches": 119,
+   "clear_sizes": {
+    "singles": 190,
+    "doubles": 39,
+    "triples": 6,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 26311,
+   "lines": 345,
+   "score": 541280,
+   "frames": 44971,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 359180,
+   "level_39_score": 516240,
+   "final_state_hash": "c1db03d9cc7f1060",
+   "pieces": 895,
+   "adjusts": 622,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 228,
+    "doubles": 35,
+    "triples": 9,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 2785,
+   "lines": 331,
+   "score": 610740,
+   "frames": 42090,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 445700,
+   "level_39_score": 609140,
+   "final_state_hash": "18ff45487903bbcb",
+   "pieces": 859,
+   "adjusts": 601,
+   "switches": 103,
+   "clear_sizes": {
+    "singles": 194,
+    "doubles": 37,
+    "triples": 9,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 15445,
+   "lines": 342,
+   "score": 638820,
+   "frames": 45300,
+   "stopping_reason": "game_over",
+   "level": 40,
+   "level_29_score": 465240,
+   "level_39_score": 618700,
+   "final_state_hash": "4df49e28ba7bd8a7",
+   "pieces": 889,
+   "adjusts": 624,
+   "switches": 102,
+   "clear_sizes": {
+    "singles": 204,
+    "doubles": 37,
+    "triples": 8,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 11940,
+   "lines": 331,
+   "score": 464560,
+   "frames": 44913,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 316420,
+   "level_39_score": 462960,
+   "final_state_hash": "339b8a05598da512",
+   "pieces": 862,
+   "adjusts": 607,
+   "switches": 106,
+   "clear_sizes": {
+    "singles": 221,
+    "doubles": 38,
+    "triples": 6,
+    "tetrises": 4
+   }
+  },
+  {
+   "seed": 17954,
+   "lines": 333,
+   "score": 745660,
+   "frames": 42562,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 581040,
+   "level_39_score": 740860,
+   "final_state_hash": "239c85aa548dc625",
+   "pieces": 864,
+   "adjusts": 586,
+   "switches": 108,
+   "clear_sizes": {
+    "singles": 189,
+    "doubles": 24,
+    "triples": 12,
+    "tetrises": 15
+   }
+  },
+  {
+   "seed": 50662,
+   "lines": 233,
+   "score": 398100,
+   "frames": 35827,
+   "stopping_reason": "game_over",
+   "level": 29,
+   "level_29_score": 394500,
+   "level_39_score": null,
+   "final_state_hash": "2e084b519ed6a805",
+   "pieces": 620,
+   "adjusts": 594,
+   "switches": 98,
+   "clear_sizes": {
+    "singles": 141,
+    "doubles": 21,
+    "triples": 6,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 60041,
+   "lines": 333,
+   "score": 518780,
+   "frames": 44883,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 371380,
+   "level_39_score": 513980,
+   "final_state_hash": "d9e90ad4b3893db2",
+   "pieces": 863,
+   "adjusts": 616,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 233,
+    "doubles": 30,
+    "triples": 4,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 62357,
+   "lines": 352,
+   "score": 673280,
+   "frames": 42977,
+   "stopping_reason": "game_over",
+   "level": 41,
+   "level_29_score": 488960,
+   "level_39_score": 634220,
+   "final_state_hash": "d29ec2809a99c830",
+   "pieces": 913,
+   "adjusts": 639,
+   "switches": 91,
+   "clear_sizes": {
+    "singles": 197,
+    "doubles": 45,
+    "triples": 7,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 39396,
+   "lines": 338,
+   "score": 609340,
+   "frames": 42878,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 413280,
+   "level_39_score": 594940,
+   "final_state_hash": "1cd0ce3065df0487",
+   "pieces": 877,
+   "adjusts": 640,
+   "switches": 99,
+   "clear_sizes": {
+    "singles": 215,
+    "doubles": 33,
+    "triples": 7,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 2239,
+   "lines": 293,
+   "score": 517360,
+   "frames": 39889,
+   "stopping_reason": "game_over",
+   "level": 35,
+   "level_29_score": 425720,
+   "level_39_score": null,
+   "final_state_hash": "7b3b7697b3a2ece3",
+   "pieces": 770,
+   "adjusts": 601,
+   "switches": 97,
+   "clear_sizes": {
+    "singles": 183,
+    "doubles": 27,
+    "triples": 8,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 13307,
+   "lines": 333,
+   "score": 617660,
+   "frames": 42702,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 461140,
+   "level_39_score": 612860,
+   "final_state_hash": "69ba30b6246e595d",
+   "pieces": 864,
+   "adjusts": 614,
+   "switches": 107,
+   "clear_sizes": {
+    "singles": 213,
+    "doubles": 27,
+    "triples": 10,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 19764,
+   "lines": 330,
+   "score": 544960,
+   "frames": 45806,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 388260,
+   "level_39_score": 544960,
+   "final_state_hash": "713a51cae2996951",
+   "pieces": 856,
+   "adjusts": 617,
+   "switches": 112,
+   "clear_sizes": {
+    "singles": 222,
+    "doubles": 31,
+    "triples": 6,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 12276,
+   "lines": 375,
+   "score": 740840,
+   "frames": 46422,
+   "stopping_reason": "game_over",
+   "level": 43,
+   "level_29_score": 479400,
+   "level_39_score": 663820,
+   "final_state_hash": "b9c307a6694d7641",
+   "pieces": 971,
+   "adjusts": 614,
+   "switches": 86,
+   "clear_sizes": {
+    "singles": 227,
+    "doubles": 40,
+    "triples": 8,
+    "tetrises": 11
+   }
+  },
+  {
+   "seed": 53565,
+   "lines": 359,
+   "score": 532140,
+   "frames": 46404,
+   "stopping_reason": "game_over",
+   "level": 41,
+   "level_29_score": 334000,
+   "level_39_score": 482880,
+   "final_state_hash": "62ee5153ed93044c",
+   "pieces": 933,
+   "adjusts": 602,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 261,
+    "doubles": 27,
+    "triples": 8,
+    "tetrises": 5
+   }
+  },
+  {
+   "seed": 29550,
+   "lines": 339,
+   "score": 600260,
+   "frames": 43309,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 439500,
+   "level_39_score": 584260,
+   "final_state_hash": "be2eb61e54449541",
+   "pieces": 880,
+   "adjusts": 586,
+   "switches": 105,
+   "clear_sizes": {
+    "singles": 201,
+    "doubles": 36,
+    "triples": 10,
+    "tetrises": 9
+   }
+  },
+  {
+   "seed": 36813,
+   "lines": 336,
+   "score": 639560,
+   "frames": 44792,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 430980,
+   "level_39_score": 629960,
+   "final_state_hash": "1f3a404abed0fccd",
+   "pieces": 872,
+   "adjusts": 647,
+   "switches": 92,
+   "clear_sizes": {
+    "singles": 205,
+    "doubles": 35,
+    "triples": 7,
+    "tetrises": 10
+   }
+  },
+  {
+   "seed": 23585,
+   "lines": 339,
+   "score": 602600,
+   "frames": 42551,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 433680,
+   "level_39_score": 587400,
+   "final_state_hash": "4abe3311b5a6b6e1",
+   "pieces": 879,
+   "adjusts": 616,
+   "switches": 114,
+   "clear_sizes": {
+    "singles": 209,
+    "doubles": 31,
+    "triples": 12,
+    "tetrises": 8
+   }
+  },
+  {
+   "seed": 9158,
+   "lines": 339,
+   "score": 676800,
+   "frames": 43060,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 498960,
+   "level_39_score": 660800,
+   "final_state_hash": "1523a5be380c21ac",
+   "pieces": 880,
+   "adjusts": 647,
+   "switches": 102,
+   "clear_sizes": {
+    "singles": 187,
+    "doubles": 37,
+    "triples": 10,
+    "tetrises": 12
+   }
+  },
+  {
+   "seed": 24743,
+   "lines": 330,
+   "score": 536660,
+   "frames": 43175,
+   "stopping_reason": "game_over",
+   "level": 39,
+   "level_29_score": 376500,
+   "level_39_score": 536660,
+   "final_state_hash": "46cfc81ef92e303a",
+   "pieces": 858,
+   "adjusts": 592,
+   "switches": 95,
+   "clear_sizes": {
+    "singles": 198,
+    "doubles": 40,
+    "triples": 8,
+    "tetrises": 7
+   }
+  },
+  {
+   "seed": 32958,
+   "lines": 230,
+   "score": 390340,
+   "frames": 33911,
+   "stopping_reason": "game_over",
+   "level": 29,
+   "level_29_score": 390340,
+   "level_39_score": null,
+   "final_state_hash": "fde925582ed16828",
+   "pieces": 611,
+   "adjusts": 588,
+   "switches": 104,
+   "clear_sizes": {
+    "singles": 132,
+    "doubles": 24,
+    "triples": 6,
+    "tetrises": 8
+   }
+  }
+ ]
+}

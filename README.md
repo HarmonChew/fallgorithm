@@ -22,7 +22,8 @@ file is registered at runtime by the normal launcher so the sources Experiment
 `survival_plan`: the same search with a lower stack-height budget from level 28,
 where pieces start falling one row per frame. Experiment 008 measures that
 evaluation in BetaTetris's benchmark format, with human-like tap speed and
-reaction time. There is no machine learning yet.
+reaction time. Experiment 009 is the first machine learning: it tunes the evaluation
+numbers with the cross-entropy method (CEM).
 Development proceeds one measured experiment at a time, reusing this engine
 connection and recording path.
 
@@ -46,7 +47,7 @@ things without the menu (`block-stack-ai` is the same program):
 .venv/bin/fallgorithm evaluate --experiment 008                                   # full evaluation (--jobs 30); prints the record path
 ```
 
-New 006/008 games are played headless (a minute or two), saved under
+New 006/008/009 games are played headless (a minute or two), saved under
 `runs/watch/` and opened paused in the desktop window; `--export-only` skips the
 window. Games use each experiment's configured rules (start level included).
 Record paths may be given relative to the project root from any directory.
@@ -103,6 +104,24 @@ by BetaTetris (30 Hz or 15 Hz tapping, 300 ms or no reaction time, level 39
 See [its notes](experiments/008-benchmark-format/notes.md) for the format, the
 reaction model and the results.
 
+## Experiment 009
+
+Experiment 009 asks whether CEM-learned evaluation numbers can raise
+`bench_plan`'s score in the same benchmark format (30 Hz, 300 ms). The agent
+`tuned_plan` is `bench_plan` with its numbers as parameters.
+
+```sh
+.venv/bin/python -m block_stack_ai.experiment009 select-seeds
+.venv/bin/python -m block_stack_ai.experiment009 train --jobs 30      # hours; resumable
+.venv/bin/python -m block_stack_ai.experiment009 evaluate --jobs 30
+.venv/bin/python -m block_stack_ai.experiment009 verify experiments/009-cem-score/records/run.json.gz
+.venv/bin/python -m block_stack_ai.experiment009 summarize experiments/009-cem-score/records/run.json.gz
+```
+
+Watch a recorded game with `fallgorithm watch-record experiments/009-cem-score/records/run.json.gz --seed N --format 30hz-300ms`.
+See [its notes](experiments/009-cem-score/notes.md); the protocol was written
+down before training in `experiments/009-cem-score/predeclared.md`.
+
 ## Watch a game from an experiment record
 
 Experiments 006 and later keep their own records, so `block-stack-ai watch`
@@ -124,7 +143,7 @@ speed. `--export-only` writes the `.rep` under `runs/watch/` without opening it.
 ## Interactive launcher
 
 Launch without arguments (`fallgorithm` or `block-stack-ai`) to choose options
-in a terminal; `menu` opens the same launcher. Experiments 006 and 008 offer
+in a terminal; `menu` opens the same launcher. Experiments 006, 008 and 009 offer
 watching a new game, watching a recorded game and a full evaluation (see Quick
 start); the rest of this section describes experiments 000-005. Type a menu option's number and
 press Enter to select an experiment, then choose live play or full evaluation.
