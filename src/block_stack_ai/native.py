@@ -19,12 +19,14 @@ from typing import Any
 
 from . import tunedplan, wellplan
 from .heuristic import WIDTH
-from .limits import DOUBLE_KILLSCREEN
+from .limits import DOUBLE_KILLSCREEN, Flight
 from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 1
+ABI_VERSION = 2
+PLACEMENT_CAPACITY = 1024
+MASK_CAPACITY = PLACEMENT_CAPACITY * 600
 
 # The order of native/eval.hpp's Params struct (tunedplan.DEFAULTS' order).
 WEIGHT_NAMES = (
@@ -113,6 +115,10 @@ def load() -> Any:
     lib.fn_level_for_lines.restype = C.c_int
     lib.fn_gravity.argtypes = [C.c_int, C.c_int, C.POINTER(C.c_int), C.POINTER(C.c_int)]
     lib.fn_gravity.restype = C.c_int
+    lib.fn_reach.argtypes = [Columns, C.c_int, C.POINTER(C.c_int), C.c_int, C.c_int, C.c_int,
+                             C.POINTER(C.c_int), C.c_int, C.POINTER(C.c_uint8), C.c_int,
+                             C.POINTER(C.c_int)]
+    lib.fn_reach.restype = C.c_int
     if lib.fn_abi_version() != ABI_VERSION:
         raise NativeError(f"{path} has ABI version {lib.fn_abi_version()}, expected "
                           f"{ABI_VERSION}. Rebuild with scripts/build_native.py.")
@@ -154,3 +160,27 @@ def gravity(level: int, ruleset: str) -> tuple[int, int]:
     if load().fn_gravity(level, ruleset == DOUBLE_KILLSCREEN, C.byref(period), C.byref(rows)):
         raise ValueError(f"no gravity for level {level}")
     return period.value, rows.value
+
+
+def reachable(columns: tuple[int, ...], piece: str, flight: Flight, *, period: int, rows: int,
+              interval: int) -> list[tuple[int, int, int, tuple[int, ...]]]:
+    """:func:`block_stack_ai.reach.reachable`, computed by the C++.
+
+    Each placement is ``(orientation, x, y, masks)``, in the Python's order.
+    """
+    start = (C.c_int * 7)(flight.orientation, flight.x, flight.y, flight.gravity_counter,
+                          flight.first_delay, flight.shift_wait, flight.rotate_wait)
+    placements = (C.c_int * (3 * PLACEMENT_CAPACITY))()
+    masks = (C.c_uint8 * MASK_CAPACITY)()
+    lengths = (C.c_int * PLACEMENT_CAPACITY)()
+    count = load().fn_reach(Columns(*columns), PIECES.index(piece), start, period, rows, interval,
+                            placements, PLACEMENT_CAPACITY, masks, MASK_CAPACITY, lengths)
+    if count < 0:
+        raise NativeError(f"fn_reach failed with {count}")
+    found, used = [], 0
+    for index in range(count):
+        length = lengths[index]
+        found.append((placements[3 * index], placements[3 * index + 1], placements[3 * index + 2],
+                      tuple(masks[used:used + length])))
+        used += length
+    return found

@@ -12,9 +12,9 @@ import random
 
 import pytest
 
-from block_stack_ai import native, tunedplan, wellplan
+from block_stack_ai import native, reach, tunedplan, wellplan
 from block_stack_ai.heuristic import GRID_ROWS, HIDDEN_ROWS, WIDTH
-from block_stack_ai.limits import DOUBLE_KILLSCREEN, gravity
+from block_stack_ai.limits import DOUBLE_KILLSCREEN, Flight, gravity
 from block_stack_ai.pathaware import level_for_lines, settle_columns
 from block_stack_ai.pieces import PIECES, cells, orientation_count
 
@@ -154,3 +154,97 @@ def test_levels_and_gravity_match_the_python():
     for level in range(0, 60):
         for ruleset in (DOUBLE_KILLSCREEN, "classic_ntsc_extended"):
             assert native.gravity(level, ruleset) == gravity(level, ruleset)
+
+
+# ---------------------------------------------------------------- reach (step 2)
+
+REACH_LEVELS = (18, 19, 28, 29, 38, 39, 45)
+INTERVALS = (2, 3, 4, 5)  # 30, 20, 15 and 12 Hz
+
+
+def _cave_columns(rng: random.Random) -> tuple[int, ...]:
+    """A random stack with gaps under roofs, so slides, tucks and spins are possible."""
+    columns = list(_random_columns(rng))
+    for index, column in enumerate(columns):
+        visible = column >> HIDDEN_ROWS
+        if visible and rng.random() < 0.5:
+            top = (visible & -visible).bit_length() - 1 + HIDDEN_ROWS
+            for row in range(top + 1, min(GRID_ROWS, top + 1 + rng.randint(1, 3))):
+                columns[index] &= ~(1 << row)
+    return tuple(columns)
+
+
+def _random_flight(rng: random.Random, piece: str, period: int, interval: int) -> Flight:
+    if rng.random() < 0.5:  # a fresh piece, sometimes the game's first
+        delay = rng.choice((0, 0, rng.randint(1, 120)))
+        return Flight(gravity_counter=rng.randrange(period), first_delay=delay)
+    return Flight(orientation=rng.randrange(orientation_count(piece)), x=rng.randint(0, WIDTH - 1),
+                  y=rng.randint(0, 14), gravity_counter=rng.randrange(period),
+                  first_delay=rng.choice((0, 0, rng.randint(1, 30))),
+                  shift_wait=rng.randrange(interval), rotate_wait=rng.randrange(interval))
+
+
+def _python_reach(columns, piece, flight, period, rows, interval):
+    found = reach._search(columns, piece, flight.orientation, flight.x, flight.y,
+                          flight.gravity_counter, flight.first_delay, flight.shift_wait,
+                          flight.rotate_wait, period, rows, interval)
+    return [(r.orientation, r.x, r.y, r.masks) for r in found]
+
+
+def test_reach_matches_the_python_in_order_with_every_mask():
+    rng = random.Random(4)
+    cases = placements = late = 0
+    for _ in range(3000):
+        columns = (_cave_columns if rng.random() < 0.6 else _random_columns)(rng)
+        piece = rng.choice(PIECES)
+        level, interval = rng.choice(REACH_LEVELS), rng.choice(INTERVALS)
+        period, rows = gravity(level, DOUBLE_KILLSCREEN)
+        flight = _random_flight(rng, piece, period, interval)
+        expected = _python_reach(columns, piece, flight, period, rows, interval)
+        assert native.reachable(columns, piece, flight, period=period, rows=rows,
+                                interval=interval) == expected, (columns, piece, flight, level, interval)
+        cases += 1
+        placements += len(expected)
+        late += sum(1 for *_, masks in expected if 0 in masks)  # a wait before a press
+    assert placements > 20 * cases // 2 and late > 1000
+
+
+def test_reach_matches_the_python_from_every_spawn_on_an_empty_and_a_full_board():
+    full = tuple((1 << GRID_ROWS) - (1 << 3) for _ in range(WIDTH))  # only rows 0-2 open
+    for columns in ((0,) * WIDTH, full):
+        for piece in PIECES:
+            for level in REACH_LEVELS:
+                for interval in INTERVALS:
+                    period, rows = gravity(level, DOUBLE_KILLSCREEN)
+                    expected = _python_reach(columns, piece, Flight(), period, rows, interval)
+                    assert native.reachable(columns, piece, Flight(), period=period, rows=rows,
+                                            interval=interval) == expected
+
+
+def test_reach_matches_the_python_where_the_600_frame_cap_cuts_the_search():
+    rng = random.Random(5)
+    cut = 0
+    for _ in range(150):
+        columns = _random_columns(rng)
+        piece = rng.choice(PIECES)
+        interval = rng.choice(INTERVALS)
+        period = 48  # level 0's gravity, so a long first-piece delay reaches the cap
+        flight = Flight(gravity_counter=rng.randrange(period), first_delay=rng.randint(520, 620))
+        expected = _python_reach(columns, piece, flight, period, 1, interval)
+        assert native.reachable(columns, piece, flight, period=period, rows=1,
+                                interval=interval) == expected
+        cut += not expected
+    assert 20 < cut < 130  # some searches end at the cap with no lock, some lock before it
+
+
+def test_reach_locks_on_the_last_frame_before_the_cap_and_not_after_it():
+    # Only rows 0-3 are open, so a fresh piece locks on its first gravity tick, which
+    # comes on frame ``first_delay`` (the counter keeps counting through the delay).
+    nearly_full = tuple((1 << GRID_ROWS) - (1 << 4) for _ in range(WIDTH))
+    for first_delay in (598, 599, 600, 601):
+        for piece in PIECES:
+            flight = Flight(first_delay=first_delay)
+            expected = _python_reach(nearly_full, piece, flight, 48, 1, 2)
+            assert bool(expected) == (first_delay < 600)
+            assert native.reachable(nearly_full, piece, flight, period=48, rows=1,
+                                    interval=2) == expected
