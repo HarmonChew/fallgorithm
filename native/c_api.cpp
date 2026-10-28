@@ -3,12 +3,15 @@
 // Bad arguments return -1 instead of reaching undefined behaviour, because the
 // tests call these with generated input.
 #include <cstdint>
+#include <exception>
+#include <string>
 #include <vector>
 
 #include "board.hpp"
 #include "eval.hpp"
 #include "reach.hpp"
 #include "search.hpp"
+#include "agent.hpp"
 
 #if defined(_WIN32)
 #define FN_API extern "C" __declspec(dllexport)
@@ -20,7 +23,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 4;
+constexpr int abi_version = 6;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -191,4 +194,59 @@ FN_API double fn_unknown_average(const Params* params, const std::uint32_t* sett
     thread_local Searcher searcher;
     searcher.set_params(*params);
     return searcher.expected_unknown(at, at.columns, base_drought, unknown_level);
+}
+
+// One whole reach_plan game on the engine (experiment010._play). The game is created
+// as the Python binding creates it (ruleset and mode by name). ``inputs`` receives
+// every frame's mask; ``out`` receives (inputs, engine frames, stop reason, pieces,
+// adjusts, switches, score, lines, level, initial state hash, final state hash), the
+// stop reason as agent.hpp's StopReason and the hashes as Game::state_hash's bits.
+// Returns 0, -1 for bad arguments, -3 if the agent failed.
+FN_API int fn_play_game(const Params* params, const char* ruleset, const char* mode,
+                        int start_level, int height, int seed, int line_cap, int frame_cap,
+                        int interval, int reaction, std::uint8_t* inputs, int capacity,
+                        std::int64_t* out) {
+    if (!ruleset || !mode || seed < 0 || seed > 0xffff || line_cap < 0 || frame_cap < 0 ||
+        capacity < frame_cap || interval < 1 || reaction < 0) {
+        return -1;
+    }
+    try {
+        blocks::Config config;
+        config.ruleset = blocks::ruleset_from_name(ruleset);
+        const std::string mode_name(mode);
+        if (mode_name == "endless") {
+            config.mode = blocks::Mode::Endless;
+        } else if (mode_name == "challenge") {
+            config.mode = blocks::Mode::Challenge;
+        } else {
+            return -1;
+        }
+        config.start_level = start_level;
+        config.height = height;
+        config.seed = static_cast<std::uint16_t>(seed);
+        blocks::Game game(config);
+        const std::uint64_t initial_hash = game.state_hash();
+        Agent agent(*params, interval, reaction);
+        std::vector<std::uint8_t> played;
+        played.reserve(static_cast<std::size_t>(frame_cap));
+        GameResult result;
+        if (!play_game(game, agent, line_cap, frame_cap, played, result)) {
+            return -3;
+        }
+        for (std::size_t index = 0; index < played.size(); ++index) {
+            inputs[index] = played[index];
+        }
+        const std::int64_t values[] = {result.inputs, static_cast<std::int64_t>(result.frames),
+                                       result.reason, result.pieces, result.adjusts,
+                                       result.switches, static_cast<std::int64_t>(result.score),
+                                       result.lines, result.level,
+                                       static_cast<std::int64_t>(initial_hash),
+                                       static_cast<std::int64_t>(game.state_hash())};
+        for (int index = 0; index < 11; ++index) {
+            out[index] = values[index];
+        }
+        return 0;
+    } catch (const std::exception&) {
+        return -1;
+    }
 }

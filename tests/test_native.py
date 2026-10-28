@@ -6,6 +6,7 @@ first with ``.venv/bin/python scripts/build_native.py``.
 
 from __future__ import annotations
 
+import base64
 import gzip
 import json
 import math
@@ -13,7 +14,7 @@ import random
 
 import pytest
 
-from block_stack_ai import benchplan, experiment011, native, reach, reachplan, searchplan, tunedplan, wellplan
+from block_stack_ai import benchplan, experiment010, experiment011, native, reach, reachplan, searchplan, tunedplan, wellplan
 from block_stack_ai.heuristic import GRID_ROWS, HIDDEN_ROWS, WIDTH
 from block_stack_ai.limits import DOUBLE_KILLSCREEN, Flight, Limits, gravity
 from block_stack_ai.pathaware import level_for_lines, settle_columns
@@ -432,3 +433,118 @@ def test_search_takes_each_ply_level_as_the_python_does():
                       ruleset=DOUBLE_KILLSCREEN, limits=limits)
         assert native.search(columns, piece, preview, params=native_params, **kwargs) == \
             _python_choice(columns, piece, preview, kwargs, values)
+
+
+# ---------------------------------------------------------------- whole games (step 4)
+
+def _reference():
+    return json.loads(gzip.decompress(REFERENCE.read_bytes()))
+
+
+@pytest.mark.integration
+def test_cpp_games_equal_the_python_reference_in_each_format():
+    record = _reference()
+    config = record["configuration"]
+    firsts = [next(e for e in record["episodes"] if e["format"] == index)
+              for index in range(len(config["formats"]))]
+    found = [experiment011.play_native((e["format"], config["formats"][e["format"]], e["seed"],
+                                        config)) for e in firsts]
+    assert experiment011.compare(found, firsts) == []
+
+
+# Each changes the configuration or format of reference seed 12043. The first two stop
+# at a cap; the others were checked by the step 4 review: a level-0 game whose pieces
+# have no reachable placement, a first piece that runs into reach.py's 600-frame cap,
+# challenge mode, and a reaction time longer than a piece's fall.
+EDGE_GAMES = {
+    "line cap": ({"line_cap": 5}, None),
+    "frame cap": ({"frame_cap": 2000}, None),
+    "start level 0": ({"game": {"ruleset": DOUBLE_KILLSCREEN, "mode": "endless",
+                                "start_level": 0, "height": 0}}, None),
+    "start level 4": ({"game": {"ruleset": DOUBLE_KILLSCREEN, "mode": "endless",
+                                "start_level": 4, "height": 0}, "frame_cap": 6000}, None),
+    "challenge": ({"game": {"ruleset": DOUBLE_KILLSCREEN, "mode": "challenge",
+                            "start_level": 9, "height": 3}}, None),
+    "1000 ms": ({"frame_cap": 6000}, {"tap_hz": 30, "reaction_ms": 1000}),
+}
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("name", list(EDGE_GAMES))
+def test_cpp_games_equal_python_games_at_the_edges(name):
+    change, fmt = EDGE_GAMES[name]
+    config = _reference()["configuration"] | change
+    job = (0, fmt or config["formats"][0], 12043, config)
+    python, cpp = experiment010._play(job), experiment011.play_native(job)
+    if "cap" in name:
+        assert python["result"]["stopping_reason"] == name.replace(" cap", "_cap").replace(
+            "frame_cap", "frame_limit")
+    assert experiment011.compare([cpp], [python]) == []
+
+
+def test_compare_reports_missing_fields_types_and_counters():
+    old = {"format": 0, "seed": 1, "initial_state_hash": "a", "inputs": "AA==",
+           "result": {"score": 10, "level_29_score": None, "switches": 3, "decision_seconds": 1.0}}
+    same = json.loads(json.dumps(old)) | {"result": dict(old["result"], decision_seconds=9.0)}
+    assert experiment011.compare([same], [old]) == []
+    missing = dict(old, result={k: v for k, v in old["result"].items() if k != "level_29_score"})
+    assert experiment011.compare([missing], [old]) == \
+        ["format 0 seed 1: result fields ['level_29_score'] in one only"]
+    retyped = dict(old, result=dict(old["result"], score=10.0))
+    assert experiment011.compare([retyped], [old]) == ["format 0 seed 1: different score"]
+    counted = dict(old, result=dict(old["result"], switches=4))
+    assert experiment011.compare([counted], [old]) == ["format 0 seed 1: different switches"]
+
+
+def _write_record(path, episodes):
+    path.write_bytes(gzip.compress(json.dumps({"episodes": episodes}).encode()))
+    return path
+
+
+@pytest.mark.integration
+def test_diverge_finds_the_first_different_decision(tmp_path, monkeypatch):
+    record = _reference()
+    original = record["episodes"][0]
+    found = experiment011.decisions(original, record["configuration"])
+    changed = dict(original)
+    inputs = bytearray(base64.b64decode(original["inputs"]))
+    inputs[found[40]["at"]] ^= 2  # a right tap the agent did not make
+    changed["inputs"] = base64.b64encode(bytes(inputs)).decode("ascii")
+    path = _write_record(tmp_path / "changed.json.gz", [changed])
+    where = f"format 0 seed {original['seed']}: inputs differ from frame {found[40]['at']}"
+    assert experiment011.diverge(path) == [f"{where}; every decision before it agrees"]
+
+    real, calls = native.search, []
+
+    def search_that_errs_on_the_tenth_call(*args, **kwargs):
+        calls.append(1)
+        choice = real(*args, **kwargs)
+        return None if len(calls) == 10 else choice
+
+    monkeypatch.setattr(experiment011.native, "search", search_that_errs_on_the_tenth_call)
+    report = experiment011.diverge(path)
+    assert len(report) == 1 and report[0].startswith(
+        f"{where}; first different decision at frame {found[9]['at']} ({found[9]['kind']}")
+    assert report[0].count(", C++ None;") == 1
+
+
+@pytest.mark.integration
+def test_diverge_reports_unmatched_games_counters_and_longer_inputs(tmp_path):
+    record = _reference()
+    original = record["episodes"][0]
+    stranger = dict(original, seed=1)
+    counted = dict(original, result=dict(original["result"], switches=-1))
+    where = f"format 0 seed {original['seed']}"
+    report = experiment011.diverge(_write_record(tmp_path / "r.json.gz", [stranger, counted]))
+    assert report == ["format 0 seed 1: no such game in reference.json.gz",
+                      f"{where}: same inputs, but {where}: different switches"]
+    # A baseline of the game's first 300 frames, against the same plus one more input.
+    start = base64.b64decode(original["inputs"])[:300]
+    short = dict(original, inputs=base64.b64encode(start).decode("ascii"))
+    longer = dict(original, inputs=base64.b64encode(start + b"\0").decode("ascii"))
+    baseline = tmp_path / "short.json.gz"
+    baseline.write_bytes(gzip.compress(json.dumps(
+        {"configuration": record["configuration"], "episodes": [short]}).encode()))
+    report = experiment011.diverge(_write_record(tmp_path / "l.json.gz", [longer]), baseline)
+    assert report == [f"{where}: inputs differ from frame 300 (baseline 300 inputs, "
+                      "this record 301); every decision agrees"]

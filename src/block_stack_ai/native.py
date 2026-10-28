@@ -24,7 +24,8 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 4
+ABI_VERSION = 6
+STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
 
@@ -80,9 +81,23 @@ def library_path() -> Path:
 SOURCE_DIR = PROJECT_ROOT / "native"
 
 
+def _engine_sources() -> set[Path]:
+    """The engine core the library was built from (its ``BLOCK_STACK_ROOT``), if known."""
+    cache = BUILD_DIR / "CMakeCache.txt"
+    if not cache.is_file():
+        return set()
+    for line in cache.read_text(encoding="utf-8").splitlines():
+        if line.startswith("BLOCK_STACK_ROOT:"):
+            core = Path(line.partition("=")[2]) / "core"
+            return {path for pattern in ("src/*.cpp", "include/blocks/*")
+                    for path in core.glob(pattern)}
+    return set()
+
+
 def _build_sources() -> set[Path]:
-    """``native/CMakeLists.txt``, ``c_api.cpp`` and every ``native/`` header it includes."""
-    found = {SOURCE_DIR / "CMakeLists.txt"}
+    """``native/CMakeLists.txt``, ``c_api.cpp``, every ``native/`` header it includes, and
+    the engine core it links."""
+    found = {SOURCE_DIR / "CMakeLists.txt"} | _engine_sources()
     pending = [SOURCE_DIR / "c_api.cpp"]
     while pending:
         source = pending.pop()
@@ -139,6 +154,10 @@ def load() -> Any:
     lib.fn_unknown_average.argtypes = [C.POINTER(Params), Columns, C.POINTER(C.c_int), C.c_int,
                                        C.c_int]
     lib.fn_unknown_average.restype = C.c_double
+    lib.fn_play_game.argtypes = [C.POINTER(Params), C.c_char_p, C.c_char_p, C.c_int, C.c_int,
+                                 C.c_int, C.c_int, C.c_int, C.c_int, C.c_int,
+                                 C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int64)]
+    lib.fn_play_game.restype = C.c_int
     if lib.fn_abi_version() != ABI_VERSION:
         raise NativeError(f"{path} has ABI version {lib.fn_abi_version()}, expected "
                           f"{ABI_VERSION}. Rebuild with scripts/build_native.py.")
@@ -243,3 +262,27 @@ def search(columns: tuple[int, ...], piece: str, next_piece: str | None, *, flig
     if not found:
         return None
     return out[0], out[1], out[2], tuple(masks[:length.value])
+
+
+def play_game(game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: int,
+              limits: Limits, params: Params) -> dict[str, Any]:
+    """One whole ``reach_plan`` game played by the C++ (Experiment 010's ``_play``).
+
+    ``game`` is the configuration's ``game`` dict (ruleset, mode, start_level,
+    height). Returns the input bytes and the engine's and agent's final counters.
+    """
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    status = load().fn_play_game(
+        C.byref(params), game["ruleset"].encode(), game["mode"].encode(), game["start_level"],
+        game["height"], seed, line_cap, frame_cap, limits.tap_interval, limits.reaction_frames,
+        inputs, max(1, frame_cap), out)
+    if status:
+        raise NativeError(f"fn_play_game failed with {status}")
+    count, frames, reason, pieces, adjusts, switches, score, lines, level, start, end = out
+    return {"inputs": bytes(inputs[:count]), "frames": frames,
+            "stopping_reason": STOP_REASONS[reason], "pieces": pieces, "adjusts": adjusts,
+            "switches": switches, "score": score, "lines": lines, "level": level,
+            # runner._hash's form, from the C++ game's own engine copy
+            "initial_state_hash": f"{start & (1 << 64) - 1:016x}",
+            "final_state_hash": f"{end & (1 << 64) - 1:016x}"}
