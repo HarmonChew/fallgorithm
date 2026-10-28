@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 import sys
 
-from . import experiment005, runner, searchplan
+from . import experiment005, quickplay, runner, searchplan, watchrecord
 from .engine import EngineError, PROJECT_ROOT, engine_root, git_info, load_binding
 from .live import play_live
 from .menu import PLAY_SPEEDS, default_live_agent, select_command
@@ -108,6 +108,15 @@ def _print_experiments() -> None:
         print(f"No experiments found in {PROJECT_ROOT / 'experiments'}")
         return
     for name, path in experiments.items():
+        if name.partition("-")[0] in quickplay.EXPERIMENTS:
+            value = json.loads(path.read_text(encoding="utf-8"))
+            if "agents" in value:
+                detail = f"live agents: {', '.join(value['agents'])}; frame limit: {value['frame_limit']}"
+            else:
+                detail = (f"{value['agent']} in {len(value['formats'])} tap/reaction formats; "
+                          f"line cap {value['line_cap']}")
+            print(f"{name}: {detail}; play-game, watch-record, evaluate")
+            continue
         config = load_config(path)
         if isinstance(config, SuiteConfig):
             detail = f"live agents: {', '.join(config.agents)}; frame limit: {config.frame_limit}"
@@ -116,6 +125,7 @@ def _print_experiments() -> None:
             detail = f"scripted, up to {frames} frames; run/replay only"
         print(f"{name}: {detail}")
     print("Choose a number or full name with --experiment; use --agent to choose an agent within it.")
+    print("006 and 008 use `play-game`, `watch-record` and `evaluate` instead of play/run.")
 
 
 def _add_experiment_selection(parser: argparse.ArgumentParser) -> None:
@@ -159,7 +169,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def _main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="block-stack-ai", description="Run without a command to open the interactive experiment menu.",
+        prog="fallgorithm", description="Run without a command to open the interactive experiment menu.",
     )
     subcommands = parser.add_subparsers(dest="command")
     parser.set_defaults(command="menu")
@@ -185,6 +195,20 @@ def _main(argv: list[str] | None = None) -> int:
     play_parser.add_argument(
         "--paused", action=argparse.BooleanOptionalAction, default=None,
         help="start paused for frame stepping (default: paused for the search agent, otherwise playing); --no-paused starts playing")
+    game_parser = subcommands.add_parser("play-game", help="play one fresh Experiment 006 or 008 game, then watch it paused")
+    game_parser.add_argument("--experiment", required=True, metavar="006|008")
+    game_parser.add_argument("--seed", type=int, help="fixed seed 0-65535; otherwise random")
+    game_parser.add_argument("--agent", help=f"006 only (default: {quickplay.SURVIVAL})")
+    game_parser.add_argument("--frame-limit", type=int, metavar="N", help="frame limit (default: the config's)")
+    game_parser.add_argument("--tap-hz", type=float, help=f"008 only, above 0 and at most {quickplay.MAX_TAP_HZ} (default: {quickplay.TAP_HZ})")
+    game_parser.add_argument("--reaction-ms", type=float, help=f"008 only, 0 or more (default: {quickplay.REACTION_MS})")
+    game_parser.add_argument("--export-only", action="store_true", help="write the .rep under runs/watch/ without opening it")
+    record_parser = subcommands.add_parser("watch-record", help="watch one game from a 006/008 record, paused; "
+                                           "put RECORD first; the options are those of `python -m block_stack_ai.watchrecord`")
+    record_parser.add_argument("watch_args", nargs=argparse.REMAINDER, metavar="RECORD [--seed N --agent A|--format F --list --export-only]")
+    evaluate_parser = subcommands.add_parser("evaluate", help="run the full 006 or 008 evaluation")
+    evaluate_parser.add_argument("--experiment", required=True, metavar="006|008")
+    evaluate_parser.add_argument("--jobs", type=int, default=quickplay.JOBS)
     args = parser.parse_args(argv)
     if args.command == "doctor":
         return doctor()
@@ -218,6 +242,18 @@ def _main(argv: list[str] | None = None) -> int:
                 args.paused = args.agent == searchplan.SEARCH_AGENT
         if args.command == "experiments":
             _print_experiments()
+        elif args.command == "play-game":
+            return quickplay.play_game(
+                args.experiment, seed=args.seed, agent=args.agent, frame_limit=args.frame_limit,
+                tap_hz=args.tap_hz, reaction_ms=args.reaction_ms, export_only=args.export_only)
+        elif args.command == "watch-record":
+            forwarded = list(args.watch_args)
+            # Records are named from the project root, wherever the command runs.
+            if forwarded and not Path(forwarded[0]).exists() and (PROJECT_ROOT / forwarded[0]).exists():
+                forwarded[0] = str(PROJECT_ROOT / forwarded[0])
+            return watchrecord.main(forwarded)
+        elif args.command == "evaluate":
+            return quickplay.evaluate(args.experiment, args.jobs)
         elif args.command == "play":
             if args.agent == searchplan.SEARCH_AGENT:
                 # The live session that records the search objective's honest

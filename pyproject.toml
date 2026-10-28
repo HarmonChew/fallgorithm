@@ -11,6 +11,7 @@ dependencies = ["block-stack>=0.1.0"]
 
 [project.scripts]
 block-stack-ai = "block_stack_ai.cli:main"
+fallgorithm = "block_stack_ai.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

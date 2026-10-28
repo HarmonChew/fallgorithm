@@ -26,6 +26,33 @@ reaction time. There is no machine learning yet.
 Development proceeds one measured experiment at a time, reusing this engine
 connection and recording path.
 
+## Quick start
+
+After setup (below), one command opens a menu for every experiment:
+
+```sh
+.venv/bin/fallgorithm
+```
+
+Pick an experiment, then an action (watch a new game, watch a recorded game,
+or run the full evaluation), answer the prompts (Enter takes the default, `q`
+quits) and the menu shows the equivalent command before it starts. The same
+things without the menu (`block-stack-ai` is the same program):
+
+```sh
+.venv/bin/fallgorithm play-game --experiment 008 --tap-hz 30 --reaction-ms 300   # new game (tap 0-30 Hz, reaction 0+ ms)
+.venv/bin/fallgorithm play-game --experiment 006 --agent survival_plan --seed 7   # likewise, Experiment 006
+.venv/bin/fallgorithm watch-record experiments/008-benchmark-format/records/run.json.gz --seed 9103 --format 30hz-300ms
+.venv/bin/fallgorithm evaluate --experiment 008                                   # full evaluation (--jobs 30); prints the record path
+```
+
+New 006/008 games are played headless (a minute or two), saved under
+`runs/watch/` and opened paused in the desktop window; `--export-only` skips the
+window. Games use each experiment's configured rules (start level included).
+Record paths may be given relative to the project root from any directory.
+To summarize an evaluation, follow the experiment's notes (`summarize` rewrites
+the committed `result.json`). Experiments 000-005 use `play` and `run` as described below.
+
 ## Setup
 
 Place the game checkout beside this project as `../block-stack`, or set
@@ -84,23 +111,22 @@ that its replay ends where the record says, and opens it in the desktop window
 (build it with `scripts/setup_engine.py --desktop`):
 
 ```sh
-.venv/bin/python -m block_stack_ai.watchrecord experiments/008-benchmark-format/records/run.json.gz --list
-.venv/bin/python -m block_stack_ai.watchrecord experiments/008-benchmark-format/records/run.json.gz --seed 9103 --format 30hz-300ms
-.venv/bin/python -m block_stack_ai.watchrecord experiments/006-level29-survival/records/run.json.gz --seed 33713 --agent survival_plan
+.venv/bin/fallgorithm watch-record experiments/008-benchmark-format/records/run.json.gz --list
+.venv/bin/fallgorithm watch-record experiments/008-benchmark-format/records/run.json.gz --seed 9103 --format 30hz-300ms
+.venv/bin/fallgorithm watch-record experiments/006-level29-survival/records/run.json.gz --seed 33713 --agent survival_plan
 ```
+
+(`python -m block_stack_ai.watchrecord` takes the same arguments.)
 
 The replay starts paused: P plays, `.` steps one frame, `[` and `]` change the
 speed. `--export-only` writes the `.rep` under `runs/watch/` without opening it.
 
 ## Interactive launcher
 
-Launch without arguments to choose options in a terminal:
-
-```sh
-.venv/bin/block-stack-ai
-```
-
-`block-stack-ai menu` opens the same launcher. Type a menu option's number and
+Launch without arguments (`fallgorithm` or `block-stack-ai`) to choose options
+in a terminal; `menu` opens the same launcher. Experiments 006 and 008 offer
+watching a new game, watching a recorded game and a full evaluation (see Quick
+start); the rest of this section describes experiments 000-005. Type a menu option's number and
 press Enter to select an experiment, then choose live play or full evaluation.
 Live play offers the experiment's agents, a frame limit that defaults to the
 experiment's configured value, a fresh or fixed seed, speed, and whether to

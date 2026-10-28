@@ -149,15 +149,25 @@ def main(argv: list[str] | None = None) -> int:
         episode = select_episode(record, args.seed, agent=args.agent, format_value=args.format_value)
         label = describe(record, episode).split(" ", 1)[-1].replace(" ", "-")
         name = f"{args.record.name.split('.')[0]}-{args.record.parent.parent.name}-{args.seed}-{label}.rep"
-        replay_path = export(record, episode, WATCH_DIR / name)
+    except (ValueError, EngineError, OSError, KeyError) as error:
+        print(error, file=sys.stderr)
+        return 1
+    return show(record, episode, WATCH_DIR / name, export_only=args.export_only)
+
+
+def show(record: dict[str, Any], episode: dict[str, Any], replay_path: Path,
+         *, export_only: bool = False) -> int:
+    """Export one episode, report it, and open it paused in the desktop window."""
+    try:
+        replay_path = export(record, episode, replay_path)
     except (ValueError, EngineError, OSError, KeyError) as error:
         print(error, file=sys.stderr)
         return 1
     result = episode["result"]
     print(f"Replay: {replay_path}")
-    print(f"Seed {args.seed}, {describe(record, episode)}: {result['lines']} lines, "
+    print(f"Seed {episode['seed']}, {describe(record, episode)}: {result['lines']} lines, "
           f"score {result['score']}, {result['stopping_reason']}.")
-    if args.export_only:
+    if export_only:
         return 0
     print("Starts paused. P: play/pause; .: one frame; [ / ]: speed; F1: debug.", flush=True)
     return subprocess.run([str(engine_executable("block_stack")), "--replay",
