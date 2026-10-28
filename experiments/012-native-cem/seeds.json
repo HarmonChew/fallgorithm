@@ -1,0 +1,5903 @@
+{
+ "selection": "SHA256(<label with index>), first two bytes big-endian; skip any seed used by Experiments 000-011 (their JSON and gzipped records, 009's training seeds, and 12345, 011's profiling seed) and any seed whose seed-erased native start state matches an excluded or already selected one; training seeds are selected first; no gameplay outcomes inspected",
+ "excluded_seeds": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  12,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  23,
+  41,
+  42,
+  43,
+  44,
+  45,
+  46,
+  48,
+  50,
+  52,
+  54,
+  56,
+  58,
+  60,
+  254,
+  257,
+  344,
+  361,
+  367,
+  461,
+  606,
+  830,
+  932,
+  1223,
+  1235,
+  1358,
+  1573,
+  2003,
+  2108,
+  2239,
+  2243,
+  2309,
+  2399,
+  2546,
+  2554,
+  2620,
+  2716,
+  2751,
+  2785,
+  2882,
+  2918,
+  3163,
+  3529,
+  3564,
+  4153,
+  4342,
+  4446,
+  4574,
+  4686,
+  4793,
+  4891,
+  4961,
+  4987,
+  5235,
+  5705,
+  5781,
+  5981,
+  6196,
+  6624,
+  6782,
+  6937,
+  7030,
+  7062,
+  7162,
+  7878,
+  7951,
+  7964,
+  8222,
+  8328,
+  8464,
+  8803,
+  8833,
+  8904,
+  8962,
+  9103,
+  9158,
+  9479,
+  9700,
+  9990,
+  10379,
+  10482,
+  10730,
+  10832,
+  11124,
+  11845,
+  11846,
+  11940,
+  11999,
+  12043,
+  12084,
+  12269,
+  12276,
+  12339,
+  12345,
+  12401,
+  12925,
+  13174,
+  13245,
+  13307,
+  13696,
+  14124,
+  14398,
+  14567,
+  14769,
+  14841,
+  15082,
+  15219,
+  15445,
+  15707,
+  15957,
+  15966,
+  16148,
+  16218,
+  16245,
+  16249,
+  16467,
+  17084,
+  17416,
+  17451,
+  17629,
+  17706,
+  17840,
+  17954,
+  18182,
+  18198,
+  18266,
+  18319,
+  18470,
+  18592,
+  19018,
+  19100,
+  19344,
+  19475,
+  19544,
+  19580,
+  19702,
+  19735,
+  19764,
+  20171,
+  20411,
+  20691,
+  20693,
+  20802,
+  20995,
+  21090,
+  21274,
+  21893,
+  21960,
+  22176,
+  22270,
+  22322,
+  22342,
+  22817,
+  22909,
+  22993,
+  23022,
+  23484,
+  23585,
+  24336,
+  24413,
+  24590,
+  24594,
+  24658,
+  24743,
+  24885,
+  25261,
+  25462,
+  25827,
+  26238,
+  26311,
+  26334,
+  26363,
+  27035,
+  27208,
+  27491,
+  27534,
+  28078,
+  28175,
+  28221,
+  28334,
+  28415,
+  28606,
+  28762,
+  28866,
+  29058,
+  29081,
+  29292,
+  29430,
+  29550,
+  29672,
+  29897,
+  29944,
+  30033,
+  30320,
+  30465,
+  30686,
+  30819,
+  31287,
+  31473,
+  31546,
+  31619,
+  32222,
+  32345,
+  32487,
+  32654,
+  32705,
+  32910,
+  32958,
+  32961,
+  33051,
+  33061,
+  33118,
+  33162,
+  33357,
+  33507,
+  33606,
+  33619,
+  33620,
+  33713,
+  33772,
+  33791,
+  33834,
+  33887,
+  34028,
+  34069,
+  34074,
+  34490,
+  34562,
+  34864,
+  35227,
+  35443,
+  35472,
+  35971,
+  36090,
+  36336,
+  36426,
+  36457,
+  36788,
+  36794,
+  36813,
+  36866,
+  37659,
+  37931,
+  38041,
+  38150,
+  38672,
+  39207,
+  39222,
+  39233,
+  39300,
+  39327,
+  39374,
+  39389,
+  39396,
+  39497,
+  39732,
+  39986,
+  40071,
+  40371,
+  40646,
+  40660,
+  40700,
+  41012,
+  41120,
+  41419,
+  41583,
+  41612,
+  42114,
+  42134,
+  42201,
+  42317,
+  42488,
+  43037,
+  43364,
+  43527,
+  43986,
+  44027,
+  44308,
+  44472,
+  44777,
+  44829,
+  45079,
+  45121,
+  45343,
+  45401,
+  45609,
+  45896,
+  46076,
+  46082,
+  46119,
+  46150,
+  46173,
+  46372,
+  46408,
+  46832,
+  47189,
+  47431,
+  47751,
+  47848,
+  48167,
+  48208,
+  48314,
+  48625,
+  48712,
+  48824,
+  49269,
+  49281,
+  49673,
+  49731,
+  49836,
+  49854,
+  49922,
+  50000,
+  50017,
+  50061,
+  50121,
+  50337,
+  50519,
+  50604,
+  50635,
+  50662,
+  51145,
+  51559,
+  51681,
+  51796,
+  51958,
+  52029,
+  52063,
+  52389,
+  52399,
+  52607,
+  52631,
+  52754,
+  53146,
+  53555,
+  53565,
+  53641,
+  54207,
+  54589,
+  54626,
+  54672,
+  54803,
+  54813,
+  54974,
+  55105,
+  55751,
+  55971,
+  56181,
+  56486,
+  56762,
+  56974,
+  57104,
+  57262,
+  57304,
+  57526,
+  57837,
+  57941,
+  57944,
+  58208,
+  58549,
+  58924,
+  59274,
+  59382,
+  59555,
+  59720,
+  60041,
+  60487,
+  60681,
+  60819,
+  61148,
+  61188,
+  61430,
+  62332,
+  62357,
+  62362,
+  62460,
+  62632,
+  63135,
+  63361,
+  63531,
+  63588,
+  63789,
+  63949,
+  64554,
+  64754,
+  64792,
+  64873,
+  64994,
+  65039
+ ],
+ "train_label": "fallgorithm012/train/v1/<index>",
+ "train_selected": [
+  {
+   "seed": 36313,
+   "candidate_index": 0
+  },
+  {
+   "seed": 54546,
+   "candidate_index": 1
+  },
+  {
+   "seed": 24093,
+   "candidate_index": 2
+  },
+  {
+   "seed": 58160,
+   "candidate_index": 3
+  },
+  {
+   "seed": 53259,
+   "candidate_index": 4
+  },
+  {
+   "seed": 44910,
+   "candidate_index": 5
+  },
+  {
+   "seed": 8356,
+   "candidate_index": 6
+  },
+  {
+   "seed": 35701,
+   "candidate_index": 7
+  },
+  {
+   "seed": 63546,
+   "candidate_index": 8
+  },
+  {
+   "seed": 15396,
+   "candidate_index": 9
+  },
+  {
+   "seed": 803,
+   "candidate_index": 10
+  },
+  {
+   "seed": 13973,
+   "candidate_index": 11
+  },
+  {
+   "seed": 13095,
+   "candidate_index": 12
+  },
+  {
+   "seed": 60300,
+   "candidate_index": 13
+  },
+  {
+   "seed": 18891,
+   "candidate_index": 14
+  },
+  {
+   "seed": 12139,
+   "candidate_index": 15
+  },
+  {
+   "seed": 24882,
+   "candidate_index": 16
+  },
+  {
+   "seed": 48374,
+   "candidate_index": 17
+  },
+  {
+   "seed": 38994,
+   "candidate_index": 18
+  },
+  {
+   "seed": 35606,
+   "candidate_index": 19
+  },
+  {
+   "seed": 63497,
+   "candidate_index": 20
+  },
+  {
+   "seed": 22381,
+   "candidate_index": 21
+  },
+  {
+   "seed": 53751,
+   "candidate_index": 22
+  },
+  {
+   "seed": 40921,
+   "candidate_index": 23
+  },
+  {
+   "seed": 51044,
+   "candidate_index": 24
+  },
+  {
+   "seed": 4174,
+   "candidate_index": 25
+  },
+  {
+   "seed": 12249,
+   "candidate_index": 26
+  },
+  {
+   "seed": 40402,
+   "candidate_index": 27
+  },
+  {
+   "seed": 14252,
+   "candidate_index": 28
+  },
+  {
+   "seed": 28769,
+   "candidate_index": 29
+  },
+  {
+   "seed": 40816,
+   "candidate_index": 30
+  },
+  {
+   "seed": 14295,
+   "candidate_index": 31
+  },
+  {
+   "seed": 29558,
+   "candidate_index": 32
+  },
+  {
+   "seed": 26585,
+   "candidate_index": 33
+  },
+  {
+   "seed": 52971,
+   "candidate_index": 34
+  },
+  {
+   "seed": 13300,
+   "candidate_index": 35
+  },
+  {
+   "seed": 25561,
+   "candidate_index": 36
+  },
+  {
+   "seed": 50465,
+   "candidate_index": 37
+  },
+  {
+   "seed": 39809,
+   "candidate_index": 38
+  },
+  {
+   "seed": 17087,
+   "candidate_index": 39
+  },
+  {
+   "seed": 4073,
+   "candidate_index": 40
+  },
+  {
+   "seed": 28939,
+   "candidate_index": 41
+  },
+  {
+   "seed": 7131,
+   "candidate_index": 42
+  },
+  {
+   "seed": 11923,
+   "candidate_index": 43
+  },
+  {
+   "seed": 7033,
+   "candidate_index": 44
+  },
+  {
+   "seed": 3725,
+   "candidate_index": 45
+  },
+  {
+   "seed": 21786,
+   "candidate_index": 46
+  },
+  {
+   "seed": 17306,
+   "candidate_index": 47
+  },
+  {
+   "seed": 13829,
+   "candidate_index": 48
+  },
+  {
+   "seed": 39380,
+   "candidate_index": 49
+  },
+  {
+   "seed": 42056,
+   "candidate_index": 50
+  },
+  {
+   "seed": 53331,
+   "candidate_index": 51
+  },
+  {
+   "seed": 48998,
+   "candidate_index": 52
+  },
+  {
+   "seed": 31801,
+   "candidate_index": 53
+  },
+  {
+   "seed": 48136,
+   "candidate_index": 54
+  },
+  {
+   "seed": 13478,
+   "candidate_index": 55
+  },
+  {
+   "seed": 54897,
+   "candidate_index": 56
+  },
+  {
+   "seed": 5557,
+   "candidate_index": 57
+  },
+  {
+   "seed": 63023,
+   "candidate_index": 58
+  },
+  {
+   "seed": 19709,
+   "candidate_index": 59
+  },
+  {
+   "seed": 1894,
+   "candidate_index": 60
+  },
+  {
+   "seed": 57034,
+   "candidate_index": 61
+  },
+  {
+   "seed": 58585,
+   "candidate_index": 62
+  },
+  {
+   "seed": 25228,
+   "candidate_index": 63
+  },
+  {
+   "seed": 53702,
+   "candidate_index": 64
+  },
+  {
+   "seed": 63633,
+   "candidate_index": 65
+  },
+  {
+   "seed": 21050,
+   "candidate_index": 66
+  },
+  {
+   "seed": 49392,
+   "candidate_index": 67
+  },
+  {
+   "seed": 47218,
+   "candidate_index": 68
+  },
+  {
+   "seed": 27259,
+   "candidate_index": 69
+  },
+  {
+   "seed": 60110,
+   "candidate_index": 70
+  },
+  {
+   "seed": 50014,
+   "candidate_index": 71
+  },
+  {
+   "seed": 25567,
+   "candidate_index": 72
+  },
+  {
+   "seed": 64581,
+   "candidate_index": 73
+  },
+  {
+   "seed": 16602,
+   "candidate_index": 74
+  },
+  {
+   "seed": 39236,
+   "candidate_index": 75
+  },
+  {
+   "seed": 20055,
+   "candidate_index": 76
+  },
+  {
+   "seed": 15151,
+   "candidate_index": 77
+  },
+  {
+   "seed": 14276,
+   "candidate_index": 78
+  },
+  {
+   "seed": 32027,
+   "candidate_index": 79
+  },
+  {
+   "seed": 12325,
+   "candidate_index": 80
+  },
+  {
+   "seed": 39146,
+   "candidate_index": 81
+  },
+  {
+   "seed": 40989,
+   "candidate_index": 82
+  },
+  {
+   "seed": 1977,
+   "candidate_index": 83
+  },
+  {
+   "seed": 4924,
+   "candidate_index": 84
+  },
+  {
+   "seed": 54254,
+   "candidate_index": 85
+  },
+  {
+   "seed": 12067,
+   "candidate_index": 86
+  },
+  {
+   "seed": 30521,
+   "candidate_index": 87
+  },
+  {
+   "seed": 31074,
+   "candidate_index": 88
+  },
+  {
+   "seed": 19998,
+   "candidate_index": 89
+  },
+  {
+   "seed": 32649,
+   "candidate_index": 90
+  },
+  {
+   "seed": 58734,
+   "candidate_index": 91
+  },
+  {
+   "seed": 25874,
+   "candidate_index": 92
+  },
+  {
+   "seed": 62147,
+   "candidate_index": 93
+  },
+  {
+   "seed": 32652,
+   "candidate_index": 94
+  },
+  {
+   "seed": 27149,
+   "candidate_index": 95
+  }
+ ],
+ "train_seeds": [
+  36313,
+  54546,
+  24093,
+  58160,
+  53259,
+  44910,
+  8356,
+  35701,
+  63546,
+  15396,
+  803,
+  13973,
+  13095,
+  60300,
+  18891,
+  12139,
+  24882,
+  48374,
+  38994,
+  35606,
+  63497,
+  22381,
+  53751,
+  40921,
+  51044,
+  4174,
+  12249,
+  40402,
+  14252,
+  28769,
+  40816,
+  14295,
+  29558,
+  26585,
+  52971,
+  13300,
+  25561,
+  50465,
+  39809,
+  17087,
+  4073,
+  28939,
+  7131,
+  11923,
+  7033,
+  3725,
+  21786,
+  17306,
+  13829,
+  39380,
+  42056,
+  53331,
+  48998,
+  31801,
+  48136,
+  13478,
+  54897,
+  5557,
+  63023,
+  19709,
+  1894,
+  57034,
+  58585,
+  25228,
+  53702,
+  63633,
+  21050,
+  49392,
+  47218,
+  27259,
+  60110,
+  50014,
+  25567,
+  64581,
+  16602,
+  39236,
+  20055,
+  15151,
+  14276,
+  32027,
+  12325,
+  39146,
+  40989,
+  1977,
+  4924,
+  54254,
+  12067,
+  30521,
+  31074,
+  19998,
+  32649,
+  58734,
+  25874,
+  62147,
+  32652,
+  27149
+ ],
+ "heldout_label": "fallgorithm012/heldout/v1/<index>",
+ "heldout_selected": [
+  {
+   "seed": 61737,
+   "candidate_index": 0
+  },
+  {
+   "seed": 24534,
+   "candidate_index": 1
+  },
+  {
+   "seed": 27806,
+   "candidate_index": 2
+  },
+  {
+   "seed": 55213,
+   "candidate_index": 3
+  },
+  {
+   "seed": 2912,
+   "candidate_index": 4
+  },
+  {
+   "seed": 21349,
+   "candidate_index": 5
+  },
+  {
+   "seed": 29349,
+   "candidate_index": 6
+  },
+  {
+   "seed": 38448,
+   "candidate_index": 7
+  },
+  {
+   "seed": 17212,
+   "candidate_index": 8
+  },
+  {
+   "seed": 56873,
+   "candidate_index": 9
+  },
+  {
+   "seed": 6468,
+   "candidate_index": 10
+  },
+  {
+   "seed": 41269,
+   "candidate_index": 11
+  },
+  {
+   "seed": 64579,
+   "candidate_index": 12
+  },
+  {
+   "seed": 18639,
+   "candidate_index": 13
+  },
+  {
+   "seed": 14991,
+   "candidate_index": 14
+  },
+  {
+   "seed": 65207,
+   "candidate_index": 15
+  },
+  {
+   "seed": 15772,
+   "candidate_index": 16
+  },
+  {
+   "seed": 4983,
+   "candidate_index": 17
+  },
+  {
+   "seed": 54274,
+   "candidate_index": 18
+  },
+  {
+   "seed": 16318,
+   "candidate_index": 19
+  },
+  {
+   "seed": 30036,
+   "candidate_index": 20
+  },
+  {
+   "seed": 18968,
+   "candidate_index": 21
+  },
+  {
+   "seed": 53684,
+   "candidate_index": 22
+  },
+  {
+   "seed": 27087,
+   "candidate_index": 23
+  },
+  {
+   "seed": 6013,
+   "candidate_index": 24
+  },
+  {
+   "seed": 8702,
+   "candidate_index": 26
+  },
+  {
+   "seed": 54503,
+   "candidate_index": 27
+  },
+  {
+   "seed": 10636,
+   "candidate_index": 28
+  },
+  {
+   "seed": 12220,
+   "candidate_index": 29
+  },
+  {
+   "seed": 27347,
+   "candidate_index": 30
+  },
+  {
+   "seed": 23203,
+   "candidate_index": 31
+  },
+  {
+   "seed": 21013,
+   "candidate_index": 32
+  },
+  {
+   "seed": 30277,
+   "candidate_index": 33
+  },
+  {
+   "seed": 26711,
+   "candidate_index": 34
+  },
+  {
+   "seed": 98,
+   "candidate_index": 35
+  },
+  {
+   "seed": 58640,
+   "candidate_index": 36
+  },
+  {
+   "seed": 12862,
+   "candidate_index": 37
+  },
+  {
+   "seed": 44259,
+   "candidate_index": 38
+  },
+  {
+   "seed": 57936,
+   "candidate_index": 39
+  },
+  {
+   "seed": 41212,
+   "candidate_index": 40
+  },
+  {
+   "seed": 25718,
+   "candidate_index": 41
+  },
+  {
+   "seed": 19869,
+   "candidate_index": 42
+  },
+  {
+   "seed": 33388,
+   "candidate_index": 43
+  },
+  {
+   "seed": 36339,
+   "candidate_index": 44
+  },
+  {
+   "seed": 21672,
+   "candidate_index": 45
+  },
+  {
+   "seed": 27089,
+   "candidate_index": 46
+  },
+  {
+   "seed": 14394,
+   "candidate_index": 47
+  },
+  {
+   "seed": 40162,
+   "candidate_index": 48
+  },
+  {
+   "seed": 24017,
+   "candidate_index": 49
+  },
+  {
+   "seed": 3281,
+   "candidate_index": 50
+  },
+  {
+   "seed": 30986,
+   "candidate_index": 51
+  },
+  {
+   "seed": 30815,
+   "candidate_index": 52
+  },
+  {
+   "seed": 4020,
+   "candidate_index": 53
+  },
+  {
+   "seed": 27631,
+   "candidate_index": 54
+  },
+  {
+   "seed": 52272,
+   "candidate_index": 55
+  },
+  {
+   "seed": 33630,
+   "candidate_index": 56
+  },
+  {
+   "seed": 23173,
+   "candidate_index": 58
+  },
+  {
+   "seed": 46095,
+   "candidate_index": 59
+  },
+  {
+   "seed": 7166,
+   "candidate_index": 60
+  },
+  {
+   "seed": 26581,
+   "candidate_index": 61
+  },
+  {
+   "seed": 43327,
+   "candidate_index": 62
+  },
+  {
+   "seed": 61559,
+   "candidate_index": 63
+  },
+  {
+   "seed": 1429,
+   "candidate_index": 64
+  },
+  {
+   "seed": 6317,
+   "candidate_index": 66
+  },
+  {
+   "seed": 7616,
+   "candidate_index": 67
+  },
+  {
+   "seed": 49894,
+   "candidate_index": 68
+  },
+  {
+   "seed": 40111,
+   "candidate_index": 69
+  },
+  {
+   "seed": 41095,
+   "candidate_index": 71
+  },
+  {
+   "seed": 62963,
+   "candidate_index": 72
+  },
+  {
+   "seed": 10407,
+   "candidate_index": 73
+  },
+  {
+   "seed": 27292,
+   "candidate_index": 74
+  },
+  {
+   "seed": 48273,
+   "candidate_index": 75
+  },
+  {
+   "seed": 57510,
+   "candidate_index": 76
+  },
+  {
+   "seed": 46493,
+   "candidate_index": 77
+  },
+  {
+   "seed": 29608,
+   "candidate_index": 78
+  },
+  {
+   "seed": 32789,
+   "candidate_index": 79
+  },
+  {
+   "seed": 50405,
+   "candidate_index": 80
+  },
+  {
+   "seed": 61332,
+   "candidate_index": 81
+  },
+  {
+   "seed": 35111,
+   "candidate_index": 82
+  },
+  {
+   "seed": 32106,
+   "candidate_index": 83
+  },
+  {
+   "seed": 60109,
+   "candidate_index": 84
+  },
+  {
+   "seed": 27530,
+   "candidate_index": 85
+  },
+  {
+   "seed": 31934,
+   "candidate_index": 86
+  },
+  {
+   "seed": 5081,
+   "candidate_index": 87
+  },
+  {
+   "seed": 17298,
+   "candidate_index": 88
+  },
+  {
+   "seed": 4746,
+   "candidate_index": 89
+  },
+  {
+   "seed": 64948,
+   "candidate_index": 90
+  },
+  {
+   "seed": 29621,
+   "candidate_index": 91
+  },
+  {
+   "seed": 16732,
+   "candidate_index": 92
+  },
+  {
+   "seed": 25304,
+   "candidate_index": 93
+  },
+  {
+   "seed": 63730,
+   "candidate_index": 94
+  },
+  {
+   "seed": 58412,
+   "candidate_index": 95
+  },
+  {
+   "seed": 55517,
+   "candidate_index": 96
+  },
+  {
+   "seed": 12129,
+   "candidate_index": 97
+  },
+  {
+   "seed": 7295,
+   "candidate_index": 98
+  },
+  {
+   "seed": 54406,
+   "candidate_index": 99
+  },
+  {
+   "seed": 62980,
+   "candidate_index": 100
+  },
+  {
+   "seed": 29922,
+   "candidate_index": 101
+  },
+  {
+   "seed": 55216,
+   "candidate_index": 102
+  },
+  {
+   "seed": 60800,
+   "candidate_index": 103
+  },
+  {
+   "seed": 8178,
+   "candidate_index": 104
+  },
+  {
+   "seed": 19118,
+   "candidate_index": 105
+  },
+  {
+   "seed": 38516,
+   "candidate_index": 106
+  },
+  {
+   "seed": 53123,
+   "candidate_index": 107
+  },
+  {
+   "seed": 36915,
+   "candidate_index": 108
+  },
+  {
+   "seed": 32140,
+   "candidate_index": 109
+  },
+  {
+   "seed": 29738,
+   "candidate_index": 110
+  },
+  {
+   "seed": 10095,
+   "candidate_index": 111
+  },
+  {
+   "seed": 5193,
+   "candidate_index": 112
+  },
+  {
+   "seed": 11564,
+   "candidate_index": 113
+  },
+  {
+   "seed": 65533,
+   "candidate_index": 114
+  },
+  {
+   "seed": 44261,
+   "candidate_index": 115
+  },
+  {
+   "seed": 5383,
+   "candidate_index": 116
+  },
+  {
+   "seed": 63559,
+   "candidate_index": 117
+  },
+  {
+   "seed": 34282,
+   "candidate_index": 118
+  },
+  {
+   "seed": 17895,
+   "candidate_index": 119
+  },
+  {
+   "seed": 33982,
+   "candidate_index": 120
+  },
+  {
+   "seed": 39766,
+   "candidate_index": 121
+  },
+  {
+   "seed": 63165,
+   "candidate_index": 122
+  },
+  {
+   "seed": 35522,
+   "candidate_index": 123
+  },
+  {
+   "seed": 44413,
+   "candidate_index": 124
+  },
+  {
+   "seed": 48261,
+   "candidate_index": 125
+  },
+  {
+   "seed": 26664,
+   "candidate_index": 126
+  },
+  {
+   "seed": 48564,
+   "candidate_index": 127
+  },
+  {
+   "seed": 54602,
+   "candidate_index": 128
+  },
+  {
+   "seed": 9179,
+   "candidate_index": 129
+  },
+  {
+   "seed": 8264,
+   "candidate_index": 130
+  },
+  {
+   "seed": 8332,
+   "candidate_index": 131
+  },
+  {
+   "seed": 773,
+   "candidate_index": 133
+  },
+  {
+   "seed": 11003,
+   "candidate_index": 134
+  },
+  {
+   "seed": 61338,
+   "candidate_index": 135
+  },
+  {
+   "seed": 3521,
+   "candidate_index": 136
+  },
+  {
+   "seed": 25878,
+   "candidate_index": 137
+  },
+  {
+   "seed": 64106,
+   "candidate_index": 138
+  },
+  {
+   "seed": 37372,
+   "candidate_index": 139
+  },
+  {
+   "seed": 33647,
+   "candidate_index": 140
+  },
+  {
+   "seed": 35689,
+   "candidate_index": 141
+  },
+  {
+   "seed": 61079,
+   "candidate_index": 142
+  },
+  {
+   "seed": 43576,
+   "candidate_index": 143
+  },
+  {
+   "seed": 25596,
+   "candidate_index": 144
+  },
+  {
+   "seed": 18693,
+   "candidate_index": 145
+  },
+  {
+   "seed": 32823,
+   "candidate_index": 146
+  },
+  {
+   "seed": 65343,
+   "candidate_index": 147
+  },
+  {
+   "seed": 44565,
+   "candidate_index": 149
+  },
+  {
+   "seed": 36659,
+   "candidate_index": 150
+  },
+  {
+   "seed": 53550,
+   "candidate_index": 151
+  },
+  {
+   "seed": 30334,
+   "candidate_index": 152
+  },
+  {
+   "seed": 42535,
+   "candidate_index": 153
+  },
+  {
+   "seed": 14963,
+   "candidate_index": 154
+  },
+  {
+   "seed": 47174,
+   "candidate_index": 155
+  },
+  {
+   "seed": 59883,
+   "candidate_index": 156
+  },
+  {
+   "seed": 38027,
+   "candidate_index": 157
+  },
+  {
+   "seed": 15918,
+   "candidate_index": 158
+  },
+  {
+   "seed": 32987,
+   "candidate_index": 159
+  },
+  {
+   "seed": 47388,
+   "candidate_index": 160
+  },
+  {
+   "seed": 21647,
+   "candidate_index": 161
+  },
+  {
+   "seed": 3428,
+   "candidate_index": 162
+  },
+  {
+   "seed": 57024,
+   "candidate_index": 163
+  },
+  {
+   "seed": 53728,
+   "candidate_index": 164
+  },
+  {
+   "seed": 59097,
+   "candidate_index": 165
+  },
+  {
+   "seed": 2703,
+   "candidate_index": 166
+  },
+  {
+   "seed": 37636,
+   "candidate_index": 167
+  },
+  {
+   "seed": 8789,
+   "candidate_index": 168
+  },
+  {
+   "seed": 2773,
+   "candidate_index": 169
+  },
+  {
+   "seed": 29091,
+   "candidate_index": 170
+  },
+  {
+   "seed": 33598,
+   "candidate_index": 171
+  },
+  {
+   "seed": 56503,
+   "candidate_index": 172
+  },
+  {
+   "seed": 17319,
+   "candidate_index": 173
+  },
+  {
+   "seed": 64775,
+   "candidate_index": 174
+  },
+  {
+   "seed": 45853,
+   "candidate_index": 175
+  },
+  {
+   "seed": 12320,
+   "candidate_index": 177
+  },
+  {
+   "seed": 46279,
+   "candidate_index": 178
+  },
+  {
+   "seed": 46834,
+   "candidate_index": 179
+  },
+  {
+   "seed": 12334,
+   "candidate_index": 180
+  },
+  {
+   "seed": 8336,
+   "candidate_index": 181
+  },
+  {
+   "seed": 42396,
+   "candidate_index": 182
+  },
+  {
+   "seed": 54724,
+   "candidate_index": 183
+  },
+  {
+   "seed": 48856,
+   "candidate_index": 184
+  },
+  {
+   "seed": 5772,
+   "candidate_index": 185
+  },
+  {
+   "seed": 5655,
+   "candidate_index": 186
+  },
+  {
+   "seed": 60479,
+   "candidate_index": 187
+  },
+  {
+   "seed": 44581,
+   "candidate_index": 188
+  },
+  {
+   "seed": 43198,
+   "candidate_index": 189
+  },
+  {
+   "seed": 40059,
+   "candidate_index": 190
+  },
+  {
+   "seed": 13913,
+   "candidate_index": 191
+  },
+  {
+   "seed": 11206,
+   "candidate_index": 192
+  },
+  {
+   "seed": 55677,
+   "candidate_index": 193
+  },
+  {
+   "seed": 11703,
+   "candidate_index": 194
+  },
+  {
+   "seed": 37293,
+   "candidate_index": 195
+  },
+  {
+   "seed": 30828,
+   "candidate_index": 196
+  },
+  {
+   "seed": 31717,
+   "candidate_index": 197
+  },
+  {
+   "seed": 12383,
+   "candidate_index": 198
+  },
+  {
+   "seed": 28361,
+   "candidate_index": 199
+  },
+  {
+   "seed": 2149,
+   "candidate_index": 200
+  },
+  {
+   "seed": 27057,
+   "candidate_index": 201
+  },
+  {
+   "seed": 24867,
+   "candidate_index": 202
+  },
+  {
+   "seed": 20227,
+   "candidate_index": 203
+  },
+  {
+   "seed": 46438,
+   "candidate_index": 204
+  },
+  {
+   "seed": 25877,
+   "candidate_index": 205
+  },
+  {
+   "seed": 51444,
+   "candidate_index": 206
+  },
+  {
+   "seed": 9510,
+   "candidate_index": 207
+  },
+  {
+   "seed": 1965,
+   "candidate_index": 208
+  },
+  {
+   "seed": 4031,
+   "candidate_index": 209
+  },
+  {
+   "seed": 53583,
+   "candidate_index": 210
+  },
+  {
+   "seed": 37640,
+   "candidate_index": 211
+  },
+  {
+   "seed": 31145,
+   "candidate_index": 212
+  },
+  {
+   "seed": 56135,
+   "candidate_index": 213
+  },
+  {
+   "seed": 3137,
+   "candidate_index": 214
+  },
+  {
+   "seed": 1549,
+   "candidate_index": 215
+  },
+  {
+   "seed": 15192,
+   "candidate_index": 216
+  },
+  {
+   "seed": 2723,
+   "candidate_index": 217
+  },
+  {
+   "seed": 10817,
+   "candidate_index": 218
+  },
+  {
+   "seed": 59213,
+   "candidate_index": 219
+  },
+  {
+   "seed": 56521,
+   "candidate_index": 220
+  },
+  {
+   "seed": 64551,
+   "candidate_index": 222
+  },
+  {
+   "seed": 55525,
+   "candidate_index": 223
+  },
+  {
+   "seed": 61752,
+   "candidate_index": 224
+  },
+  {
+   "seed": 13935,
+   "candidate_index": 225
+  },
+  {
+   "seed": 32419,
+   "candidate_index": 226
+  },
+  {
+   "seed": 58733,
+   "candidate_index": 227
+  },
+  {
+   "seed": 29404,
+   "candidate_index": 228
+  },
+  {
+   "seed": 35375,
+   "candidate_index": 229
+  },
+  {
+   "seed": 55817,
+   "candidate_index": 230
+  },
+  {
+   "seed": 47190,
+   "candidate_index": 231
+  },
+  {
+   "seed": 33683,
+   "candidate_index": 232
+  },
+  {
+   "seed": 29242,
+   "candidate_index": 233
+  },
+  {
+   "seed": 42603,
+   "candidate_index": 234
+  },
+  {
+   "seed": 53201,
+   "candidate_index": 235
+  },
+  {
+   "seed": 9180,
+   "candidate_index": 236
+  },
+  {
+   "seed": 12172,
+   "candidate_index": 237
+  },
+  {
+   "seed": 9771,
+   "candidate_index": 238
+  },
+  {
+   "seed": 51256,
+   "candidate_index": 239
+  },
+  {
+   "seed": 24427,
+   "candidate_index": 240
+  },
+  {
+   "seed": 18865,
+   "candidate_index": 241
+  },
+  {
+   "seed": 56150,
+   "candidate_index": 242
+  },
+  {
+   "seed": 53940,
+   "candidate_index": 243
+  },
+  {
+   "seed": 532,
+   "candidate_index": 244
+  },
+  {
+   "seed": 65414,
+   "candidate_index": 245
+  },
+  {
+   "seed": 64903,
+   "candidate_index": 246
+  },
+  {
+   "seed": 36468,
+   "candidate_index": 247
+  },
+  {
+   "seed": 50009,
+   "candidate_index": 248
+  },
+  {
+   "seed": 35746,
+   "candidate_index": 249
+  },
+  {
+   "seed": 48493,
+   "candidate_index": 250
+  },
+  {
+   "seed": 60736,
+   "candidate_index": 251
+  },
+  {
+   "seed": 13988,
+   "candidate_index": 252
+  },
+  {
+   "seed": 29447,
+   "candidate_index": 253
+  },
+  {
+   "seed": 11049,
+   "candidate_index": 254
+  },
+  {
+   "seed": 11157,
+   "candidate_index": 255
+  },
+  {
+   "seed": 15635,
+   "candidate_index": 256
+  },
+  {
+   "seed": 47658,
+   "candidate_index": 257
+  },
+  {
+   "seed": 575,
+   "candidate_index": 258
+  },
+  {
+   "seed": 58454,
+   "candidate_index": 259
+  },
+  {
+   "seed": 11438,
+   "candidate_index": 260
+  },
+  {
+   "seed": 56658,
+   "candidate_index": 261
+  },
+  {
+   "seed": 13025,
+   "candidate_index": 262
+  },
+  {
+   "seed": 33801,
+   "candidate_index": 263
+  },
+  {
+   "seed": 60924,
+   "candidate_index": 264
+  },
+  {
+   "seed": 59794,
+   "candidate_index": 265
+  },
+  {
+   "seed": 40196,
+   "candidate_index": 266
+  },
+  {
+   "seed": 50987,
+   "candidate_index": 268
+  },
+  {
+   "seed": 29623,
+   "candidate_index": 269
+  },
+  {
+   "seed": 8956,
+   "candidate_index": 270
+  },
+  {
+   "seed": 20311,
+   "candidate_index": 271
+  },
+  {
+   "seed": 50042,
+   "candidate_index": 272
+  },
+  {
+   "seed": 24423,
+   "candidate_index": 273
+  },
+  {
+   "seed": 688,
+   "candidate_index": 274
+  },
+  {
+   "seed": 46057,
+   "candidate_index": 275
+  },
+  {
+   "seed": 22222,
+   "candidate_index": 276
+  },
+  {
+   "seed": 56290,
+   "candidate_index": 277
+  },
+  {
+   "seed": 57637,
+   "candidate_index": 278
+  },
+  {
+   "seed": 13189,
+   "candidate_index": 279
+  },
+  {
+   "seed": 6909,
+   "candidate_index": 280
+  },
+  {
+   "seed": 58253,
+   "candidate_index": 281
+  },
+  {
+   "seed": 29156,
+   "candidate_index": 282
+  },
+  {
+   "seed": 54704,
+   "candidate_index": 283
+  },
+  {
+   "seed": 59033,
+   "candidate_index": 284
+  },
+  {
+   "seed": 19161,
+   "candidate_index": 285
+  },
+  {
+   "seed": 9052,
+   "candidate_index": 286
+  },
+  {
+   "seed": 45693,
+   "candidate_index": 287
+  },
+  {
+   "seed": 19817,
+   "candidate_index": 288
+  },
+  {
+   "seed": 10738,
+   "candidate_index": 289
+  },
+  {
+   "seed": 20081,
+   "candidate_index": 290
+  },
+  {
+   "seed": 63104,
+   "candidate_index": 291
+  },
+  {
+   "seed": 47148,
+   "candidate_index": 292
+  },
+  {
+   "seed": 57049,
+   "candidate_index": 293
+  },
+  {
+   "seed": 9617,
+   "candidate_index": 294
+  },
+  {
+   "seed": 56932,
+   "candidate_index": 295
+  },
+  {
+   "seed": 28831,
+   "candidate_index": 296
+  },
+  {
+   "seed": 60380,
+   "candidate_index": 297
+  },
+  {
+   "seed": 38891,
+   "candidate_index": 298
+  },
+  {
+   "seed": 20098,
+   "candidate_index": 299
+  },
+  {
+   "seed": 60372,
+   "candidate_index": 300
+  },
+  {
+   "seed": 18681,
+   "candidate_index": 301
+  },
+  {
+   "seed": 24982,
+   "candidate_index": 302
+  },
+  {
+   "seed": 64182,
+   "candidate_index": 303
+  },
+  {
+   "seed": 49333,
+   "candidate_index": 304
+  },
+  {
+   "seed": 38687,
+   "candidate_index": 305
+  },
+  {
+   "seed": 4272,
+   "candidate_index": 306
+  },
+  {
+   "seed": 36209,
+   "candidate_index": 307
+  },
+  {
+   "seed": 41596,
+   "candidate_index": 309
+  },
+  {
+   "seed": 2090,
+   "candidate_index": 310
+  },
+  {
+   "seed": 59996,
+   "candidate_index": 311
+  },
+  {
+   "seed": 61765,
+   "candidate_index": 312
+  },
+  {
+   "seed": 33364,
+   "candidate_index": 313
+  },
+  {
+   "seed": 22087,
+   "candidate_index": 314
+  },
+  {
+   "seed": 20250,
+   "candidate_index": 315
+  },
+  {
+   "seed": 33988,
+   "candidate_index": 316
+  },
+  {
+   "seed": 16608,
+   "candidate_index": 317
+  },
+  {
+   "seed": 54651,
+   "candidate_index": 318
+  },
+  {
+   "seed": 7679,
+   "candidate_index": 319
+  },
+  {
+   "seed": 42882,
+   "candidate_index": 320
+  },
+  {
+   "seed": 5876,
+   "candidate_index": 321
+  },
+  {
+   "seed": 62616,
+   "candidate_index": 322
+  },
+  {
+   "seed": 17129,
+   "candidate_index": 323
+  },
+  {
+   "seed": 18924,
+   "candidate_index": 324
+  },
+  {
+   "seed": 8019,
+   "candidate_index": 325
+  },
+  {
+   "seed": 25655,
+   "candidate_index": 326
+  },
+  {
+   "seed": 17478,
+   "candidate_index": 327
+  },
+  {
+   "seed": 38154,
+   "candidate_index": 328
+  },
+  {
+   "seed": 23736,
+   "candidate_index": 329
+  },
+  {
+   "seed": 3432,
+   "candidate_index": 330
+  },
+  {
+   "seed": 5607,
+   "candidate_index": 331
+  },
+  {
+   "seed": 62726,
+   "candidate_index": 332
+  },
+  {
+   "seed": 39182,
+   "candidate_index": 333
+  },
+  {
+   "seed": 11586,
+   "candidate_index": 334
+  },
+  {
+   "seed": 12741,
+   "candidate_index": 335
+  },
+  {
+   "seed": 7571,
+   "candidate_index": 336
+  },
+  {
+   "seed": 23288,
+   "candidate_index": 337
+  },
+  {
+   "seed": 23601,
+   "candidate_index": 338
+  },
+  {
+   "seed": 45661,
+   "candidate_index": 339
+  },
+  {
+   "seed": 58993,
+   "candidate_index": 340
+  },
+  {
+   "seed": 46887,
+   "candidate_index": 341
+  },
+  {
+   "seed": 36111,
+   "candidate_index": 342
+  },
+  {
+   "seed": 28826,
+   "candidate_index": 343
+  },
+  {
+   "seed": 58663,
+   "candidate_index": 344
+  },
+  {
+   "seed": 56061,
+   "candidate_index": 345
+  },
+  {
+   "seed": 14377,
+   "candidate_index": 346
+  },
+  {
+   "seed": 18769,
+   "candidate_index": 347
+  },
+  {
+   "seed": 2891,
+   "candidate_index": 348
+  },
+  {
+   "seed": 24315,
+   "candidate_index": 349
+  },
+  {
+   "seed": 61606,
+   "candidate_index": 350
+  },
+  {
+   "seed": 27671,
+   "candidate_index": 351
+  },
+  {
+   "seed": 58472,
+   "candidate_index": 352
+  },
+  {
+   "seed": 7513,
+   "candidate_index": 353
+  },
+  {
+   "seed": 36997,
+   "candidate_index": 354
+  },
+  {
+   "seed": 4409,
+   "candidate_index": 355
+  },
+  {
+   "seed": 30081,
+   "candidate_index": 356
+  },
+  {
+   "seed": 60276,
+   "candidate_index": 357
+  },
+  {
+   "seed": 23541,
+   "candidate_index": 358
+  },
+  {
+   "seed": 34481,
+   "candidate_index": 359
+  },
+  {
+   "seed": 26497,
+   "candidate_index": 360
+  },
+  {
+   "seed": 38282,
+   "candidate_index": 361
+  },
+  {
+   "seed": 4561,
+   "candidate_index": 362
+  },
+  {
+   "seed": 18490,
+   "candidate_index": 363
+  },
+  {
+   "seed": 62100,
+   "candidate_index": 364
+  },
+  {
+   "seed": 44336,
+   "candidate_index": 365
+  },
+  {
+   "seed": 6695,
+   "candidate_index": 366
+  },
+  {
+   "seed": 7194,
+   "candidate_index": 367
+  },
+  {
+   "seed": 48234,
+   "candidate_index": 368
+  },
+  {
+   "seed": 6881,
+   "candidate_index": 369
+  },
+  {
+   "seed": 1842,
+   "candidate_index": 370
+  },
+  {
+   "seed": 43034,
+   "candidate_index": 371
+  },
+  {
+   "seed": 20047,
+   "candidate_index": 372
+  },
+  {
+   "seed": 39179,
+   "candidate_index": 373
+  },
+  {
+   "seed": 10561,
+   "candidate_index": 374
+  },
+  {
+   "seed": 1207,
+   "candidate_index": 375
+  },
+  {
+   "seed": 21801,
+   "candidate_index": 376
+  },
+  {
+   "seed": 30159,
+   "candidate_index": 377
+  },
+  {
+   "seed": 24074,
+   "candidate_index": 378
+  },
+  {
+   "seed": 35838,
+   "candidate_index": 379
+  },
+  {
+   "seed": 49834,
+   "candidate_index": 380
+  },
+  {
+   "seed": 37523,
+   "candidate_index": 381
+  },
+  {
+   "seed": 18970,
+   "candidate_index": 382
+  },
+  {
+   "seed": 54102,
+   "candidate_index": 383
+  },
+  {
+   "seed": 15472,
+   "candidate_index": 384
+  },
+  {
+   "seed": 24466,
+   "candidate_index": 385
+  },
+  {
+   "seed": 23936,
+   "candidate_index": 386
+  },
+  {
+   "seed": 9002,
+   "candidate_index": 387
+  },
+  {
+   "seed": 50552,
+   "candidate_index": 388
+  },
+  {
+   "seed": 9788,
+   "candidate_index": 389
+  },
+  {
+   "seed": 60341,
+   "candidate_index": 390
+  },
+  {
+   "seed": 13591,
+   "candidate_index": 391
+  },
+  {
+   "seed": 9368,
+   "candidate_index": 392
+  },
+  {
+   "seed": 5373,
+   "candidate_index": 393
+  },
+  {
+   "seed": 8177,
+   "candidate_index": 394
+  },
+  {
+   "seed": 57919,
+   "candidate_index": 395
+  },
+  {
+   "seed": 8074,
+   "candidate_index": 396
+  },
+  {
+   "seed": 46762,
+   "candidate_index": 397
+  },
+  {
+   "seed": 11380,
+   "candidate_index": 398
+  },
+  {
+   "seed": 24648,
+   "candidate_index": 399
+  },
+  {
+   "seed": 62031,
+   "candidate_index": 400
+  },
+  {
+   "seed": 65030,
+   "candidate_index": 401
+  },
+  {
+   "seed": 35162,
+   "candidate_index": 402
+  },
+  {
+   "seed": 20449,
+   "candidate_index": 404
+  },
+  {
+   "seed": 43924,
+   "candidate_index": 405
+  },
+  {
+   "seed": 25369,
+   "candidate_index": 406
+  },
+  {
+   "seed": 55457,
+   "candidate_index": 407
+  },
+  {
+   "seed": 34694,
+   "candidate_index": 409
+  },
+  {
+   "seed": 10328,
+   "candidate_index": 410
+  },
+  {
+   "seed": 49205,
+   "candidate_index": 411
+  },
+  {
+   "seed": 28570,
+   "candidate_index": 412
+  },
+  {
+   "seed": 1215,
+   "candidate_index": 413
+  },
+  {
+   "seed": 17300,
+   "candidate_index": 414
+  },
+  {
+   "seed": 17238,
+   "candidate_index": 415
+  },
+  {
+   "seed": 26935,
+   "candidate_index": 416
+  },
+  {
+   "seed": 37565,
+   "candidate_index": 417
+  },
+  {
+   "seed": 44559,
+   "candidate_index": 418
+  },
+  {
+   "seed": 31232,
+   "candidate_index": 419
+  },
+  {
+   "seed": 39054,
+   "candidate_index": 420
+  },
+  {
+   "seed": 40983,
+   "candidate_index": 421
+  },
+  {
+   "seed": 13608,
+   "candidate_index": 422
+  },
+  {
+   "seed": 54471,
+   "candidate_index": 423
+  },
+  {
+   "seed": 48312,
+   "candidate_index": 424
+  },
+  {
+   "seed": 42998,
+   "candidate_index": 425
+  },
+  {
+   "seed": 50844,
+   "candidate_index": 426
+  },
+  {
+   "seed": 13761,
+   "candidate_index": 427
+  },
+  {
+   "seed": 9423,
+   "candidate_index": 428
+  },
+  {
+   "seed": 61107,
+   "candidate_index": 430
+  },
+  {
+   "seed": 56020,
+   "candidate_index": 431
+  },
+  {
+   "seed": 61869,
+   "candidate_index": 432
+  },
+  {
+   "seed": 51482,
+   "candidate_index": 433
+  },
+  {
+   "seed": 62259,
+   "candidate_index": 434
+  },
+  {
+   "seed": 30015,
+   "candidate_index": 435
+  },
+  {
+   "seed": 56382,
+   "candidate_index": 436
+  },
+  {
+   "seed": 37960,
+   "candidate_index": 437
+  },
+  {
+   "seed": 44848,
+   "candidate_index": 438
+  },
+  {
+   "seed": 3806,
+   "candidate_index": 440
+  },
+  {
+   "seed": 10028,
+   "candidate_index": 441
+  },
+  {
+   "seed": 59700,
+   "candidate_index": 442
+  },
+  {
+   "seed": 44887,
+   "candidate_index": 444
+  },
+  {
+   "seed": 28984,
+   "candidate_index": 445
+  },
+  {
+   "seed": 12653,
+   "candidate_index": 446
+  },
+  {
+   "seed": 60197,
+   "candidate_index": 447
+  },
+  {
+   "seed": 14905,
+   "candidate_index": 448
+  },
+  {
+   "seed": 18295,
+   "candidate_index": 449
+  },
+  {
+   "seed": 52152,
+   "candidate_index": 450
+  },
+  {
+   "seed": 22001,
+   "candidate_index": 451
+  },
+  {
+   "seed": 18399,
+   "candidate_index": 452
+  },
+  {
+   "seed": 62416,
+   "candidate_index": 453
+  },
+  {
+   "seed": 39246,
+   "candidate_index": 454
+  },
+  {
+   "seed": 15327,
+   "candidate_index": 455
+  },
+  {
+   "seed": 28270,
+   "candidate_index": 456
+  },
+  {
+   "seed": 26046,
+   "candidate_index": 457
+  },
+  {
+   "seed": 19190,
+   "candidate_index": 458
+  },
+  {
+   "seed": 32189,
+   "candidate_index": 459
+  },
+  {
+   "seed": 16184,
+   "candidate_index": 460
+  },
+  {
+   "seed": 36118,
+   "candidate_index": 461
+  },
+  {
+   "seed": 29751,
+   "candidate_index": 462
+  },
+  {
+   "seed": 17026,
+   "candidate_index": 463
+  },
+  {
+   "seed": 52916,
+   "candidate_index": 464
+  },
+  {
+   "seed": 25764,
+   "candidate_index": 465
+  },
+  {
+   "seed": 35964,
+   "candidate_index": 466
+  },
+  {
+   "seed": 38710,
+   "candidate_index": 467
+  },
+  {
+   "seed": 12981,
+   "candidate_index": 468
+  },
+  {
+   "seed": 29247,
+   "candidate_index": 469
+  },
+  {
+   "seed": 11879,
+   "candidate_index": 470
+  },
+  {
+   "seed": 58553,
+   "candidate_index": 471
+  },
+  {
+   "seed": 20161,
+   "candidate_index": 472
+  },
+  {
+   "seed": 43335,
+   "candidate_index": 473
+  },
+  {
+   "seed": 16607,
+   "candidate_index": 475
+  },
+  {
+   "seed": 42839,
+   "candidate_index": 476
+  },
+  {
+   "seed": 60837,
+   "candidate_index": 477
+  },
+  {
+   "seed": 19747,
+   "candidate_index": 478
+  },
+  {
+   "seed": 164,
+   "candidate_index": 479
+  },
+  {
+   "seed": 38505,
+   "candidate_index": 480
+  },
+  {
+   "seed": 39640,
+   "candidate_index": 481
+  },
+  {
+   "seed": 56294,
+   "candidate_index": 482
+  },
+  {
+   "seed": 45920,
+   "candidate_index": 483
+  },
+  {
+   "seed": 20152,
+   "candidate_index": 484
+  },
+  {
+   "seed": 23296,
+   "candidate_index": 485
+  },
+  {
+   "seed": 41501,
+   "candidate_index": 486
+  },
+  {
+   "seed": 816,
+   "candidate_index": 487
+  },
+  {
+   "seed": 25968,
+   "candidate_index": 488
+  },
+  {
+   "seed": 65168,
+   "candidate_index": 489
+  },
+  {
+   "seed": 59849,
+   "candidate_index": 490
+  },
+  {
+   "seed": 57744,
+   "candidate_index": 491
+  },
+  {
+   "seed": 9259,
+   "candidate_index": 492
+  },
+  {
+   "seed": 46974,
+   "candidate_index": 493
+  },
+  {
+   "seed": 26349,
+   "candidate_index": 494
+  },
+  {
+   "seed": 44518,
+   "candidate_index": 495
+  },
+  {
+   "seed": 16287,
+   "candidate_index": 496
+  },
+  {
+   "seed": 19579,
+   "candidate_index": 497
+  },
+  {
+   "seed": 24700,
+   "candidate_index": 498
+  },
+  {
+   "seed": 35054,
+   "candidate_index": 499
+  },
+  {
+   "seed": 57017,
+   "candidate_index": 500
+  },
+  {
+   "seed": 40985,
+   "candidate_index": 501
+  },
+  {
+   "seed": 26650,
+   "candidate_index": 502
+  },
+  {
+   "seed": 32054,
+   "candidate_index": 503
+  },
+  {
+   "seed": 9160,
+   "candidate_index": 504
+  },
+  {
+   "seed": 59578,
+   "candidate_index": 505
+  },
+  {
+   "seed": 32279,
+   "candidate_index": 506
+  },
+  {
+   "seed": 24113,
+   "candidate_index": 507
+  },
+  {
+   "seed": 61603,
+   "candidate_index": 508
+  },
+  {
+   "seed": 52953,
+   "candidate_index": 510
+  },
+  {
+   "seed": 52639,
+   "candidate_index": 511
+  },
+  {
+   "seed": 31276,
+   "candidate_index": 512
+  },
+  {
+   "seed": 31478,
+   "candidate_index": 513
+  },
+  {
+   "seed": 6404,
+   "candidate_index": 514
+  },
+  {
+   "seed": 48525,
+   "candidate_index": 515
+  },
+  {
+   "seed": 57446,
+   "candidate_index": 516
+  },
+  {
+   "seed": 51995,
+   "candidate_index": 517
+  },
+  {
+   "seed": 29800,
+   "candidate_index": 518
+  },
+  {
+   "seed": 16233,
+   "candidate_index": 519
+  },
+  {
+   "seed": 27380,
+   "candidate_index": 520
+  },
+  {
+   "seed": 6110,
+   "candidate_index": 521
+  },
+  {
+   "seed": 43483,
+   "candidate_index": 522
+  },
+  {
+   "seed": 59292,
+   "candidate_index": 523
+  },
+  {
+   "seed": 47562,
+   "candidate_index": 525
+  },
+  {
+   "seed": 38849,
+   "candidate_index": 526
+  },
+  {
+   "seed": 61242,
+   "candidate_index": 527
+  },
+  {
+   "seed": 18392,
+   "candidate_index": 528
+  },
+  {
+   "seed": 21724,
+   "candidate_index": 529
+  },
+  {
+   "seed": 38383,
+   "candidate_index": 530
+  },
+  {
+   "seed": 15238,
+   "candidate_index": 531
+  },
+  {
+   "seed": 25410,
+   "candidate_index": 532
+  },
+  {
+   "seed": 55427,
+   "candidate_index": 533
+  },
+  {
+   "seed": 17899,
+   "candidate_index": 534
+  },
+  {
+   "seed": 30971,
+   "candidate_index": 535
+  },
+  {
+   "seed": 35353,
+   "candidate_index": 536
+  },
+  {
+   "seed": 60868,
+   "candidate_index": 537
+  },
+  {
+   "seed": 62392,
+   "candidate_index": 538
+  },
+  {
+   "seed": 64096,
+   "candidate_index": 539
+  },
+  {
+   "seed": 61349,
+   "candidate_index": 540
+  },
+  {
+   "seed": 64376,
+   "candidate_index": 541
+  },
+  {
+   "seed": 65160,
+   "candidate_index": 542
+  },
+  {
+   "seed": 30177,
+   "candidate_index": 543
+  },
+  {
+   "seed": 39936,
+   "candidate_index": 544
+  },
+  {
+   "seed": 56807,
+   "candidate_index": 545
+  },
+  {
+   "seed": 48864,
+   "candidate_index": 547
+  },
+  {
+   "seed": 21872,
+   "candidate_index": 548
+  },
+  {
+   "seed": 57205,
+   "candidate_index": 549
+  },
+  {
+   "seed": 17022,
+   "candidate_index": 550
+  },
+  {
+   "seed": 29675,
+   "candidate_index": 551
+  },
+  {
+   "seed": 5796,
+   "candidate_index": 552
+  },
+  {
+   "seed": 29605,
+   "candidate_index": 553
+  },
+  {
+   "seed": 25854,
+   "candidate_index": 554
+  },
+  {
+   "seed": 31549,
+   "candidate_index": 556
+  },
+  {
+   "seed": 32915,
+   "candidate_index": 557
+  },
+  {
+   "seed": 20077,
+   "candidate_index": 558
+  },
+  {
+   "seed": 41723,
+   "candidate_index": 559
+  },
+  {
+   "seed": 1732,
+   "candidate_index": 560
+  },
+  {
+   "seed": 56885,
+   "candidate_index": 561
+  },
+  {
+   "seed": 28404,
+   "candidate_index": 562
+  },
+  {
+   "seed": 47545,
+   "candidate_index": 563
+  },
+  {
+   "seed": 36218,
+   "candidate_index": 564
+  },
+  {
+   "seed": 54564,
+   "candidate_index": 566
+  },
+  {
+   "seed": 60897,
+   "candidate_index": 567
+  },
+  {
+   "seed": 52719,
+   "candidate_index": 569
+  },
+  {
+   "seed": 58962,
+   "candidate_index": 570
+  },
+  {
+   "seed": 26399,
+   "candidate_index": 571
+  },
+  {
+   "seed": 65366,
+   "candidate_index": 572
+  },
+  {
+   "seed": 40953,
+   "candidate_index": 573
+  },
+  {
+   "seed": 5574,
+   "candidate_index": 574
+  },
+  {
+   "seed": 25068,
+   "candidate_index": 575
+  },
+  {
+   "seed": 29741,
+   "candidate_index": 576
+  },
+  {
+   "seed": 27443,
+   "candidate_index": 577
+  },
+  {
+   "seed": 46090,
+   "candidate_index": 578
+  },
+  {
+   "seed": 14911,
+   "candidate_index": 579
+  },
+  {
+   "seed": 1115,
+   "candidate_index": 580
+  },
+  {
+   "seed": 196,
+   "candidate_index": 581
+  },
+  {
+   "seed": 56044,
+   "candidate_index": 582
+  },
+  {
+   "seed": 3105,
+   "candidate_index": 583
+  },
+  {
+   "seed": 16033,
+   "candidate_index": 584
+  },
+  {
+   "seed": 63872,
+   "candidate_index": 585
+  },
+  {
+   "seed": 19323,
+   "candidate_index": 586
+  },
+  {
+   "seed": 2298,
+   "candidate_index": 587
+  },
+  {
+   "seed": 16772,
+   "candidate_index": 588
+  },
+  {
+   "seed": 55831,
+   "candidate_index": 589
+  },
+  {
+   "seed": 54853,
+   "candidate_index": 590
+  },
+  {
+   "seed": 32730,
+   "candidate_index": 591
+  },
+  {
+   "seed": 9093,
+   "candidate_index": 592
+  },
+  {
+   "seed": 45686,
+   "candidate_index": 593
+  },
+  {
+   "seed": 1604,
+   "candidate_index": 594
+  },
+  {
+   "seed": 41761,
+   "candidate_index": 595
+  },
+  {
+   "seed": 26768,
+   "candidate_index": 596
+  },
+  {
+   "seed": 60812,
+   "candidate_index": 597
+  },
+  {
+   "seed": 50308,
+   "candidate_index": 598
+  },
+  {
+   "seed": 36513,
+   "candidate_index": 599
+  },
+  {
+   "seed": 14303,
+   "candidate_index": 600
+  },
+  {
+   "seed": 65158,
+   "candidate_index": 601
+  },
+  {
+   "seed": 14936,
+   "candidate_index": 602
+  },
+  {
+   "seed": 23719,
+   "candidate_index": 603
+  },
+  {
+   "seed": 32798,
+   "candidate_index": 604
+  },
+  {
+   "seed": 54989,
+   "candidate_index": 605
+  },
+  {
+   "seed": 44930,
+   "candidate_index": 606
+  },
+  {
+   "seed": 56257,
+   "candidate_index": 607
+  },
+  {
+   "seed": 44053,
+   "candidate_index": 608
+  },
+  {
+   "seed": 44452,
+   "candidate_index": 609
+  },
+  {
+   "seed": 7846,
+   "candidate_index": 610
+  },
+  {
+   "seed": 3365,
+   "candidate_index": 611
+  },
+  {
+   "seed": 15488,
+   "candidate_index": 612
+  },
+  {
+   "seed": 57875,
+   "candidate_index": 614
+  },
+  {
+   "seed": 13118,
+   "candidate_index": 615
+  },
+  {
+   "seed": 28387,
+   "candidate_index": 616
+  },
+  {
+   "seed": 3033,
+   "candidate_index": 617
+  },
+  {
+   "seed": 54116,
+   "candidate_index": 618
+  },
+  {
+   "seed": 10657,
+   "candidate_index": 619
+  },
+  {
+   "seed": 51893,
+   "candidate_index": 620
+  },
+  {
+   "seed": 45433,
+   "candidate_index": 621
+  },
+  {
+   "seed": 26648,
+   "candidate_index": 622
+  },
+  {
+   "seed": 507,
+   "candidate_index": 623
+  },
+  {
+   "seed": 64521,
+   "candidate_index": 624
+  },
+  {
+   "seed": 61458,
+   "candidate_index": 625
+  },
+  {
+   "seed": 18734,
+   "candidate_index": 626
+  },
+  {
+   "seed": 45156,
+   "candidate_index": 627
+  },
+  {
+   "seed": 42713,
+   "candidate_index": 628
+  },
+  {
+   "seed": 31688,
+   "candidate_index": 630
+  },
+  {
+   "seed": 49915,
+   "candidate_index": 631
+  },
+  {
+   "seed": 42083,
+   "candidate_index": 632
+  },
+  {
+   "seed": 41820,
+   "candidate_index": 633
+  },
+  {
+   "seed": 41250,
+   "candidate_index": 634
+  },
+  {
+   "seed": 1795,
+   "candidate_index": 635
+  },
+  {
+   "seed": 60018,
+   "candidate_index": 636
+  },
+  {
+   "seed": 27211,
+   "candidate_index": 637
+  },
+  {
+   "seed": 3748,
+   "candidate_index": 638
+  },
+  {
+   "seed": 46145,
+   "candidate_index": 640
+  },
+  {
+   "seed": 10300,
+   "candidate_index": 641
+  },
+  {
+   "seed": 16776,
+   "candidate_index": 642
+  },
+  {
+   "seed": 27904,
+   "candidate_index": 643
+  },
+  {
+   "seed": 10741,
+   "candidate_index": 644
+  },
+  {
+   "seed": 26658,
+   "candidate_index": 645
+  },
+  {
+   "seed": 20543,
+   "candidate_index": 646
+  },
+  {
+   "seed": 57815,
+   "candidate_index": 647
+  },
+  {
+   "seed": 37714,
+   "candidate_index": 648
+  },
+  {
+   "seed": 57083,
+   "candidate_index": 649
+  },
+  {
+   "seed": 17715,
+   "candidate_index": 650
+  },
+  {
+   "seed": 26752,
+   "candidate_index": 651
+  },
+  {
+   "seed": 41460,
+   "candidate_index": 653
+  },
+  {
+   "seed": 23668,
+   "candidate_index": 655
+  },
+  {
+   "seed": 14314,
+   "candidate_index": 656
+  },
+  {
+   "seed": 2618,
+   "candidate_index": 657
+  },
+  {
+   "seed": 37822,
+   "candidate_index": 658
+  },
+  {
+   "seed": 7664,
+   "candidate_index": 659
+  },
+  {
+   "seed": 15124,
+   "candidate_index": 660
+  },
+  {
+   "seed": 54265,
+   "candidate_index": 661
+  },
+  {
+   "seed": 64277,
+   "candidate_index": 662
+  },
+  {
+   "seed": 39883,
+   "candidate_index": 663
+  },
+  {
+   "seed": 12612,
+   "candidate_index": 664
+  },
+  {
+   "seed": 43895,
+   "candidate_index": 665
+  },
+  {
+   "seed": 6309,
+   "candidate_index": 666
+  },
+  {
+   "seed": 21242,
+   "candidate_index": 667
+  },
+  {
+   "seed": 57032,
+   "candidate_index": 668
+  },
+  {
+   "seed": 64691,
+   "candidate_index": 669
+  },
+  {
+   "seed": 1355,
+   "candidate_index": 670
+  },
+  {
+   "seed": 42095,
+   "candidate_index": 671
+  },
+  {
+   "seed": 24123,
+   "candidate_index": 672
+  },
+  {
+   "seed": 46245,
+   "candidate_index": 673
+  },
+  {
+   "seed": 50260,
+   "candidate_index": 674
+  },
+  {
+   "seed": 6579,
+   "candidate_index": 675
+  },
+  {
+   "seed": 307,
+   "candidate_index": 676
+  },
+  {
+   "seed": 9115,
+   "candidate_index": 678
+  },
+  {
+   "seed": 24819,
+   "candidate_index": 679
+  },
+  {
+   "seed": 13010,
+   "candidate_index": 680
+  },
+  {
+   "seed": 59055,
+   "candidate_index": 681
+  },
+  {
+   "seed": 59519,
+   "candidate_index": 682
+  },
+  {
+   "seed": 10054,
+   "candidate_index": 683
+  },
+  {
+   "seed": 10343,
+   "candidate_index": 684
+  },
+  {
+   "seed": 11628,
+   "candidate_index": 685
+  },
+  {
+   "seed": 12759,
+   "candidate_index": 686
+  },
+  {
+   "seed": 3333,
+   "candidate_index": 687
+  },
+  {
+   "seed": 53907,
+   "candidate_index": 688
+  },
+  {
+   "seed": 64265,
+   "candidate_index": 689
+  },
+  {
+   "seed": 57557,
+   "candidate_index": 690
+  },
+  {
+   "seed": 11035,
+   "candidate_index": 691
+  },
+  {
+   "seed": 60883,
+   "candidate_index": 692
+  },
+  {
+   "seed": 1644,
+   "candidate_index": 693
+  },
+  {
+   "seed": 19818,
+   "candidate_index": 694
+  },
+  {
+   "seed": 55796,
+   "candidate_index": 695
+  },
+  {
+   "seed": 44471,
+   "candidate_index": 696
+  },
+  {
+   "seed": 56810,
+   "candidate_index": 697
+  },
+  {
+   "seed": 48812,
+   "candidate_index": 698
+  },
+  {
+   "seed": 55239,
+   "candidate_index": 699
+  },
+  {
+   "seed": 40421,
+   "candidate_index": 700
+  },
+  {
+   "seed": 2822,
+   "candidate_index": 701
+  },
+  {
+   "seed": 15803,
+   "candidate_index": 702
+  },
+  {
+   "seed": 37405,
+   "candidate_index": 703
+  },
+  {
+   "seed": 879,
+   "candidate_index": 704
+  },
+  {
+   "seed": 38483,
+   "candidate_index": 705
+  },
+  {
+   "seed": 47832,
+   "candidate_index": 706
+  },
+  {
+   "seed": 59966,
+   "candidate_index": 707
+  },
+  {
+   "seed": 41183,
+   "candidate_index": 708
+  },
+  {
+   "seed": 41830,
+   "candidate_index": 709
+  },
+  {
+   "seed": 8752,
+   "candidate_index": 710
+  },
+  {
+   "seed": 40838,
+   "candidate_index": 711
+  },
+  {
+   "seed": 21417,
+   "candidate_index": 712
+  },
+  {
+   "seed": 25913,
+   "candidate_index": 713
+  },
+  {
+   "seed": 52648,
+   "candidate_index": 714
+  },
+  {
+   "seed": 29345,
+   "candidate_index": 715
+  },
+  {
+   "seed": 44076,
+   "candidate_index": 716
+  },
+  {
+   "seed": 36128,
+   "candidate_index": 717
+  },
+  {
+   "seed": 59085,
+   "candidate_index": 718
+  },
+  {
+   "seed": 4356,
+   "candidate_index": 719
+  },
+  {
+   "seed": 398,
+   "candidate_index": 720
+  },
+  {
+   "seed": 14068,
+   "candidate_index": 721
+  },
+  {
+   "seed": 7729,
+   "candidate_index": 722
+  },
+  {
+   "seed": 6519,
+   "candidate_index": 723
+  },
+  {
+   "seed": 30725,
+   "candidate_index": 724
+  },
+  {
+   "seed": 39137,
+   "candidate_index": 725
+  },
+  {
+   "seed": 50427,
+   "candidate_index": 726
+  },
+  {
+   "seed": 29308,
+   "candidate_index": 727
+  },
+  {
+   "seed": 13817,
+   "candidate_index": 728
+  },
+  {
+   "seed": 47989,
+   "candidate_index": 729
+  },
+  {
+   "seed": 38249,
+   "candidate_index": 730
+  },
+  {
+   "seed": 3243,
+   "candidate_index": 731
+  },
+  {
+   "seed": 47394,
+   "candidate_index": 732
+  },
+  {
+   "seed": 27118,
+   "candidate_index": 733
+  },
+  {
+   "seed": 13802,
+   "candidate_index": 734
+  },
+  {
+   "seed": 50159,
+   "candidate_index": 735
+  },
+  {
+   "seed": 29513,
+   "candidate_index": 736
+  },
+  {
+   "seed": 10431,
+   "candidate_index": 737
+  },
+  {
+   "seed": 51887,
+   "candidate_index": 738
+  },
+  {
+   "seed": 58727,
+   "candidate_index": 739
+  },
+  {
+   "seed": 62367,
+   "candidate_index": 740
+  },
+  {
+   "seed": 25830,
+   "candidate_index": 741
+  },
+  {
+   "seed": 25392,
+   "candidate_index": 742
+  },
+  {
+   "seed": 48393,
+   "candidate_index": 743
+  },
+  {
+   "seed": 44445,
+   "candidate_index": 744
+  },
+  {
+   "seed": 47784,
+   "candidate_index": 745
+  },
+  {
+   "seed": 58307,
+   "candidate_index": 746
+  },
+  {
+   "seed": 15271,
+   "candidate_index": 747
+  },
+  {
+   "seed": 7310,
+   "candidate_index": 748
+  },
+  {
+   "seed": 5863,
+   "candidate_index": 749
+  },
+  {
+   "seed": 20463,
+   "candidate_index": 750
+  },
+  {
+   "seed": 45516,
+   "candidate_index": 751
+  },
+  {
+   "seed": 48319,
+   "candidate_index": 752
+  },
+  {
+   "seed": 43045,
+   "candidate_index": 754
+  },
+  {
+   "seed": 61168,
+   "candidate_index": 755
+  },
+  {
+   "seed": 37465,
+   "candidate_index": 756
+  },
+  {
+   "seed": 40665,
+   "candidate_index": 757
+  },
+  {
+   "seed": 28288,
+   "candidate_index": 758
+  },
+  {
+   "seed": 65370,
+   "candidate_index": 759
+  },
+  {
+   "seed": 1260,
+   "candidate_index": 760
+  },
+  {
+   "seed": 7401,
+   "candidate_index": 761
+  },
+  {
+   "seed": 29541,
+   "candidate_index": 763
+  },
+  {
+   "seed": 15553,
+   "candidate_index": 764
+  },
+  {
+   "seed": 45139,
+   "candidate_index": 765
+  },
+  {
+   "seed": 54240,
+   "candidate_index": 766
+  },
+  {
+   "seed": 64946,
+   "candidate_index": 767
+  },
+  {
+   "seed": 53442,
+   "candidate_index": 768
+  },
+  {
+   "seed": 43127,
+   "candidate_index": 769
+  },
+  {
+   "seed": 42518,
+   "candidate_index": 770
+  },
+  {
+   "seed": 19313,
+   "candidate_index": 771
+  },
+  {
+   "seed": 65394,
+   "candidate_index": 772
+  },
+  {
+   "seed": 1507,
+   "candidate_index": 773
+  },
+  {
+   "seed": 33296,
+   "candidate_index": 774
+  },
+  {
+   "seed": 48910,
+   "candidate_index": 775
+  },
+  {
+   "seed": 52317,
+   "candidate_index": 776
+  },
+  {
+   "seed": 62015,
+   "candidate_index": 777
+  },
+  {
+   "seed": 55350,
+   "candidate_index": 778
+  },
+  {
+   "seed": 18386,
+   "candidate_index": 779
+  },
+  {
+   "seed": 40751,
+   "candidate_index": 780
+  },
+  {
+   "seed": 25123,
+   "candidate_index": 781
+  },
+  {
+   "seed": 60132,
+   "candidate_index": 782
+  },
+  {
+   "seed": 44798,
+   "candidate_index": 783
+  },
+  {
+   "seed": 12257,
+   "candidate_index": 784
+  },
+  {
+   "seed": 55132,
+   "candidate_index": 785
+  },
+  {
+   "seed": 22034,
+   "candidate_index": 786
+  },
+  {
+   "seed": 49812,
+   "candidate_index": 787
+  },
+  {
+   "seed": 48134,
+   "candidate_index": 788
+  },
+  {
+   "seed": 28383,
+   "candidate_index": 789
+  },
+  {
+   "seed": 47651,
+   "candidate_index": 790
+  },
+  {
+   "seed": 60279,
+   "candidate_index": 791
+  },
+  {
+   "seed": 13570,
+   "candidate_index": 793
+  },
+  {
+   "seed": 15525,
+   "candidate_index": 794
+  },
+  {
+   "seed": 33811,
+   "candidate_index": 795
+  },
+  {
+   "seed": 42279,
+   "candidate_index": 796
+  },
+  {
+   "seed": 22592,
+   "candidate_index": 797
+  },
+  {
+   "seed": 32175,
+   "candidate_index": 798
+  },
+  {
+   "seed": 38035,
+   "candidate_index": 800
+  },
+  {
+   "seed": 18861,
+   "candidate_index": 801
+  },
+  {
+   "seed": 17437,
+   "candidate_index": 802
+  },
+  {
+   "seed": 4664,
+   "candidate_index": 803
+  },
+  {
+   "seed": 55441,
+   "candidate_index": 805
+  },
+  {
+   "seed": 51607,
+   "candidate_index": 806
+  },
+  {
+   "seed": 6223,
+   "candidate_index": 807
+  },
+  {
+   "seed": 8899,
+   "candidate_index": 808
+  },
+  {
+   "seed": 42627,
+   "candidate_index": 809
+  },
+  {
+   "seed": 21177,
+   "candidate_index": 810
+  },
+  {
+   "seed": 30858,
+   "candidate_index": 812
+  },
+  {
+   "seed": 64897,
+   "candidate_index": 813
+  },
+  {
+   "seed": 14605,
+   "candidate_index": 814
+  },
+  {
+   "seed": 3223,
+   "candidate_index": 815
+  },
+  {
+   "seed": 5647,
+   "candidate_index": 816
+  },
+  {
+   "seed": 48054,
+   "candidate_index": 817
+  },
+  {
+   "seed": 57239,
+   "candidate_index": 818
+  },
+  {
+   "seed": 33883,
+   "candidate_index": 819
+  },
+  {
+   "seed": 63833,
+   "candidate_index": 820
+  },
+  {
+   "seed": 50723,
+   "candidate_index": 821
+  },
+  {
+   "seed": 63206,
+   "candidate_index": 822
+  },
+  {
+   "seed": 21546,
+   "candidate_index": 823
+  },
+  {
+   "seed": 33088,
+   "candidate_index": 824
+  },
+  {
+   "seed": 20662,
+   "candidate_index": 825
+  },
+  {
+   "seed": 9515,
+   "candidate_index": 826
+  },
+  {
+   "seed": 15700,
+   "candidate_index": 827
+  },
+  {
+   "seed": 53321,
+   "candidate_index": 828
+  },
+  {
+   "seed": 58599,
+   "candidate_index": 829
+  },
+  {
+   "seed": 14449,
+   "candidate_index": 830
+  },
+  {
+   "seed": 51339,
+   "candidate_index": 831
+  },
+  {
+   "seed": 30620,
+   "candidate_index": 832
+  },
+  {
+   "seed": 30557,
+   "candidate_index": 833
+  },
+  {
+   "seed": 35697,
+   "candidate_index": 835
+  },
+  {
+   "seed": 35555,
+   "candidate_index": 836
+  },
+  {
+   "seed": 27957,
+   "candidate_index": 837
+  },
+  {
+   "seed": 11920,
+   "candidate_index": 838
+  },
+  {
+   "seed": 14687,
+   "candidate_index": 839
+  },
+  {
+   "seed": 35287,
+   "candidate_index": 840
+  },
+  {
+   "seed": 29686,
+   "candidate_index": 841
+  },
+  {
+   "seed": 42169,
+   "candidate_index": 842
+  },
+  {
+   "seed": 20598,
+   "candidate_index": 843
+  },
+  {
+   "seed": 16332,
+   "candidate_index": 844
+  },
+  {
+   "seed": 62503,
+   "candidate_index": 845
+  },
+  {
+   "seed": 34467,
+   "candidate_index": 846
+  },
+  {
+   "seed": 59925,
+   "candidate_index": 847
+  },
+  {
+   "seed": 17777,
+   "candidate_index": 848
+  },
+  {
+   "seed": 23290,
+   "candidate_index": 849
+  },
+  {
+   "seed": 59869,
+   "candidate_index": 851
+  },
+  {
+   "seed": 63424,
+   "candidate_index": 852
+  },
+  {
+   "seed": 57344,
+   "candidate_index": 853
+  },
+  {
+   "seed": 50701,
+   "candidate_index": 854
+  },
+  {
+   "seed": 24368,
+   "candidate_index": 855
+  },
+  {
+   "seed": 51708,
+   "candidate_index": 856
+  },
+  {
+   "seed": 40347,
+   "candidate_index": 857
+  },
+  {
+   "seed": 4054,
+   "candidate_index": 858
+  },
+  {
+   "seed": 52175,
+   "candidate_index": 859
+  },
+  {
+   "seed": 30025,
+   "candidate_index": 860
+  },
+  {
+   "seed": 38497,
+   "candidate_index": 861
+  },
+  {
+   "seed": 64878,
+   "candidate_index": 862
+  },
+  {
+   "seed": 28551,
+   "candidate_index": 863
+  },
+  {
+   "seed": 23875,
+   "candidate_index": 864
+  },
+  {
+   "seed": 9425,
+   "candidate_index": 865
+  },
+  {
+   "seed": 55711,
+   "candidate_index": 866
+  },
+  {
+   "seed": 54619,
+   "candidate_index": 867
+  },
+  {
+   "seed": 32353,
+   "candidate_index": 868
+  },
+  {
+   "seed": 46336,
+   "candidate_index": 869
+  },
+  {
+   "seed": 61116,
+   "candidate_index": 870
+  },
+  {
+   "seed": 31849,
+   "candidate_index": 871
+  },
+  {
+   "seed": 50543,
+   "candidate_index": 872
+  },
+  {
+   "seed": 48609,
+   "candidate_index": 873
+  },
+  {
+   "seed": 56514,
+   "candidate_index": 875
+  },
+  {
+   "seed": 7230,
+   "candidate_index": 876
+  },
+  {
+   "seed": 23072,
+   "candidate_index": 878
+  },
+  {
+   "seed": 35321,
+   "candidate_index": 879
+  },
+  {
+   "seed": 65127,
+   "candidate_index": 880
+  },
+  {
+   "seed": 12864,
+   "candidate_index": 881
+  },
+  {
+   "seed": 57662,
+   "candidate_index": 882
+  },
+  {
+   "seed": 47582,
+   "candidate_index": 883
+  },
+  {
+   "seed": 51915,
+   "candidate_index": 884
+  },
+  {
+   "seed": 53827,
+   "candidate_index": 885
+  },
+  {
+   "seed": 22359,
+   "candidate_index": 886
+  },
+  {
+   "seed": 14619,
+   "candidate_index": 888
+  },
+  {
+   "seed": 5172,
+   "candidate_index": 889
+  },
+  {
+   "seed": 53196,
+   "candidate_index": 890
+  },
+  {
+   "seed": 51874,
+   "candidate_index": 891
+  },
+  {
+   "seed": 31153,
+   "candidate_index": 892
+  },
+  {
+   "seed": 42735,
+   "candidate_index": 893
+  },
+  {
+   "seed": 57192,
+   "candidate_index": 894
+  },
+  {
+   "seed": 62396,
+   "candidate_index": 895
+  },
+  {
+   "seed": 11537,
+   "candidate_index": 896
+  },
+  {
+   "seed": 24963,
+   "candidate_index": 897
+  },
+  {
+   "seed": 21195,
+   "candidate_index": 898
+  },
+  {
+   "seed": 34613,
+   "candidate_index": 899
+  },
+  {
+   "seed": 17261,
+   "candidate_index": 900
+  },
+  {
+   "seed": 3780,
+   "candidate_index": 902
+  },
+  {
+   "seed": 48192,
+   "candidate_index": 903
+  },
+  {
+   "seed": 12764,
+   "candidate_index": 904
+  },
+  {
+   "seed": 18160,
+   "candidate_index": 905
+  },
+  {
+   "seed": 35592,
+   "candidate_index": 906
+  },
+  {
+   "seed": 7446,
+   "candidate_index": 907
+  },
+  {
+   "seed": 18260,
+   "candidate_index": 908
+  },
+  {
+   "seed": 40224,
+   "candidate_index": 909
+  },
+  {
+   "seed": 32723,
+   "candidate_index": 911
+  },
+  {
+   "seed": 10514,
+   "candidate_index": 912
+  },
+  {
+   "seed": 9623,
+   "candidate_index": 913
+  },
+  {
+   "seed": 57573,
+   "candidate_index": 914
+  },
+  {
+   "seed": 44268,
+   "candidate_index": 915
+  },
+  {
+   "seed": 19624,
+   "candidate_index": 916
+  },
+  {
+   "seed": 79,
+   "candidate_index": 917
+  },
+  {
+   "seed": 31971,
+   "candidate_index": 918
+  },
+  {
+   "seed": 14883,
+   "candidate_index": 920
+  },
+  {
+   "seed": 15140,
+   "candidate_index": 921
+  },
+  {
+   "seed": 22288,
+   "candidate_index": 922
+  },
+  {
+   "seed": 18255,
+   "candidate_index": 923
+  },
+  {
+   "seed": 18068,
+   "candidate_index": 925
+  },
+  {
+   "seed": 30731,
+   "candidate_index": 926
+  },
+  {
+   "seed": 58853,
+   "candidate_index": 927
+  },
+  {
+   "seed": 15343,
+   "candidate_index": 928
+  },
+  {
+   "seed": 60833,
+   "candidate_index": 929
+  },
+  {
+   "seed": 34034,
+   "candidate_index": 930
+  },
+  {
+   "seed": 59321,
+   "candidate_index": 931
+  },
+  {
+   "seed": 31866,
+   "candidate_index": 932
+  },
+  {
+   "seed": 49158,
+   "candidate_index": 933
+  },
+  {
+   "seed": 23400,
+   "candidate_index": 934
+  },
+  {
+   "seed": 44566,
+   "candidate_index": 935
+  },
+  {
+   "seed": 2046,
+   "candidate_index": 936
+  },
+  {
+   "seed": 45130,
+   "candidate_index": 937
+  },
+  {
+   "seed": 3141,
+   "candidate_index": 938
+  },
+  {
+   "seed": 30053,
+   "candidate_index": 939
+  },
+  {
+   "seed": 61651,
+   "candidate_index": 940
+  },
+  {
+   "seed": 18276,
+   "candidate_index": 941
+  },
+  {
+   "seed": 9827,
+   "candidate_index": 943
+  },
+  {
+   "seed": 49261,
+   "candidate_index": 944
+  },
+  {
+   "seed": 21042,
+   "candidate_index": 946
+  },
+  {
+   "seed": 50491,
+   "candidate_index": 947
+  },
+  {
+   "seed": 9332,
+   "candidate_index": 948
+  },
+  {
+   "seed": 38395,
+   "candidate_index": 949
+  },
+  {
+   "seed": 27715,
+   "candidate_index": 950
+  },
+  {
+   "seed": 8993,
+   "candidate_index": 952
+  },
+  {
+   "seed": 2235,
+   "candidate_index": 953
+  },
+  {
+   "seed": 45789,
+   "candidate_index": 954
+  },
+  {
+   "seed": 46927,
+   "candidate_index": 955
+  },
+  {
+   "seed": 25180,
+   "candidate_index": 956
+  },
+  {
+   "seed": 5659,
+   "candidate_index": 958
+  },
+  {
+   "seed": 60327,
+   "candidate_index": 959
+  },
+  {
+   "seed": 24056,
+   "candidate_index": 960
+  },
+  {
+   "seed": 34962,
+   "candidate_index": 961
+  },
+  {
+   "seed": 36234,
+   "candidate_index": 963
+  },
+  {
+   "seed": 42580,
+   "candidate_index": 964
+  },
+  {
+   "seed": 12888,
+   "candidate_index": 965
+  },
+  {
+   "seed": 18462,
+   "candidate_index": 966
+  },
+  {
+   "seed": 211,
+   "candidate_index": 967
+  },
+  {
+   "seed": 16821,
+   "candidate_index": 968
+  },
+  {
+   "seed": 25406,
+   "candidate_index": 969
+  },
+  {
+   "seed": 41045,
+   "candidate_index": 970
+  },
+  {
+   "seed": 34350,
+   "candidate_index": 971
+  },
+  {
+   "seed": 57460,
+   "candidate_index": 972
+  },
+  {
+   "seed": 53054,
+   "candidate_index": 973
+  },
+  {
+   "seed": 44142,
+   "candidate_index": 974
+  },
+  {
+   "seed": 37174,
+   "candidate_index": 975
+  },
+  {
+   "seed": 23018,
+   "candidate_index": 976
+  },
+  {
+   "seed": 46146,
+   "candidate_index": 977
+  },
+  {
+   "seed": 49893,
+   "candidate_index": 979
+  },
+  {
+   "seed": 30721,
+   "candidate_index": 980
+  },
+  {
+   "seed": 44723,
+   "candidate_index": 981
+  },
+  {
+   "seed": 52990,
+   "candidate_index": 982
+  },
+  {
+   "seed": 9267,
+   "candidate_index": 983
+  },
+  {
+   "seed": 1053,
+   "candidate_index": 984
+  },
+  {
+   "seed": 1392,
+   "candidate_index": 985
+  },
+  {
+   "seed": 23243,
+   "candidate_index": 986
+  },
+  {
+   "seed": 12983,
+   "candidate_index": 987
+  },
+  {
+   "seed": 23748,
+   "candidate_index": 988
+  },
+  {
+   "seed": 63568,
+   "candidate_index": 989
+  },
+  {
+   "seed": 61086,
+   "candidate_index": 990
+  },
+  {
+   "seed": 51479,
+   "candidate_index": 991
+  },
+  {
+   "seed": 43590,
+   "candidate_index": 993
+  },
+  {
+   "seed": 8824,
+   "candidate_index": 994
+  },
+  {
+   "seed": 10395,
+   "candidate_index": 995
+  },
+  {
+   "seed": 40783,
+   "candidate_index": 996
+  },
+  {
+   "seed": 28339,
+   "candidate_index": 997
+  },
+  {
+   "seed": 37226,
+   "candidate_index": 998
+  },
+  {
+   "seed": 16279,
+   "candidate_index": 999
+  },
+  {
+   "seed": 57515,
+   "candidate_index": 1000
+  },
+  {
+   "seed": 4876,
+   "candidate_index": 1001
+  },
+  {
+   "seed": 30780,
+   "candidate_index": 1002
+  },
+  {
+   "seed": 60640,
+   "candidate_index": 1003
+  },
+  {
+   "seed": 23458,
+   "candidate_index": 1004
+  },
+  {
+   "seed": 60710,
+   "candidate_index": 1005
+  },
+  {
+   "seed": 3598,
+   "candidate_index": 1006
+  },
+  {
+   "seed": 31434,
+   "candidate_index": 1007
+  },
+  {
+   "seed": 28238,
+   "candidate_index": 1008
+  },
+  {
+   "seed": 33218,
+   "candidate_index": 1009
+  },
+  {
+   "seed": 58298,
+   "candidate_index": 1010
+  },
+  {
+   "seed": 30104,
+   "candidate_index": 1011
+  },
+  {
+   "seed": 21934,
+   "candidate_index": 1012
+  },
+  {
+   "seed": 60243,
+   "candidate_index": 1013
+  },
+  {
+   "seed": 38400,
+   "candidate_index": 1014
+  },
+  {
+   "seed": 14361,
+   "candidate_index": 1015
+  },
+  {
+   "seed": 59108,
+   "candidate_index": 1016
+  },
+  {
+   "seed": 22754,
+   "candidate_index": 1017
+  },
+  {
+   "seed": 46666,
+   "candidate_index": 1018
+  },
+  {
+   "seed": 64447,
+   "candidate_index": 1020
+  },
+  {
+   "seed": 28042,
+   "candidate_index": 1021
+  },
+  {
+   "seed": 35402,
+   "candidate_index": 1022
+  },
+  {
+   "seed": 40724,
+   "candidate_index": 1023
+  },
+  {
+   "seed": 9749,
+   "candidate_index": 1024
+  },
+  {
+   "seed": 17050,
+   "candidate_index": 1025
+  },
+  {
+   "seed": 27985,
+   "candidate_index": 1026
+  },
+  {
+   "seed": 47655,
+   "candidate_index": 1027
+  },
+  {
+   "seed": 62775,
+   "candidate_index": 1028
+  },
+  {
+   "seed": 52410,
+   "candidate_index": 1029
+  },
+  {
+   "seed": 49376,
+   "candidate_index": 1030
+  },
+  {
+   "seed": 1575,
+   "candidate_index": 1031
+  },
+  {
+   "seed": 47697,
+   "candidate_index": 1032
+  },
+  {
+   "seed": 19398,
+   "candidate_index": 1033
+  },
+  {
+   "seed": 18874,
+   "candidate_index": 1034
+  },
+  {
+   "seed": 44735,
+   "candidate_index": 1035
+  },
+  {
+   "seed": 65232,
+   "candidate_index": 1036
+  },
+  {
+   "seed": 52403,
+   "candidate_index": 1037
+  },
+  {
+   "seed": 15835,
+   "candidate_index": 1038
+  },
+  {
+   "seed": 23328,
+   "candidate_index": 1039
+  },
+  {
+   "seed": 61685,
+   "candidate_index": 1040
+  },
+  {
+   "seed": 15709,
+   "candidate_index": 1042
+  },
+  {
+   "seed": 38487,
+   "candidate_index": 1044
+  },
+  {
+   "seed": 6326,
+   "candidate_index": 1045
+  },
+  {
+   "seed": 21187,
+   "candidate_index": 1046
+  },
+  {
+   "seed": 20821,
+   "candidate_index": 1047
+  },
+  {
+   "seed": 14401,
+   "candidate_index": 1048
+  },
+  {
+   "seed": 62934,
+   "candidate_index": 1049
+  },
+  {
+   "seed": 19771,
+   "candidate_index": 1050
+  },
+  {
+   "seed": 59682,
+   "candidate_index": 1051
+  },
+  {
+   "seed": 59593,
+   "candidate_index": 1052
+  }
+ ],
+ "heldout_seeds": [
+  61737,
+  24534,
+  27806,
+  55213,
+  2912,
+  21349,
+  29349,
+  38448,
+  17212,
+  56873,
+  6468,
+  41269,
+  64579,
+  18639,
+  14991,
+  65207,
+  15772,
+  4983,
+  54274,
+  16318,
+  30036,
+  18968,
+  53684,
+  27087,
+  6013,
+  8702,
+  54503,
+  10636,
+  12220,
+  27347,
+  23203,
+  21013,
+  30277,
+  26711,
+  98,
+  58640,
+  12862,
+  44259,
+  57936,
+  41212,
+  25718,
+  19869,
+  33388,
+  36339,
+  21672,
+  27089,
+  14394,
+  40162,
+  24017,
+  3281,
+  30986,
+  30815,
+  4020,
+  27631,
+  52272,
+  33630,
+  23173,
+  46095,
+  7166,
+  26581,
+  43327,
+  61559,
+  1429,
+  6317,
+  7616,
+  49894,
+  40111,
+  41095,
+  62963,
+  10407,
+  27292,
+  48273,
+  57510,
+  46493,
+  29608,
+  32789,
+  50405,
+  61332,
+  35111,
+  32106,
+  60109,
+  27530,
+  31934,
+  5081,
+  17298,
+  4746,
+  64948,
+  29621,
+  16732,
+  25304,
+  63730,
+  58412,
+  55517,
+  12129,
+  7295,
+  54406,
+  62980,
+  29922,
+  55216,
+  60800,
+  8178,
+  19118,
+  38516,
+  53123,
+  36915,
+  32140,
+  29738,
+  10095,
+  5193,
+  11564,
+  65533,
+  44261,
+  5383,
+  63559,
+  34282,
+  17895,
+  33982,
+  39766,
+  63165,
+  35522,
+  44413,
+  48261,
+  26664,
+  48564,
+  54602,
+  9179,
+  8264,
+  8332,
+  773,
+  11003,
+  61338,
+  3521,
+  25878,
+  64106,
+  37372,
+  33647,
+  35689,
+  61079,
+  43576,
+  25596,
+  18693,
+  32823,
+  65343,
+  44565,
+  36659,
+  53550,
+  30334,
+  42535,
+  14963,
+  47174,
+  59883,
+  38027,
+  15918,
+  32987,
+  47388,
+  21647,
+  3428,
+  57024,
+  53728,
+  59097,
+  2703,
+  37636,
+  8789,
+  2773,
+  29091,
+  33598,
+  56503,
+  17319,
+  64775,
+  45853,
+  12320,
+  46279,
+  46834,
+  12334,
+  8336,
+  42396,
+  54724,
+  48856,
+  5772,
+  5655,
+  60479,
+  44581,
+  43198,
+  40059,
+  13913,
+  11206,
+  55677,
+  11703,
+  37293,
+  30828,
+  31717,
+  12383,
+  28361,
+  2149,
+  27057,
+  24867,
+  20227,
+  46438,
+  25877,
+  51444,
+  9510,
+  1965,
+  4031,
+  53583,
+  37640,
+  31145,
+  56135,
+  3137,
+  1549,
+  15192,
+  2723,
+  10817,
+  59213,
+  56521,
+  64551,
+  55525,
+  61752,
+  13935,
+  32419,
+  58733,
+  29404,
+  35375,
+  55817,
+  47190,
+  33683,
+  29242,
+  42603,
+  53201,
+  9180,
+  12172,
+  9771,
+  51256,
+  24427,
+  18865,
+  56150,
+  53940,
+  532,
+  65414,
+  64903,
+  36468,
+  50009,
+  35746,
+  48493,
+  60736,
+  13988,
+  29447,
+  11049,
+  11157,
+  15635,
+  47658,
+  575,
+  58454,
+  11438,
+  56658,
+  13025,
+  33801,
+  60924,
+  59794,
+  40196,
+  50987,
+  29623,
+  8956,
+  20311,
+  50042,
+  24423,
+  688,
+  46057,
+  22222,
+  56290,
+  57637,
+  13189,
+  6909,
+  58253,
+  29156,
+  54704,
+  59033,
+  19161,
+  9052,
+  45693,
+  19817,
+  10738,
+  20081,
+  63104,
+  47148,
+  57049,
+  9617,
+  56932,
+  28831,
+  60380,
+  38891,
+  20098,
+  60372,
+  18681,
+  24982,
+  64182,
+  49333,
+  38687,
+  4272,
+  36209,
+  41596,
+  2090,
+  59996,
+  61765,
+  33364,
+  22087,
+  20250,
+  33988,
+  16608,
+  54651,
+  7679,
+  42882,
+  5876,
+  62616,
+  17129,
+  18924,
+  8019,
+  25655,
+  17478,
+  38154,
+  23736,
+  3432,
+  5607,
+  62726,
+  39182,
+  11586,
+  12741,
+  7571,
+  23288,
+  23601,
+  45661,
+  58993,
+  46887,
+  36111,
+  28826,
+  58663,
+  56061,
+  14377,
+  18769,
+  2891,
+  24315,
+  61606,
+  27671,
+  58472,
+  7513,
+  36997,
+  4409,
+  30081,
+  60276,
+  23541,
+  34481,
+  26497,
+  38282,
+  4561,
+  18490,
+  62100,
+  44336,
+  6695,
+  7194,
+  48234,
+  6881,
+  1842,
+  43034,
+  20047,
+  39179,
+  10561,
+  1207,
+  21801,
+  30159,
+  24074,
+  35838,
+  49834,
+  37523,
+  18970,
+  54102,
+  15472,
+  24466,
+  23936,
+  9002,
+  50552,
+  9788,
+  60341,
+  13591,
+  9368,
+  5373,
+  8177,
+  57919,
+  8074,
+  46762,
+  11380,
+  24648,
+  62031,
+  65030,
+  35162,
+  20449,
+  43924,
+  25369,
+  55457,
+  34694,
+  10328,
+  49205,
+  28570,
+  1215,
+  17300,
+  17238,
+  26935,
+  37565,
+  44559,
+  31232,
+  39054,
+  40983,
+  13608,
+  54471,
+  48312,
+  42998,
+  50844,
+  13761,
+  9423,
+  61107,
+  56020,
+  61869,
+  51482,
+  62259,
+  30015,
+  56382,
+  37960,
+  44848,
+  3806,
+  10028,
+  59700,
+  44887,
+  28984,
+  12653,
+  60197,
+  14905,
+  18295,
+  52152,
+  22001,
+  18399,
+  62416,
+  39246,
+  15327,
+  28270,
+  26046,
+  19190,
+  32189,
+  16184,
+  36118,
+  29751,
+  17026,
+  52916,
+  25764,
+  35964,
+  38710,
+  12981,
+  29247,
+  11879,
+  58553,
+  20161,
+  43335,
+  16607,
+  42839,
+  60837,
+  19747,
+  164,
+  38505,
+  39640,
+  56294,
+  45920,
+  20152,
+  23296,
+  41501,
+  816,
+  25968,
+  65168,
+  59849,
+  57744,
+  9259,
+  46974,
+  26349,
+  44518,
+  16287,
+  19579,
+  24700,
+  35054,
+  57017,
+  40985,
+  26650,
+  32054,
+  9160,
+  59578,
+  32279,
+  24113,
+  61603,
+  52953,
+  52639,
+  31276,
+  31478,
+  6404,
+  48525,
+  57446,
+  51995,
+  29800,
+  16233,
+  27380,
+  6110,
+  43483,
+  59292,
+  47562,
+  38849,
+  61242,
+  18392,
+  21724,
+  38383,
+  15238,
+  25410,
+  55427,
+  17899,
+  30971,
+  35353,
+  60868,
+  62392,
+  64096,
+  61349,
+  64376,
+  65160,
+  30177,
+  39936,
+  56807,
+  48864,
+  21872,
+  57205,
+  17022,
+  29675,
+  5796,
+  29605,
+  25854,
+  31549,
+  32915,
+  20077,
+  41723,
+  1732,
+  56885,
+  28404,
+  47545,
+  36218,
+  54564,
+  60897,
+  52719,
+  58962,
+  26399,
+  65366,
+  40953,
+  5574,
+  25068,
+  29741,
+  27443,
+  46090,
+  14911,
+  1115,
+  196,
+  56044,
+  3105,
+  16033,
+  63872,
+  19323,
+  2298,
+  16772,
+  55831,
+  54853,
+  32730,
+  9093,
+  45686,
+  1604,
+  41761,
+  26768,
+  60812,
+  50308,
+  36513,
+  14303,
+  65158,
+  14936,
+  23719,
+  32798,
+  54989,
+  44930,
+  56257,
+  44053,
+  44452,
+  7846,
+  3365,
+  15488,
+  57875,
+  13118,
+  28387,
+  3033,
+  54116,
+  10657,
+  51893,
+  45433,
+  26648,
+  507,
+  64521,
+  61458,
+  18734,
+  45156,
+  42713,
+  31688,
+  49915,
+  42083,
+  41820,
+  41250,
+  1795,
+  60018,
+  27211,
+  3748,
+  46145,
+  10300,
+  16776,
+  27904,
+  10741,
+  26658,
+  20543,
+  57815,
+  37714,
+  57083,
+  17715,
+  26752,
+  41460,
+  23668,
+  14314,
+  2618,
+  37822,
+  7664,
+  15124,
+  54265,
+  64277,
+  39883,
+  12612,
+  43895,
+  6309,
+  21242,
+  57032,
+  64691,
+  1355,
+  42095,
+  24123,
+  46245,
+  50260,
+  6579,
+  307,
+  9115,
+  24819,
+  13010,
+  59055,
+  59519,
+  10054,
+  10343,
+  11628,
+  12759,
+  3333,
+  53907,
+  64265,
+  57557,
+  11035,
+  60883,
+  1644,
+  19818,
+  55796,
+  44471,
+  56810,
+  48812,
+  55239,
+  40421,
+  2822,
+  15803,
+  37405,
+  879,
+  38483,
+  47832,
+  59966,
+  41183,
+  41830,
+  8752,
+  40838,
+  21417,
+  25913,
+  52648,
+  29345,
+  44076,
+  36128,
+  59085,
+  4356,
+  398,
+  14068,
+  7729,
+  6519,
+  30725,
+  39137,
+  50427,
+  29308,
+  13817,
+  47989,
+  38249,
+  3243,
+  47394,
+  27118,
+  13802,
+  50159,
+  29513,
+  10431,
+  51887,
+  58727,
+  62367,
+  25830,
+  25392,
+  48393,
+  44445,
+  47784,
+  58307,
+  15271,
+  7310,
+  5863,
+  20463,
+  45516,
+  48319,
+  43045,
+  61168,
+  37465,
+  40665,
+  28288,
+  65370,
+  1260,
+  7401,
+  29541,
+  15553,
+  45139,
+  54240,
+  64946,
+  53442,
+  43127,
+  42518,
+  19313,
+  65394,
+  1507,
+  33296,
+  48910,
+  52317,
+  62015,
+  55350,
+  18386,
+  40751,
+  25123,
+  60132,
+  44798,
+  12257,
+  55132,
+  22034,
+  49812,
+  48134,
+  28383,
+  47651,
+  60279,
+  13570,
+  15525,
+  33811,
+  42279,
+  22592,
+  32175,
+  38035,
+  18861,
+  17437,
+  4664,
+  55441,
+  51607,
+  6223,
+  8899,
+  42627,
+  21177,
+  30858,
+  64897,
+  14605,
+  3223,
+  5647,
+  48054,
+  57239,
+  33883,
+  63833,
+  50723,
+  63206,
+  21546,
+  33088,
+  20662,
+  9515,
+  15700,
+  53321,
+  58599,
+  14449,
+  51339,
+  30620,
+  30557,
+  35697,
+  35555,
+  27957,
+  11920,
+  14687,
+  35287,
+  29686,
+  42169,
+  20598,
+  16332,
+  62503,
+  34467,
+  59925,
+  17777,
+  23290,
+  59869,
+  63424,
+  57344,
+  50701,
+  24368,
+  51708,
+  40347,
+  4054,
+  52175,
+  30025,
+  38497,
+  64878,
+  28551,
+  23875,
+  9425,
+  55711,
+  54619,
+  32353,
+  46336,
+  61116,
+  31849,
+  50543,
+  48609,
+  56514,
+  7230,
+  23072,
+  35321,
+  65127,
+  12864,
+  57662,
+  47582,
+  51915,
+  53827,
+  22359,
+  14619,
+  5172,
+  53196,
+  51874,
+  31153,
+  42735,
+  57192,
+  62396,
+  11537,
+  24963,
+  21195,
+  34613,
+  17261,
+  3780,
+  48192,
+  12764,
+  18160,
+  35592,
+  7446,
+  18260,
+  40224,
+  32723,
+  10514,
+  9623,
+  57573,
+  44268,
+  19624,
+  79,
+  31971,
+  14883,
+  15140,
+  22288,
+  18255,
+  18068,
+  30731,
+  58853,
+  15343,
+  60833,
+  34034,
+  59321,
+  31866,
+  49158,
+  23400,
+  44566,
+  2046,
+  45130,
+  3141,
+  30053,
+  61651,
+  18276,
+  9827,
+  49261,
+  21042,
+  50491,
+  9332,
+  38395,
+  27715,
+  8993,
+  2235,
+  45789,
+  46927,
+  25180,
+  5659,
+  60327,
+  24056,
+  34962,
+  36234,
+  42580,
+  12888,
+  18462,
+  211,
+  16821,
+  25406,
+  41045,
+  34350,
+  57460,
+  53054,
+  44142,
+  37174,
+  23018,
+  46146,
+  49893,
+  30721,
+  44723,
+  52990,
+  9267,
+  1053,
+  1392,
+  23243,
+  12983,
+  23748,
+  63568,
+  61086,
+  51479,
+  43590,
+  8824,
+  10395,
+  40783,
+  28339,
+  37226,
+  16279,
+  57515,
+  4876,
+  30780,
+  60640,
+  23458,
+  60710,
+  3598,
+  31434,
+  28238,
+  33218,
+  58298,
+  30104,
+  21934,
+  60243,
+  38400,
+  14361,
+  59108,
+  22754,
+  46666,
+  64447,
+  28042,
+  35402,
+  40724,
+  9749,
+  17050,
+  27985,
+  47655,
+  62775,
+  52410,
+  49376,
+  1575,
+  47697,
+  19398,
+  18874,
+  44735,
+  65232,
+  52403,
+  15835,
+  23328,
+  61685,
+  15709,
+  38487,
+  6326,
+  21187,
+  20821,
+  14401,
+  62934,
+  19771,
+  59682,
+  59593
+ ]
+}
