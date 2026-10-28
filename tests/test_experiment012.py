@@ -64,7 +64,7 @@ def test_training_game_matches_the_recorded_native_game():
     params = e12._load(e9.FINAL_PARAMS)["resolved"]
     seed = e12._load(e12.SEEDS)["train_seeds"][0]
     candidate, score, lines = e12._fitness_game((3, seed, SHORT, params))
-    episode = e12._play(("cem", "heldout", seed, SHORT | {"params": {"cem": params}}))
+    episode = e12._play_run(("cem", "heldout", seed, SHORT | {"params": {"cem": params}}))
     assert candidate == 3
     assert (score, lines) == (episode["result"]["score"], episode["result"]["lines"])
     assert episode["agent"] == "cem" and episode["result"]["frames"] == 1500

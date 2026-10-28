@@ -193,7 +193,12 @@ def record_configuration() -> dict[str, Any]:
         "runs": [list(run) for run in RUNS]}
 
 
-def _play(job: tuple[str, str, int, dict[str, Any]]) -> dict[str, Any]:
+def _play(job: tuple[int, dict[str, Any], int, dict[str, Any]]) -> dict[str, Any]:
+    """One game of the C++ ``reach_plan`` with ``config["params"]`` (the launcher's call)."""
+    return e11.play_native(job)
+
+
+def _play_run(job: tuple[str, str, int, dict[str, Any]]) -> dict[str, Any]:
     agent, seeds, seed, config = job
     episode = e11.play_native((0, config["formats"][0], seed, config | {
         "params": config["params"][agent]}))
@@ -212,7 +217,7 @@ def evaluate(jobs: int) -> Path:
     config = record_configuration()
     tick = time.perf_counter()
     with Pool(jobs) as pool:
-        episodes = pool.map(_play, _work(config), chunksize=4)
+        episodes = pool.map(_play_run, _work(config), chunksize=4)
     record = {
         "schema": SCHEMA, "created_at": datetime.now(timezone.utc).isoformat(),
         "configuration": config, "versions": runner._record_versions(),

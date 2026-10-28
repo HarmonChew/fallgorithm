@@ -1,7 +1,7 @@
 # Experiment 012 - plan: finish CEM training on the native reach_plan
 
-Status: plan, 2026-10-29. Before the held-out run, `predeclared.md` is written from
-the "Success rule" section and is not edited afterwards.
+Status: done 2026-10-29; see `notes.md` for the result. Before the held-out run,
+`predeclared.md` is written from the "Success rule" section and is not edited afterwards.
 
 ## Question
 

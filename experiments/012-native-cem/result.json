@@ -1,0 +1,431 @@
+{
+ "experiment": "012-native-cem",
+ "question": "Does a full CEM run on the native reach_plan beat Experiment 009's numbers on fresh held-out seeds?",
+ "record": {
+  "path": "experiments/012-native-cem/records/run.json.gz",
+  "sha256": "c268206872a832420739e7363136f02f1acdb404e93cb0c3c166d4f24084916d",
+  "created_at": "2026-10-28T18:19:18.487334+00:00"
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "b7a48145319f2338f2edfd38cb2f48f1f361173e",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "engine_fingerprint": "f63c80b5400d4b14415c53e5034dfec8f292ff331e86785a6be5a04a9614ac31",
+ "params": {
+  "cem": {
+   "build_tetrises": 14.80514290151463,
+   "build_premature_clear": -1.5829827296145582,
+   "build_holes": -7.368059530293222,
+   "build_aggregate_height": -0.4770487407277273,
+   "build_bumpiness": -0.5865370928598305,
+   "build_max_height": -0.495803580031877,
+   "build_reserve": 7.335322259528969,
+   "build_overflow": -2.081062385177577,
+   "spend_lines_cleared": 1.4702457865195582,
+   "spend_holes": -1.4177440958589136,
+   "spend_aggregate_height": -0.06474110453869512,
+   "spend_bumpiness": -0.3562363012983146,
+   "spend_max_height": 1.012806563314773,
+   "spend_row_transitions": -0.6267576671523537,
+   "spend_column_transitions": -2.1388606898259668,
+   "spend_edge_depth": -0.7401357693555761,
+   "height_budget": 10,
+   "survival_budget": 2,
+   "survival_level": 37,
+   "drought_bound": 14
+  },
+  "baseline": {
+   "build_tetrises": 11.276062783045742,
+   "build_premature_clear": -1.2923964075008532,
+   "build_holes": -3.8736611116795414,
+   "build_aggregate_height": -0.3786423001541908,
+   "build_bumpiness": -0.6116473961319185,
+   "build_max_height": -1.0871378118557218,
+   "build_reserve": 7.099340928741832,
+   "build_overflow": -0.9204396578464832,
+   "spend_lines_cleared": 1.3668683628754859,
+   "spend_holes": -1.2687167246387228,
+   "spend_aggregate_height": -0.441362578547331,
+   "spend_bumpiness": -0.5543259311442118,
+   "spend_max_height": -0.8355097888135256,
+   "spend_row_transitions": -0.3097803977693202,
+   "spend_column_transitions": -1.6965352288609223,
+   "spend_edge_depth": -0.40362914426961755,
+   "height_budget": 9,
+   "survival_budget": 6,
+   "survival_level": 29,
+   "drought_bound": 9
+  }
+ },
+ "heldout": {
+  "games": 1000,
+  "cem": {
+   "games": 1000,
+   "lines": {
+    "mean": 363.7,
+    "median": 367.0,
+    "p5": 249.0,
+    "p10": 270.0,
+    "p90": 430.0
+   },
+   "score": {
+    "mean": 993476.8,
+    "median": 1006910.0,
+    "p5": 661513.0,
+    "p10": 737202.0,
+    "p90": 1228980.0
+   },
+   "top_out_pct": 75.9,
+   "reached_level_29_pct": 99.3,
+   "reached_level_39_pct": 82.0,
+   "reached_line_cap_pct": 24.1,
+   "frame_limit_stops": 0,
+   "adjust_switch_pct": 10.2,
+   "clear_sizes": {
+    "singles": 149565,
+    "doubles": 45298,
+    "triples": 13576,
+    "tetrises": 20695
+   },
+   "tetris_rate": 0.2276
+  },
+  "baseline": {
+   "games": 1000,
+   "lines": {
+    "mean": 336.1,
+    "median": 336.0,
+    "p5": 330.0,
+    "p10": 330.9,
+    "p90": 350.0
+   },
+   "score": {
+    "mean": 620612.7,
+    "median": 618610.0,
+    "p5": 480575.0,
+    "p10": 508610.0,
+    "p90": 741014.0
+   },
+   "top_out_pct": 100.0,
+   "reached_level_29_pct": 99.7,
+   "reached_level_39_pct": 95.9,
+   "reached_line_cap_pct": 0.0,
+   "frame_limit_stops": 0,
+   "adjust_switch_pct": 11.9,
+   "clear_sizes": {
+    "singles": 200206,
+    "doubles": 35098,
+    "triples": 9349,
+    "tetrises": 9425
+   },
+   "tetris_rate": 0.1122
+  },
+  "paired_cem_minus_baseline": {
+   "score": {
+    "mean": 372864.04,
+    "ci95_low": 359734.26,
+    "ci95_high": 385956.42,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": 27.52,
+    "ci95_low": 23.646,
+    "ci95_high": 31.32,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 955,
+    "lower": 45,
+    "equal": 0
+   }
+  }
+ },
+ "seeds_008": {
+  "games": 300,
+  "cem": {
+   "games": 300,
+   "lines": {
+    "mean": 363.4,
+    "median": 362.5,
+    "p5": 244.0,
+    "p10": 274.7,
+    "p90": 430.0
+   },
+   "score": {
+    "mean": 986863.6,
+    "median": 1007590.0,
+    "p5": 671551.0,
+    "p10": 730374.0,
+    "p90": 1222008.0
+   },
+   "top_out_pct": 76.0,
+   "reached_level_29_pct": 99.0,
+   "reached_level_39_pct": 80.3,
+   "reached_line_cap_pct": 24.0,
+   "frame_limit_stops": 0,
+   "adjust_switch_pct": 10.3,
+   "clear_sizes": {
+    "singles": 45159,
+    "doubles": 13522,
+    "triples": 4087,
+    "tetrises": 6139
+   },
+   "tetris_rate": 0.2252
+  },
+  "baseline_011_record": {
+   "games": 300,
+   "lines": {
+    "mean": 330.9,
+    "median": 335.0,
+    "p5": 271.4,
+    "p10": 330.0,
+    "p90": 348.0
+   },
+   "score": {
+    "mean": 607113.4,
+    "median": 605280.0,
+    "p5": 482446.0,
+    "p10": 512792.0,
+    "p90": 717952.0
+   },
+   "top_out_pct": 100.0,
+   "reached_level_29_pct": 98.3,
+   "reached_level_39_pct": 92.7,
+   "reached_line_cap_pct": 0.0,
+   "frame_limit_stops": 0,
+   "adjust_switch_pct": 12.0,
+   "clear_sizes": {
+    "singles": 59016,
+    "doubles": 10323,
+    "triples": 2826,
+    "tetrises": 2786
+   },
+   "tetris_rate": 0.1122
+  },
+  "paired_cem_minus_baseline": {
+   "score": {
+    "mean": 379750.2,
+    "ci95_low": 355693.2,
+    "ci95_high": 403577.4666666667,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": 32.45333333333333,
+    "ci95_low": 25.093333333333334,
+    "ci95_high": 39.69,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 288,
+    "lower": 12,
+    "equal": 0
+   }
+  }
+ },
+ "training": {
+  "curve": [
+   {
+    "iteration": 0,
+    "best": 699695.8333333334,
+    "elite_mean": 550590.7638888889,
+    "population_mean": 289983.58506944444
+   },
+   {
+    "iteration": 1,
+    "best": 738962.9166666666,
+    "elite_mean": 623704.84375,
+    "population_mean": 504026.9010416667
+   },
+   {
+    "iteration": 2,
+    "best": 716516.4583333334,
+    "elite_mean": 671552.6388888889,
+    "population_mean": 540929.3229166666
+   },
+   {
+    "iteration": 3,
+    "best": 738137.7083333334,
+    "elite_mean": 692903.6111111111,
+    "population_mean": 608926.3020833334
+   },
+   {
+    "iteration": 4,
+    "best": 804412.7083333334,
+    "elite_mean": 738410.78125,
+    "population_mean": 656326.7534722222
+   },
+   {
+    "iteration": 5,
+    "best": 824680.2083333334,
+    "elite_mean": 770990.4861111111,
+    "population_mean": 688101.7664930556
+   },
+   {
+    "iteration": 6,
+    "best": 818054.1666666666,
+    "elite_mean": 783331.8576388889,
+    "population_mean": 734640.5034722221
+   },
+   {
+    "iteration": 7,
+    "best": 874490.0,
+    "elite_mean": 839564.1840277779,
+    "population_mean": 778622.8993055555
+   },
+   {
+    "iteration": 8,
+    "best": 875701.4583333334,
+    "elite_mean": 863622.6736111111,
+    "population_mean": 811373.0859375
+   },
+   {
+    "iteration": 9,
+    "best": 911503.75,
+    "elite_mean": 892521.5972222221,
+    "population_mean": 850555.0043402779
+   },
+   {
+    "iteration": 10,
+    "best": 953415.4166666666,
+    "elite_mean": 914954.6180555555,
+    "population_mean": 872625.4991319445
+   },
+   {
+    "iteration": 11,
+    "best": 988822.0833333334,
+    "elite_mean": 958307.5868055555,
+    "population_mean": 905154.2361111111
+   },
+   {
+    "iteration": 12,
+    "best": 996578.75,
+    "elite_mean": 964967.8125,
+    "population_mean": 929208.3506944445
+   },
+   {
+    "iteration": 13,
+    "best": 996568.125,
+    "elite_mean": 967653.1944444445,
+    "population_mean": 930229.1796875
+   },
+   {
+    "iteration": 14,
+    "best": 1004101.4583333334,
+    "elite_mean": 982003.4375,
+    "population_mean": 950768.0295138889
+   },
+   {
+    "iteration": 15,
+    "best": 1008742.0833333334,
+    "elite_mean": 992823.1423611111,
+    "population_mean": 957395.15625
+   },
+   {
+    "iteration": 16,
+    "best": 1006406.0416666666,
+    "elite_mean": 983717.5694444445,
+    "population_mean": 960786.5625
+   },
+   {
+    "iteration": 17,
+    "best": 1011696.875,
+    "elite_mean": 999048.8368055555,
+    "population_mean": 965718.2508680555
+   },
+   {
+    "iteration": 18,
+    "best": 1013526.25,
+    "elite_mean": 996273.3506944445,
+    "population_mean": 965330.3428819445
+   },
+   {
+    "iteration": 19,
+    "best": 1018372.0833333334,
+    "elite_mean": 1006434.7743055555,
+    "population_mean": 978048.7456597221
+   },
+   {
+    "iteration": 20,
+    "best": 1023254.5833333334,
+    "elite_mean": 1006707.6215277779,
+    "population_mean": 981391.0199652779
+   },
+   {
+    "iteration": 21,
+    "best": 1030596.0416666666,
+    "elite_mean": 1012625.2083333334,
+    "population_mean": 988034.8741319445
+   },
+   {
+    "iteration": 22,
+    "best": 1018912.5,
+    "elite_mean": 1002691.3368055555,
+    "population_mean": 977116.3454861111
+   },
+   {
+    "iteration": 23,
+    "best": 1015599.375,
+    "elite_mean": 1005576.40625,
+    "population_mean": 978799.3142361111
+   },
+   {
+    "iteration": 24,
+    "best": 1028030.4166666666,
+    "elite_mean": 1015036.4930555555,
+    "population_mean": 986305.8550347221
+   },
+   {
+    "iteration": 25,
+    "best": 1031205.8333333334,
+    "elite_mean": 1023904.1666666666,
+    "population_mean": 993516.796875
+   },
+   {
+    "iteration": 26,
+    "best": 1024277.5,
+    "elite_mean": 1010624.6875,
+    "population_mean": 986407.8298611111
+   },
+   {
+    "iteration": 27,
+    "best": 1048623.125,
+    "elite_mean": 1019117.2743055555,
+    "population_mean": 995323.0946180555
+   },
+   {
+    "iteration": 28,
+    "best": 1024850.0,
+    "elite_mean": 1016018.1076388889,
+    "population_mean": 997639.5746527779
+   },
+   {
+    "iteration": 29,
+    "best": 1071596.875,
+    "elite_mean": 1028210.9722222221,
+    "population_mean": 998647.1744791666
+   }
+  ],
+  "baseline_009_params": {
+   "mean_score": 601998.5416666666,
+   "mean_lines": 333.40625
+  },
+  "final_mean": {
+   "mean_score": 1040198.125,
+   "mean_lines": 362.8020833333333
+  },
+  "total_wall_seconds": 3976.4
+ },
+ "success_rule": "95% CI of the paired mean score difference (cem minus baseline) on the 1,000 held-out seeds entirely above 0",
+ "success": true
+}

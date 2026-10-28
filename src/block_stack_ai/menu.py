@@ -89,7 +89,7 @@ def _frame_limit(default: int) -> int:
               "to keep the experiment's limit.")
 
 
-# Experiments 006, 008, 009, 010 and 011 have their own harnesses, so they get their own
+# Experiments 006, 008, 009, 010, 011 and 012 have their own harnesses, so they get their own
 # prompts and the play-game/watch-record/evaluate subcommands.
 HARNESS_ACTIONS = ["Watch a new game", "Watch a recorded game", "Run full evaluation"]
 TAP_SPEEDS = ("30", "20", "15", "12")
@@ -149,7 +149,7 @@ def _record_arg(path: Path) -> str:
 
 
 def _harness_selection(name: str, config_path: Path) -> tuple[list[str], list[str]]:
-    """Prompt for a 006, 008, 009, 010 or 011 action; return CLI args and summary lines."""
+    """Prompt for a 006, 008, 009, 010, 011 or 012 action; return CLI args and summary lines."""
     number = name.partition("-")[0]
     config = json.loads(config_path.read_text(encoding="utf-8"))
     action = _choose("Action", HARNESS_ACTIONS)
@@ -169,8 +169,11 @@ def _harness_selection(name: str, config_path: Path) -> tuple[list[str], list[st
         names = [watchrecord.format_name(f) for f in config["formats"]]
         usual = watchrecord.format_name({"tap_hz": quickplay.TAP_HZ, "reaction_ms": quickplay.REACTION_MS})
         fmt = _choose("Format", names, default=usual if usual in names else names[0])
-        seed = _pick_game([e for e in episodes if e["format"] == names.index(fmt)])
-        return (["watch-record", record, "--seed", str(seed), "--format", fmt],
+        agent = quickplay.RECORD_AGENT.get(number)
+        seed = _pick_game([e for e in episodes if e["format"] == names.index(fmt)
+                           and e.get("agent", agent) == agent])
+        extra = ["--agent", agent] if agent else []
+        return (["watch-record", record, "--seed", str(seed), "--format", fmt, *extra],
                 [f"Recorded game: {fmt}, seed {seed}"])
     command = ["play-game", "--experiment", number]
     if "agents" in config:
