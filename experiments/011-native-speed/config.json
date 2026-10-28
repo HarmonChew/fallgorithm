@@ -9,9 +9,11 @@
  "frame_cap": 150000,
  "agent": "reach_plan",
  "params_source": "experiments/009-cem-score/final_params.json (resolved), unchanged",
+ "formats": [
+  {"tap_hz": 30, "reaction_ms": 300}
+ ],
  "heldout": {
-  "format": {"tap_hz": 30, "reaction_ms": 300},
-  "seeds": "every seed of experiments/008-benchmark-format/config.json",
+  "seeds": "every seed of experiments/008-benchmark-format/config.json, in the format above",
   "baseline": "experiments/010-complete-reach/records/run.json.gz"
  },
  "training": {

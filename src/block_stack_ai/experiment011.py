@@ -3,18 +3,30 @@
     python -m block_stack_ai.experiment011 reference [--jobs N]
     python -m block_stack_ai.experiment011 parity [--jobs N]
     python -m block_stack_ai.experiment011 diverge RECORD [--baseline RECORD]
+    python -m block_stack_ai.experiment011 bench [--jobs N]
+    python -m block_stack_ai.experiment011 evaluate [--jobs N]
     python -m block_stack_ai.experiment011 verify RECORD [--jobs N]
+    python -m block_stack_ai.experiment011 summarize RECORD [--jobs N]
 
 ``reference`` plays Experiment 009's training seeds with the Python ``reach_plan``
 (Experiment 010's ``_play``) in the three training formats of ``config.json``, and
 times each game. Its record is what the C++ games are compared with, and its 30 Hz /
-300 ms batch was timed too, but other work ran during it, so step 5 times Python and
+300 ms batch was timed too, but other work ran during it, so ``bench`` times Python and
 C++ back to back instead. ``parity`` plays the same games with the C++ ``reach_plan``
 (:func:`block_stack_ai.native.play_game`) and compares each one with the reference:
 the same start, the same input bytes and the same results. ``diverge`` reports, for a
 game that differs, the first decision where the two choose differently. ``verify``
 replays a record's games on the engine and checks every result (Experiment 009's
 ``_replay``).
+
+``bench`` is the predeclared speed measurement (training seeds only): the Python and
+then the C++ batch of the 24 training games at 30 Hz / 300 ms, and the per-decision
+times. ``evaluate`` plays Experiment 008's 300 held-out seeds with the C++ and compares
+every game with Experiment 010's record; ``summarize`` writes ``result.json``.
+
+Like Experiment 010's, every command writes its record under ``runs/`` only; the
+retained copies in ``records/`` (``reference.json.gz``, ``run.json.gz``) are copied
+there by hand.
 
 A C++ game's result is not computed by new C++ accounting: its inputs are replayed
 on the Python binding with Experiment 009's ``replay_outcome``, and the C++'s own
@@ -29,7 +41,8 @@ import base64
 import gzip
 import hashlib
 import json
-import shutil
+import os
+import statistics
 import sys
 import time
 from datetime import datetime, timezone
@@ -47,6 +60,13 @@ EXPERIMENT_ROOT = runner.PROJECT_ROOT / "experiments" / "011-native-speed"
 CONFIG = EXPERIMENT_ROOT / "config.json"
 RECORDS = EXPERIMENT_ROOT / "records"
 REFERENCE = RECORDS / "reference.json.gz"
+HELDOUT = RECORDS / "run.json.gz"
+BENCH = EXPERIMENT_ROOT / "bench.json"
+RESULT = EXPERIMENT_ROOT / "result.json"
+FINAL_PARAMS = e10.FINAL_PARAMS  # Experiment 009's learned numbers, unchanged
+BASELINE_RECORD = e10.EXPERIMENT_ROOT / "records" / "run.json.gz"
+TIMING_GAMES, TIMING_STRIDE = 12, 20
+CEM_GAMES = 32 * 24  # one Experiment 009 iteration: 32 candidates x 24 seeds
 NATIVE_SOURCES = runner.PROJECT_ROOT / "native"
 SCHEMA = "fallgorithm.experiment011.run/1"
 
@@ -115,6 +135,10 @@ def _exact(value: Any) -> str:
     return json.dumps(value, sort_keys=True)
 
 
+# The launcher (quickplay) plays a new game through ``_play``, as for 008-010.
+_play = play_native
+
+
 def compare(found: list[dict[str, Any]], expected: list[dict[str, Any]]) -> list[str]:
     """Differences between two records' games: start, input bytes, results but timing."""
     if [(e["format"], e["seed"]) for e in found] != [(e["format"], e["seed"]) for e in expected]:
@@ -169,10 +193,7 @@ def reference(jobs: int) -> Path:
         "engine_fingerprint": experiment005.engine_fingerprint()["combined_sha256"],
         "sources": sources(), "batches": batches, "episodes": episodes,
     }
-    path = _write(record, "reference")
-    RECORDS.mkdir(exist_ok=True)
-    shutil.copyfile(path, REFERENCE)
-    return path
+    return _write(record, "reference")
 
 
 def decisions(episode: dict[str, Any], config: dict[str, Any]) -> list[dict[str, Any]]:
@@ -301,6 +322,161 @@ def diverge(path: Path, baseline: Path = REFERENCE) -> list[str]:
     return lines
 
 
+# ---------------------------------------------------------------- speed
+
+def _decision_kwargs(decision: dict[str, Any], limits: Limits) -> dict[str, Any]:
+    return {key: decision[key] for key in
+            ("flight", "drought", "level", "lines", "start_level", "ruleset")} | {"limits": limits}
+
+
+def decision_times(record: dict[str, Any]) -> dict[str, Any]:
+    """Per-decision time, one process: each sampled piece's commit plus adjust search.
+
+    Every ``TIMING_STRIDE``-th piece of the first ``TIMING_GAMES`` 30 Hz / 300 ms games,
+    with the recorded arguments. The Python's reach cache is emptied before each piece.
+    """
+    from . import reach
+    config = record["configuration"]
+    fmt = config["formats"][0]
+    limits = Limits(fmt["tap_hz"], fmt["reaction_ms"])
+    native_params = native.params(config["params"])
+    bands = {"level_18_28": lambda v: v < 29, "level_29_38": lambda v: 29 <= v < 39,
+             "level_39_plus": lambda v: v >= 39}
+    seconds: dict[str, dict[str, list[float]]] = {band: {"python": [], "cpp": []} for band in bands}
+    games = [e for e in record["episodes"] if e["format"] == 0][:TIMING_GAMES]
+    for episode in games:
+        pieces: list[list[dict[str, Any]]] = []
+        for decision in decisions(episode, config):
+            if decision["kind"] == "commit":
+                pieces.append([decision])
+            else:
+                pieces[-1].append(decision)  # the same piece's adjust
+        for piece in pieces[::TIMING_STRIDE]:
+            band = next(name for name, inside in bands.items() if inside(piece[0]["level"]))
+            reach._cached_search.cache_clear()
+            tick = time.perf_counter()
+            for d in piece:
+                reachplan.search(d["columns"], d["piece"], d["next_piece"],
+                                 params=config["params"], **_decision_kwargs(d, limits))
+            seconds[band]["python"].append(time.perf_counter() - tick)
+            tick = time.perf_counter()
+            for d in piece:
+                native.search(d["columns"], d["piece"], d["next_piece"], params=native_params,
+                              **_decision_kwargs(d, limits))
+            seconds[band]["cpp"].append(time.perf_counter() - tick)
+    out = {}
+    for band, values in seconds.items():
+        python, cpp = statistics.mean(values["python"]), statistics.mean(values["cpp"])
+        out[band] = {"pieces": len(values["python"]), "python_ms": round(1000 * python, 2),
+                     "cpp_ms": round(1000 * cpp, 3), "speedup": round(python / cpp, 1)}
+    return out
+
+
+def bench(jobs: int = 24) -> dict[str, Any]:
+    """The predeclared speed measurement; writes ``bench.json``."""
+    load_before = [round(value, 2) for value in os.getloadavg()]
+    config = training_configuration()
+    fmt, seeds = config["formats"][0], config["format_seeds"][0]
+    work = [(0, fmt, seed, config) for seed in seeds]
+    batches = {}
+    for name, play in (("python", _timed_python_game), ("cpp", play_native)):
+        tick = time.perf_counter()
+        with Pool(min(jobs, len(work))) as pool:
+            games = pool.map(play, work, chunksize=1)
+        batches[name] = {"games": games, "wall": time.perf_counter() - tick}
+        print(f"{name}: {len(games)} games in {batches[name]['wall']:.1f} s", file=sys.stderr,
+              flush=True)
+    problems = compare(batches["cpp"]["games"], batches["python"]["games"])
+    per_game = {name: statistics.mean(g["wall_seconds"] for g in batch["games"])
+                for name, batch in batches.items()}
+    result = {
+        "load_average_before": load_before, "workers": min(jobs, len(work)),
+        "format": fmt, "seeds": seeds,
+        "python_seconds_per_game": round(per_game["python"], 2),
+        "cpp_seconds_per_game": round(per_game["cpp"], 3),
+        "per_game_speedup": round(per_game["python"] / per_game["cpp"], 1),
+        "python_batch_wall_seconds": round(batches["python"]["wall"], 1),
+        "cpp_batch_wall_seconds": round(batches["cpp"]["wall"], 1),
+        "cpp_batch_identical_to_python_batch": not problems, "differences": problems,
+        "per_decision": decision_times(_load(REFERENCE)),
+        "versions": runner._record_versions(), "sources": sources(),
+    }
+    BENCH.write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
+    return result
+
+
+# ---------------------------------------------------------------- the held-out run
+
+def heldout_configuration() -> dict[str, Any]:
+    config = _load(CONFIG)
+    seeds = _load(e8.CONFIG)["seeds"]
+    return {key: config[key] for key in ("game", "line_cap", "frame_cap", "agent", "formats")} | {
+        "format_seeds": [seeds], "seeds": seeds, "params": _load(FINAL_PARAMS)["resolved"]}
+
+
+def evaluate(jobs: int = 30) -> tuple[Path, list[str]]:
+    """The C++ on the 300 held-out seeds; returns the record and its differences from 010's."""
+    config = heldout_configuration()
+    work = [(0, config["formats"][0], seed, config) for seed in config["seeds"]]
+    tick = time.perf_counter()
+    with Pool(jobs) as pool:
+        episodes = pool.map(play_native, work, chunksize=1)
+    wall = time.perf_counter() - tick
+    record = {
+        "schema": SCHEMA, "kind": "native-heldout",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "configuration": config, "versions": runner._record_versions(),
+        "engine_fingerprint": experiment005.engine_fingerprint()["combined_sha256"],
+        "sources": sources(), "workers": jobs, "wall_seconds": round(wall, 1),
+        "episodes": episodes,
+    }
+    return _write(record, "heldout"), compare(episodes, _load(BASELINE_RECORD)["episodes"])
+
+
+def summarize(path: Path, jobs: int = 30) -> dict[str, Any]:
+    record = _load(path)
+    base = _load(BASELINE_RECORD)
+    differences = compare(record["episodes"], base["episodes"])
+    replay_problems = verify(path, jobs)
+    speed = _load(BENCH)
+    cpp_seconds = [e["wall_seconds"] for e in record["episodes"]]
+    python_seconds = [e["result"]["decision_seconds"] for e in base["episodes"]]
+    exact = not differences and not replay_problems
+    fast = speed["per_game_speedup"] >= 50
+    return {
+        "experiment": "011-native-speed",
+        "question": ("Does the C++ reach_plan play exactly the same games as the Python "
+                     "reach_plan of Experiment 010, at least 50 times faster?"),
+        "record": {"path": str(path.relative_to(runner.PROJECT_ROOT)),
+                   "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                   "created_at": record["created_at"]},
+        "versions": record["versions"], "engine_fingerprint": record["engine_fingerprint"],
+        "baseline": str(BASELINE_RECORD.relative_to(runner.PROJECT_ROOT)),
+        "heldout_games": len(record["episodes"]),
+        "identical_games": (0 if any(not d.startswith("format ") for d in differences) else
+                            len(record["episodes"]) - len({d.split(":")[0] for d in differences})),
+        "differences": differences, "replay_problems": replay_problems,
+        "speed": {key: speed[key] for key in (
+            "load_average_before", "workers", "python_seconds_per_game", "cpp_seconds_per_game",
+            "per_game_speedup", "python_batch_wall_seconds", "cpp_batch_wall_seconds",
+            "cpp_batch_identical_to_python_batch", "per_decision")},
+        "heldout_run": {
+            "workers": record["workers"], "wall_seconds_with_replay": record["wall_seconds"],
+            "cpp_seconds_per_game_mean": round(statistics.mean(cpp_seconds), 3),
+            # computed (the C++ seconds of all games / workers), not a measured wall clock
+            "cpp_seconds_summed_per_worker": round(sum(cpp_seconds) / record["workers"], 1),
+            "python_010_decision_seconds_per_game_mean": round(statistics.mean(python_seconds), 1),
+        },
+        "cem_iteration_seconds_projected": round(
+            CEM_GAMES * statistics.mean(cpp_seconds) / record["workers"], 1),
+        "success_rule": ("exact: all 300 held-out games identical to Experiment 010's record and "
+                         "verified on the engine; fast: per-game speed-up on the training seeds "
+                         "at least 50"),
+        "success": {"exact": exact, "fast": fast, "both": exact and fast},
+        "metrics": e9.metrics([{"seed": e["seed"], **e["result"]} for e in record["episodes"]]),
+    }
+
+
 def _replay(episode: dict[str, Any], config: dict[str, Any]) -> list[str]:
     return e9._replay(episode, config)
 
@@ -330,6 +506,13 @@ def main(argv: list[str] | None = None) -> int:
     div.add_argument("record", type=Path)
     div.add_argument("--baseline", type=Path, default=REFERENCE,
                      help="the Python record to compare with (default: the training reference)")
+    speed = commands.add_parser("bench", help="the predeclared speed measurement (training seeds)")
+    speed.add_argument("--jobs", type=int, default=24)
+    held = commands.add_parser("evaluate", help="the C++ on the 300 held-out seeds")
+    held.add_argument("--jobs", type=int, default=30)
+    summary = commands.add_parser("summarize", help="write result.json from a held-out record")
+    summary.add_argument("record", type=Path)
+    summary.add_argument("--jobs", type=int, default=30)
     check = commands.add_parser("verify", help="replay a record on the engine")
     check.add_argument("record", type=Path)
     check.add_argument("--jobs", type=int, default=30)
@@ -348,6 +531,22 @@ def main(argv: list[str] | None = None) -> int:
             for line in diverge(args.record.resolve(), args.baseline.resolve()) or \
                     [f"no game differs from {args.baseline}"]:
                 print(line)
+        elif args.command == "bench":
+            result = bench(args.jobs)
+            print(json.dumps({k: v for k, v in result.items() if k not in ("sources", "seeds")},
+                             indent=1))
+        elif args.command == "evaluate":
+            path, problems = evaluate(args.jobs)
+            print(path)
+            for problem in problems:
+                print(problem, file=sys.stderr)
+            print("all games identical to Experiment 010's" if not problems
+                  else f"{len(problems)} differences from Experiment 010's record")
+            return 1 if problems else 0
+        elif args.command == "summarize":
+            RESULT.write_text(json.dumps(summarize(args.record.resolve(), args.jobs), indent=1)
+                              + "\n", encoding="utf-8")
+            print(f"Wrote {RESULT}")
         elif args.command == "verify":
             problems = verify(args.record.resolve(), args.jobs)
             for problem in problems:
