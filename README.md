@@ -20,7 +20,9 @@ plausible unseen pieces under a deterministic integer node budget; its agent
 file is registered at runtime by the normal launcher so the sources Experiment
 004's retained identity covers stay untouched. Experiment 006 adds
 `survival_plan`: the same search with a lower stack-height budget from level 28,
-where pieces start falling one row per frame. There is no machine learning yet.
+where pieces start falling one row per frame. Experiment 008 measures that
+evaluation in BetaTetris's benchmark format, with human-like tap speed and
+reaction time. There is no machine learning yet.
 Development proceeds one measured experiment at a time, reusing this engine
 connection and recording path.
 
@@ -57,6 +59,38 @@ Experiment 006 has its own small harness rather than launcher integration:
 
 See [its notes](experiments/006-level29-survival/notes.md) for the protocol and
 results.
+
+## Experiment 008
+
+Experiment 008 plays `survival_plan`'s evaluation in the benchmark format used
+by BetaTetris (30 Hz or 15 Hz tapping, 300 ms or no reaction time, level 39
+"double killscreen", line cap at level 49). It has its own small harness:
+
+```sh
+.venv/bin/python -m block_stack_ai.experiment008 select-seeds --count 300
+.venv/bin/python -m block_stack_ai.experiment008 run --jobs 30
+.venv/bin/python -m block_stack_ai.experiment008 verify experiments/008-benchmark-format/records/run.json.gz
+.venv/bin/python -m block_stack_ai.experiment008 summarize experiments/008-benchmark-format/records/run.json.gz
+```
+
+See [its notes](experiments/008-benchmark-format/notes.md) for the format, the
+reaction model and the results.
+
+## Watch a game from an experiment record
+
+Experiments 006 and later keep their own records, so `block-stack-ai watch`
+does not open them. `watchrecord` picks one game from such a record, checks
+that its replay ends where the record says, and opens it in the desktop window
+(build it with `scripts/setup_engine.py --desktop`):
+
+```sh
+.venv/bin/python -m block_stack_ai.watchrecord experiments/008-benchmark-format/records/run.json.gz --list
+.venv/bin/python -m block_stack_ai.watchrecord experiments/008-benchmark-format/records/run.json.gz --seed 9103 --format 30hz-300ms
+.venv/bin/python -m block_stack_ai.watchrecord experiments/006-level29-survival/records/run.json.gz --seed 33713 --agent survival_plan
+```
+
+The replay starts paused: P plays, `.` steps one frame, `[` and `]` change the
+speed. `--export-only` writes the `.rep` under `runs/watch/` without opening it.
 
 ## Interactive launcher
 
