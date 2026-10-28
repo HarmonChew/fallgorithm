@@ -231,7 +231,9 @@ wall-clock time, and the projected cost of one 009-style CEM iteration (32 candi
   (top-out, line cap 430, frame cap 150,000, checked before each frame's input).
 * **The build.** The C++ needs the block-stack source beside fallgorithm (already a
   requirement) and a C++20 compiler (already used for the engine). Tests that need
-  the library get a `native` marker and are skipped when it is not built.
+  the library get a `native` marker. Like the engine's integration tests they fail
+  (they are not skipped) when it is not built, and `native.py` refuses a library older
+  than its sources.
 * **If it is only 30x.** Still useful for training; the rule says it fails the 50x bar,
   and the notes say where the remaining time goes.
 
