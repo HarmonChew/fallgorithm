@@ -24,7 +24,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 6
+ABI_VERSION = 7
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -39,6 +39,12 @@ WEIGHT_NAMES = (
 )
 INTEGER_NAMES = ("height_budget", "survival_budget", "survival_level", "drought_bound")
 PHASES = (wellplan.BUILD, wellplan.SPEND)
+# Experiment 013 (native/value.hpp): 3 level bands of 2 + 2 * 18 weights; the agents
+# of fn_play_game_ex.
+BOARD_FEATURES = 18
+BAND_WEIGHTS = 2 + 2 * BOARD_FEATURES
+VALUE_WEIGHTS = 3 * BAND_WEIGHTS
+AGENT_KINDS = ("reach_plan", "reach_plan_extra_ply", "value")
 
 Columns = C.c_uint32 * WIDTH
 
@@ -158,6 +164,19 @@ def load() -> Any:
                                  C.c_int, C.c_int, C.c_int, C.c_int, C.c_int,
                                  C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int64)]
     lib.fn_play_game.restype = C.c_int
+    lib.fn_play_game_ex.argtypes = [C.c_int, C.POINTER(Params), C.POINTER(C.c_double),
+                                    C.c_char_p, C.c_char_p, C.c_int, C.c_int, C.c_int, C.c_int,
+                                    C.c_int, C.c_int, C.c_int, C.c_double, C.c_int, C.c_uint64,
+                                    C.POINTER(C.c_uint8), C.c_int,
+                                    C.POINTER(C.c_int64), C.POINTER(C.c_double),
+                                    C.POINTER(C.c_double), C.POINTER(C.c_double)]
+    lib.fn_play_game_ex.restype = C.c_int
+    lib.fn_board_features.argtypes = [Columns, C.POINTER(C.c_double)]
+    lib.fn_board_features.restype = None
+    lib.fn_board_value.argtypes = [C.POINTER(C.c_double), C.c_int, Columns, C.c_int, C.c_int]
+    lib.fn_board_value.restype = C.c_double
+    lib.fn_clear_reward.argtypes = [C.c_int, C.c_int, C.c_int]
+    lib.fn_clear_reward.restype = C.c_double
     if lib.fn_abi_version() != ABI_VERSION:
         raise NativeError(f"{path} has ABI version {lib.fn_abi_version()}, expected "
                           f"{ABI_VERSION}. Rebuild with scripts/build_native.py.")
@@ -286,3 +305,72 @@ def play_game(game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: int,
             # runner._hash's form, from the C++ game's own engine copy
             "initial_state_hash": f"{start & (1 << 64) - 1:016x}",
             "final_state_hash": f"{end & (1 << 64) - 1:016x}"}
+
+
+# ---------------------------------------------------------------- Experiment 013
+
+Weights = C.c_double * VALUE_WEIGHTS
+
+
+def board_features(columns: tuple[int, ...]) -> tuple[float, ...]:
+    """native/value.hpp's 18 board features."""
+    out = (C.c_double * BOARD_FEATURES)()
+    load().fn_board_features(Columns(*columns), out)
+    return tuple(out)
+
+
+def _weights(weights: list[float]) -> Any:
+    if len(weights) != VALUE_WEIGHTS:
+        raise ValueError(f"the learned value takes {VALUE_WEIGHTS} weights, not {len(weights)}")
+    return Weights(*weights)
+
+
+def board_value(weights: list[float], line_cap: int, columns: tuple[int, ...], lines: int,
+                start_level: int) -> float:
+    return load().fn_board_value(_weights(weights), line_cap, Columns(*columns), lines,
+                                 start_level)
+
+
+def clear_reward(cleared: int, lines_after: int, start_level: int) -> float:
+    return load().fn_clear_reward(cleared, lines_after, start_level)
+
+
+def play_game_ex(agent: str, game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: int,
+                 limits: Limits, params: Params | None = None,
+                 weights: list[float] | None = None, fit: bool = False, explore: float = 0.0,
+                 explore_start: int = 0, explore_seed: int = 0) -> dict[str, Any]:
+    """One whole game by one of :data:`AGENT_KINDS` (Experiment 013).
+
+    ``reach_plan`` plays exactly as :func:`play_game`; ``reach_plan_extra_ply`` looks one
+    unknown piece further at the adjust search; ``value`` uses the learned ``weights``.
+    With ``fit``, also returns the game's least-squares sums (``gram``, 114 x 114 row by row,
+    ``target``, and ``totals``: count, sum and sum of squares of the targets). ``explore`` is
+    the chance, per piece, of a random reachable placement, and ``explore_start`` the number
+    of random placements a game starts with (self-play only).
+    """
+    kind = AGENT_KINDS.index(agent)
+    if (kind == 2) != (weights is not None) or (kind < 2) != (params is not None):
+        raise ValueError(f"{agent} takes {'weights' if kind == 2 else 'params'} only")
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    gram = (C.c_double * (VALUE_WEIGHTS * VALUE_WEIGHTS))() if fit else None
+    target = (C.c_double * VALUE_WEIGHTS)() if fit else None
+    totals = (C.c_double * 3)() if fit else None
+    status = load().fn_play_game_ex(
+        kind, C.byref(params) if params is not None else None,
+        _weights(weights) if weights is not None else None, game["ruleset"].encode(),
+        game["mode"].encode(), game["start_level"], game["height"], seed, line_cap, frame_cap,
+        limits.tap_interval, limits.reaction_frames, explore, explore_start, explore_seed,
+        inputs,
+        max(1, frame_cap), out, gram, target, totals)
+    if status:
+        raise NativeError(f"fn_play_game_ex failed with {status}")
+    count, frames, reason, pieces, adjusts, switches, score, lines, level, start, end = out
+    played = {"inputs": bytes(inputs[:count]), "frames": frames,
+              "stopping_reason": STOP_REASONS[reason], "pieces": pieces, "adjusts": adjusts,
+              "switches": switches, "score": score, "lines": lines, "level": level,
+              "initial_state_hash": f"{start & (1 << 64) - 1:016x}",
+              "final_state_hash": f"{end & (1 << 64) - 1:016x}"}
+    if fit:
+        played |= {"gram": list(gram), "target": list(target), "totals": list(totals)}
+    return played

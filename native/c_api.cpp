@@ -12,6 +12,7 @@
 #include "reach.hpp"
 #include "search.hpp"
 #include "agent.hpp"
+#include "value.hpp"
 
 #if defined(_WIN32)
 #define FN_API extern "C" __declspec(dllexport)
@@ -23,7 +24,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 6;
+constexpr int abi_version = 7;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -196,6 +197,57 @@ FN_API double fn_unknown_average(const Params* params, const std::uint32_t* sett
     return searcher.expected_unknown(at, at.columns, base_drought, unknown_level);
 }
 
+namespace {
+
+// The engine game the Python binding would create (ruleset and mode by name).
+bool make_config(const char* ruleset, const char* mode, int start_level, int height, int seed,
+                 blocks::Config& config) {
+    config.ruleset = blocks::ruleset_from_name(ruleset);
+    const std::string mode_name(mode);
+    if (mode_name == "endless") {
+        config.mode = blocks::Mode::Endless;
+    } else if (mode_name == "challenge") {
+        config.mode = blocks::Mode::Challenge;
+    } else {
+        return false;
+    }
+    config.start_level = start_level;
+    config.height = height;
+    config.seed = static_cast<std::uint16_t>(seed);
+    return true;
+}
+
+// Plays one game and writes fn_play_game's ``inputs`` and ``out``. Returns 0, or -3.
+template <class AnyAgent>
+int run_game(const blocks::Config& config, AnyAgent& agent, int line_cap, int frame_cap,
+             std::uint8_t* inputs, std::int64_t* out, std::vector<BoardSample>* samples,
+             std::uint64_t& final_score) {
+    blocks::Game game(config);
+    const std::uint64_t initial_hash = game.state_hash();
+    std::vector<std::uint8_t> played;
+    played.reserve(static_cast<std::size_t>(frame_cap));
+    GameResult result;
+    if (!play_game(game, agent, line_cap, frame_cap, played, result, samples)) {
+        return -3;
+    }
+    for (std::size_t index = 0; index < played.size(); ++index) {
+        inputs[index] = played[index];
+    }
+    const std::int64_t values[] = {result.inputs, static_cast<std::int64_t>(result.frames),
+                                   result.reason, result.pieces, result.adjusts,
+                                   result.switches, static_cast<std::int64_t>(result.score),
+                                   result.lines, result.level,
+                                   static_cast<std::int64_t>(initial_hash),
+                                   static_cast<std::int64_t>(game.state_hash())};
+    for (int index = 0; index < 11; ++index) {
+        out[index] = values[index];
+    }
+    final_score = result.score;
+    return 0;
+}
+
+}  // namespace
+
 // One whole reach_plan game on the engine (experiment010._play). The game is created
 // as the Python binding creates it (ruleset and mode by name). ``inputs`` receives
 // every frame's mask; ``out`` receives (inputs, engine frames, stop reason, pieces,
@@ -212,41 +264,105 @@ FN_API int fn_play_game(const Params* params, const char* ruleset, const char* m
     }
     try {
         blocks::Config config;
-        config.ruleset = blocks::ruleset_from_name(ruleset);
-        const std::string mode_name(mode);
-        if (mode_name == "endless") {
-            config.mode = blocks::Mode::Endless;
-        } else if (mode_name == "challenge") {
-            config.mode = blocks::Mode::Challenge;
-        } else {
+        if (!make_config(ruleset, mode, start_level, height, seed, config)) {
             return -1;
         }
-        config.start_level = start_level;
-        config.height = height;
-        config.seed = static_cast<std::uint16_t>(seed);
-        blocks::Game game(config);
-        const std::uint64_t initial_hash = game.state_hash();
-        Agent agent(*params, interval, reaction);
-        std::vector<std::uint8_t> played;
-        played.reserve(static_cast<std::size_t>(frame_cap));
-        GameResult result;
-        if (!play_game(game, agent, line_cap, frame_cap, played, result)) {
-            return -3;
+        Agent agent(Searcher(*params), interval, reaction);
+        std::uint64_t final_score = 0;
+        return run_game(config, agent, line_cap, frame_cap, inputs, out, nullptr, final_score);
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 013's game: fn_play_game's arguments and outputs, with the agent chosen
+// by ``agent``: 0 reach_plan with ``params``, 1 the same with the extra ply
+// (search.hpp's depth check), 2 the learned value with ``weights`` (value.hpp's 114,
+// and ``line_cap`` as the model's cap). When ``gram`` is given, the game's boards
+// are added to value.hpp's least-squares sums (FitSums, add_game; only the line
+// cap matters there): ``gram`` (114 x 114), ``target`` (114) and ``totals`` (count, sum,
+// sum of squares of the targets). ``explore``, ``explore_start`` and ``explore_seed``
+// are agent.hpp's exploration (0, 0 for every evaluated game).
+FN_API int fn_play_game_ex(int agent_kind, const Params* params, const double* weights,
+                           const char* ruleset, const char* mode, int start_level, int height,
+                           int seed, int line_cap, int frame_cap, int interval, int reaction,
+                           double explore, int explore_start, std::uint64_t explore_seed,
+                           std::uint8_t* inputs,
+                           int capacity, std::int64_t* out, double* gram, double* target,
+                           double* totals) {
+    if (!ruleset || !mode || seed < 0 || seed > 0xffff || line_cap < 0 || frame_cap < 0 ||
+        capacity < frame_cap || interval < 1 || reaction < 0 || agent_kind < 0 ||
+        agent_kind > 2 || (agent_kind < 2 && !params) || (agent_kind == 2 && !weights) ||
+        (gram && (!target || !totals)) || start_level < 0 || start_level >= 20 ||
+        !(explore >= 0.0 && explore <= 1.0) || explore_start < 0) {
+        return -1;
+    }
+    try {
+        blocks::Config config;
+        if (!make_config(ruleset, mode, start_level, height, seed, config)) {
+            return -1;
         }
-        for (std::size_t index = 0; index < played.size(); ++index) {
-            inputs[index] = played[index];
+        ValueModel model;
+        model.line_cap = line_cap;
+        if (weights) {
+            for (int index = 0; index < value_weights; ++index) {
+                model.weights[index] = weights[index];
+            }
         }
-        const std::int64_t values[] = {result.inputs, static_cast<std::int64_t>(result.frames),
-                                       result.reason, result.pieces, result.adjusts,
-                                       result.switches, static_cast<std::int64_t>(result.score),
-                                       result.lines, result.level,
-                                       static_cast<std::int64_t>(initial_hash),
-                                       static_cast<std::int64_t>(game.state_hash())};
-        for (int index = 0; index < 11; ++index) {
-            out[index] = values[index];
+        std::vector<BoardSample> samples;
+        std::vector<BoardSample>* keep = gram ? &samples : nullptr;
+        std::uint64_t final_score = 0;
+        int status = 0;
+        if (agent_kind == 2) {
+            BasicAgent<ValueSearcher> agent(ValueSearcher(model), interval, reaction);
+            agent.set_explore(explore, explore_start, explore_seed);
+            status = run_game(config, agent, line_cap, frame_cap, inputs, out, keep, final_score);
+        } else {
+            Searcher searcher(*params);
+            searcher.set_extra_ply(agent_kind == 1);
+            Agent agent(searcher, interval, reaction);
+            agent.set_explore(explore, explore_start, explore_seed);
+            status = run_game(config, agent, line_cap, frame_cap, inputs, out, keep, final_score);
         }
+        if (status || !gram) {
+            return status;
+        }
+        FitSums sums;
+        add_game(model, samples, final_score, start_level, sums);
+        for (int index = 0; index < value_weights * value_weights; ++index) {
+            gram[index] = sums.gram[index];
+        }
+        for (int index = 0; index < value_weights; ++index) {
+            target[index] = sums.target[index];
+        }
+        totals[0] = sums.count;
+        totals[1] = sums.total;
+        totals[2] = sums.squares;
         return 0;
     } catch (const std::exception&) {
         return -1;
     }
+}
+
+// The 18 board features of value.hpp for one board (for the tests).
+FN_API void fn_board_features(const std::uint32_t* columns, double* out) {
+    const auto f = board_feature_values(load_columns(columns));
+    for (int index = 0; index < board_features; ++index) {
+        out[index] = f[index];
+    }
+}
+
+// value.hpp's board_value and clear_reward (for the tests).
+FN_API double fn_board_value(const double* weights, int line_cap, const std::uint32_t* columns,
+                             int lines, int start_level) {
+    ValueModel model;
+    model.line_cap = line_cap;
+    for (int index = 0; index < value_weights; ++index) {
+        model.weights[index] = weights[index];
+    }
+    return board_value(model, load_columns(columns), lines, start_level);
+}
+
+FN_API double fn_clear_reward(int cleared, int lines_after, int start_level) {
+    return clear_reward(cleared, lines_after, start_level);
 }

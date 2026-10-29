@@ -47,6 +47,9 @@ public:
     Searcher() = default;
     explicit Searcher(const Params& params) : params_(params) {}
     void set_params(const Params& params) { params_ = params; }
+    // Experiment 013's depth check (C++ only; off by default, which is reach_plan):
+    // at the adjust search, look one unknown piece further.
+    void set_extra_ply(bool extra_ply) { extra_ply_ = extra_ply; }
 
     // reachplan.search; ``choice.found`` is false where the Python returns None.
     // Returns false only if the walk back for the chosen placement failed.
@@ -112,7 +115,11 @@ public:
                     position.lines + option.cleared + path.preview_cleared, position.start_level);
                 const double total =
                     path.value +
-                    unknown_average(path.preview_settled, preview_drought, unknown_level);
+                    (extra_ply_ ? deeper_average(path.preview_settled, preview_drought,
+                                                 position.lines + option.cleared +
+                                                     path.preview_cleared)
+                                : unknown_average(path.preview_settled, preview_drought,
+                                                  unknown_level));
                 if (!have_total || total > best_total) {
                     best = &option;
                     best_total = total;
@@ -125,6 +132,21 @@ public:
         choice.x = best->placement.x;
         choice.y = best->placement.y;
         return root_.masks(best->placement, choice.masks);
+    }
+
+    // Experiment 013's exploration: after a search, the root placement ``pick`` picks
+    // (modulo their count) in place of the searched one.
+    bool random_choice(std::uint64_t pick, Choice& choice) {
+        choice = Choice{};
+        if (root_.placements.empty()) {
+            return true;
+        }
+        const Reach& placement = root_.placements[pick % root_.placements.size()];
+        choice.found = true;
+        choice.orientation = placement.orientation;
+        choice.x = placement.x;
+        choice.y = placement.y;
+        return root_.masks(placement, choice.masks);
     }
 
     // The commit search's term for one settled board (for the tests): the mean best
@@ -186,7 +208,30 @@ private:
         return total;
     }
 
+    // The extra ply: the mean, over the seven unknown pieces, of each one's best
+    // placement's value plus the seven-piece average on the board that placement leaves.
+    double deeper_average(const Columns& settled, int base_drought, int lines) {
+        double total = 0.0;
+        for (int unknown = 0; unknown < piece_types; ++unknown) {
+            const int drought = next_drought(base_drought, unknown);
+            const int phase = phase_of(params_, position_.level, drought, settled);
+            Path best{0.0, 0, false, 0, {}};
+            const double own = best_value(settled, unknown,
+                                          level_for_lines(lines, position_.start_level), phase,
+                                          &best);
+            if (!best.preview_found) {
+                return minus_infinity;
+            }
+            total += (own + unknown_average(best.preview_settled, drought,
+                                            level_for_lines(lines + best.preview_cleared,
+                                                            position_.start_level))) *
+                     unknown_weight;
+        }
+        return total;
+    }
+
     Params params_{};
+    bool extra_ply_ = false;
     Position position_{};
     ReachSearch root_, ply_;
     std::vector<Option> current_;

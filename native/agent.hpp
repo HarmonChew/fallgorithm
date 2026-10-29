@@ -15,6 +15,7 @@
 
 #include "board.hpp"
 #include "search.hpp"
+#include "value.hpp"
 
 namespace fallgorithm {
 
@@ -32,12 +33,24 @@ inline Columns visible_columns(const blocks::State& state) {
     return columns;
 }
 
-class Agent {
+// ``Search`` is search.hpp's Searcher (reach_plan) or value.hpp's ValueSearcher.
+template <class Search>
+class BasicAgent {
 public:
     // ``interval`` and ``reaction`` are limits.Limits' tap_interval and
     // reaction_frames (computed in Python, whose round() they need).
-    Agent(const Params& params, int interval, int reaction)
-        : searcher_(params), interval_(interval), reaction_(reaction) {}
+    BasicAgent(const Search& searcher, int interval, int reaction)
+        : searcher_(searcher), interval_(interval), reaction_(reaction) {}
+
+    // Experiment 013's self-play exploration (off unless set): the first
+    // ``start_pieces`` pieces, and after them each piece with probability ``rate``, play
+    // a uniformly random reachable placement instead, and skip that piece's adjust
+    // search. A splitmix64 stream from ``seed`` decides.
+    void set_explore(double rate, int start_pieces, std::uint64_t seed) {
+        explore_rate_ = rate;
+        explore_start_ = start_pieces;
+        explore_state_ = seed;
+    }
 
     // BenchAgent.act. Returns false only if a walk back lost its path.
     bool act(const blocks::Game& game, std::uint8_t& mask) {
@@ -53,6 +66,7 @@ public:
             frame_ = 0;
             shift_wait_ = rotate_wait_ = 0;
             have_target_ = false;
+            exploring_ = false;
             pieces += 1;
             drought_before_ = drought_;
             if (reaction_ == 0) {
@@ -66,7 +80,7 @@ public:
                     return false;
                 }
             }
-        } else if (reaction_ > 0 && frame_ == reaction_) {
+        } else if (reaction_ > 0 && frame_ == reaction_ && !exploring_) {
             adjusts += 1;
             drought_ = current_is_i || preview_is_i ? 0 : drought_before_ + 1;
             if (!decide(game, true)) {
@@ -81,7 +95,7 @@ public:
         return true;
     }
 
-    int pieces = 0, adjusts = 0, switches = 0;
+    int pieces = 0, adjusts = 0, switches = 0, explored = 0;
 
 private:
     // ReachAgent._decide. A switch is a change of (orientation, x); y is not compared.
@@ -102,6 +116,16 @@ private:
         if (!searcher_.search(position, choice_)) {
             return false;
         }
+        if (!have_target_ && (pieces <= explore_start_ ||
+                              (explore_rate_ > 0.0 &&
+                               static_cast<double>(next_random() >> 11) * 0x1.0p-53 <
+                                   explore_rate_))) {
+            exploring_ = true;
+            explored += 1;
+            if (!searcher_.random_choice(next_random(), choice_)) {
+                return false;
+            }
+        }
         if (have_target_ && (!choice_.found || choice_.orientation != target_orientation_ ||
                              choice_.x != target_x_)) {
             switches += 1;
@@ -114,8 +138,19 @@ private:
         return true;
     }
 
-    Searcher searcher_;
+    std::uint64_t next_random() {  // splitmix64
+        std::uint64_t z = (explore_state_ += 0x9e3779b97f4a7c15ull);
+        z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ull;
+        z = (z ^ (z >> 27)) * 0x94d049bb133111ebull;
+        return z ^ (z >> 31);
+    }
+
+    Search searcher_;
     Choice choice_;
+    double explore_rate_ = 0.0;
+    int explore_start_ = 0;
+    std::uint64_t explore_state_ = 0;
+    bool exploring_ = false;
     int interval_, reaction_;
     long long piece_count_ = -1;
     int frame_ = 0, base_ = 0, shift_wait_ = 0, rotate_wait_ = 0;
@@ -125,6 +160,8 @@ private:
     std::vector<std::uint8_t> masks_;
 };
 
+using Agent = BasicAgent<Searcher>;
+
 // experiment008._stop_reason's answers.
 enum StopReason : int { game_over = 0, challenge_complete = 1, line_cap_reached = 2, frame_limit = 3 };
 
@@ -132,18 +169,27 @@ struct GameResult {
     int inputs = 0;
     std::uint64_t frames = 0;  // the engine's frame count, as experiment008._result reports it
     int reason = game_over;
-    int pieces = 0, adjusts = 0, switches = 0;
+    int pieces = 0, adjusts = 0, switches = 0, explored = 0;
     std::uint64_t score = 0;
     int lines = 0, level = 0;
 };
 
 // experiment010._play's loop: the stop rules are checked before each frame's input.
-// Returns false only if the agent failed.
-inline bool play_game(blocks::Game& game, Agent& agent, int line_cap, int frame_cap,
-                      std::vector<std::uint8_t>& inputs, GameResult& result) {
+// Returns false only if the agent failed. With ``samples`` (Experiment 013), also
+// keeps the board, lines and score at every spawn, so each board a piece left.
+template <class AnyAgent>
+bool play_game(blocks::Game& game, AnyAgent& agent, int line_cap, int frame_cap,
+               std::vector<std::uint8_t>& inputs, GameResult& result,
+               std::vector<BoardSample>* samples = nullptr) {
     inputs.clear();
+    long long sampled = -1;
     while (true) {
         const blocks::State& state = game.state();
+        if (samples && state.phase == blocks::Phase::Active &&
+            static_cast<long long>(state.piece_count) != sampled) {
+            sampled = state.piece_count;
+            samples->push_back({visible_columns(state), state.lines, state.score});
+        }
         if (game.terminal()) {
             result.reason = state.phase == blocks::Phase::ChallengeComplete ? challenge_complete
                                                                              : game_over;
