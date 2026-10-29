@@ -1,0 +1,639 @@
+{
+ "experiment": "015-fast-commit",
+ "question": "Does 014's agent with the extra ply at the commit search from level 29, re-tuned by CEM, beat 014 on 012's held-out seeds?",
+ "record": {
+  "path": "experiments/015-fast-commit/records/run.json.gz",
+  "sha256": "54e97dc103d53d86b4a14833ac081d7e99c09c7a65cd87daafec65eec1347b32",
+  "created_at": "2026-10-29T12:18:07.437524+00:00"
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "ba094309e96c9121fa5d8b9f51a13872d443cad3",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "engine_fingerprint": "f63c80b5400d4b14415c53e5034dfec8f292ff331e86785a6be5a04a9614ac31",
+ "search": {
+  "commit_ply_level": 29,
+  "commit_beam": 2
+ },
+ "params": {
+  "fast_deep": {
+   "build_tetrises": 29.788698986143274,
+   "build_premature_clear": -1.073946142126443,
+   "build_holes": -15.276334720862385,
+   "build_aggregate_height": -0.1209122041701578,
+   "build_bumpiness": -0.9561828972815446,
+   "build_max_height": -0.5243284186911991,
+   "build_reserve": 5.018997068935409,
+   "build_overflow": 1.2869445815766996,
+   "spend_lines_cleared": 2.0537673708249677,
+   "spend_holes": -2.1866333657527663,
+   "spend_aggregate_height": 0.16624097555547737,
+   "spend_bumpiness": -0.025496684369312406,
+   "spend_max_height": 1.0441841982692475,
+   "spend_row_transitions": -1.114182114571442,
+   "spend_column_transitions": -2.5519444027682487,
+   "spend_edge_depth": -1.5248381291952173,
+   "height_budget": 10,
+   "survival_budget": 3,
+   "survival_level": 38,
+   "drought_bound": 18,
+   "clear_points": 37.74268445034382,
+   "killscreen_budget": 1
+  },
+  "points": {
+   "build_tetrises": 33.64458614708543,
+   "build_premature_clear": -1.0219724454103332,
+   "build_holes": -14.057489805301302,
+   "build_aggregate_height": -0.1554990959311456,
+   "build_bumpiness": -0.7881577015333868,
+   "build_max_height": -0.4268187092630011,
+   "build_reserve": 4.857442011391798,
+   "build_overflow": -0.013963613896535327,
+   "spend_lines_cleared": 0.9476401016921928,
+   "spend_holes": -1.8910713729010802,
+   "spend_aggregate_height": 0.04360397203653899,
+   "spend_bumpiness": -0.24689122489445392,
+   "spend_max_height": 0.897799880975592,
+   "spend_row_transitions": -0.7281098442565578,
+   "spend_column_transitions": -2.447861803385484,
+   "spend_edge_depth": -1.2355047048001802,
+   "height_budget": 10,
+   "survival_budget": 2,
+   "survival_level": 38,
+   "drought_bound": 16,
+   "clear_points": 16.49452842709017,
+   "killscreen_budget": 2
+  }
+ },
+ "heldout": {
+  "games": 1000,
+  "fast_deep": {
+   "games": 1000,
+   "lines": {
+    "mean": 368.7,
+    "median": 377.5,
+    "p5": 243.9,
+    "p10": 278.9,
+    "p90": 430.0
+   },
+   "score": {
+    "mean": 1360502.8,
+    "median": 1410970.0,
+    "p5": 838698.0,
+    "p10": 991700.0,
+    "p90": 1649704.0
+   },
+   "top_out_pct": 64.1,
+   "reached_level_29_pct": 97.3,
+   "reached_level_39_pct": 81.0,
+   "reached_line_cap_pct": 35.9,
+   "frame_limit_stops": 0,
+   "adjust_switch_pct": 11.6,
+   "clear_sizes": {
+    "singles": 116305,
+    "doubles": 39791,
+    "triples": 11831,
+    "tetrises": 34333
+   },
+   "tetris_rate": 0.3725
+  },
+  "points": {
+   "games": 1000,
+   "lines": {
+    "mean": 357.5,
+    "median": 353.0,
+    "p5": 246.0,
+    "p10": 271.9,
+    "p90": 430.0
+   },
+   "score": {
+    "mean": 1260572.7,
+    "median": 1288110.0,
+    "p5": 827332.0,
+    "p10": 948554.0,
+    "p90": 1525084.0
+   },
+   "top_out_pct": 75.8,
+   "reached_level_29_pct": 98.2,
+   "reached_level_39_pct": 77.3,
+   "reached_line_cap_pct": 24.2,
+   "frame_limit_stops": 0,
+   "adjust_switch_pct": 11.9,
+   "clear_sizes": {
+    "singles": 117207,
+    "doubles": 39016,
+    "triples": 11212,
+    "tetrises": 32152
+   },
+   "tetris_rate": 0.3598
+  },
+  "points_ply": {
+   "games": 1000,
+   "lines": {
+    "mean": 370.1,
+    "median": 383.0,
+    "p5": 245.9,
+    "p10": 273.9,
+    "p90": 430.0
+   },
+   "score": {
+    "mean": 1344953.4,
+    "median": 1378820.0,
+    "p5": 835687.0,
+    "p10": 988348.0,
+    "p90": 1640784.0
+   },
+   "top_out_pct": 64.1,
+   "reached_level_29_pct": 98.2,
+   "reached_level_39_pct": 81.1,
+   "reached_line_cap_pct": 35.9,
+   "frame_limit_stops": 0,
+   "adjust_switch_pct": 11.5,
+   "clear_sizes": {
+    "singles": 119047,
+    "doubles": 40621,
+    "triples": 11663,
+    "tetrises": 33696
+   },
+   "tetris_rate": 0.3642
+  },
+  "paired_fast_deep_minus_points": {
+   "score": {
+    "mean": 99930.1,
+    "ci95_low": 78111.06,
+    "ci95_high": 122023.7,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": 11.229,
+    "ci95_low": 5.7,
+    "ci95_high": 16.741,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 634,
+    "lower": 366,
+    "equal": 0
+   }
+  },
+  "paired_points_ply_minus_points": {
+   "score": {
+    "mean": 84380.76,
+    "ci95_low": 67959.86,
+    "ci95_high": 101002.22,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": 12.579,
+    "ci95_low": 7.739,
+    "ci95_high": 17.468,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 643,
+    "lower": 336,
+    "equal": 21
+   }
+  },
+  "paired_fast_deep_minus_points_ply": {
+   "score": {
+    "mean": 15549.34,
+    "ci95_low": -7939.58,
+    "ci95_high": 39069.96,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -1.35,
+    "ci95_low": -6.905,
+    "ci95_high": 4.445,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 530,
+    "lower": 470,
+    "equal": 0
+   }
+  }
+ },
+ "training": {
+  "curve": [
+   {
+    "iteration": 0,
+    "best": 1058943.9583333333,
+    "elite_mean": 923436.2152777779,
+    "population_mean": 460129.28819444444
+   },
+   {
+    "iteration": 1,
+    "best": 1164557.2916666667,
+    "elite_mean": 1065498.6111111112,
+    "population_mean": 824129.4053819445
+   },
+   {
+    "iteration": 2,
+    "best": 1189410.0,
+    "elite_mean": 1146318.1944444445,
+    "population_mean": 957927.0659722221
+   },
+   {
+    "iteration": 3,
+    "best": 1209238.125,
+    "elite_mean": 1181066.0243055557,
+    "population_mean": 1037039.4921875
+   },
+   {
+    "iteration": 4,
+    "best": 1316309.5833333333,
+    "elite_mean": 1246682.5173611112,
+    "population_mean": 1110142.9340277778
+   },
+   {
+    "iteration": 5,
+    "best": 1293152.2916666667,
+    "elite_mean": 1270647.6041666667,
+    "population_mean": 1194572.1875
+   },
+   {
+    "iteration": 6,
+    "best": 1350033.9583333333,
+    "elite_mean": 1326049.7916666667,
+    "population_mean": 1267893.3116319445
+   },
+   {
+    "iteration": 7,
+    "best": 1413911.6666666667,
+    "elite_mean": 1355285.7986111112,
+    "population_mean": 1299571.0677083333
+   },
+   {
+    "iteration": 8,
+    "best": 1422961.25,
+    "elite_mean": 1358308.4722222222,
+    "population_mean": 1306732.4782986112
+   },
+   {
+    "iteration": 9,
+    "best": 1384835.2083333333,
+    "elite_mean": 1351350.4861111112,
+    "population_mean": 1308406.4583333333
+   },
+   {
+    "iteration": 10,
+    "best": 1391042.9166666667,
+    "elite_mean": 1361533.7326388888,
+    "population_mean": 1321427.1310763888
+   },
+   {
+    "iteration": 11,
+    "best": 1398785.8333333333,
+    "elite_mean": 1368081.09375,
+    "population_mean": 1317836.6970486112
+   },
+   {
+    "iteration": 12,
+    "best": 1399980.4166666667,
+    "elite_mean": 1365335.2604166667,
+    "population_mean": 1325251.9748263888
+   },
+   {
+    "iteration": 13,
+    "best": 1379175.625,
+    "elite_mean": 1365507.9861111112,
+    "population_mean": 1334307.7083333333
+   },
+   {
+    "iteration": 14,
+    "best": 1406272.9166666667,
+    "elite_mean": 1376071.857638889,
+    "population_mean": 1339436.0590277778
+   },
+   {
+    "iteration": 15,
+    "best": 1390195.4166666667,
+    "elite_mean": 1368762.5173611112,
+    "population_mean": 1336912.4045138888
+   },
+   {
+    "iteration": 16,
+    "best": 1410261.875,
+    "elite_mean": 1377768.0729166667,
+    "population_mean": 1345674.9392361112
+   },
+   {
+    "iteration": 17,
+    "best": 1408617.5,
+    "elite_mean": 1383065.9027777778,
+    "population_mean": 1346529.1579861112
+   },
+   {
+    "iteration": 18,
+    "best": 1396504.1666666667,
+    "elite_mean": 1382929.2534722222,
+    "population_mean": 1348614.5355902778
+   },
+   {
+    "iteration": 19,
+    "best": 1416974.1666666667,
+    "elite_mean": 1384253.4722222222,
+    "population_mean": 1344995.3472222222
+   },
+   {
+    "iteration": 20,
+    "best": 1429158.5416666667,
+    "elite_mean": 1382355.7465277778,
+    "population_mean": 1348895.1388888888
+   },
+   {
+    "iteration": 21,
+    "best": 1424403.9583333333,
+    "elite_mean": 1384100.5729166667,
+    "population_mean": 1347450.4036458333
+   },
+   {
+    "iteration": 22,
+    "best": 1407714.375,
+    "elite_mean": 1393864.1493055555,
+    "population_mean": 1357290.1953125
+   },
+   {
+    "iteration": 23,
+    "best": 1423120.0,
+    "elite_mean": 1400098.6458333333,
+    "population_mean": 1359707.8732638888
+   },
+   {
+    "iteration": 24,
+    "best": 1402281.6666666667,
+    "elite_mean": 1384604.2708333333,
+    "population_mean": 1353419.7569444445
+   },
+   {
+    "iteration": 25,
+    "best": 1446063.75,
+    "elite_mean": 1396010.7118055555,
+    "population_mean": 1361422.8298611112
+   },
+   {
+    "iteration": 26,
+    "best": 1422427.9166666667,
+    "elite_mean": 1396893.8715277778,
+    "population_mean": 1365003.5980902778
+   },
+   {
+    "iteration": 27,
+    "best": 1439810.8333333333,
+    "elite_mean": 1399713.2291666667,
+    "population_mean": 1356576.8446180555
+   },
+   {
+    "iteration": 28,
+    "best": 1397052.7083333333,
+    "elite_mean": 1384098.0381944445,
+    "population_mean": 1355517.3697916667
+   },
+   {
+    "iteration": 29,
+    "best": 1465430.8333333333,
+    "elite_mean": 1403008.611111111,
+    "population_mean": 1366620.6380208333
+   }
+  ],
+  "start_params": {
+   "mean_score": 1305703.5416666667,
+   "mean_lines": 364.4583333333333
+  },
+  "final_mean": {
+   "mean_score": 1351937.9166666667,
+   "mean_lines": 364.3020833333333
+  },
+  "total_wall_seconds": 6764.3
+ },
+ "depth_check": {
+  "question": "The commit ply and a killscreen budget of 4, with 014's numbers, on the dev seeds",
+  "seeds": "dev_seeds (Experiment 013's)",
+  "games": 200,
+  "variants": {
+   "points": {},
+   "ply_beam2": {
+    "commit_ply_level": 29,
+    "commit_beam": 2
+   },
+   "ply_beam4": {
+    "commit_ply_level": 29,
+    "commit_beam": 4
+   },
+   "killscreen_4": {
+    "killscreen_budget": 4
+   },
+   "killscreen_4_beam2": {
+    "killscreen_budget": 4,
+    "commit_ply_level": 29,
+    "commit_beam": 2
+   },
+   "killscreen_4_beam4": {
+    "killscreen_budget": 4,
+    "commit_ply_level": 29,
+    "commit_beam": 4
+   }
+  },
+  "scores": {
+   "points": {
+    "mean_score": 1253902.7,
+    "mean_lines": 353.865
+   },
+   "ply_beam2": {
+    "mean_score": 1360418.9,
+    "mean_lines": 371.855
+   },
+   "ply_beam4": {
+    "mean_score": 1357564.5,
+    "mean_lines": 369.09
+   },
+   "killscreen_4": {
+    "mean_score": 1208841.0,
+    "mean_lines": 333.71
+   },
+   "killscreen_4_beam2": {
+    "mean_score": 1290735.8,
+    "mean_lines": 342.39
+   },
+   "killscreen_4_beam4": {
+    "mean_score": 1293008.6,
+    "mean_lines": 344.645
+   }
+  },
+  "paired": {
+   "ply_beam2 - points": {
+    "score": {
+     "mean": 106516.2,
+     "ci95_low": 69769.2,
+     "ci95_high": 143405.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 17.99,
+     "ci95_low": 6.95,
+     "ci95_high": 28.935,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 136,
+     "lower": 61,
+     "equal": 3
+    }
+   },
+   "ply_beam4 - points": {
+    "score": {
+     "mean": 103661.8,
+     "ci95_low": 66380.7,
+     "ci95_high": 141919.9,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 15.225,
+     "ci95_low": 4.335,
+     "ci95_high": 26.1,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 132,
+     "lower": 65,
+     "equal": 3
+    }
+   },
+   "killscreen_4 - points": {
+    "score": {
+     "mean": -45061.7,
+     "ci95_low": -55753.3,
+     "ci95_high": -34594.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -20.155,
+     "ci95_low": -24.89,
+     "ci95_high": -15.56,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 25,
+     "lower": 94,
+     "equal": 81
+    }
+   },
+   "killscreen_4_beam2 - points": {
+    "score": {
+     "mean": 36833.1,
+     "ci95_low": 2770.4,
+     "ci95_high": 71278.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -11.475,
+     "ci95_low": -21.215,
+     "ci95_high": -1.51,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 113,
+     "lower": 84,
+     "equal": 3
+    }
+   },
+   "killscreen_4_beam4 - points": {
+    "score": {
+     "mean": 39105.9,
+     "ci95_low": 5088.7,
+     "ci95_high": 73293.9,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -9.22,
+     "ci95_low": -19.02,
+     "ci95_high": 0.615,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 114,
+     "lower": 83,
+     "equal": 3
+    }
+   },
+   "killscreen_4_beam2 - ply_beam2": {
+    "score": {
+     "mean": -69683.1,
+     "ci95_low": -82540.9,
+     "ci95_high": -57277.8,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -29.465,
+     "ci95_low": -34.815,
+     "ci95_high": -24.11,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 23,
+     "lower": 121,
+     "equal": 56
+    }
+   },
+   "killscreen_4_beam4 - ply_beam4": {
+    "score": {
+     "mean": -64555.9,
+     "ci95_low": -78101.6,
+     "ci95_high": -51452.5,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -24.445,
+     "ci95_low": -29.72,
+     "ci95_high": -19.285,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 31,
+     "lower": 109,
+     "equal": 60
+    }
+   }
+  },
+  "seconds_per_game": {
+   "points": 1.159,
+   "ply_beam2": 1.377,
+   "ply_beam4": 1.571,
+   "killscreen_4": 1.11,
+   "killscreen_4_beam2": 1.29,
+   "killscreen_4_beam4": 1.45
+  }
+ },
+ "success_rule": "95% CI of the paired mean score difference (fast_deep minus points) on 012's 1,000 held-out seeds entirely above 0",
+ "success": true
+}

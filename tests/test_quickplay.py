@@ -1,4 +1,4 @@
-"""Menu flows and commands for Experiments 006 and 008-014."""
+"""Menu flows and commands for Experiments 006 and 008-015."""
 
 from __future__ import annotations
 
@@ -112,8 +112,8 @@ def test_watch_record_finds_the_record_from_another_directory(tmp_path, monkeypa
     (["--experiment", "008", "--reaction-ms", "-1"], "0 ms or more"),
     (["--experiment", "008", "--reaction-ms", "inf"], "0 ms or more"),
     (["--experiment", "008", "--agent", "survival_plan"], "006 only"),
-    (["--experiment", "006", "--tap-hz", "30"], "008-014 only"),
-    (["--experiment", "006", "--reaction-ms", "0"], "008-014 only"),
+    (["--experiment", "006", "--tap-hz", "30"], "008-015 only"),
+    (["--experiment", "006", "--reaction-ms", "0"], "008-015 only"),
 ])
 def test_play_game_rejects_bad_or_inapplicable_options(arguments, message, capsys):
     assert cli.main(["play-game", *arguments]) == 1
@@ -127,7 +127,7 @@ def test_start_level_is_gone():
 
 def test_bad_experiment_is_reported(capsys):
     assert cli.main(["play-game", "--experiment", "001"]) == 1
-    assert "choose 006, 008, 009, 010, 011, 012, 013 or 014" in capsys.readouterr().err
+    assert "choose 006, 008, 009, 010, 011, 012, 013, 014 or 015" in capsys.readouterr().err
 
 
 def test_experiments_lists_006_and_008(capsys):
@@ -350,4 +350,24 @@ def test_a_new_014_game_plays_the_points_agent_with_its_parameters():
     episode = e14._play((0, fmt, 7, dict(config, frame_cap=1500, params=params)))
     expected = e14.play_native(
         ("points", 7, dict(config, frame_cap=1500, points_params=params, formats=[fmt])))
+    assert episode["inputs"] == expected["inputs"] and episode["result"]["frames"] == 1500
+
+
+def test_015_is_wired_into_the_launcher(menu, monkeypatch):
+    assert quickplay.experiment_id("15") == "015"
+    assert "015" in quickplay.TRAINED and quickplay.RECORD_AGENT["015"] == "fast_deep"
+    calls = []
+    monkeypatch.setattr(quickplay.experiment015, "main", lambda argv: calls.append(argv) or 0)
+    assert quickplay.evaluate("015", 5) == 0
+    assert calls == [["evaluate", "--jobs", "5"]]
+
+
+def test_a_new_015_game_plays_the_fast_deep_agent_with_its_parameters():
+    e15 = quickplay.experiment015
+    config = e15._load(e15.CONFIG)
+    params = e15._load(e15.FINAL_PARAMS)["resolved"]
+    fmt = {"tap_hz": 30, "reaction_ms": 300}
+    episode = e15._play((0, fmt, 7, dict(config, frame_cap=1500, params=params)))
+    expected = e15.play_native(
+        ("fast_deep", 7, dict(config, frame_cap=1500, fast_deep_params=params, formats=[fmt])))
     assert episode["inputs"] == expected["inputs"] and episode["result"]["frames"] == 1500

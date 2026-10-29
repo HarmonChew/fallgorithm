@@ -1,7 +1,8 @@
 # Experiment 015 - plan: a deeper commit search at the fast levels
 
-Status: planned 2026-10-29. Before training, `predeclared.md` was written from the
-"Success rule" section and is not edited afterwards.
+Status: done 2026-10-29; see `notes.md` for the result. Before training,
+`predeclared.md` was written from the "Success rule" section and is not edited
+afterwards.
 
 ## Why
 
