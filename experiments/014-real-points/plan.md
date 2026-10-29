@@ -1,7 +1,8 @@
 # Experiment 014 - plan: real points for clears, Tetrises past the killscreen, NES odds
 
-Status: in progress. Before training, `predeclared.md` is written from the "Success rule"
-section and is not edited afterwards.
+Status: done 2026-10-29; see `notes.md` for the result. Before training,
+`predeclared.md` was written from the "Success rule" section and is not edited
+afterwards.
 
 ## Why
 

@@ -403,6 +403,13 @@ def play_native(job: tuple[str, int, dict[str, Any]]) -> dict[str, Any]:
     return episode
 
 
+def _play(job: tuple[int, dict[str, Any], int, dict[str, Any]]) -> dict[str, Any]:
+    """The launcher's new game: the points agent with ``config["params"]`` in format ``fmt``."""
+    _, fmt, seed, config = job
+    return play_native(("points", seed, config | {"points_params": config["params"],
+                                                  "formats": [fmt]}))
+
+
 def evaluate(jobs: int) -> Path:
     iterations = _load(CONFIG)["train"]["iterations"]
     if not PREDECLARED.exists() or not e13._committed(PREDECLARED) or not TRAINING.exists() or \

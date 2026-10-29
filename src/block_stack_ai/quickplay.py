@@ -1,4 +1,4 @@
-"""One-game and full-evaluation helpers for Experiments 006, 008, 009, 010, 011, 012 and 013.
+"""One-game and full-evaluation helpers for Experiments 006 and 008-014.
 
 Those experiments have their own harnesses and configs, so the stock runner
 cannot play them. This module plays one game with the harness's own single-game
@@ -13,13 +13,13 @@ import math
 from pathlib import Path
 import random
 
-from . import experiment006, experiment008, experiment009, experiment010, experiment011, experiment012, experiment013, watchrecord
+from . import experiment006, experiment008, experiment009, experiment010, experiment011, experiment012, experiment013, experiment014, watchrecord
 
 EXPERIMENTS = {"006": experiment006, "008": experiment008, "009": experiment009,
                "010": experiment010, "011": experiment011, "012": experiment012,
-               "013": experiment013}
-TRAINED = ("009", "010", "011", "012", "013")  # learned parameters (012 and 013 their own, the rest 009's)
-RECORD_AGENT = {"012": "cem", "013": "deep"}  # records with baseline agents too; the menu shows the trained one
+               "013": experiment013, "014": experiment014}
+TRAINED = ("009", "010", "011", "012", "013", "014")  # learned parameters (012-014 their own, the rest 009's)
+RECORD_AGENT = {"012": "cem", "013": "deep", "014": "points"}  # records with baseline agents too; the menu shows the trained one
 SURVIVAL = "survival_plan"
 TAP_HZ, REACTION_MS, JOBS = 30, 300, 30
 MAX_TAP_HZ = 30  # limits.py silently caps faster rates
@@ -30,7 +30,7 @@ def experiment_id(selection: str) -> str:
     number = selection.partition("-")[0]
     if number.isdecimal() and f"{int(number):03d}" in EXPERIMENTS:
         return f"{int(number):03d}"
-    raise ValueError(f"Experiment {selection!r} has no single-game command; choose 006, 008, 009, 010, 011, 012 or 013.")
+    raise ValueError(f"Experiment {selection!r} has no single-game command; choose 006, 008, 009, 010, 011, 012, 013 or 014.")
 
 
 def record_path(experiment: str) -> Path:
@@ -54,8 +54,8 @@ def play_game(experiment: str, *, seed: int | None = None, agent: str | None = N
               reaction_ms: float | None = None, export_only: bool = False) -> int:
     """Play one fresh game headless, then show it paused in the desktop window.
 
-    006 takes an agent; 008-013 take tap speed and reaction time (009, 010 and 011 play
-    Experiment 009's trained parameters, 012 and 013 their own). Options that do not apply are rejected, not ignored.
+    006 takes an agent; 008-014 take tap speed and reaction time (009, 010 and 011 play
+    Experiment 009's trained parameters, 012-014 their own). Options that do not apply are rejected, not ignored.
     """
     experiment = experiment_id(experiment)
     module = EXPERIMENTS[experiment]
@@ -68,7 +68,7 @@ def play_game(experiment: str, *, seed: int | None = None, agent: str | None = N
     game = config["game"]
     if experiment == "006":
         if tap_hz is not None or reaction_ms is not None:
-            raise ValueError("--tap-hz and --reaction-ms apply to Experiments 008, 009, 010, 011, 012 and 013 only.")
+            raise ValueError("--tap-hz and --reaction-ms apply to Experiments 008-014 only.")
         agent = agent or SURVIVAL
         if agent not in module.AGENTS:
             raise ValueError(f"Agent must be one of: {', '.join(module.AGENTS)}")
@@ -94,7 +94,7 @@ def play_game(experiment: str, *, seed: int | None = None, agent: str | None = N
                 raise ValueError(f"Experiment {experiment} has no trained parameters yet "
                                  "(final_params.json).")
             settings["params"] = module._load(module.FINAL_PARAMS)["resolved"]
-        wait = "a second or two" if experiment in ("011", "012", "013") else "a minute or two"
+        wait = "a second or two" if experiment in ("011", "012", "013", "014") else "a minute or two"
         print(f"Playing {experiment} at {tap_hz:g} Hz, {reaction_ms:g} ms reaction, seed {seed}, "
               f"up to {settings['line_cap']} lines. This can take {wait}...", flush=True)
         episode = module._play((0, fmt, seed, settings))
