@@ -1,0 +1,351 @@
+{
+ "seeds": "Experiment 013's first 200 dev seeds (experiments/013-deeper-search/seeds.json)",
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "d42e890f9bc26867b7081c00bdfe39e86db58031",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "agents": {
+  "deep": {
+   "games": 200,
+   "mean_score": 1160963.7,
+   "mean_lines": 351.85,
+   "clears_per_game": {
+    "18-28": {
+     "build": {
+      "clear1": 50.06,
+      "clear2": 14.79,
+      "clear3": 4.83,
+      "clear4": 18.02
+     },
+     "spend:drought": {
+      "clear1": 4.26,
+      "clear2": 1.93,
+      "clear3": 0.61,
+      "clear4": 0.0
+     },
+     "spend:height": {
+      "clear1": 9.02,
+      "clear2": 4.95,
+      "clear3": 2.4,
+      "clear4": 4.74
+     },
+     "spend:drought+height": {
+      "clear1": 2.15,
+      "clear2": 1.87,
+      "clear3": 0.74,
+      "clear4": 0.0
+     }
+    },
+    "29-38": {
+     "build": {
+      "clear1": 20.72,
+      "clear2": 4.96,
+      "clear3": 1.64,
+      "clear4": 3.75
+     },
+     "spend:drought": {
+      "clear1": 1.5,
+      "clear2": 0.6,
+      "clear3": 0.12,
+      "clear4": 0.0
+     },
+     "spend:height": {
+      "clear1": 10.62,
+      "clear2": 4.39,
+      "clear3": 1.69,
+      "clear4": 1.46
+     },
+     "spend:drought+height": {
+      "clear1": 1.4,
+      "clear2": 0.93,
+      "clear3": 0.19,
+      "clear4": 0.0
+     }
+    },
+    "39+": {
+     "build": {
+      "clear1": 0.05,
+      "clear2": 0.0,
+      "clear3": 0.0,
+      "clear4": 0.0
+     },
+     "spend:drought": {
+      "clear1": 0.01,
+      "clear2": 0.0,
+      "clear3": 0.0,
+      "clear4": 0.0
+     },
+     "spend:height": {
+      "clear1": 19.12,
+      "clear2": 5.13,
+      "clear3": 0.56,
+      "clear4": 0.12
+     },
+     "spend:drought+height": {
+      "clear1": 1.83,
+      "clear2": 0.56,
+      "clear3": 0.06,
+      "clear4": 0.0
+     }
+    }
+   },
+   "pieces_per_game": {
+    "18-28": {
+     "build": 478.1,
+     "spend:drought": 27.7,
+     "spend:height": 57.6,
+     "spend:drought+height": 19.3
+    },
+    "29-38": {
+     "build": 147.4,
+     "spend:drought": 10.3,
+     "spend:height": 55.7,
+     "spend:drought+height": 10.7
+    },
+    "39+": {
+     "build": 1.9,
+     "spend:drought": 0.2,
+     "spend:height": 89.8,
+     "spend:drought+height": 9.1
+    }
+   },
+   "i_to_tetris": {
+    "18-28": 0.282,
+    "29-38": 0.169,
+    "39+": 0.008
+   },
+   "totals": {
+    "I pieces|18-28": 16163,
+    "I pieces|29-38": 6182,
+    "I pieces|39+": 2828,
+    "I tetris|18-28": 4553,
+    "I tetris|29-38": 1042,
+    "I tetris|39+": 24,
+    "clear1|18-28|build": 10013,
+    "clear1|18-28|spend:drought": 852,
+    "clear1|18-28|spend:drought+height": 429,
+    "clear1|18-28|spend:height": 1804,
+    "clear1|29-38|build": 4144,
+    "clear1|29-38|spend:drought": 300,
+    "clear1|29-38|spend:drought+height": 280,
+    "clear1|29-38|spend:height": 2125,
+    "clear1|39+|build": 10,
+    "clear1|39+|spend:drought": 2,
+    "clear1|39+|spend:drought+height": 367,
+    "clear1|39+|spend:height": 3824,
+    "clear2|18-28|build": 2959,
+    "clear2|18-28|spend:drought": 386,
+    "clear2|18-28|spend:drought+height": 374,
+    "clear2|18-28|spend:height": 989,
+    "clear2|29-38|build": 993,
+    "clear2|29-38|spend:drought": 120,
+    "clear2|29-38|spend:drought+height": 186,
+    "clear2|29-38|spend:height": 878,
+    "clear2|39+|spend:drought+height": 112,
+    "clear2|39+|spend:height": 1026,
+    "clear3|18-28|build": 965,
+    "clear3|18-28|spend:drought": 122,
+    "clear3|18-28|spend:drought+height": 148,
+    "clear3|18-28|spend:height": 480,
+    "clear3|29-38|build": 328,
+    "clear3|29-38|spend:drought": 24,
+    "clear3|29-38|spend:drought+height": 38,
+    "clear3|29-38|spend:height": 338,
+    "clear3|39+|spend:drought+height": 11,
+    "clear3|39+|spend:height": 112,
+    "clear4|18-28|build": 3605,
+    "clear4|18-28|spend:height": 948,
+    "clear4|29-38|build": 750,
+    "clear4|29-38|spend:height": 292,
+    "clear4|39+|spend:height": 24,
+    "pieces|18-28|build": 95619,
+    "pieces|18-28|spend:drought": 5548,
+    "pieces|18-28|spend:drought+height": 3851,
+    "pieces|18-28|spend:height": 11520,
+    "pieces|29-38|build": 29480,
+    "pieces|29-38|spend:drought": 2068,
+    "pieces|29-38|spend:drought+height": 2140,
+    "pieces|29-38|spend:height": 11148,
+    "pieces|39+|build": 376,
+    "pieces|39+|spend:drought": 47,
+    "pieces|39+|spend:drought+height": 1820,
+    "pieces|39+|spend:height": 17959
+   }
+  },
+  "points": {
+   "games": 200,
+   "mean_score": 1253902.7,
+   "mean_lines": 353.87,
+   "clears_per_game": {
+    "18-28": {
+     "build": {
+      "clear1": 44.36,
+      "clear2": 14.07,
+      "clear3": 4.32,
+      "clear4": 22.07
+     },
+     "spend:drought": {
+      "clear1": 2.35,
+      "clear2": 1.02,
+      "clear3": 0.38,
+      "clear4": 0.0
+     },
+     "spend:height": {
+      "clear1": 9.23,
+      "clear2": 5.29,
+      "clear3": 2.15,
+      "clear4": 4.61
+     },
+     "spend:drought+height": {
+      "clear1": 1.4,
+      "clear2": 1.32,
+      "clear3": 0.46,
+      "clear4": 0.0
+     }
+    },
+    "29-38": {
+     "build": {
+      "clear1": 19.88,
+      "clear2": 5.59,
+      "clear3": 1.73,
+      "clear4": 3.87
+     },
+     "spend:drought": {
+      "clear1": 0.83,
+      "clear2": 0.33,
+      "clear3": 0.07,
+      "clear4": 0.0
+     },
+     "spend:height": {
+      "clear1": 10.37,
+      "clear2": 4.26,
+      "clear3": 1.39,
+      "clear4": 1.58
+     },
+     "spend:drought+height": {
+      "clear1": 0.96,
+      "clear2": 0.55,
+      "clear3": 0.11,
+      "clear4": 0.0
+     }
+    },
+    "39+": {
+     "build": {
+      "clear1": 0.09,
+      "clear2": 0.0,
+      "clear3": 0.0,
+      "clear4": 0.0
+     },
+     "spend:drought": {
+      "clear1": 0.02,
+      "clear2": 0.0,
+      "clear3": 0.0,
+      "clear4": 0.0
+     },
+     "spend:height": {
+      "clear1": 22.64,
+      "clear2": 5.88,
+      "clear3": 0.55,
+      "clear4": 0.13
+     },
+     "spend:drought+height": {
+      "clear1": 1.67,
+      "clear2": 0.47,
+      "clear3": 0.02,
+      "clear4": 0.0
+     }
+    }
+   },
+   "pieces_per_game": {
+    "18-28": {
+     "build": 496.2,
+     "spend:drought": 15.9,
+     "spend:height": 57.2,
+     "spend:drought+height": 14.0
+    },
+    "29-38": {
+     "build": 149.6,
+     "spend:drought": 5.9,
+     "spend:height": 54.0,
+     "spend:drought+height": 6.7
+    },
+    "39+": {
+     "build": 2.4,
+     "spend:drought": 0.2,
+     "spend:height": 101.6,
+     "spend:drought+height": 8.2
+    }
+   },
+   "i_to_tetris": {
+    "18-28": 0.33,
+    "29-38": 0.18,
+    "39+": 0.009
+   },
+   "totals": {
+    "I pieces|18-28": 16186,
+    "I pieces|29-38": 6052,
+    "I pieces|39+": 3038,
+    "I tetris|18-28": 5336,
+    "I tetris|29-38": 1089,
+    "I tetris|39+": 26,
+    "clear1|18-28|build": 8872,
+    "clear1|18-28|spend:drought": 471,
+    "clear1|18-28|spend:drought+height": 279,
+    "clear1|18-28|spend:height": 1847,
+    "clear1|29-38|build": 3976,
+    "clear1|29-38|spend:drought": 166,
+    "clear1|29-38|spend:drought+height": 192,
+    "clear1|29-38|spend:height": 2073,
+    "clear1|39+|build": 17,
+    "clear1|39+|spend:drought": 4,
+    "clear1|39+|spend:drought+height": 334,
+    "clear1|39+|spend:height": 4527,
+    "clear2|18-28|build": 2815,
+    "clear2|18-28|spend:drought": 205,
+    "clear2|18-28|spend:drought+height": 264,
+    "clear2|18-28|spend:height": 1057,
+    "clear2|29-38|build": 1118,
+    "clear2|29-38|spend:drought": 65,
+    "clear2|29-38|spend:drought+height": 109,
+    "clear2|29-38|spend:height": 853,
+    "clear2|39+|spend:drought+height": 95,
+    "clear2|39+|spend:height": 1175,
+    "clear3|18-28|build": 863,
+    "clear3|18-28|spend:drought": 75,
+    "clear3|18-28|spend:drought+height": 91,
+    "clear3|18-28|spend:height": 431,
+    "clear3|29-38|build": 346,
+    "clear3|29-38|spend:drought": 13,
+    "clear3|29-38|spend:drought+height": 22,
+    "clear3|29-38|spend:height": 278,
+    "clear3|39+|spend:drought+height": 4,
+    "clear3|39+|spend:height": 110,
+    "clear4|18-28|build": 4415,
+    "clear4|18-28|spend:height": 921,
+    "clear4|29-38|build": 773,
+    "clear4|29-38|spend:height": 316,
+    "clear4|39+|spend:height": 26,
+    "pieces|18-28|build": 99246,
+    "pieces|18-28|spend:drought": 3179,
+    "pieces|18-28|spend:drought+height": 2803,
+    "pieces|18-28|spend:height": 11434,
+    "pieces|29-38|build": 29927,
+    "pieces|29-38|spend:drought": 1183,
+    "pieces|29-38|spend:drought+height": 1349,
+    "pieces|29-38|spend:height": 10802,
+    "pieces|39+|build": 478,
+    "pieces|39+|spend:drought": 49,
+    "pieces|39+|spend:drought+height": 1643,
+    "pieces|39+|spend:height": 20320
+   }
+  }
+ }
+}
