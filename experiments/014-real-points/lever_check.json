@@ -1,0 +1,173 @@
+{
+ "question": "Each 014 change alone, with 013's numbers, on the dev seeds",
+ "seeds": "dev_seeds (Experiment 013's)",
+ "games": 200,
+ "variants": {
+  "deep": {
+   "agent": "reach_plan_extra_ply",
+   "numbers": {}
+  },
+  "deep_nes": {
+   "agent": "reach_plan_014",
+   "numbers": {}
+  },
+  "killscreen_4": {
+   "agent": "reach_plan_014",
+   "numbers": {
+    "killscreen_budget": 4
+   }
+  },
+  "killscreen_8": {
+   "agent": "reach_plan_014",
+   "numbers": {
+    "killscreen_budget": 8
+   }
+  },
+  "points_5": {
+   "agent": "reach_plan_014",
+   "numbers": {
+    "clear_points": 5
+   }
+  },
+  "points_15": {
+   "agent": "reach_plan_014",
+   "numbers": {
+    "clear_points": 15
+   }
+  }
+ },
+ "scores": {
+  "deep": {
+   "mean_score": 1160963.7,
+   "mean_lines": 351.85
+  },
+  "deep_nes": {
+   "mean_score": 1135936.2,
+   "mean_lines": 350.265
+  },
+  "killscreen_4": {
+   "mean_score": 1090319.5,
+   "mean_lines": 329.845
+  },
+  "killscreen_8": {
+   "mean_score": 1076517.3,
+   "mean_lines": 321.285
+  },
+  "points_5": {
+   "mean_score": 1129033.2,
+   "mean_lines": 347.085
+  },
+  "points_15": {
+   "mean_score": 1194586.9,
+   "mean_lines": 363.605
+  }
+ },
+ "paired_minus_deep": {
+  "deep_nes": {
+   "score": {
+    "mean": -25027.5,
+    "ci95_low": -71760.4,
+    "ci95_high": 21177.3,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -1.585,
+    "ci95_low": -13.385,
+    "ci95_high": 10.295,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 91,
+    "lower": 109,
+    "equal": 0
+   }
+  },
+  "killscreen_4": {
+   "score": {
+    "mean": -70644.2,
+    "ci95_low": -114626.5,
+    "ci95_high": -26874.9,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -22.005,
+    "ci95_low": -32.41,
+    "ci95_high": -11.4,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 79,
+    "lower": 121,
+    "equal": 0
+   }
+  },
+  "killscreen_8": {
+   "score": {
+    "mean": -84446.4,
+    "ci95_low": -128004.1,
+    "ci95_high": -40729.0,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -30.565,
+    "ci95_low": -40.58,
+    "ci95_high": -20.485,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 73,
+    "lower": 127,
+    "equal": 0
+   }
+  },
+  "points_5": {
+   "score": {
+    "mean": -31930.5,
+    "ci95_low": -77897.7,
+    "ci95_high": 12965.5,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -4.765,
+    "ci95_low": -17.1,
+    "ci95_high": 7.415,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 96,
+    "lower": 104,
+    "equal": 0
+   }
+  },
+  "points_15": {
+   "score": {
+    "mean": 33623.2,
+    "ci95_low": -9914.0,
+    "ci95_high": 77258.5,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": 11.755,
+    "ci95_low": 1.095,
+    "ci95_high": 22.595,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 119,
+    "lower": 81,
+    "equal": 0
+   }
+  }
+ },
+ "wall_seconds": 66.8
+}
