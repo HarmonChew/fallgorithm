@@ -18,9 +18,9 @@ keeps 60000, this experiment uses 200000), no `frame_limit: null` path exists,
 and there is no `experiments/002-whole-games` directory or uncapped execution.
 The native dependency is the registered read-only Block Stack checkout at
 `8ca41587` **recorded dirty** — a working-tree run — with the registered library
-`/home/harmon-chew/projects/code/fallgorithm/.build/engine/libblocks_native.so`.
+`.build/engine/libblocks_native.so`.
 In this harness the registered virtualenv is
-`/home/harmon-chew/projects/code/fallgorithm/.venv`; its editable `fallgorithm`
+`.venv`; its editable `fallgorithm`
 path points at a project root this worktree does not have, so every command
 below selects this tree with `PYTHONPATH=<worktree>/src`. The validation probes
 are retained in [`probes/`](probes/) so each recorded command can be re-run
@@ -174,7 +174,7 @@ execute.
 
 **Validation evidence:** Every command below was executed in this
 working tree with the registered virtualenv interpreter
-(`/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python` and its
+(`.venv/bin/python` and its
 `block-stack-ai`), and each entry records the command, its complete stdout and
 its exit status (no launch lines: every capture is the finished command's whole
 output). The probes are retained in [`probes/`](probes/):
@@ -183,7 +183,7 @@ code, and `evidence.py` runs every other probe as a subcommand.
 
 ```sh
 export PYTHONPATH=$PWD/src   # this worktree's src; the harness sets this too
-PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
+PY=.venv/bin/python
 $PY experiments/002-path-aware-lookahead/probes/evidence.py prechange --sandbox /tmp/exp002-prechange
 $PY experiments/002-path-aware-lookahead/probes/evidence.py regressions --sandbox /tmp/exp002-prechange
 $PY experiments/002-path-aware-lookahead/probes/evidence.py mask-identity --sandbox /tmp/exp002-prechange
@@ -270,7 +270,7 @@ sandbox as `from git archive HEAD = 6d0b886cc325ca47df14a7e14b28ac36aa67f5c7`):
 ```text
 # pre-change sandbox: /tmp/exp002-prechange from git archive HEAD = 6d0b886cc325ca47df14a7e14b28ac36aa67f5c7
 ########## prechange probe: column_masks
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py column_masks   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py column_masks   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: column_masks
 grids: 15
@@ -282,7 +282,7 @@ result: the base tree satisfies this probe
 exit=0
 
 ########## prechange probe: settle_hidden
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py settle_hidden   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py settle_hidden   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: settle_hidden
 # single clear: frozen settle('O', x=1, y=-1) -> cleared=1
@@ -296,7 +296,7 @@ result: the base tree satisfies this probe
 exit=0
 
 ########## prechange probe: fits_predicate
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py fits_predicate   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py fits_predicate   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: fits_predicate
 grids: 11
@@ -307,7 +307,7 @@ result: the base tree satisfies this probe
 exit=0
 
 ########## prechange probe: reachable_equals_straight
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py reachable_equals_straight   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py reachable_equals_straight   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: reachable_equals_straight
 I: 17 straight-drop placements, columns [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -323,7 +323,7 @@ result: the base tree satisfies this probe
 exit=0
 
 ########## prechange probe: extra_columns
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py extra_columns   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py extra_columns   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: extra_columns
 # base candidate set for O (the only candidate set the base can build):
@@ -333,7 +333,7 @@ AssertionError: pre-change candidate set has no (0,7)/(0,8)/(0,9): the regressio
 exit=1
 
 ########## prechange probe: drop_unexecutable_model
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py drop_unexecutable_model   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py drop_unexecutable_model   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: drop_unexecutable_model
 # base straight set for I on the fence board: [(0, 2, 1), (0, 3, 1), (0, 4, 1), (0, 5, 1), (0, 6, 19), (0, 7, 19), (0, 8, 19), (1, 0, 18), (1, 1, 18), (1, 2, 18), (1, 3, 0), (1, 4, 18), (1, 5, 18), (1, 6, 18), (1, 7, 18), (1, 8, 18), (1, 9, 18)]
@@ -341,7 +341,7 @@ AssertionError: pre-change straight-drop model still offers the plan (1,3,0), wh
 exit=1
 
 ########## prechange probe: plan_mask
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py plan_mask   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py plan_mask   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: plan_mask
 base controller (PlacementAgent.act) states driven: 24960
@@ -351,7 +351,7 @@ result: the base tree satisfies this probe
 exit=0
 
 ########## prechange probe: base_choice
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py base_choice   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py base_choice   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: base_choice
 # frozen enumeration of J on the dense board: 7 placements
@@ -361,7 +361,7 @@ result: the base tree satisfies this probe
 exit=0
 
 ########## prechange probe: base_value_rule
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py base_value_rule   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py base_value_rule   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: base_value_rule
 # frozen straight-drop candidates for J on the dense board: [(0, 5, 0), (1, 2, 0), (1, 6, 0), (2, 5, 0), (3, 2, 0), (3, 5, 0), (3, 6, 0)]
@@ -376,7 +376,7 @@ result: the base tree satisfies this probe
 exit=0
 
 ########## prechange probe: engine_level
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py engine_level   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py engine_level   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: engine_level
 # engine, start level 0: (lines, level) samples = [(2, 0), (4, 0), (6, 0), (8, 0), (10, 1), (12, 1)]
@@ -386,7 +386,7 @@ result: the base tree satisfies this probe
 exit=0
 
 ########## prechange probe: fallback
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py fallback   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py fallback   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: fallback
 greedy policy on an empty candidate tuple: None
@@ -396,7 +396,7 @@ result: the base tree satisfies this probe
 exit=0
 
 ########## prechange probe: preview_choice
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py preview_choice   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py preview_choice   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: preview_choice
 # base greedy choice on the empty board with an O: (0, 1)
@@ -405,7 +405,7 @@ AssertionError: base greedy choice (0, 1) != (0, 9), the placement the regressio
 exit=1
 
 ########## prechange probe: agent_name
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py agent_name   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py agent_name   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: agent_name
 AGENT_NAMES = ('random', 'greedy')
@@ -414,7 +414,7 @@ AssertionError: the base has no lookahead agent, so the suite-record regression 
 exit=1
 
 ########## prechange probe: native_ceiling
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py native_ceiling   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py native_ceiling   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: native_ceiling
 # base straight model's candidate set: [(0, 1, 18), (0, 2, 18), (0, 3, 18), (0, 4, 18), (0, 5, 18), (0, 6, 18)]
@@ -423,7 +423,7 @@ AssertionError: the engine locked the aimed (0, 7) at (0, 7, 18, False) but the 
 exit=1
 
 ########## prechange probe: native_fence
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py native_fence   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py native_fence   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: native_fence
 # base straight model offers (1, 3) at row 0: True
@@ -432,7 +432,7 @@ AssertionError: the engine locked (1, 4, 18, False) instead of the aimed (1, 3):
 exit=1
 
 ########## prechange probe: native_overhang
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/probes/prechange_probe.py native_overhang   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/prechange_probe.py native_overhang   [{'PYTHONPATH': '/tmp/exp002-prechange/src'}]
 # base module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
 # probe: native_overhang
 # the frozen straight-drop set omits the plan (0, 5) for every piece: True ({'I': True, 'J': True, 'L': True, 'O': True, 'S': True, 'T': True, 'Z': True})
@@ -447,9 +447,9 @@ shared `plan_mask` here, for every piece, orientation, observed column, aim and
 release flag:
 
 ```text
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python -c '<the base controller enumeration beneath>'
+$ .venv/bin/python -c '<the base controller enumeration beneath>'
 # base controller module: /tmp/exp002-prechange/src/block_stack_ai/__init__.py
-# shared rule module: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/src/block_stack_ai/pathaware.py
+# shared rule module: src/block_stack_ai/pathaware.py
 plan states compared: 24960
 mask/release mismatches: 0
 ```
@@ -482,7 +482,7 @@ The same eight targets pass on the unmutated tree (`8 passed`, exit 0),
 and `evidence.py determinism` reports:
 
 ```text
-# module: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/src/block_stack_ai/pathaware.py
+# module: src/block_stack_ai/pathaware.py
 lookahead_choice on the ceiling board (T with an I preview), five calls: [(0, 8, 18), (0, 8, 18), (0, 8, 18), (0, 8, 18), (0, 8, 18)]
 all five identical: True
 pathaware imports no RNG: True
@@ -538,8 +538,8 @@ the same configuration. Both replay every episode and exit 0, the only warning
 being the recorded working-tree engine:
 
 ```text
-$ export PYTHONPATH=/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/src
-$ V=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/block-stack-ai
+$ export PYTHONPATH=src
+$ V=.venv/bin/block-stack-ai
 $ time $V verify runs/20260927T052746268934Z-dbeb0c30/run.json    # the record result.json was written from
 Verified: runs/20260927T052746268934Z-dbeb0c30/run.json
 Warning: The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.
@@ -566,11 +566,11 @@ use constructed boards, the pure Python model and one 400-frame lookahead
 episode, and the native work is the 1134-plan whole-set gate above):
 
 ```text
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python -m block_stack_ai.cli doctor
-Engine checkout: /home/harmon-chew/projects/code/block-stack
+$ .venv/bin/python -m block_stack_ai.cli doctor
+Engine checkout: ../block-stack
 Engine Git: 8ca4158711c2d6339cab1ee8d78aa65bd624c89d (working-tree, dirty=True)
-Python binding: /home/harmon-chew/projects/code/block-stack/python/block_stack/__init__.py (package 0.1.0)
-Native library: /home/harmon-chew/projects/code/fallgorithm/.build/engine/libblocks_native.so
+Python binding: ../block-stack/python/block_stack/__init__.py (package 0.1.0)
+Native library: .build/engine/libblocks_native.so
 Smoke check: OK (frame 0 -> 1, hash 27cc82cf15f77a97)
 
 real	0m0.068s
@@ -585,7 +585,7 @@ tree collects 110 and 21 — exactly the 13 new unit tests in
 the suite-record replay), with nothing removed, skipped or newly deselected:
 
 ```text
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python -m pytest -q -p no:cacheprovider -m 'not integration'
+$ .venv/bin/python -m pytest -q -p no:cacheprovider -m 'not integration'
 ........................................................................ [ 65%]
 ......................................                                   [100%]
 110 passed, 21 deselected in 0.48s
@@ -594,7 +594,7 @@ real	0m0.573s
 user	0m0.539s
 sys	0m0.036s
 exit=0
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python -m pytest -q -p no:cacheprovider -m integration
+$ .venv/bin/python -m pytest -q -p no:cacheprovider -m integration
 .....................                                                    [100%]
 21 passed, 110 deselected in 1.46s
 
@@ -610,10 +610,10 @@ replays below):
 
 ```text
 Experiment: 002-path-aware-lookahead
-Config: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/002-path-aware-lookahead/config.json
+Config: experiments/002-path-aware-lookahead/config.json
 greedy: 10 games, score mean 106621.9, lines mean 118.9, frames mean 15801.3, (game_over 10)
 lookahead: 10 games, score mean 2822959.9, lines mean 912.8, frames mean 92024.9, (frame_limit 1, game_over 9)
-Record: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/runs/20260927T053031752624Z-708c8c0b/run.json
+Record: runs/20260927T053031752624Z-708c8c0b/run.json
 
 real	1m25.467s
 user	1m25.997s
@@ -653,8 +653,8 @@ touched — `git diff --quiet HEAD -- experiments/001-greedy-heuristic` and
 record bytes and the straight-drop contract are the committed ones:
 
 ```text
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python experiments/002-path-aware-lookahead/probes/evidence.py baseline
-$ PYTHONPATH=/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/src python -m block_stack_ai.cli run --config /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-002-path-aware-lookahead/experiments/001-greedy-heuristic/config.json
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/evidence.py baseline
+$ PYTHONPATH=src python -m block_stack_ai.cli run --config experiments/001-greedy-heuristic/config.json
 # 001 configuration identical: True
 # 001 weights identical: True
 # 001 summary for greedy identical to the published record: True
@@ -680,10 +680,10 @@ observation the runner passes to `act(state)`. Driven on the registered binding,
 that field is the preview the engine promotes into play — never hidden RNG state:
 
 ```text
-$ /home/harmon-chew/projects/code/fallgorithm/.venv/bin/python experiments/002-path-aware-lookahead/probes/evidence.py engine-preview
+$ .venv/bin/python experiments/002-path-aware-lookahead/probes/evidence.py engine-preview
 $ python -c '<drive the registered binding from a fresh game>'
-# binding: /home/harmon-chew/projects/code/block-stack/python/block_stack/__init__.py
-# native library: /home/harmon-chew/projects/code/fallgorithm/.build/engine/libblocks_native.so
+# binding: ../block-stack/python/block_stack/__init__.py
+# native library: .build/engine/libblocks_native.so
 # fresh game: current J, next Z, phase active, frame 0
 # observation fields: next_piece 'Z' (id 6), rng_state 16384, piece_count 2
 # spawn: the preview promised Z, the engine spawned Z, agreement True, next now T
@@ -755,7 +755,7 @@ exit=0
 [project README](../../README.md):
 
 ```sh
-PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python   # or .venv/bin/... in a project checkout
+PY=.venv/bin/python   # or .venv/bin/... in a project checkout
 export PYTHONPATH=$PWD/src
 $PY -m block_stack_ai.cli doctor
 $PY -m block_stack_ai.cli run --experiment 002

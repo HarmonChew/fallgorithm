@@ -2,7 +2,7 @@
 
 Run each subcommand directly, or ``all`` for every one that needs no arguments:
 
-    PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
+    PY=.venv/bin/python
     PYTHONPATH=$PWD/src $PY experiments/003-tetris-aware-agent/probes/evidence.py all
 
 Every probe exits 0 on success and prints the values it measured. ``all`` covers

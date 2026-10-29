@@ -80,9 +80,9 @@ exists, and there is no `experiments/002-whole-games` directory. The native
 dependency is the registered read-only Block Stack checkout at
 `8ca4158711c2d6339cab1ee8d78aa65bd624c89d` **recorded dirty** — a working-tree
 run, not a clean reproducible dependency claim — with the registered library
-`/home/harmon-chew/projects/code/fallgorithm/.build/engine/libblocks_native.so`.
+`.build/engine/libblocks_native.so`.
 In this harness the registered virtualenv is
-`/home/harmon-chew/projects/code/fallgorithm/.venv`; its editable `fallgorithm`
+`.venv`; its editable `fallgorithm`
 path points at a project root this worktree does not have, and the harness
 exports `PYTHONPATH=<worktree>/src`, so every command below selects this tree's
 `src`. The validation probes are retained in [`probes/`](probes/).
@@ -1237,9 +1237,9 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: publication_tree_derivation
-# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
-#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: publication snapshot
+# target probe file: experiments/003-tetris-aware-agent/probes/evidence.py
+#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C . rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
+# experiments/003-tetris-aware-agent/result.json: publication snapshot
 #   captured_at: '2026-09-29T06:53:03.778772+00:00'
 #   command: "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # this round's run, after every edit of the round and the re-measured evaluation"
 #   published 38e6904c348d155ba4eb6e569632287a546dd8e0, tree 4871f40fb1c5207501837c3098ec9819233fe26e
@@ -1248,7 +1248,7 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # every field of the snapshot is consistent with that one run
 # the retained record passes the check; the repository resolves 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} to 4871f40fb1c5207501837c3098ec9819233fe26e
 # both copies of published_tree changed to 0000000000000000000000000000000000000000 and the capture line regenerated with the tree's own helper
-#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
+#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C . rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
 # /tmp/exp003-publication-tree-q27s9s0w/result.json: publication snapshot
 #   captured_at: '2026-09-29T06:53:03.778772+00:00'
 #   command: "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # this round's run, after every edit of the round and the re-measured evaluation"
@@ -1281,11 +1281,11 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: publication_paths_prose
-# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
+# target probe file: experiments/003-tetris-aware-agent/probes/evidence.py
 # the retained capture: 51 compared paths, 51 of them files in the published tree
 # the retained prose: "every path either tree tracks, plus this worktree's untracked files, derived from Git: a declared list can omit a path the task changes, and the review found that hole twice (first this record's own result.json, then any tracked path outside the list); 51 of the 51 compared paths are files in the published tree and 0 are not, listed one by one in capture.compared_paths with each side's state and whether the run found it differing, so the counts above are that list's own lengths"
-#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: publication snapshot
+#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C . rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
+# experiments/003-tetris-aware-agent/result.json: publication snapshot
 #   captured_at: '2026-09-29T06:53:03.778772+00:00'
 #   command: "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # this round's run, after every edit of the round and the re-measured evaluation"
 #   published 38e6904c348d155ba4eb6e569632287a546dd8e0, tree 4871f40fb1c5207501837c3098ec9819233fe26e
@@ -1293,15 +1293,15 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 #   captured run: 51 compared paths, 11 uncommitted
 # every field of the snapshot is consistent with that one run
 # the tree's own check accepts its retained record: True
-#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: publication snapshot
+#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C . rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
+# experiments/003-tetris-aware-agent/result.json: publication snapshot
 #   captured_at: '2026-09-29T06:53:03.778772+00:00'
 #   command: "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # this round's run, after every edit of the round and the re-measured evaluation"
 #   published 38e6904c348d155ba4eb6e569632287a546dd8e0, tree 4871f40fb1c5207501837c3098ec9819233fe26e
 #   11 of 51 compared paths differ from this worktree
 #   captured run: 51 compared paths, 11 uncommitted
 # every field of the snapshot is consistent with that one run
-#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
+#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C . rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
 # /tmp/exp003-publication-prose-0rfxvtvp/result.json: publication snapshot
 #   captured_at: '2026-09-29T06:53:03.778772+00:00'
 #   command: "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # this round's run, after every edit of the round and the re-measured evaluation"
@@ -1309,7 +1309,7 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 #   11 of 51 compared paths differ from this worktree
 #   captured run: 51 compared paths, 11 uncommitted
 # the prose count the capture does not support is reported: compared_paths is "every path either tree tracks, plus this worktree's untracked files, derived from Git: a declared list can omit a path the task changes, and the review found that hole twice (first this record's own result.json, then any tracked path outside the list); 49 of the 51 compared paths are files in the published tree and 0 are not, listed one by one in capture.compared_paths with each side's state and whether the run found it differing, so the counts above are that list's own lengths", not the sentence the captured run's 51 entries imply (51 of them files in the published tree)
-#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
+#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C . rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
 # /tmp/exp003-publication-prose-0rfxvtvp/result.json: publication snapshot
 #   captured_at: '2026-09-29T06:53:03.778772+00:00'
 #   command: "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # this round's run, after every edit of the round and the re-measured evaluation"
@@ -1342,7 +1342,7 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: predeclaration_created_at
-# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
+# target probe file: experiments/003-tetris-aware-agent/probes/evidence.py
 # the retained block's cited_record_created_at is '2026-09-29T05:54:29.322800+00:00'
 # predeclaration captured_at: 2026-09-29T00:33:29.514691+00:00 (module sha256 3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e, notes section sha256 b676a981d184f5bcf53909d4f9201db5e7e05df411e624f32fa2a377d1df6e9b, 5 identity modules)
 # evaluation record created_at: 2026-09-29T05:54:29.322800+00:00
@@ -1354,7 +1354,7 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # the cited record's own objective identity: {'block_stack_ai.agents': '2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329', 'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
 # the cited record's own objective weights: {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}
 # the declared objective is the measured one and predates the record
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: predeclaration block
+# experiments/003-tetris-aware-agent/result.json: predeclaration block
 #   capture experiments/003-tetris-aware-agent/probes/predeclared_objective.json written 2026-09-29T00:33:29.514691+00:00
 #   cited run runs/20260929T055643023782Z-31196de6/run.json created 2026-09-29T05:54:29.322800+00:00
 # every quoted value comes from the artifact it names
@@ -1412,7 +1412,7 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: format_version_prose
-# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
+# target probe file: experiments/003-tetris-aware-agent/probes/evidence.py
 # the retained version prose: "five repairs of one class, and that class audited across the rest of the record: a retained claim must be derivable from evidence outside the pair it is compared with, and each value read at the moment it becomes true. The publication snapshot's commit/tree pairing, and the base snapshot's two, are resolved from this repository's own objects (`git rev-parse <commit>^{tree}`) instead of from copies of themselves inside the capture, so rewriting every copy together is reported; the comparison-set prose is regenerated from the captured run's own per-path states, so a sentence claiming a file count its capture contradicts is reported; the predeclared block's order sentence is regenerated from the block's own capture and cited-run timestamps instead of quoting an earlier evaluation of the same round; the writer reads the objective's loaded identity when the run or live session is constructed, so a module the process reloaded is recorded as the code that computes the choices while a plain file edit still is not; and the README's version prose matches the runner's constants (3 scripted / 4 prior suite / 5 outward-identity suite / 6 current suite)"
 # the tree's writer declares: FORMAT_VERSION 3, PRIOR_SUITE_FORMAT_VERSION 4, OUTWARD_IDENTITY_SUITE_FORMAT_VERSION 5, SUITE_FORMAT_VERSION 6
 # predeclaration captured_at: 2026-09-29T00:33:29.514691+00:00 (module sha256 3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e, notes section sha256 b676a981d184f5bcf53909d4f9201db5e7e05df411e624f32fa2a377d1df6e9b, 5 identity modules)
@@ -1425,7 +1425,7 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # the cited record's own objective identity: {'block_stack_ai.agents': '2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329', 'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
 # the cited record's own objective weights: {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}
 # the declared objective is the measured one and predates the record
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: predeclaration block
+# experiments/003-tetris-aware-agent/result.json: predeclaration block
 #   capture experiments/003-tetris-aware-agent/probes/predeclared_objective.json written 2026-09-29T00:33:29.514691+00:00
 #   cited run runs/20260929T055643023782Z-31196de6/run.json created 2026-09-29T05:54:29.322800+00:00
 # every quoted value comes from the artifact it names
@@ -1473,8 +1473,8 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: base_commit_trees
-# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: base-refresh snapshot
+# target probe file: experiments/003-tetris-aware-agent/probes/evidence.py
+# experiments/003-tetris-aware-agent/result.json: base-refresh snapshot
 #   recorded base d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree c312a71489219625b402172042cb78bb2a41cbc4)
 #   observed remote main tip d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree c312a71489219625b402172042cb78bb2a41cbc4), base an ancestor: True
 #   observed worktree HEAD 38e6904c348d155ba4eb6e569632287a546dd8e0
@@ -1600,7 +1600,7 @@ retained record.
 ## Validation evidence
 
 Every command below was executed in this working tree with the registered
-virtualenv interpreter (`/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python`),
+virtualenv interpreter (`.venv/bin/python`),
 and each entry records the command, its complete stdout and its exit status. The
 probes are retained in [`probes/`](probes/): `prechange_probe.py` evaluates each
 new regression's contract against pre-change code, and `evidence.py` runs every
@@ -1608,9 +1608,9 @@ other probe as a subcommand.
 
 ```sh
 export PYTHONPATH=$PWD/src       # this worktree's src
-export BLOCK_STACK_ROOT=/home/harmon-chew/projects/code/block-stack
-export BLOCKS_NATIVE_LIB=/home/harmon-chew/projects/code/fallgorithm/.build/engine/libblocks_native.so
-PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
+export BLOCK_STACK_ROOT=../block-stack
+export BLOCKS_NATIVE_LIB=.build/engine/libblocks_native.so
+PY=.venv/bin/python
 $PY experiments/003-tetris-aware-agent/probes/evidence.py remote-main   # base == refreshed remote main tip
 $PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # refs, base descent and per-path content comparison
 $PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record   # the retained snapshot is one run's
@@ -1807,22 +1807,22 @@ and its printed state line are one run's, quoted below and retained in
 #   exit 0
 #   | c312a71489219625b402172042cb78bb2a41cbc4
 # the recorded branch base commit
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
+#   $ git -C . rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
 #   exit 0
 #   | d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
 # the recorded branch base tree
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}
+#   $ git -C . rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}
 #   exit 0
 #   | c312a71489219625b402172042cb78bb2a41cbc4
 # this worktree's HEAD
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
+#   $ git -C . rev-parse HEAD
 #   exit 0
 #   | 9799d59e292731a4c58ede018d66a526a5860bfe
 # the recorded base is an ancestor of the refreshed remote main
 #   $ git -C /tmp/exp003-remote-main merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
 # the worktree HEAD descends from the recorded base
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
+#   $ git -C . merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
 # the recorded branch base is d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree c312a71489219625b402172042cb78bb2a41cbc4); the observed remote main tip is that base; this worktree's HEAD is 9799d59e292731a4c58ede018d66a526a5860bfe, which descends from it
 # base_capture={…}
@@ -1943,11 +1943,11 @@ the values before the paste.
 #   $ git -C /tmp/exp003-publication merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
 # this worktree's HEAD
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
+#   $ git -C . rev-parse HEAD
 #   exit 0
 #   | 01c47550bb1ab3218d122b23ac9ac891fc693a22
 # changes not committed in this worktree
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent status --porcelain
+#   $ git -C . status --porcelain
 #   exit 0
 #   | M experiments/003-tetris-aware-agent/notes.md
 #   |  M experiments/003-tetris-aware-agent/probes/evidence.py
@@ -2144,11 +2144,11 @@ comparison is by content:
 #   | present tests/test_unit.py
 #   | present tests/test_integration.py
 # this worktree's HEAD
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
+#   $ git -C . rev-parse HEAD
 #   exit 0
 #   | fbe21e1345caf04970320b35689548c1efefd216
 # changes not committed in this worktree
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent status --porcelain
+#   $ git -C . status --porcelain
 #   exit 0
 #   | M README.md
 #   |  M experiments/003-tetris-aware-agent/notes.md
@@ -2736,7 +2736,7 @@ exit=1
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: publication_content
-# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
+# target probe file: experiments/003-tetris-aware-agent/probes/evidence.py
 # 1111111 published, worktree dirty holding the repair: exit 0
 #   reported 11 differing paths of 11
 # 1111111 published, worktree clean: exit 1 (the published tree 1111111111111111111111111111111111111111 differs from this clean worktree on ['experiments/003-tetris-aware-agent/notes.md', 'experiments/003-tetris-aware-agent/probes/evidence.py', 'experiments/003-tetris-aware-agent/probes/prechange_probe.py', 'experiments/003-tetris-aware-agent/result.json', 'src/block_stack_ai/agents.py', 'src/block_stack_ai/live.py', 'src/block_stack_ai/runner.py', 'src/block_stack_ai/tetris.py', 'tests/test_integration.py', 'tests/test_live.py', 'tests/test_unit.py'], and nothing here is uncommitted to account for it)
@@ -2776,12 +2776,12 @@ $ PYTHONPATH=/tmp/exp003-attempt8/src $PY experiments/003-tetris-aware-agent/pro
 #   published ed8830a15d05a70fbd1783e4a6faa26df78a1d05, tree a3b132358189a5fc931d7ef3253893f8ba463d45
 #   8 of 46 compared paths differ from this worktree
 Traceback (most recent call last):
-  File "/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py", line 948, in <module>
+  File "experiments/003-tetris-aware-agent/probes/evidence.py", line 948, in <module>
     raise SystemExit(main())
                      ^^^^^^
-  File "/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py", line 920, in main
+  File "experiments/003-tetris-aware-agent/probes/evidence.py", line 920, in main
     check_publication_record(Path(sys.argv[2]))
-  File "/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py", line 554, in check_publication_record
+  File "experiments/003-tetris-aware-agent/probes/evidence.py", line 554, in check_publication_record
     assert not problems, "; ".join(problems)
            ^^^^^^^^^^^^
 AssertionError: repaired_paths_compared_by_content is 11 but the probe's counts line declares 12 repaired paths compared by content; counts_line is None, not the probe's counts line for the fields beside it
@@ -2794,12 +2794,12 @@ $ PYTHONPATH=$PWD/src $PY experiments/003-tetris-aware-agent/probes/evidence.py 
 #   published ed8830a15d05a70fbd1783e4a6faa26df78a1d05, tree a3b132358189a5fc931d7ef3253893f8ba463d45
 #   9 of 46 compared paths differ from this worktree
 Traceback (most recent call last):
-  File "/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py", line 948, in <module>
+  File "experiments/003-tetris-aware-agent/probes/evidence.py", line 948, in <module>
     raise SystemExit(main())
                      ^^^^^^
-  File "/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py", line 920, in main
+  File "experiments/003-tetris-aware-agent/probes/evidence.py", line 920, in main
     check_publication_record(Path(sys.argv[2]))
-  File "/home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py", line 554, in check_publication_record
+  File "experiments/003-tetris-aware-agent/probes/evidence.py", line 554, in check_publication_record
     assert not problems, "; ".join(problems)
            ^^^^^^^^^^^^
 AssertionError: state is not the line these fields reconstruct, so the line and the counts beside it are not one run's: 'the refs name an earlier publication: ed8830a15d05a70fbd1783e4a6faa26df78a1d05; 9 of 46 compared paths differ from this worktree (experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/003-tetris-aware-agent/result.json, experiments/README.md, src/block_stack_ai/runner.py, tests/test_integration.py, tests/test_live.py), and this worktree holds the unpublished repair' != 'the refs name an earlier publication: ed8830a15d05a70fbd1783e4a6faa26df78a1d05; 9 of 46 compared paths differ from this worktree (experiments/003-tetris-aware-agent/notes.md, experiments/003-tetris-aware-agent/probes/evidence.py, experiments/003-tetris-aware-agent/probes/prechange_probe.py, experiments/003-tetris-aware-agent/result.json, experiments/README.md, src/block_stack_ai/runner.py, tests/test_integration.py, tests/test_live.py, tests/test_unit.py), and this worktree holds the unpublished repair'
@@ -2864,7 +2864,7 @@ exit=1
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: publication_content
-# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
+# target probe file: experiments/003-tetris-aware-agent/probes/evidence.py
 # 1111111 published, worktree dirty holding the repair: exit 0
 #   reported 10 differing paths of 10
 # 1111111 published, worktree clean: exit 1 (the published tree 1111111111111111111111111111111111111111 differs from this clean worktree on ['experiments/003-tetris-aware-agent/notes.md', 'experiments/003-tetris-aware-agent/probes/evidence.py', 'experiments/003-tetris-aware-agent/probes/prechange_probe.py', 'experiments/003-tetris-aware-agent/result.json', 'src/block_stack_ai/agents.py', 'src/block_stack_ai/live.py', 'src/block_stack_ai/runner.py', 'src/block_stack_ai/tetris.py', 'tests/test_integration.py', 'tests/test_unit.py'], and nothing here is uncommitted to account for it)
@@ -2877,7 +2877,7 @@ exit=0
 =================================== FAILURES ===================================
 ____ test_publication_probe_reports_content_not_presence_when_the_refs_lag _____
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_reports0')
+tmp_path = PosixPath('/tmp/pytest/pytest-43/test_publication_probe_reports0')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71e5b53323c0>
 capsys = <_pytest.capture.CaptureFixture object at 0x71e5b532a3c0>
 
@@ -2905,7 +2905,7 @@ E       AssertionError: assert 'the refs name an earlier publication' in '# the 
 tests/test_unit.py:1553: AssertionError
 ___ test_publication_probe_detects_a_changed_path_outside_the_declared_list ____
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_detects0')
+tmp_path = PosixPath('/tmp/pytest/pytest-43/test_publication_probe_detects0')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71e5b5331040>
 capsys = <_pytest.capture.CaptureFixture object at 0x71e5b5374ef0>
 
@@ -2936,7 +2936,7 @@ E       AssertionError: assert 'the refs name an earlier publication' in '# the 
 tests/test_unit.py:1582: AssertionError
 ____ test_publication_probe_reports_a_tracked_path_deleted_in_the_worktree _____
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_reports1')
+tmp_path = PosixPath('/tmp/pytest/pytest-43/test_publication_probe_reports1')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71e5b5376c30>
 capsys = <_pytest.capture.CaptureFixture object at 0x71e5b5376420>
 
@@ -2967,7 +2967,7 @@ E       AssertionError: assert 'the refs name an earlier publication' in '# the 
 tests/test_unit.py:1609: AssertionError
 ______ test_publication_probe_reports_a_path_added_since_the_publication _______
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_reports2')
+tmp_path = PosixPath('/tmp/pytest/pytest-43/test_publication_probe_reports2')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71e5b5376fc0>
 capsys = <_pytest.capture.CaptureFixture object at 0x71e5b5376f90>
 
@@ -2998,7 +2998,7 @@ E       AssertionError: assert 'the refs name an earlier publication' in '# the 
 tests/test_unit.py:1637: AssertionError
 ______ test_publication_probe_reports_a_compared_path_that_is_a_directory ______
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_reports3')
+tmp_path = PosixPath('/tmp/pytest/pytest-43/test_publication_probe_reports3')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71e5b5377aa0>
 capsys = <_pytest.capture.CaptureFixture object at 0x71e5b5377a70>
 
@@ -3028,7 +3028,7 @@ E       AssertionError: assert 'the refs name an earlier publication' in '# the 
 tests/test_unit.py:1663: AssertionError
 ________ test_publication_probe_reports_a_path_present_in_neither_tree _________
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_reports4')
+tmp_path = PosixPath('/tmp/pytest/pytest-43/test_publication_probe_reports4')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71e5b532ad80>
 capsys = <_pytest.capture.CaptureFixture object at 0x71e5b532a390>
 
@@ -3054,7 +3054,7 @@ E       AssertionError: assert 'published content equals this worktree' in '# th
 tests/test_unit.py:1685: AssertionError
 ____ test_publication_probe_rejects_repaired_content_a_clean_worktree_lacks ____
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_rejects0')
+tmp_path = PosixPath('/tmp/pytest/pytest-43/test_publication_probe_rejects0')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71e5b5376810>
 
     def test_publication_probe_rejects_repaired_content_a_clean_worktree_lacks(
@@ -3083,18 +3083,18 @@ tests/test_unit.py:1704: Failed
 #   | dc3c29c449c439ad8df415404d4df6d0eeb0087f	refs/heads/rakazo/experiment-003-tetris-aware-agent
 #   | dc3c29c449c439ad8df415404d4df6d0eeb0087f	refs/pull/11/head
 # writable clone of the published branch
-#   $ git clone --quiet --branch rakazo/experiment-003-tetris-aware-agent https://github.com/HarmonChew/fallgorithm.git /tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_rejects0/publication
+#   $ git clone --quiet --branch rakazo/experiment-003-tetris-aware-agent https://github.com/HarmonChew/fallgorithm.git /tmp/pytest/pytest-43/test_publication_probe_rejects0/publication
 #   exit 0
 # the published task commit from the clone
-#   $ git -C /tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_rejects0/publication rev-parse HEAD
+#   $ git -C /tmp/pytest/pytest-43/test_publication_probe_rejects0/publication rev-parse HEAD
 #   exit 0
 #   | dc3c29c449c439ad8df415404d4df6d0eeb0087f
 # the published tree from the clone
-#   $ git -C /tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_rejects0/publication rev-parse HEAD^{tree}
+#   $ git -C /tmp/pytest/pytest-43/test_publication_probe_rejects0/publication rev-parse HEAD^{tree}
 #   exit 0
 #   | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 # the published commit descends from the recorded base
-#   $ git -C /tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_rejects0/publication merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
+#   $ git -C /tmp/pytest/pytest-43/test_publication_probe_rejects0/publication merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
 #   | present src/block_stack_ai/runner.py
 #   | present src/block_stack_ai/live.py
@@ -3105,11 +3105,11 @@ tests/test_unit.py:1704: Failed
 #   | present tests/test_unit.py
 #   | present tests/test_integration.py
 # this worktree's HEAD
-#   $ git -C /tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_rejects0/worktree rev-parse HEAD
+#   $ git -C /tmp/pytest/pytest-43/test_publication_probe_rejects0/worktree rev-parse HEAD
 #   exit 0
 #   | dc3c29c449c439ad8df415404d4df6d0eeb0087f
 # changes not committed in this worktree
-#   $ git -C /tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_rejects0/worktree status --porcelain
+#   $ git -C /tmp/pytest/pytest-43/test_publication_probe_rejects0/worktree status --porcelain
 #   exit 0
 # the branch refs/heads/rakazo/experiment-003-tetris-aware-agent and the PR head refs/pull/11/head are dc3c29c449c439ad8df415404d4df6d0eeb0087f
 # that commit descends from the recorded base d83a5bc54a76bb23cd38e4afbab8192b0e2a207f, so it is this task's own
@@ -3119,7 +3119,7 @@ tests/test_unit.py:1704: Failed
 # approval precedes publication and the refs above name the last published tree
 ___________ test_publication_probe_detects_a_result_only_difference ____________
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_detects1')
+tmp_path = PosixPath('/tmp/pytest/pytest-43/test_publication_probe_detects1')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71e5b5377b90>
 capsys = <_pytest.capture.CaptureFixture object at 0x71e5b537af30>
 
@@ -3148,7 +3148,7 @@ E       AssertionError: assert 'the refs name an earlier publication' in '# the 
 tests/test_unit.py:1727: AssertionError
 ________ test_publication_probe_certifies_a_published_repair_by_content ________
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-43/test_publication_probe_certifi0')
+tmp_path = PosixPath('/tmp/pytest/pytest-43/test_publication_probe_certifi0')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71e5b5378380>
 capsys = <_pytest.capture.CaptureFixture object at 0x71e5b5378d10>
 
@@ -3190,7 +3190,7 @@ FAILED tests/test_unit.py::test_publication_probe_certifies_a_published_repair_b
 =================================== FAILURES ===================================
 ___ test_publication_probe_detects_a_changed_path_outside_the_declared_list ____
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-44/test_publication_probe_detects0')
+tmp_path = PosixPath('/tmp/pytest/pytest-44/test_publication_probe_detects0')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7aaa43041070>
 capsys = <_pytest.capture.CaptureFixture object at 0x7aaa430410a0>
 
@@ -3221,7 +3221,7 @@ E       AssertionError: assert 'the refs name an earlier publication' in '# the 
 tests/test_unit.py:1582: AssertionError
 ______ test_publication_probe_reports_a_path_added_since_the_publication _______
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-44/test_publication_probe_reports2')
+tmp_path = PosixPath('/tmp/pytest/pytest-44/test_publication_probe_reports2')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7aaa43042b10>
 capsys = <_pytest.capture.CaptureFixture object at 0x7aaa43042ae0>
 
@@ -3252,7 +3252,7 @@ E       AssertionError: assert 'the refs name an earlier publication' in '# the 
 tests/test_unit.py:1637: AssertionError
 ______ test_publication_probe_reports_a_compared_path_that_is_a_directory ______
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-44/test_publication_probe_reports3')
+tmp_path = PosixPath('/tmp/pytest/pytest-44/test_publication_probe_reports3')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7aaa43042db0>
 capsys = <_pytest.capture.CaptureFixture object at 0x7aaa43042c30>
 
@@ -3282,7 +3282,7 @@ E       AssertionError: assert 'the refs name an earlier publication' in '# the 
 tests/test_unit.py:1663: AssertionError
 ________ test_publication_probe_reports_a_path_present_in_neither_tree _________
 
-tmp_path = PosixPath('/tmp/pytest-of-harmon-chew/pytest-44/test_publication_probe_reports4')
+tmp_path = PosixPath('/tmp/pytest/pytest-44/test_publication_probe_reports4')
 monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7aaa43042d80>
 capsys = <_pytest.capture.CaptureFixture object at 0x7aaa430439b0>
 
@@ -3590,7 +3590,7 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: predeclaration_identity
-# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
+# target probe file: experiments/003-tetris-aware-agent/probes/evidence.py
 # captured_at: 2026-09-28T13:56:01.540513+00:00
 # module: src/block_stack_ai/tetris.py sha256 3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e
 # notes section: experiments/003-tetris-aware-agent/notes.md#predeclared-objective sha256 b676a981d184f5bcf53909d4f9201db5e7e05df411e624f32fa2a377d1df6e9b
@@ -3675,8 +3675,8 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: publication_count_capture
-# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: publication snapshot
+# target probe file: experiments/003-tetris-aware-agent/probes/evidence.py
+# experiments/003-tetris-aware-agent/result.json: publication snapshot
 #   captured_at: '2026-09-28T13:48:19.906728+00:00'
 #   command: '$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/exp003-publication-run.txt'
 #   published 01c47550bb1ab3218d122b23ac9ac891fc693a22, tree 2472db99e1134420c24ed983c96bcaf5a16c1051
@@ -3742,7 +3742,7 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: remote_main_durability
-# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
+# target probe file: experiments/003-tetris-aware-agent/probes/evidence.py
 # recorded base: d83a5bc54a76bb23cd38e4afbab8192b0e2a207f; observed remote main tip: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb (ahead of it)
 # remote main over HTTPS
 #   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorithm.git refs/heads/main
@@ -3760,25 +3760,25 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 #   exit 0
 #   | cccccccccccccccccccccccccccccccccccccccc
 # the recorded branch base commit
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
+#   $ git -C . rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
 #   exit 0
 #   | d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
 # the recorded branch base tree
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}
+#   $ git -C . rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}
 #   exit 0
 #   | cccccccccccccccccccccccccccccccccccccccc
 # this worktree's HEAD
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
+#   $ git -C . rev-parse HEAD
 #   exit 0
 #   | eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 # the recorded base is an ancestor of the refreshed remote main
 #   $ git -C /tmp/exp003-remote-main-yl15bt96/remote-main merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
 # the worktree HEAD descends from the recorded base
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
+#   $ git -C . merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
 # the recorded branch base is d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree cccccccccccccccccccccccccccccccccccccccc); remote main has since moved to bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, which contains it; this worktree's HEAD is eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee, which descends from it
-# base_capture={"base_is_ancestor_of_remote_main": true, "commands": [{"command": "git -C /tmp/exp003-remote-main-yl15bt96/remote-main rev-parse HEAD", "exit": 0, "output": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "role": "refreshed remote main commit from the clone"}, {"command": "git -C /tmp/exp003-remote-main-yl15bt96/remote-main rev-parse HEAD^{tree}", "exit": 0, "output": "cccccccccccccccccccccccccccccccccccccccc", "role": "refreshed remote main tree from the clone"}, {"command": "git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f", "exit": 0, "output": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f", "role": "the recorded branch base commit"}, {"command": "git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}", "exit": 0, "output": "cccccccccccccccccccccccccccccccccccccccc", "role": "the recorded branch base tree"}, {"command": "git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD", "exit": 0, "output": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "role": "this worktree's HEAD"}, {"command": "git -C /tmp/exp003-remote-main-yl15bt96/remote-main merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD", "exit": 0, "output": "", "role": "the recorded base is an ancestor of the refreshed remote main"}, {"command": "git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD", "exit": 0, "output": "", "role": "the worktree HEAD descends from the recorded base"}], "commit": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f", "git_tree_id": "cccccccccccccccccccccccccccccccccccccccc", "remote_main_ref": "refs/heads/main", "remote_main_tip": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "remote_main_tree": "cccccccccccccccccccccccccccccccccccccccc", "worktree_head": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}
+# base_capture={"base_is_ancestor_of_remote_main": true, "commands": [{"command": "git -C /tmp/exp003-remote-main-yl15bt96/remote-main rev-parse HEAD", "exit": 0, "output": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "role": "refreshed remote main commit from the clone"}, {"command": "git -C /tmp/exp003-remote-main-yl15bt96/remote-main rev-parse HEAD^{tree}", "exit": 0, "output": "cccccccccccccccccccccccccccccccccccccccc", "role": "refreshed remote main tree from the clone"}, {"command": "git -C . rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f", "exit": 0, "output": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f", "role": "the recorded branch base commit"}, {"command": "git -C . rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}", "exit": 0, "output": "cccccccccccccccccccccccccccccccccccccccc", "role": "the recorded branch base tree"}, {"command": "git -C . rev-parse HEAD", "exit": 0, "output": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "role": "this worktree's HEAD"}, {"command": "git -C /tmp/exp003-remote-main-yl15bt96/remote-main merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD", "exit": 0, "output": "", "role": "the recorded base is an ancestor of the refreshed remote main"}, {"command": "git -C . merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD", "exit": 0, "output": "", "role": "the worktree HEAD descends from the recorded base"}], "commit": "d83a5bc54a76bb23cd38e4afbab8192b0e2a207f", "git_tree_id": "cccccccccccccccccccccccccccccccccccccccc", "remote_main_ref": "refs/heads/main", "remote_main_tip": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "remote_main_tree": "cccccccccccccccccccccccccccccccccccccccc", "worktree_head": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}
 # the remote main ahead of the base is accepted and both tips are reported
 # remote main over HTTPS
 #   $ git ls-remote --exit-code https://github.com/HarmonChew/fallgorithm.git refs/heads/main
@@ -3796,15 +3796,15 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 #   exit 0
 #   | cccccccccccccccccccccccccccccccccccccccc
 # the recorded branch base commit
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
+#   $ git -C . rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
 #   exit 0
 #   | d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
 # the recorded branch base tree
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}
+#   $ git -C . rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}
 #   exit 0
 #   | cccccccccccccccccccccccccccccccccccccccc
 # this worktree's HEAD
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
+#   $ git -C . rev-parse HEAD
 #   exit 0
 #   | eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 # the recorded base is an ancestor of the refreshed remote main
@@ -3842,8 +3842,8 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: base_commit_record
-# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: base-refresh snapshot
+# target probe file: experiments/003-tetris-aware-agent/probes/evidence.py
+# experiments/003-tetris-aware-agent/result.json: base-refresh snapshot
 #   recorded base d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree c312a71489219625b402172042cb78bb2a41cbc4)
 #   observed remote main tip d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree c312a71489219625b402172042cb78bb2a41cbc4), base an ancestor: True
 #   observed worktree HEAD 01c47550bb1ab3218d122b23ac9ac891fc693a22
@@ -3967,7 +3967,7 @@ $ $PY experiments/003-tetris-aware-agent/probes/evidence.py evaluation
 ########## probe: evaluation
 # configuration: {'game': {'ruleset': 'classic_ntsc_extended', 'mode': 'endless', 'start_level': 18, 'height': 0}, 'frame_limit': 200000, 'seeds': [2, 4, 6, 8, 10, 12, 14, 16, 18, 20], 'agents': ['lookahead', 'tetris']}
 # episodes: 20, wall clock seconds: 131.3
-# record: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/runs/20260929T003549254811Z-0d37fb01/run.json
+# record: runs/20260929T003549254811Z-0d37fb01/run.json
 # verify warnings: ['The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.']
 # lookahead: games 10, stopping_reasons {'frame_limit': 1, 'game_over': 9}, clear_sizes {'doubles': 918, 'singles': 7179, 'tetrises': 2, 'triples': 35}
 # tetris: games 10, stopping_reasons {'game_over': 10}, clear_sizes {'doubles': 476, 'singles': 2278, 'tetrises': 10, 'triples': 75}
@@ -3978,7 +3978,7 @@ $ $PY experiments/003-tetris-aware-agent/probes/evidence.py evaluation   # the r
 ########## probe: evaluation
 # configuration: {'game': {'ruleset': 'classic_ntsc_extended', 'mode': 'endless', 'start_level': 18, 'height': 0}, 'frame_limit': 200000, 'seeds': [2, 4, 6, 8, 10, 12, 14, 16, 18, 20], 'agents': ['lookahead', 'tetris']}
 # episodes: 20, wall clock seconds: 131.1
-# record: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/runs/20260929T004011462607Z-587cbe29/run.json
+# record: runs/20260929T004011462607Z-587cbe29/run.json
 # verify warnings: ['The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.']
 # lookahead: games 10, stopping_reasons {'frame_limit': 1, 'game_over': 9}, clear_sizes {'doubles': 918, 'singles': 7179, 'tetrises': 2, 'triples': 35}
 # tetris: games 10, stopping_reasons {'game_over': 10}, clear_sizes {'doubles': 476, 'singles': 2278, 'tetrises': 10, 'triples': 75}
@@ -4028,11 +4028,11 @@ $ $PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/e
 #   $ git -C /tmp/exp003-publication merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
 # this worktree's HEAD
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
+#   $ git -C . rev-parse HEAD
 #   exit 0
 #   | 63e432fff79d075fa9149ea7936751abfc42c546
 # changes not committed in this worktree
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent status --porcelain
+#   $ git -C . status --porcelain
 #   exit 0
 #   | M README.md
 #   |  M experiments/003-tetris-aware-agent/notes.md
@@ -4075,7 +4075,7 @@ exit=0
 
 $ $PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record
 ########## probe: publication-record
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: publication snapshot
+# experiments/003-tetris-aware-agent/result.json: publication snapshot
 #   captured_at: '2026-09-29T01:59:08.970103+00:00'
 #   command: "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication > /tmp/exp003-pub7-final.txt   # this round's run, after the enlarged capture and the re-measured evaluation"
 #   published 63e432fff79d075fa9149ea7936751abfc42c546, tree 69faa602644a657089caae9e14186070cd1caf14
@@ -4271,7 +4271,7 @@ exit=0
 $ $PY experiments/003-tetris-aware-agent/probes/evidence.py evaluation
 # configuration: {'game': {'ruleset': 'classic_ntsc_extended', 'mode': 'endless', 'start_level': 18, 'height': 0}, 'frame_limit': 200000, 'seeds': [2, 4, 6, 8, 10, 12, 14, 16, 18, 20], 'agents': ['lookahead', 'tetris']}
 # episodes: 20, wall clock seconds: 132.8
-# record: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/runs/20260929T050154216094Z-afa67fa7/run.json
+# record: runs/20260929T050154216094Z-afa67fa7/run.json
 # verify warnings: ['The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.']
 # lookahead: games 10, stopping_reasons {'frame_limit': 1, 'game_over': 9}, clear_sizes {'doubles': 918, 'singles': 7179, 'tetrises': 2, 'triples': 35}
 # tetris: games 10, stopping_reasons {'game_over': 10}, clear_sizes {'doubles': 476, 'singles': 2278, 'tetrises': 10, 'triples': 75}
@@ -4345,7 +4345,7 @@ $ $PY experiments/003-tetris-aware-agent/probes/evidence.py all
 # determinism: tetris_choice on the well board (T, O preview), five calls: [(2, 3, 15)]
 #              setup board, T with an O preview: (2, 4); with an I preview: (2, 2)
 # episodes: 20, wall clock seconds: 131.8
-# record: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/runs/20260929T050627050271Z-b49a3a92/run.json
+# record: runs/20260929T050627050271Z-b49a3a92/run.json
 # verify warnings: ['The engine is a working-tree run; matching Git metadata cannot prove identical uncommitted source.']
 # lookahead: games 10, stopping_reasons {'frame_limit': 1, 'game_over': 9}, clear_sizes {'doubles': 918, 'singles': 7179, 'tetrises': 2, 'triples': 35}
 # tetris: games 10, stopping_reasons {'game_over': 10}, clear_sizes {'doubles': 476, 'singles': 2278, 'tetrises': 10, 'triples': 75}
@@ -4375,11 +4375,11 @@ $ $PY experiments/003-tetris-aware-agent/probes/evidence.py publication
 #   $ git -C /tmp/exp003-publication merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
 # this worktree's HEAD
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
+#   $ git -C . rev-parse HEAD
 #   exit 0
 #   | 9799d59e292731a4c58ede018d66a526a5860bfe
 # changes not committed in this worktree
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent status --porcelain
+#   $ git -C . status --porcelain
 #   exit 0
 #   | M README.md
 #   |  M experiments/003-tetris-aware-agent/notes.md
@@ -4444,22 +4444,22 @@ $ $PY experiments/003-tetris-aware-agent/probes/evidence.py remote-main
 #   exit 0
 #   | c312a71489219625b402172042cb78bb2a41cbc4
 # the recorded branch base commit
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
+#   $ git -C . rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
 #   exit 0
 #   | d83a5bc54a76bb23cd38e4afbab8192b0e2a207f
 # the recorded branch base tree
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}
+#   $ git -C . rev-parse d83a5bc54a76bb23cd38e4afbab8192b0e2a207f^{tree}
 #   exit 0
 #   | c312a71489219625b402172042cb78bb2a41cbc4
 # this worktree's HEAD
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse HEAD
+#   $ git -C . rev-parse HEAD
 #   exit 0
 #   | 9799d59e292731a4c58ede018d66a526a5860bfe
 # the recorded base is an ancestor of the refreshed remote main
 #   $ git -C /tmp/exp003-remote-main merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
 # the worktree HEAD descends from the recorded base
-#   $ git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
+#   $ git -C . merge-base --is-ancestor d83a5bc54a76bb23cd38e4afbab8192b0e2a207f HEAD
 #   exit 0
 # the recorded branch base is d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree c312a71489219625b402172042cb78bb2a41cbc4); the observed remote main tip is that base; this worktree's HEAD is 9799d59e292731a4c58ede018d66a526a5860bfe, which descends from it
 # base_capture={…}
@@ -4470,7 +4470,7 @@ exit=0
 
 $ $PY experiments/003-tetris-aware-agent/probes/evidence.py publication-record
 ########## probe: publication-record
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: publication snapshot
+# experiments/003-tetris-aware-agent/result.json: publication snapshot
 #   captured_at: '2026-09-29T04:23:54.559287+00:00'
 #   command: "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # this round's run, after the round's edits and the re-measured evaluation"
 #   published 9799d59e292731a4c58ede018d66a526a5860bfe, tree b8154cf92aef8b7545721fba59541b2b5602382b
@@ -4483,7 +4483,7 @@ exit=0
 
 $ $PY experiments/003-tetris-aware-agent/probes/evidence.py base-commit-record
 ########## probe: base-commit-record
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: base-refresh snapshot
+# experiments/003-tetris-aware-agent/result.json: base-refresh snapshot
 #   recorded base d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree c312a71489219625b402172042cb78bb2a41cbc4)
 #   observed remote main tip d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree c312a71489219625b402172042cb78bb2a41cbc4), base an ancestor: True
 #   observed worktree HEAD 9799d59e292731a4c58ede018d66a526a5860bfe
@@ -4548,7 +4548,7 @@ $ PYTHONPATH=/tmp/exp003-after/src $PY experiments/003-tetris-aware-agent/probes
 # tree under test: /tmp/exp003-after/src/block_stack_ai/__init__.py
 # block_stack_ai/tetris.py: present; runner declares the objective section: True
 # probe: predeclaration_identity
-# target probe file: /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/probes/evidence.py
+# target probe file: experiments/003-tetris-aware-agent/probes/evidence.py
 # captured_at: 2026-09-29T04:25:31.002268+00:00
 # module: src/block_stack_ai/tetris.py sha256 3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e
 # notes section: experiments/003-tetris-aware-agent/notes.md#predeclared-objective sha256 b676a981d184f5bcf53909d4f9201db5e7e05df411e624f32fa2a377d1df6e9b
@@ -4603,8 +4603,8 @@ lists the same path.
 
 ```sh
 export PYTHONPATH=$PWD/src       # this worktree's src
-export BLOCK_STACK_ROOT=/home/harmon-chew/projects/code/block-stack
-export BLOCKS_NATIVE_LIB=/home/harmon-chew/projects/code/fallgorithm/.build/engine/libblocks_native.so
+export BLOCK_STACK_ROOT=../block-stack
+export BLOCKS_NATIVE_LIB=.build/engine/libblocks_native.so
 
 $PY experiments/003-tetris-aware-agent/probes/evidence.py predeclare      # the retained capture still equals the unchanged tree: kept, not rewritten
 $PY experiments/003-tetris-aware-agent/probes/evidence.py evaluation      # 20 episodes, 133.9 s, runs/20260929T055643023782Z-31196de6/run.json
@@ -4660,8 +4660,8 @@ exit 0:
 
 ```text
 ########## probe: publication-record
-#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: publication snapshot
+#   published tree resolved from this repository: 4871f40fb1c5207501837c3098ec9819233fe26e (git -C . rev-parse 38e6904c348d155ba4eb6e569632287a546dd8e0^{tree} exited 0 with '4871f40fb1c5207501837c3098ec9819233fe26e')
+# experiments/003-tetris-aware-agent/result.json: publication snapshot
 #   captured_at: '2026-09-29T06:53:03.778772+00:00'
 #   command: "$PY experiments/003-tetris-aware-agent/probes/evidence.py publication   # this round's run, after every edit of the round and the re-measured evaluation"
 #   published 38e6904c348d155ba4eb6e569632287a546dd8e0, tree 4871f40fb1c5207501837c3098ec9819233fe26e
@@ -4672,7 +4672,7 @@ failures: 0
 exit=0
 
 ########## probe: base-commit-record
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: base-refresh snapshot
+# experiments/003-tetris-aware-agent/result.json: base-refresh snapshot
 #   recorded base d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree c312a71489219625b402172042cb78bb2a41cbc4)
 #   observed remote main tip d83a5bc54a76bb23cd38e4afbab8192b0e2a207f (tree c312a71489219625b402172042cb78bb2a41cbc4), base an ancestor: True
 #   observed worktree HEAD 38e6904c348d155ba4eb6e569632287a546dd8e0
@@ -4692,7 +4692,7 @@ exit=0
 # the cited record's own objective identity: {'block_stack_ai.agents': '2b24e1b25e2c77ffbaaaca3ccebeab00293d787df726c94858ffb63d3f6ad329', 'block_stack_ai.heuristic': '7f58ac1fa52ed77c911bba38476a7f3dc275612cd53fbb829f5b197316a8fbea', 'block_stack_ai.pathaware': 'c6530e25307361332b16abe6cb20de72b581c59b7952f3951b105612cbfe9884', 'block_stack_ai.pieces': '434b6a8cb1bac241716c35fb1372b58a667d91e3f4af859a917128fb9d2e39ad', 'block_stack_ai.tetris': '3d32c1c3c1f3d0ac564612e3edd1737a6fc66dc18946d5401e8654e8b0d7f40e'}
 # the cited record's own objective weights: {'aggregate_height': -0.5, 'bumpiness': -0.5, 'holes': -1.0, 'max_height': -1.0, 'premature_clear': -1.0, 'tetrises': 8.0, 'tie_break': 'first highest-valued placement in canonical enumeration order: orientation ascending, then column ascending', 'well_depth': 1.0, 'well_depth_cap': 4}
 # the declared objective is the measured one and predates the record
-# /home/harmon-chew/.local/share/rakazo-development/worktrees/experiment-003-tetris-aware-agent/experiments/003-tetris-aware-agent/result.json: predeclaration block
+# experiments/003-tetris-aware-agent/result.json: predeclaration block
 #   capture experiments/003-tetris-aware-agent/probes/predeclared_objective.json written 2026-09-29T00:33:29.514691+00:00
 #   cited run runs/20260929T055643023782Z-31196de6/run.json created 2026-09-29T05:54:29.322800+00:00
 # every quoted value comes from the artifact it names

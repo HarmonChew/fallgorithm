@@ -1027,7 +1027,7 @@ history.
 ## Reproduction
 
 ```sh
-PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
+PY=.venv/bin/python
 $PY -m pytest -q -p no:cacheprovider -m 'not integration'      # 262 passed
 $PY -m pytest -q -p no:cacheprovider -m integration            # 39 passed
 # the same selection as the GitHub unit-tests job: no Block Stack checkout beside the

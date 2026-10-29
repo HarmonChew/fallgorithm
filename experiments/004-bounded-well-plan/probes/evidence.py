@@ -2,7 +2,7 @@
 
 Run each subcommand directly, or ``all`` for every one that needs no argument:
 
-    PY=/home/harmon-chew/projects/code/fallgorithm/.venv/bin/python
+    PY=.venv/bin/python
     PYTHONPATH=$PWD/src $PY experiments/004-bounded-well-plan/probes/evidence.py all
 
 ``predeclare`` captures the declared objective from the tree as it stands, before

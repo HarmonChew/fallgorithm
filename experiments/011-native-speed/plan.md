@@ -151,8 +151,7 @@ Found while reading the Python. Each one gets a test.
 
 ## Steps
 
-Each step ends at a commit with its tests green, after an independent Opus review (as
-in 008-010). Coding steps can go to Sonnet subagents with narrow, file-level briefs.
+Each step ends at a commit with its tests green.
 
 1. **Build and board.** `native/` skeleton, `scripts/build_native.py`, `native.py`
    loader (a clear error if the library is not built), `settle`, `level_for_lines`,
