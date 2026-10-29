@@ -24,7 +24,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 8;
+constexpr int abi_version = 9;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};

@@ -25,6 +25,10 @@ struct Params {
     double clear_points;
     int height_budget, survival_budget, survival_level, drought_bound;
     int killscreen_budget;
+    // Experiment 015 (search settings, not tuned; the defaults -1 and 0 leave the search
+    // unchanged): from level ``commit_ply_level`` on, the commit search looks one unknown
+    // piece further for its ``commit_beam`` best placements (search.hpp).
+    int commit_ply_level, commit_beam;
 };
 
 // Experiment 014: the level where the double killscreen starts, and the NES points of

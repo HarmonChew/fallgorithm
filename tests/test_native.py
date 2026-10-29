@@ -76,8 +76,9 @@ def _param_sets() -> list[dict[str, float]]:
 
 def test_the_params_struct_matches_the_python_parameters():
     assert set(native.WEIGHT_NAMES + native.INTEGER_NAMES) == \
-        set(tunedplan.DEFAULTS) | set(native.EXTRA_DEFAULTS)
-    assert set(native.INTEGER_NAMES) == set(tunedplan.INTEGER_RANGES) | {"killscreen_budget"}
+        set(tunedplan.DEFAULTS) | set(native.EXTRA_DEFAULTS) | set(native.SEARCH_DEFAULTS)
+    assert set(native.INTEGER_NAMES) == set(tunedplan.INTEGER_RANGES) | {"killscreen_budget"} | \
+        set(native.SEARCH_DEFAULTS)
     native.load()  # checks the ABI version and the struct size
 
 

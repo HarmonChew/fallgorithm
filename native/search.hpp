@@ -6,6 +6,9 @@
 // reach.py's order, the first of equal values wins, and the beam is ordered by
 // value, then by the option's place in that order. The phase rule is built once
 // from the real level and used at every ply; only gravity follows the ply's level.
+//
+// Experiment 015 (off by default): from Params::commit_ply_level on, the commit search
+// (preview not known yet) adds 013's extra ply to its Params::commit_beam best options.
 #pragma once
 
 #include <algorithm>
@@ -87,17 +90,48 @@ public:
         const int phase = phase_of(params_, level, position.drought, position.columns);
         const Option* best = &current_[0];
         if (position.next_piece < 0) {
+            const bool commit_ply = params_.commit_ply_level >= 0 &&
+                                    level >= params_.commit_ply_level && params_.commit_beam > 0;
             double best_total = minus_infinity;
-            for (const Option& option : current_) {
+            ranked_.clear();
+            for (int order = 0; order < static_cast<int>(current_.size()); ++order) {
+                const Option& option = current_[order];
                 const int after = position.lines + option.cleared;
                 const int after_level = level_for_lines(after, position.start_level);
+                const double own =
+                    value_of(params_, phase, option.cleared, option.settled, after_level);
                 const double total =
-                    value_of(params_, phase, option.cleared, option.settled, after_level) +
-                    unknown_average(option.settled, position.drought, position.piece,
-                                    after_level, after);
+                    own + unknown_average(option.settled, position.drought, position.piece,
+                                          after_level, after);
                 if (total > best_total) {
                     best = &option;
                     best_total = total;
+                }
+                if (commit_ply) {
+                    ranked_.push_back({total, own, order});
+                }
+            }
+            if (commit_ply) {
+                // Experiment 015: rank by the one-ply total (ties keep the option order),
+                // then for the best ``commit_beam`` replace the seven-piece average with
+                // the extra ply; the first of equal totals wins, as at the adjust search.
+                std::stable_sort(ranked_.begin(), ranked_.end(),
+                                 [](const Ranked& a, const Ranked& b) { return a.total > b.total; });
+                const int beam = std::min(params_.commit_beam, static_cast<int>(ranked_.size()));
+                best = &current_[ranked_[0].order];
+                bool have_total = false;
+                double deep_best = 0.0;
+                for (int index = 0; index < beam; ++index) {
+                    const Option& option = current_[ranked_[index].order];
+                    const double total =
+                        ranked_[index].own + deeper_average(option.settled, position.drought,
+                                                            position.piece,
+                                                            position.lines + option.cleared);
+                    if (!have_total || total > deep_best) {
+                        best = &option;
+                        deep_best = total;
+                        have_total = true;
+                    }
                 }
             }
         } else {
@@ -192,6 +226,11 @@ private:
         int preview_cleared;
         Columns preview_settled;
     };
+    // Experiment 015: a commit-search option's one-ply total and own value.
+    struct Ranked {
+        double total, own;
+        int order;
+    };
 
     // tunedplan._best over a fresh piece's placements: the best value (-inf if
     // none). With ``path``, also keeps the best placement's settled board. ``lines``
@@ -274,6 +313,7 @@ private:
     ReachSearch root_, ply_;
     std::vector<Option> current_;
     std::vector<Path> paths_;
+    std::vector<Ranked> ranked_;
 };
 
 }  // namespace fallgorithm

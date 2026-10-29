@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import ctypes as C
 from functools import lru_cache
+import math
 import os
 from pathlib import Path
 import sys
@@ -24,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 8
+ABI_VERSION = 9
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -38,11 +39,16 @@ WEIGHT_NAMES = (
     "spend_edge_depth", "clear_points",
 )
 INTEGER_NAMES = ("height_budget", "survival_budget", "survival_level", "drought_bound",
-                 "killscreen_budget")
+                 "killscreen_budget", "commit_ply_level", "commit_beam")
 # Experiment 014's two numbers (C++ only, not in tunedplan): their defaults change
 # nothing, and a set ``killscreen_budget`` is rounded and clamped like the others.
 EXTRA_DEFAULTS = {"clear_points": 0.0, "killscreen_budget": -1}
 KILLSCREEN_BUDGET_RANGE = (0, 14)
+# Experiment 015's search settings (C++ only, not tuned): the commit search's extra ply
+# from ``commit_ply_level`` (-1: never) for its ``commit_beam`` best placements. They
+# appear in a resolved dict only when given, so earlier experiments' numbers resolve
+# as before.
+SEARCH_DEFAULTS = {"commit_ply_level": -1, "commit_beam": 0}
 PHASES = (wellplan.BUILD, wellplan.SPEND)
 # Experiment 013 (native/value.hpp): 3 level bands of 2 + 2 * 18 weights; the agents
 # of fn_play_game_ex.
@@ -64,20 +70,26 @@ class Params(C.Structure):
 
 
 def resolve(values: dict[str, float] | None = None) -> dict[str, Any]:
-    """:func:`block_stack_ai.tunedplan.resolve`, plus Experiment 014's two numbers."""
+    """:func:`block_stack_ai.tunedplan.resolve`, plus Experiment 014's two numbers and,
+    when given, Experiment 015's search settings (whole numbers, -1 or more and 0 or more)."""
     values = dict(values or {})
+    search = {name: values.pop(name) for name in SEARCH_DEFAULTS if name in values}
     extras = {name: values.pop(name, default) for name, default in EXTRA_DEFAULTS.items()}
     resolved = tunedplan.resolve(values)
     resolved["clear_points"] = float(extras["clear_points"])
     budget = extras["killscreen_budget"]
     low, high = KILLSCREEN_BUDGET_RANGE
     resolved["killscreen_budget"] = -1 if budget == -1 else min(high, max(low, round(budget)))
+    for name, value in search.items():
+        if not math.isfinite(value) or value != round(value) or value < SEARCH_DEFAULTS[name]:
+            raise ValueError(f"{name} must be a whole number, at least {SEARCH_DEFAULTS[name]}")
+        resolved[name] = int(value)
     return resolved
 
 
 def params(values: dict[str, float] | None = None) -> Params:
     """The C struct of :func:`resolve`'s values."""
-    resolved = resolve(values)
+    resolved = SEARCH_DEFAULTS | resolve(values)
     return Params(*(resolved[name] for name in WEIGHT_NAMES + INTEGER_NAMES))
 
 
