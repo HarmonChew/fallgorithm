@@ -1,0 +1,417 @@
+{
+ "seeds": "Experiment 013's first 200 dev seeds (experiments/013-deeper-search/seeds.json)",
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "29c151a63b248f0061e09aca9a41a807f3ac6967",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "agents": {
+  "points": {
+   "games": 200,
+   "numbers": {
+    "build_tetrises": 33.64458614708543,
+    "build_premature_clear": -1.0219724454103332,
+    "build_holes": -14.057489805301302,
+    "build_aggregate_height": -0.1554990959311456,
+    "build_bumpiness": -0.7881577015333868,
+    "build_max_height": -0.4268187092630011,
+    "build_reserve": 4.857442011391798,
+    "build_overflow": -0.013963613896535327,
+    "spend_lines_cleared": 0.9476401016921928,
+    "spend_holes": -1.8910713729010802,
+    "spend_aggregate_height": 0.04360397203653899,
+    "spend_bumpiness": -0.24689122489445392,
+    "spend_max_height": 0.897799880975592,
+    "spend_row_transitions": -0.7281098442565578,
+    "spend_column_transitions": -2.447861803385484,
+    "spend_edge_depth": -1.2355047048001802,
+    "height_budget": 10,
+    "survival_budget": 2,
+    "survival_level": 38,
+    "drought_bound": 16,
+    "clear_points": 16.49452842709017,
+    "killscreen_budget": 2
+   },
+   "mean_score": 1253902.7,
+   "mean_lines": 353.87,
+   "bands": {
+    "18": {
+     "pieces_per_game": 335.2,
+     "adjust_share": 0.9985,
+     "score_per_game": 426388,
+     "lines_per_game": 130.41,
+     "clears_per_game": {
+      "clear1": 32.14,
+      "clear2": 12.03,
+      "clear3": 3.91,
+      "clear4": 15.62
+     },
+     "tetris_share_of_lines": 0.4791,
+     "i_to_tetris": 0.3333,
+     "score_through_band": 426388
+    },
+    "19-28": {
+     "pieces_per_game": 248.1,
+     "adjust_share": 0.9702,
+     "score_per_game": 403562,
+     "lines_per_game": 98.97,
+     "clears_per_game": {
+      "clear1": 25.2,
+      "clear2": 9.68,
+      "clear3": 3.39,
+      "clear4": 11.06
+     },
+     "tetris_share_of_lines": 0.447,
+     "i_to_tetris": 0.3247,
+     "score_through_band": 829950
+    },
+    "29-38": {
+     "pieces_per_game": 216.3,
+     "adjust_share": 0.1264,
+     "score_per_game": 339452,
+     "lines_per_game": 85.15,
+     "clears_per_game": {
+      "clear1": 32.03,
+      "clear2": 10.72,
+      "clear3": 3.29,
+      "clear4": 5.45
+     },
+     "tetris_share_of_lines": 0.2558,
+     "i_to_tetris": 0.1799,
+     "score_through_band": 1169402
+    },
+    "39+": {
+     "pieces_per_game": 112.5,
+     "adjust_share": 0.0,
+     "score_per_game": 84501,
+     "lines_per_game": 39.34,
+     "clears_per_game": {
+      "clear1": 24.41,
+      "clear2": 6.35,
+      "clear3": 0.57,
+      "clear4": 0.13
+     },
+     "tetris_share_of_lines": 0.0132,
+     "i_to_tetris": 0.0086,
+     "score_through_band": 1253903
+    }
+   },
+   "totals": {
+    "I pieces|18": 9373,
+    "I pieces|19-28": 6813,
+    "I pieces|29-38": 6052,
+    "I pieces|39+": 3038,
+    "I tetris|18": 3124,
+    "I tetris|19-28": 2212,
+    "I tetris|29-38": 1089,
+    "I tetris|39+": 26,
+    "adjusts|18": 66951,
+    "adjusts|19-28": 48136,
+    "adjusts|29-38": 5470,
+    "clear1|18": 6428,
+    "clear1|19-28": 5041,
+    "clear1|29-38": 6407,
+    "clear1|39+": 4882,
+    "clear2|18": 2406,
+    "clear2|19-28": 1935,
+    "clear2|29-38": 2145,
+    "clear2|39+": 1270,
+    "clear3|18": 782,
+    "clear3|19-28": 678,
+    "clear3|29-38": 659,
+    "clear3|39+": 114,
+    "clear4|18": 3124,
+    "clear4|19-28": 2212,
+    "clear4|29-38": 1089,
+    "clear4|39+": 26,
+    "lines|18": 26082,
+    "lines|19-28": 19793,
+    "lines|29-38": 17030,
+    "lines|39+": 7868,
+    "pieces|18": 67049,
+    "pieces|19-28": 49613,
+    "pieces|29-38": 43261,
+    "pieces|39+": 22490,
+    "score|18": 85277520,
+    "score|19-28": 80712420,
+    "score|29-38": 67890320,
+    "score|39+": 16900280
+   }
+  },
+  "ply_beam2": {
+   "games": 200,
+   "numbers": {
+    "build_tetrises": 33.64458614708543,
+    "build_premature_clear": -1.0219724454103332,
+    "build_holes": -14.057489805301302,
+    "build_aggregate_height": -0.1554990959311456,
+    "build_bumpiness": -0.7881577015333868,
+    "build_max_height": -0.4268187092630011,
+    "build_reserve": 4.857442011391798,
+    "build_overflow": -0.013963613896535327,
+    "spend_lines_cleared": 0.9476401016921928,
+    "spend_holes": -1.8910713729010802,
+    "spend_aggregate_height": 0.04360397203653899,
+    "spend_bumpiness": -0.24689122489445392,
+    "spend_max_height": 0.897799880975592,
+    "spend_row_transitions": -0.7281098442565578,
+    "spend_column_transitions": -2.447861803385484,
+    "spend_edge_depth": -1.2355047048001802,
+    "height_budget": 10,
+    "survival_budget": 2,
+    "survival_level": 38,
+    "drought_bound": 16,
+    "clear_points": 16.49452842709017,
+    "killscreen_budget": 2,
+    "commit_ply_level": 29,
+    "commit_beam": 2
+   },
+   "mean_score": 1360418.9,
+   "mean_lines": 371.86,
+   "bands": {
+    "18": {
+     "pieces_per_game": 335.2,
+     "adjust_share": 0.9985,
+     "score_per_game": 426388,
+     "lines_per_game": 130.41,
+     "clears_per_game": {
+      "clear1": 32.14,
+      "clear2": 12.03,
+      "clear3": 3.91,
+      "clear4": 15.62
+     },
+     "tetris_share_of_lines": 0.4791,
+     "i_to_tetris": 0.3333,
+     "score_through_band": 426388
+    },
+    "19-28": {
+     "pieces_per_game": 248.1,
+     "adjust_share": 0.9702,
+     "score_per_game": 403562,
+     "lines_per_game": 98.97,
+     "clears_per_game": {
+      "clear1": 25.2,
+      "clear2": 9.68,
+      "clear3": 3.39,
+      "clear4": 11.06
+     },
+     "tetris_share_of_lines": 0.447,
+     "i_to_tetris": 0.3247,
+     "score_through_band": 829950
+    },
+    "29-38": {
+     "pieces_per_game": 221.4,
+     "adjust_share": 0.1261,
+     "score_per_game": 407213,
+     "lines_per_game": 87.53,
+     "clears_per_game": {
+      "clear1": 28.59,
+      "clear2": 9.89,
+      "clear3": 3.4,
+      "clear4": 7.25
+     },
+     "tetris_share_of_lines": 0.3311,
+     "i_to_tetris": 0.2367,
+     "score_through_band": 1237163
+    },
+    "39+": {
+     "pieces_per_game": 148.3,
+     "adjust_share": 0.0,
+     "score_per_game": 123256,
+     "lines_per_game": 54.95,
+     "clears_per_game": {
+      "clear1": 32.72,
+      "clear2": 9.07,
+      "clear3": 1.06,
+      "clear4": 0.22
+     },
+     "tetris_share_of_lines": 0.016,
+     "i_to_tetris": 0.0107,
+     "score_through_band": 1360419
+    }
+   },
+   "totals": {
+    "I pieces|18": 9373,
+    "I pieces|19-28": 6813,
+    "I pieces|29-38": 6121,
+    "I pieces|39+": 4098,
+    "I tetris|18": 3124,
+    "I tetris|19-28": 2212,
+    "I tetris|29-38": 1449,
+    "I tetris|39+": 44,
+    "adjusts|18": 66951,
+    "adjusts|19-28": 48136,
+    "adjusts|29-38": 5585,
+    "clear1|18": 6428,
+    "clear1|19-28": 5041,
+    "clear1|29-38": 5718,
+    "clear1|39+": 6544,
+    "clear2|18": 2406,
+    "clear2|19-28": 1935,
+    "clear2|29-38": 1978,
+    "clear2|39+": 1815,
+    "clear3|18": 782,
+    "clear3|19-28": 678,
+    "clear3|29-38": 679,
+    "clear3|39+": 213,
+    "clear4|18": 3124,
+    "clear4|19-28": 2212,
+    "clear4|29-38": 1449,
+    "clear4|39+": 44,
+    "lines|18": 26082,
+    "lines|19-28": 19793,
+    "lines|29-38": 17507,
+    "lines|39+": 10989,
+    "pieces|18": 67049,
+    "pieces|19-28": 49613,
+    "pieces|29-38": 44285,
+    "pieces|39+": 29657,
+    "score|18": 85277520,
+    "score|19-28": 80712420,
+    "score|29-38": 81442540,
+    "score|39+": 24651300
+   }
+  },
+  "ply_beam4": {
+   "games": 200,
+   "numbers": {
+    "build_tetrises": 33.64458614708543,
+    "build_premature_clear": -1.0219724454103332,
+    "build_holes": -14.057489805301302,
+    "build_aggregate_height": -0.1554990959311456,
+    "build_bumpiness": -0.7881577015333868,
+    "build_max_height": -0.4268187092630011,
+    "build_reserve": 4.857442011391798,
+    "build_overflow": -0.013963613896535327,
+    "spend_lines_cleared": 0.9476401016921928,
+    "spend_holes": -1.8910713729010802,
+    "spend_aggregate_height": 0.04360397203653899,
+    "spend_bumpiness": -0.24689122489445392,
+    "spend_max_height": 0.897799880975592,
+    "spend_row_transitions": -0.7281098442565578,
+    "spend_column_transitions": -2.447861803385484,
+    "spend_edge_depth": -1.2355047048001802,
+    "height_budget": 10,
+    "survival_budget": 2,
+    "survival_level": 38,
+    "drought_bound": 16,
+    "clear_points": 16.49452842709017,
+    "killscreen_budget": 2,
+    "commit_ply_level": 29,
+    "commit_beam": 4
+   },
+   "mean_score": 1357564.5,
+   "mean_lines": 369.09,
+   "bands": {
+    "18": {
+     "pieces_per_game": 335.2,
+     "adjust_share": 0.9985,
+     "score_per_game": 426388,
+     "lines_per_game": 130.41,
+     "clears_per_game": {
+      "clear1": 32.14,
+      "clear2": 12.03,
+      "clear3": 3.91,
+      "clear4": 15.62
+     },
+     "tetris_share_of_lines": 0.4791,
+     "i_to_tetris": 0.3333,
+     "score_through_band": 426388
+    },
+    "19-28": {
+     "pieces_per_game": 248.1,
+     "adjust_share": 0.9702,
+     "score_per_game": 403562,
+     "lines_per_game": 98.97,
+     "clears_per_game": {
+      "clear1": 25.2,
+      "clear2": 9.68,
+      "clear3": 3.39,
+      "clear4": 11.06
+     },
+     "tetris_share_of_lines": 0.447,
+     "i_to_tetris": 0.3247,
+     "score_through_band": 829950
+    },
+    "29-38": {
+     "pieces_per_game": 224.7,
+     "adjust_share": 0.125,
+     "score_per_game": 408096,
+     "lines_per_game": 89.06,
+     "clears_per_game": {
+      "clear1": 29.23,
+      "clear2": 10.25,
+      "clear3": 3.55,
+      "clear4": 7.17
+     },
+     "tetris_share_of_lines": 0.322,
+     "i_to_tetris": 0.2314,
+     "score_through_band": 1238046
+    },
+    "39+": {
+     "pieces_per_game": 138.3,
+     "adjust_share": 0.0,
+     "score_per_game": 119518,
+     "lines_per_game": 50.66,
+     "clears_per_game": {
+      "clear1": 30.04,
+      "clear2": 8.21,
+      "clear3": 0.94,
+      "clear4": 0.34
+     },
+     "tetris_share_of_lines": 0.0272,
+     "i_to_tetris": 0.018,
+     "score_through_band": 1357564
+    }
+   },
+   "totals": {
+    "I pieces|18": 9373,
+    "I pieces|19-28": 6813,
+    "I pieces|29-38": 6197,
+    "I pieces|39+": 3826,
+    "I tetris|18": 3124,
+    "I tetris|19-28": 2212,
+    "I tetris|29-38": 1434,
+    "I tetris|39+": 69,
+    "adjusts|18": 66951,
+    "adjusts|19-28": 48136,
+    "adjusts|29-38": 5620,
+    "clear1|18": 6428,
+    "clear1|19-28": 5041,
+    "clear1|29-38": 5846,
+    "clear1|39+": 6007,
+    "clear2|18": 2406,
+    "clear2|19-28": 1935,
+    "clear2|29-38": 2050,
+    "clear2|39+": 1642,
+    "clear3|18": 782,
+    "clear3|19-28": 678,
+    "clear3|29-38": 710,
+    "clear3|39+": 188,
+    "clear4|18": 3124,
+    "clear4|19-28": 2212,
+    "clear4|29-38": 1434,
+    "clear4|39+": 69,
+    "lines|18": 26082,
+    "lines|19-28": 19793,
+    "lines|29-38": 17812,
+    "lines|39+": 10131,
+    "pieces|18": 67049,
+    "pieces|19-28": 49613,
+    "pieces|29-38": 44946,
+    "pieces|39+": 27661,
+    "score|18": 85277520,
+    "score|19-28": 80712420,
+    "score|29-38": 81619300,
+    "score|39+": 23903660
+   }
+  }
+ }
+}

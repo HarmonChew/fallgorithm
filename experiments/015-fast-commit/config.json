@@ -14,7 +14,7 @@
    "reaction_ms": 300
   }
  ],
- "search": {"commit_ply_level": 29, "commit_beam": null},
+ "search": {"commit_ply_level": 29, "commit_beam": 2},
  "depth_check": {
   "ply_beam2": {"commit_ply_level": 29, "commit_beam": 2},
   "ply_beam4": {"commit_ply_level": 29, "commit_beam": 4},
@@ -29,7 +29,7 @@
   "rng_seed": 15,
   "spread_floor": 0.05,
   "start_mean": "experiments/014-real-points/final_params.json (resolved)",
-  "start_spread": {"clear_points": 10.0, "killscreen_budget": null},
+  "start_spread": {"clear_points": 10.0, "killscreen_budget": 2.0},
   "start_spread_rest": "experiment009.initial_spread()",
   "train_seeds": "experiments/012-native-cem/seeds.json train_seeds (96)"
  },

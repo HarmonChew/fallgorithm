@@ -1,0 +1,212 @@
+{
+ "question": "The commit ply and a killscreen budget of 4, with 014's numbers, on the dev seeds",
+ "seeds": "dev_seeds (Experiment 013's)",
+ "games": 200,
+ "variants": {
+  "points": {},
+  "ply_beam2": {
+   "commit_ply_level": 29,
+   "commit_beam": 2
+  },
+  "ply_beam4": {
+   "commit_ply_level": 29,
+   "commit_beam": 4
+  },
+  "killscreen_4": {
+   "killscreen_budget": 4
+  },
+  "killscreen_4_beam2": {
+   "killscreen_budget": 4,
+   "commit_ply_level": 29,
+   "commit_beam": 2
+  },
+  "killscreen_4_beam4": {
+   "killscreen_budget": 4,
+   "commit_ply_level": 29,
+   "commit_beam": 4
+  }
+ },
+ "scores": {
+  "points": {
+   "mean_score": 1253902.7,
+   "mean_lines": 353.865
+  },
+  "ply_beam2": {
+   "mean_score": 1360418.9,
+   "mean_lines": 371.855
+  },
+  "ply_beam4": {
+   "mean_score": 1357564.5,
+   "mean_lines": 369.09
+  },
+  "killscreen_4": {
+   "mean_score": 1208841.0,
+   "mean_lines": 333.71
+  },
+  "killscreen_4_beam2": {
+   "mean_score": 1290735.8,
+   "mean_lines": 342.39
+  },
+  "killscreen_4_beam4": {
+   "mean_score": 1293008.6,
+   "mean_lines": 344.645
+  }
+ },
+ "paired": {
+  "ply_beam2 - points": {
+   "score": {
+    "mean": 106516.2,
+    "ci95_low": 69769.2,
+    "ci95_high": 143405.4,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": 17.99,
+    "ci95_low": 6.95,
+    "ci95_high": 28.935,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 136,
+    "lower": 61,
+    "equal": 3
+   }
+  },
+  "ply_beam4 - points": {
+   "score": {
+    "mean": 103661.8,
+    "ci95_low": 66380.7,
+    "ci95_high": 141919.9,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": 15.225,
+    "ci95_low": 4.335,
+    "ci95_high": 26.1,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 132,
+    "lower": 65,
+    "equal": 3
+   }
+  },
+  "killscreen_4 - points": {
+   "score": {
+    "mean": -45061.7,
+    "ci95_low": -55753.3,
+    "ci95_high": -34594.2,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -20.155,
+    "ci95_low": -24.89,
+    "ci95_high": -15.56,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 25,
+    "lower": 94,
+    "equal": 81
+   }
+  },
+  "killscreen_4_beam2 - points": {
+   "score": {
+    "mean": 36833.1,
+    "ci95_low": 2770.4,
+    "ci95_high": 71278.6,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -11.475,
+    "ci95_low": -21.215,
+    "ci95_high": -1.51,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 113,
+    "lower": 84,
+    "equal": 3
+   }
+  },
+  "killscreen_4_beam4 - points": {
+   "score": {
+    "mean": 39105.9,
+    "ci95_low": 5088.7,
+    "ci95_high": 73293.9,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -9.22,
+    "ci95_low": -19.02,
+    "ci95_high": 0.615,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 114,
+    "lower": 83,
+    "equal": 3
+   }
+  },
+  "killscreen_4_beam2 - ply_beam2": {
+   "score": {
+    "mean": -69683.1,
+    "ci95_low": -82540.9,
+    "ci95_high": -57277.8,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -29.465,
+    "ci95_low": -34.815,
+    "ci95_high": -24.11,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 23,
+    "lower": 121,
+    "equal": 56
+   }
+  },
+  "killscreen_4_beam4 - ply_beam4": {
+   "score": {
+    "mean": -64555.9,
+    "ci95_low": -78101.6,
+    "ci95_high": -51452.5,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -24.445,
+    "ci95_low": -29.72,
+    "ci95_high": -19.285,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 31,
+    "lower": 109,
+    "equal": 60
+   }
+  }
+ },
+ "seconds_per_game": {
+  "points": 1.159,
+  "ply_beam2": 1.377,
+  "ply_beam4": 1.571,
+  "killscreen_4": 1.11,
+  "killscreen_4_beam2": 1.29,
+  "killscreen_4_beam4": 1.45
+ }
+}
