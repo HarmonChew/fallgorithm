@@ -64,6 +64,8 @@ def _param_sets() -> list[dict[str, float]]:
     for _ in range(20):
         values: dict[str, float] = {}
         for name in native.WEIGHT_NAMES:
+            if name in native.EXTRA_DEFAULTS:  # Experiment 014's: C++ only
+                continue
             draw = rng.random()
             values[name] = 0.0 if draw < 0.1 else -0.0 if draw < 0.15 else rng.gauss(0, 4)
         for name, (low, high) in tunedplan.INTEGER_RANGES.items():
@@ -73,8 +75,9 @@ def _param_sets() -> list[dict[str, float]]:
 
 
 def test_the_params_struct_matches_the_python_parameters():
-    assert set(native.WEIGHT_NAMES + native.INTEGER_NAMES) == set(tunedplan.DEFAULTS)
-    assert set(native.INTEGER_NAMES) == set(tunedplan.INTEGER_RANGES)
+    assert set(native.WEIGHT_NAMES + native.INTEGER_NAMES) == \
+        set(tunedplan.DEFAULTS) | set(native.EXTRA_DEFAULTS)
+    assert set(native.INTEGER_NAMES) == set(tunedplan.INTEGER_RANGES) | {"killscreen_budget"}
     native.load()  # checks the ABI version and the struct size
 
 

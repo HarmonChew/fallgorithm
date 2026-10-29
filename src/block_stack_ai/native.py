@@ -24,7 +24,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 7
+ABI_VERSION = 8
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -35,16 +35,21 @@ WEIGHT_NAMES = (
     "build_bumpiness", "build_max_height", "build_reserve", "build_overflow",
     "spend_lines_cleared", "spend_holes", "spend_aggregate_height", "spend_bumpiness",
     "spend_max_height", "spend_row_transitions", "spend_column_transitions",
-    "spend_edge_depth",
+    "spend_edge_depth", "clear_points",
 )
-INTEGER_NAMES = ("height_budget", "survival_budget", "survival_level", "drought_bound")
+INTEGER_NAMES = ("height_budget", "survival_budget", "survival_level", "drought_bound",
+                 "killscreen_budget")
+# Experiment 014's two numbers (C++ only, not in tunedplan): their defaults change
+# nothing, and a set ``killscreen_budget`` is rounded and clamped like the others.
+EXTRA_DEFAULTS = {"clear_points": 0.0, "killscreen_budget": -1}
+KILLSCREEN_BUDGET_RANGE = (0, 14)
 PHASES = (wellplan.BUILD, wellplan.SPEND)
 # Experiment 013 (native/value.hpp): 3 level bands of 2 + 2 * 18 weights; the agents
 # of fn_play_game_ex.
 BOARD_FEATURES = 18
 BAND_WEIGHTS = 2 + 2 * BOARD_FEATURES
 VALUE_WEIGHTS = 3 * BAND_WEIGHTS
-AGENT_KINDS = ("reach_plan", "reach_plan_extra_ply", "value")
+AGENT_KINDS = ("reach_plan", "reach_plan_extra_ply", "value", "reach_plan_014")
 
 Columns = C.c_uint32 * WIDTH
 
@@ -58,9 +63,21 @@ class Params(C.Structure):
         [(name, C.c_int) for name in INTEGER_NAMES]
 
 
-def params(values: dict[str, float] | None = None) -> Params:
-    """The C struct of :func:`block_stack_ai.tunedplan.resolve`'s values."""
+def resolve(values: dict[str, float] | None = None) -> dict[str, Any]:
+    """:func:`block_stack_ai.tunedplan.resolve`, plus Experiment 014's two numbers."""
+    values = dict(values or {})
+    extras = {name: values.pop(name, default) for name, default in EXTRA_DEFAULTS.items()}
     resolved = tunedplan.resolve(values)
+    resolved["clear_points"] = float(extras["clear_points"])
+    budget = extras["killscreen_budget"]
+    low, high = KILLSCREEN_BUDGET_RANGE
+    resolved["killscreen_budget"] = -1 if budget == -1 else min(high, max(low, round(budget)))
+    return resolved
+
+
+def params(values: dict[str, float] | None = None) -> Params:
+    """The C struct of :func:`resolve`'s values."""
+    resolved = resolve(values)
     return Params(*(resolved[name] for name in WEIGHT_NAMES + INTEGER_NAMES))
 
 
@@ -144,6 +161,10 @@ def load() -> Any:
     lib.fn_settle.restype = C.c_int
     lib.fn_value.argtypes = [C.POINTER(Params), C.c_int, C.c_int, Columns]
     lib.fn_value.restype = C.c_double
+    lib.fn_value_at.argtypes = [C.POINTER(Params), C.c_int, C.c_int, Columns, C.c_int]
+    lib.fn_value_at.restype = C.c_double
+    lib.fn_nes_odds.argtypes = [C.c_int, C.c_int]
+    lib.fn_nes_odds.restype = C.c_double
     lib.fn_phase.argtypes = [C.POINTER(Params), C.c_int, C.c_int, Columns]
     lib.fn_phase.restype = C.c_int
     lib.fn_level_for_lines.argtypes = [C.c_int, C.c_int]
@@ -198,6 +219,19 @@ def settle(columns: tuple[int, ...], piece: str, orientation: int, x: int,
 def value(native_params: Params, phase: str, cleared: int, columns: tuple[int, ...]) -> float:
     """``tunedplan.make_rules(...)[0](phase, cleared, columns)``, computed by the C++."""
     return load().fn_value(C.byref(native_params), PHASES.index(phase), cleared, Columns(*columns))
+
+
+def value_at(native_params: Params, phase: str, cleared: int, columns: tuple[int, ...],
+             level: int) -> float:
+    """:func:`value` plus Experiment 014's points term at ``level``, the level after the
+    clear (the engine updates the level, then scores)."""
+    return load().fn_value_at(C.byref(native_params), PHASES.index(phase), cleared,
+                              Columns(*columns), level)
+
+
+def nes_odds(previous: str, piece: str) -> float:
+    """search.hpp's NES-randomizer odds of ``piece`` after ``previous`` (Experiment 014)."""
+    return load().fn_nes_odds(PIECES.index(previous), PIECES.index(piece))
 
 
 def phase(native_params: Params, level: int, drought: int, columns: tuple[int, ...]) -> str:
@@ -342,14 +376,16 @@ def play_game_ex(agent: str, game: dict[str, Any], seed: int, *, line_cap: int, 
     """One whole game by one of :data:`AGENT_KINDS` (Experiment 013).
 
     ``reach_plan`` plays exactly as :func:`play_game`; ``reach_plan_extra_ply`` looks one
-    unknown piece further at the adjust search; ``value`` uses the learned ``weights``.
+    unknown piece further at the adjust search; ``reach_plan_014`` does too, with the
+    unknown pieces weighed by the NES odds (Experiment 014); ``value`` uses the learned
+    ``weights``.
     With ``fit``, also returns the game's least-squares sums (``gram``, 114 x 114 row by row,
     ``target``, and ``totals``: count, sum and sum of squares of the targets). ``explore`` is
     the chance, per piece, of a random reachable placement, and ``explore_start`` the number
     of random placements a game starts with (self-play only).
     """
     kind = AGENT_KINDS.index(agent)
-    if (kind == 2) != (weights is not None) or (kind < 2) != (params is not None):
+    if (kind == 2) != (weights is not None) or (kind != 2) != (params is not None):
         raise ValueError(f"{agent} takes {'weights' if kind == 2 else 'params'} only")
     inputs = (C.c_uint8 * max(1, frame_cap))()
     out = (C.c_int64 * 11)()

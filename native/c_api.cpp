@@ -24,7 +24,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 7;
+constexpr int abi_version = 8;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -70,7 +70,21 @@ FN_API int fn_settle(const std::uint32_t* columns, int piece, int orientation, i
 
 FN_API double fn_value(const Params* params, int phase, int cleared,
                        const std::uint32_t* columns) {
-    return value_of(*params, phase, cleared, load_columns(columns));
+    return base_value(*params, phase, cleared, load_columns(columns));
+}
+
+// Experiment 014's value with the points term at ``level``, the level after the clear.
+FN_API double fn_value_at(const Params* params, int phase, int cleared,
+                          const std::uint32_t* columns, int level) {
+    return value_of(*params, phase, cleared, load_columns(columns), level);
+}
+
+// Experiment 014: search.hpp's NES odds of ``piece`` after ``previous``.
+FN_API double fn_nes_odds(int previous, int piece) {
+    if (previous < 0 || previous >= piece_types || piece < 0 || piece >= piece_types) {
+        return -1.0;
+    }
+    return nes_odds(previous, piece);
 }
 
 FN_API int fn_phase(const Params* params, int level, int drought, const std::uint32_t* columns) {
@@ -278,7 +292,8 @@ FN_API int fn_play_game(const Params* params, const char* ruleset, const char* m
 // Experiment 013's game: fn_play_game's arguments and outputs, with the agent chosen
 // by ``agent``: 0 reach_plan with ``params``, 1 the same with the extra ply
 // (search.hpp's depth check), 2 the learned value with ``weights`` (value.hpp's 114,
-// and ``line_cap`` as the model's cap). When ``gram`` is given, the game's boards
+// and ``line_cap`` as the model's cap), 3 the extra ply with the NES odds (Experiment
+// 014). When ``gram`` is given, the game's boards
 // are added to value.hpp's least-squares sums (FitSums, add_game; only the line
 // cap matters there): ``gram`` (114 x 114), ``target`` (114) and ``totals`` (count, sum,
 // sum of squares of the targets). ``explore``, ``explore_start`` and ``explore_seed``
@@ -292,7 +307,7 @@ FN_API int fn_play_game_ex(int agent_kind, const Params* params, const double* w
                            double* totals) {
     if (!ruleset || !mode || seed < 0 || seed > 0xffff || line_cap < 0 || frame_cap < 0 ||
         capacity < frame_cap || interval < 1 || reaction < 0 || agent_kind < 0 ||
-        agent_kind > 2 || (agent_kind < 2 && !params) || (agent_kind == 2 && !weights) ||
+        agent_kind > 3 || (agent_kind != 2 && !params) || (agent_kind == 2 && !weights) ||
         (gram && (!target || !totals)) || start_level < 0 || start_level >= 20 ||
         !(explore >= 0.0 && explore <= 1.0) || explore_start < 0) {
         return -1;
@@ -319,7 +334,8 @@ FN_API int fn_play_game_ex(int agent_kind, const Params* params, const double* w
             status = run_game(config, agent, line_cap, frame_cap, inputs, out, keep, final_score);
         } else {
             Searcher searcher(*params);
-            searcher.set_extra_ply(agent_kind == 1);
+            searcher.set_extra_ply(agent_kind == 1 || agent_kind == 3);
+            searcher.set_nes_odds(agent_kind == 3);
             Agent agent(searcher, interval, reaction);
             agent.set_explore(explore, explore_start, explore_seed);
             status = run_game(config, agent, line_cap, frame_cap, inputs, out, keep, final_score);
