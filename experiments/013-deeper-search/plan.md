@@ -1,7 +1,8 @@
 # Experiment 013 - plan: deeper search, with the 20 numbers re-tuned for it
 
-Status: in progress. Before training, `predeclared.md` is written from the "Success rule"
-section and is not edited afterwards.
+Status: done 2026-10-29; see `notes.md` for the result. Before training, `predeclared.md`
+was written from the "Success rule" section and is not edited afterwards. (The 951k below
+is from an earlier, uncommitted trial; `value_probe.json` holds the committed reruns.)
 
 ## How this plan came about
 

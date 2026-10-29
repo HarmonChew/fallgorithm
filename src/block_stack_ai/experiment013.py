@@ -190,6 +190,13 @@ def play_native(job: tuple[str, int, dict[str, Any]]) -> dict[str, Any]:
     return episode
 
 
+def _play(job: tuple[int, dict[str, Any], int, dict[str, Any]]) -> dict[str, Any]:
+    """The launcher's new game: the deep agent with ``config["params"]`` in format ``fmt``."""
+    _, fmt, seed, config = job
+    return play_native(("deep", seed, config | {"deep_params": config["params"],
+                                                "formats": [fmt]}))
+
+
 def _scores(games: list[dict[str, Any]]) -> dict[str, float]:
     return {"mean_score": e9._mean([g["score"] for g in games]),
             "mean_lines": e9._mean([g["lines"] for g in games])}
