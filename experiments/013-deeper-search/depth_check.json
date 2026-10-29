@@ -1,0 +1,35 @@
+{
+ "question": "Does one more ply of lookahead (at the adjust search) help 012's numbers? A diagnostic on the dev seeds, not part of the success rule.",
+ "seeds": "dev_seeds",
+ "games": 200,
+ "cem": {
+  "mean_score": 983346.0,
+  "mean_lines": 355.86
+ },
+ "cem_extra_ply": {
+  "mean_score": 1056685.1,
+  "mean_lines": 368.295
+ },
+ "paired_extra_minus_cem": {
+  "score": {
+   "mean": 73339.1,
+   "ci95_low": 31005.9,
+   "ci95_high": 116135.0,
+   "resamples": 10000,
+   "rng_seed": 12
+  },
+  "lines": {
+   "mean": 12.435,
+   "ci95_low": -0.245,
+   "ci95_high": 25.325,
+   "resamples": 10000,
+   "rng_seed": 12
+  },
+  "wins": {
+   "higher": 123,
+   "lower": 77,
+   "equal": 0
+  }
+ },
+ "wall_seconds": 15.4
+}

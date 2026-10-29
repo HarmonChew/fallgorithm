@@ -1,0 +1,370 @@
+{
+ "note": "Learned-value trials (native/value.hpp) on self-play seeds only; not part of the success rule.",
+ "runs": [
+  {
+   "explore": 0.0,
+   "keep_rounds": 99,
+   "explore_start_max": 0,
+   "selfplay_games": 600,
+   "test_games": 300,
+   "rounds": [
+    {
+     "round": 0,
+     "selfplay_player": {
+      "mean_score": 996967.0333333333,
+      "mean_lines": 359.15833333333336
+     },
+     "fit": {
+      "boards": 555246.0,
+      "mean_target": 516138.4613666735,
+      "r2": 0.7911493119595499
+     },
+     "value_agent": {
+      "mean_score": 7.6,
+      "mean_lines": 0.01
+     }
+    },
+    {
+     "round": 1,
+     "selfplay_player": {
+      "mean_score": 95.0,
+      "mean_lines": 0.03666666666666667
+     },
+     "fit": {
+      "boards": 577057.0,
+      "mean_target": 496633.0589872404,
+      "r2": 0.7584858017330598
+     },
+     "value_agent": {
+      "mean_score": 148.2,
+      "mean_lines": 0.19
+     }
+    },
+    {
+     "round": 2,
+     "selfplay_player": {
+      "mean_score": 151.36666666666667,
+      "mean_lines": 0.195
+     },
+     "fit": {
+      "boards": 595014.0,
+      "mean_target": 481648.8320274817,
+      "r2": 0.71722971751157
+     },
+     "value_agent": {
+      "mean_score": 6561.333333333333,
+      "mean_lines": 7.593333333333334
+     }
+    },
+    {
+     "round": 3,
+     "selfplay_player": {
+      "mean_score": 6181.966666666666,
+      "mean_lines": 7.1866666666666665
+     },
+     "fit": {
+      "boards": 631621.0,
+      "mean_target": 453947.29703413916,
+      "r2": 0.5973029898624906
+     },
+     "value_agent": {
+      "mean_score": 6158.533333333334,
+      "mean_lines": 4.89
+     }
+    }
+   ]
+  },
+  {
+   "explore": 0.05,
+   "keep_rounds": 2,
+   "explore_start_max": 0,
+   "selfplay_games": 600,
+   "test_games": 300,
+   "rounds": [
+    {
+     "round": 0,
+     "selfplay_player": {
+      "mean_score": 388511.23333333334,
+      "mean_lines": 219.36666666666667
+     },
+     "fit": {
+      "boards": 351526.0,
+      "mean_target": 230682.3350193158,
+      "r2": 0.36085765467803144
+     },
+     "value_agent": {
+      "mean_score": 617910.7333333333,
+      "mean_lines": 185.14666666666668
+     }
+    },
+    {
+     "round": 1,
+     "selfplay_player": {
+      "mean_score": 158230.16666666666,
+      "mean_lines": 77.81
+     },
+     "fit": {
+      "boards": 491623.0,
+      "mean_target": 217331.2456902952,
+      "r2": 0.2575730289283127
+     },
+     "value_agent": {
+      "mean_score": 6729.133333333333,
+      "mean_lines": 5.77
+     }
+    },
+    {
+     "round": 2,
+     "selfplay_player": {
+      "mean_score": 3421.266666666667,
+      "mean_lines": 3.6983333333333333
+     },
+     "fit": {
+      "boards": 167710.0,
+      "mean_target": 154066.31280186036,
+      "r2": 0.18757744496626916
+     },
+     "value_agent": {
+      "mean_score": 37850.26666666667,
+      "mean_lines": 42.77333333333333
+     }
+    },
+    {
+     "round": 3,
+     "selfplay_player": {
+      "mean_score": 15027.1,
+      "mean_lines": 16.78
+     },
+     "fit": {
+      "boards": 76251.0,
+      "mean_target": 8351.747255773695,
+      "r2": 0.2689225087930639
+     },
+     "value_agent": {
+      "mean_score": 75210.86666666667,
+      "mean_lines": 70.79
+     }
+    }
+   ]
+  },
+  {
+   "explore": 0.05,
+   "keep_rounds": 99,
+   "explore_start_max": 0,
+   "selfplay_games": 600,
+   "test_games": 300,
+   "rounds": [
+    {
+     "round": 0,
+     "selfplay_player": {
+      "mean_score": 388511.23333333334,
+      "mean_lines": 219.36666666666667
+     },
+     "fit": {
+      "boards": 351526.0,
+      "mean_target": 230682.3350193158,
+      "r2": 0.36085765467803144
+     },
+     "value_agent": {
+      "mean_score": 617910.7333333333,
+      "mean_lines": 185.14666666666668
+     }
+    },
+    {
+     "round": 1,
+     "selfplay_player": {
+      "mean_score": 158230.16666666666,
+      "mean_lines": 77.81
+     },
+     "fit": {
+      "boards": 491623.0,
+      "mean_target": 217331.2456902952,
+      "r2": 0.2575730289283127
+     },
+     "value_agent": {
+      "mean_score": 6729.133333333333,
+      "mean_lines": 5.77
+     }
+    },
+    {
+     "round": 2,
+     "selfplay_player": {
+      "mean_score": 3421.266666666667,
+      "mean_lines": 3.6983333333333333
+     },
+     "fit": {
+      "boards": 519236.0,
+      "mean_target": 205935.83615157654,
+      "r2": 0.2527564791053658
+     },
+     "value_agent": {
+      "mean_score": 105833.13333333333,
+      "mean_lines": 69.16333333333333
+     }
+    },
+    {
+     "round": 3,
+     "selfplay_player": {
+      "mean_score": 29186.033333333333,
+      "mean_lines": 24.81833333333333
+     },
+     "fit": {
+      "boards": 581333.0,
+      "mean_target": 186651.96732337575,
+      "r2": 0.1996129805770387
+     },
+     "value_agent": {
+      "mean_score": 451935.5333333333,
+      "mean_lines": 213.41
+     }
+    }
+   ]
+  },
+  {
+   "explore": 0.02,
+   "keep_rounds": 99,
+   "explore_start_max": 0,
+   "selfplay_games": 600,
+   "test_games": 300,
+   "rounds": [
+    {
+     "round": 0,
+     "selfplay_player": {
+      "mean_score": 710386.5666666667,
+      "mean_lines": 303.8333333333333
+     },
+     "fit": {
+      "boards": 476226.0,
+      "mean_target": 386360.41715488024,
+      "r2": 0.6214922709126619
+     },
+     "value_agent": {
+      "mean_score": 786.6,
+      "mean_lines": 0.6666666666666666
+     }
+    },
+    {
+     "round": 1,
+     "selfplay_player": {
+      "mean_score": 606.1,
+      "mean_lines": 0.585
+     },
+     "fit": {
+      "boards": 498295.0,
+      "mean_target": 369270.60123019497,
+      "r2": 0.614389102988594
+     },
+     "value_agent": {
+      "mean_score": 1465.5333333333333,
+      "mean_lines": 1.6633333333333333
+     }
+    },
+    {
+     "round": 2,
+     "selfplay_player": {
+      "mean_score": 1791.0666666666666,
+      "mean_lines": 1.855
+     },
+     "fit": {
+      "boards": 523954.0,
+      "mean_target": 351252.50846448354,
+      "r2": 0.5149073356088285
+     },
+     "value_agent": {
+      "mean_score": 2029.2,
+      "mean_lines": 2.5
+     }
+    },
+    {
+     "round": 3,
+     "selfplay_player": {
+      "mean_score": 1770.8,
+      "mean_lines": 2.12
+     },
+     "fit": {
+      "boards": 551338.0,
+      "mean_target": 333855.85321526905,
+      "r2": 0.45513802143425075
+     },
+     "value_agent": {
+      "mean_score": 46933.8,
+      "mean_lines": 15.8
+     }
+    }
+   ]
+  },
+  {
+   "explore": 0.01,
+   "keep_rounds": 99,
+   "explore_start_max": 40,
+   "selfplay_games": 600,
+   "test_games": 300,
+   "rounds": [
+    {
+     "round": 0,
+     "selfplay_player": {
+      "mean_score": 294443.6,
+      "mean_lines": 126.51833333333333
+     },
+     "fit": {
+      "boards": 206331.0,
+      "mean_target": 415998.71022774087,
+      "r2": 0.5663839904939544
+     },
+     "value_agent": {
+      "mean_score": 2153.3333333333335,
+      "mean_lines": 1.8466666666666667
+     }
+    },
+    {
+     "round": 1,
+     "selfplay_player": {
+      "mean_score": 2233.633333333333,
+      "mean_lines": 1.93
+     },
+     "fit": {
+      "boards": 227244.0,
+      "mean_target": 378287.2784319938,
+      "r2": 0.4588511067629001
+     },
+     "value_agent": {
+      "mean_score": 2766.4,
+      "mean_lines": 3.26
+     }
+    },
+    {
+     "round": 2,
+     "selfplay_player": {
+      "mean_score": 832.8333333333334,
+      "mean_lines": 1.0216666666666667
+     },
+     "fit": {
+      "boards": 246560.0,
+      "mean_target": 348713.99010382866,
+      "r2": 0.4044520227313395
+     },
+     "value_agent": {
+      "mean_score": 142222.53333333333,
+      "mean_lines": 61.083333333333336
+     }
+    },
+    {
+     "round": 3,
+     "selfplay_player": {
+      "mean_score": 17389.2,
+      "mean_lines": 8.606666666666667
+     },
+     "fit": {
+      "boards": 277352.0,
+      "mean_target": 313939.46472352825,
+      "r2": 0.3452744049384331
+     },
+     "value_agent": {
+      "mean_score": 275606.26666666666,
+      "mean_lines": 207.77666666666667
+     }
+    }
+   ]
+  }
+ ]
+}
