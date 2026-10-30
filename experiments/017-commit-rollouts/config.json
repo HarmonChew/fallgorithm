@@ -23,7 +23,7 @@
   "29+_b4_n16_d10": {"commit_rollout_from_level": 29, "commit_rollout_to_level": 99, "commit_rollout_beam": 4, "commit_rollout_count": 16, "commit_rollout_depth": 10},
   "29+_b6_n32_d5": {"commit_rollout_from_level": 29, "commit_rollout_to_level": 99, "commit_rollout_beam": 6, "commit_rollout_count": 32, "commit_rollout_depth": 5}
  },
- "commit_rollout": null,
+ "commit_rollout": {"commit_rollout_from_level": 29, "commit_rollout_to_level": 99, "commit_rollout_beam": 4, "commit_rollout_count": 16, "commit_rollout_depth": 10},
  "identity_check_games": 30,
  "dev_seeds": "experiments/013-deeper-search/seeds.json dev_seeds (the first depth_check_games)",
  "heldout": {

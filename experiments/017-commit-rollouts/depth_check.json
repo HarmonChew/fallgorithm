@@ -1,0 +1,428 @@
+{
+ "question": "Commit-rollout settings on 016's agent, on the dev seeds",
+ "seeds": "Experiment 013's first 100 dev seeds",
+ "games": 100,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "37fd6603b3e23b1b7fd1f3505953370e05e78602",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "numbers": {
+  "build_tetrises": 29.788698986143274,
+  "build_premature_clear": -1.073946142126443,
+  "build_holes": -15.276334720862385,
+  "build_aggregate_height": -0.1209122041701578,
+  "build_bumpiness": -0.9561828972815446,
+  "build_max_height": -0.5243284186911991,
+  "build_reserve": 5.018997068935409,
+  "build_overflow": 1.2869445815766996,
+  "spend_lines_cleared": 2.0537673708249677,
+  "spend_holes": -2.1866333657527663,
+  "spend_aggregate_height": 0.16624097555547737,
+  "spend_bumpiness": -0.025496684369312406,
+  "spend_max_height": 1.0441841982692475,
+  "spend_row_transitions": -1.114182114571442,
+  "spend_column_transitions": -2.5519444027682487,
+  "spend_edge_depth": -1.5248381291952173,
+  "height_budget": 10,
+  "survival_budget": 3,
+  "survival_level": 38,
+  "drought_bound": 18,
+  "clear_points": 37.74268445034382,
+  "killscreen_budget": 1,
+  "commit_ply_level": 29,
+  "commit_beam": 2,
+  "rollout_from_level": 18,
+  "rollout_to_level": 28,
+  "rollout_beam": 4,
+  "rollout_count": 32,
+  "rollout_depth": 5,
+  "rollout_death": 1000
+ },
+ "variants": {
+  "29+_b4_n32_d5": {
+   "commit_rollout_from_level": 29,
+   "commit_rollout_to_level": 99,
+   "commit_rollout_beam": 4,
+   "commit_rollout_count": 32,
+   "commit_rollout_depth": 5
+  },
+  "29-38_b4_n32_d5": {
+   "commit_rollout_from_level": 29,
+   "commit_rollout_to_level": 38,
+   "commit_rollout_beam": 4,
+   "commit_rollout_count": 32,
+   "commit_rollout_depth": 5
+  },
+  "29+_b3_n16_d5": {
+   "commit_rollout_from_level": 29,
+   "commit_rollout_to_level": 99,
+   "commit_rollout_beam": 3,
+   "commit_rollout_count": 16,
+   "commit_rollout_depth": 5
+  },
+  "29+_b4_n16_d10": {
+   "commit_rollout_from_level": 29,
+   "commit_rollout_to_level": 99,
+   "commit_rollout_beam": 4,
+   "commit_rollout_count": 16,
+   "commit_rollout_depth": 10
+  },
+  "29+_b6_n32_d5": {
+   "commit_rollout_from_level": 29,
+   "commit_rollout_to_level": 99,
+   "commit_rollout_beam": 6,
+   "commit_rollout_count": 32,
+   "commit_rollout_depth": 5
+  }
+ },
+ "runs": {
+  "29+_b4_n32_d5": {
+   "mean_score": 1783224.6,
+   "mean_lines": 389.38,
+   "line_cap_share": 0.42,
+   "score_by_band": {
+    "18": 511899,
+    "19-28": 480111,
+    "29-38": 543320,
+    "39+": 247894
+   },
+   "seconds_per_game": 415.43
+  },
+  "29-38_b4_n32_d5": {
+   "mean_score": 1698236.0,
+   "mean_lines": 386.73,
+   "line_cap_share": 0.44,
+   "score_by_band": {
+    "18": 511899,
+    "19-28": 480111,
+    "29-38": 543320,
+    "39+": 162906
+   },
+   "seconds_per_game": 347.97
+  },
+  "29+_b3_n16_d5": {
+   "mean_score": 1710818.6,
+   "mean_lines": 377.49,
+   "line_cap_share": 0.28,
+   "score_by_band": {
+    "18": 511899,
+    "19-28": 480111,
+    "29-38": 524509,
+    "39+": 194300
+   },
+   "seconds_per_game": 323.33
+  },
+  "29+_b4_n16_d10": {
+   "mean_score": 1843773.0,
+   "mean_lines": 403.16,
+   "line_cap_share": 0.55,
+   "score_by_band": {
+    "18": 511899,
+    "19-28": 480111,
+    "29-38": 547593,
+    "39+": 304170
+   },
+   "seconds_per_game": 436.13
+  },
+  "29+_b6_n32_d5": {
+   "mean_score": 1745206.2,
+   "mean_lines": 382.44,
+   "line_cap_share": 0.36,
+   "score_by_band": {
+    "18": 511899,
+    "19-28": 480111,
+    "29-38": 543217,
+    "39+": 209980
+   },
+   "seconds_per_game": 507.56
+  },
+  "rollout": {
+   "mean_score": 1549080.2,
+   "mean_lines": 374.41,
+   "line_cap_share": 0.39,
+   "score_by_band": {
+    "18": 511899,
+    "19-28": 480111,
+    "29-38": 421582,
+    "39+": 135488
+   },
+   "seconds_per_game": 252.99
+  }
+ },
+ "baseline_matches_016": true,
+ "paired": {
+  "29+_b4_n32_d5 - rollout": {
+   "total": {
+    "score": {
+     "mean": 234144.4,
+     "ci95_low": 178972.6,
+     "ci95_high": 291505.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 14.97,
+     "ci95_low": 2.21,
+     "ci95_high": 28.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 77,
+     "lower": 21,
+     "equal": 2
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 121738.0,
+     "ci95_low": 91091.4,
+     "ci95_high": 153676.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 112406.4,
+     "ci95_low": 77468.8,
+     "ci95_high": 148140.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  },
+  "29-38_b4_n32_d5 - rollout": {
+   "total": {
+    "score": {
+     "mean": 149155.8,
+     "ci95_low": 99725.6,
+     "ci95_high": 201050.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 12.32,
+     "ci95_low": -0.7,
+     "ci95_high": 25.93,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 66,
+     "lower": 32,
+     "equal": 2
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 121738.0,
+     "ci95_low": 91091.4,
+     "ci95_high": 153676.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 27417.8,
+     "ci95_low": -746.2,
+     "ci95_high": 56433.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  },
+  "29+_b3_n16_d5 - rollout": {
+   "total": {
+    "score": {
+     "mean": 161738.4,
+     "ci95_low": 100770.4,
+     "ci95_high": 221907.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 3.08,
+     "ci95_low": -11.08,
+     "ci95_high": 17.74,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 73,
+     "lower": 25,
+     "equal": 2
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 102926.8,
+     "ci95_low": 64086.2,
+     "ci95_high": 141927.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 58811.6,
+     "ci95_low": 23902.8,
+     "ci95_high": 94134.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  },
+  "29+_b4_n16_d10 - rollout": {
+   "total": {
+    "score": {
+     "mean": 294692.8,
+     "ci95_low": 238997.8,
+     "ci95_high": 354308.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 28.75,
+     "ci95_low": 16.14,
+     "ci95_high": 42.06,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 87,
+     "lower": 11,
+     "equal": 2
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 126010.8,
+     "ci95_low": 92184.4,
+     "ci95_high": 160783.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 168682.0,
+     "ci95_low": 133090.6,
+     "ci95_high": 205554.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  },
+  "29+_b6_n32_d5 - rollout": {
+   "total": {
+    "score": {
+     "mean": 196126.0,
+     "ci95_low": 141389.0,
+     "ci95_high": 253486.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 8.03,
+     "ci95_low": -5.54,
+     "ci95_high": 22.01,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 72,
+     "lower": 26,
+     "equal": 2
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 121634.4,
+     "ci95_low": 92763.4,
+     "ci95_high": 151798.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 74491.6,
+     "ci95_low": 37651.6,
+     "ci95_high": 112017.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  }
+ }
+}
