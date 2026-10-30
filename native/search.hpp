@@ -9,6 +9,7 @@
 //
 // Experiment 015 (off by default): from Params::commit_ply_level on, the commit search
 // (preview not known yet) adds 013's extra ply to its Params::commit_beam best options.
+// Experiment 017 reads the commit search's ranking (commit_candidates).
 #pragma once
 
 #include <algorithm>
@@ -107,9 +108,7 @@ public:
                     best = &option;
                     best_total = total;
                 }
-                if (commit_ply) {
-                    ranked_.push_back({total, own, order});
-                }
+                ranked_.push_back({total, own, order});
             }
             if (commit_ply) {
                 // Experiment 015: rank by the one-ply total (ties keep the option order),
@@ -127,13 +126,19 @@ public:
                         ranked_[index].own + deeper_average(option.settled, position.drought,
                                                             position.piece,
                                                             position.lines + option.cleared);
+                    ranked_[index].total = total;
                     if (!have_total || total > deep_best) {
                         best = &option;
                         deep_best = total;
                         have_total = true;
                     }
                 }
+                // Experiment 017: the beam in the extra ply's order (ties keep the
+                // one-ply order, so the first is the option chosen above).
+                std::stable_sort(ranked_.begin(), ranked_.begin() + beam,
+                                 [](const Ranked& a, const Ranked& b) { return a.total > b.total; });
             }
+            ranked_sorted_ = commit_ply;
         } else {
             const int preview_drought = next_drought(position.drought, position.next_piece);
             paths_.clear();
@@ -204,6 +209,24 @@ public:
         for (int index = 0; index < size; ++index) {
             const Option& option = current_[paths_[index].order];
             out.push_back({paths_[index].order, option.cleared, option.settled});
+        }
+    }
+
+    // Experiment 017: the same after a commit search (preview not known) that found a
+    // placement: the ``count`` best options in the order that search ranked them, by the
+    // one-ply total, with Experiment 015's commit beam (when it ran) first, in the extra
+    // ply's order. The first is the option the commit search chose.
+    void commit_candidates(int count, std::vector<Candidate>& out) {
+        if (!ranked_sorted_) {  // without the commit ply, sorted only when asked for
+            std::stable_sort(ranked_.begin(), ranked_.end(),
+                             [](const Ranked& a, const Ranked& b) { return a.total > b.total; });
+            ranked_sorted_ = true;
+        }
+        out.clear();
+        const int size = std::min(count, static_cast<int>(ranked_.size()));
+        for (int index = 0; index < size; ++index) {
+            const Option& option = current_[ranked_[index].order];
+            out.push_back({ranked_[index].order, option.cleared, option.settled});
         }
     }
 
@@ -342,6 +365,7 @@ private:
     std::vector<Option> current_;
     std::vector<Path> paths_;
     std::vector<Ranked> ranked_;
+    bool ranked_sorted_ = false;
 };
 
 }  // namespace fallgorithm

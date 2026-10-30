@@ -36,6 +36,12 @@ struct Params {
     // ``rollout_death`` (rollout.hpp).
     int rollout_from_level, rollout_to_level, rollout_beam, rollout_count, rollout_depth,
         rollout_death;
+    // Experiment 017 (search settings, not tuned; the defaults -1 and 0 leave the agent
+    // unchanged): the same re-ranking at the commit decision (preview not known yet),
+    // from ``commit_rollout_from_level`` to ``commit_rollout_to_level``; a rollout that
+    // tops out loses ``rollout_death`` here too (rollout.hpp).
+    int commit_rollout_from_level, commit_rollout_to_level, commit_rollout_beam,
+        commit_rollout_count, commit_rollout_depth;
 };
 
 // Experiment 014: the level where the double killscreen starts, and the NES points of

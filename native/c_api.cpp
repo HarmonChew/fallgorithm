@@ -25,7 +25,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 10;
+constexpr int abi_version = 11;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -294,8 +294,8 @@ FN_API int fn_play_game(const Params* params, const char* ruleset, const char* m
 // by ``agent``: 0 reach_plan with ``params``, 1 the same with the extra ply
 // (search.hpp's depth check), 2 the learned value with ``weights`` (value.hpp's 114,
 // and ``line_cap`` as the model's cap), 3 the extra ply with the NES odds (Experiment
-// 014), 4 that agent with Experiment 016's rollout re-ranking (rollout.hpp; no
-// exploration, no ``gram``). When ``gram`` is given, the game's boards
+// 014), 4 that agent with Experiment 016's rollout re-ranking (rollout.hpp, and 017's at
+// the commit decision; no exploration, no ``gram``). When ``gram`` is given, the game's boards
 // are added to value.hpp's least-squares sums (FitSums, add_game; only the line
 // cap matters there): ``gram`` (114 x 114), ``target`` (114) and ``totals`` (count, sum,
 // sum of squares of the targets). ``explore``, ``explore_start`` and ``explore_seed``
