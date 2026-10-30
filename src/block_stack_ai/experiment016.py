@@ -217,6 +217,13 @@ def play_native(job: tuple[str, int, dict[str, Any]]) -> dict[str, Any]:
     return episode
 
 
+def _play(job: tuple[int, dict[str, Any], int, dict[str, Any]]) -> dict[str, Any]:
+    """The launcher's new game: the rollout agent in format ``fmt``."""
+    _, fmt, seed, config = job
+    return play_native(("rollout", seed, config | {"fast_deep_params": fast_deep_params(),
+                                                   "formats": [fmt]}))
+
+
 def evaluate(jobs: int) -> Path:
     if not PREDECLARED.exists() or not e13._committed(PREDECLARED) or \
             not e13._committed(CONFIG) or not DEPTH_CHECK.exists():

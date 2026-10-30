@@ -1,7 +1,7 @@
 # Experiment 016 - plan: rollout re-ranking at levels 18-28
 
-Status: plan and protocol written 2026-10-30, after the dev-seed checks and before any
-held-out game. `predeclared.md` is not edited afterwards.
+Status: done 2026-10-30; see `notes.md` for the result. Plan and protocol were written
+after the dev-seed checks and before any held-out game. `predeclared.md` is not edited afterwards.
 
 ## Why
 

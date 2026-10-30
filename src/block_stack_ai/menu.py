@@ -89,7 +89,7 @@ def _frame_limit(default: int) -> int:
               "to keep the experiment's limit.")
 
 
-# Experiments 006 and 008-015 have their own harnesses, so they get their own
+# Experiments 006 and 008-016 have their own harnesses, so they get their own
 # prompts and the play-game/watch-record/evaluate subcommands.
 HARNESS_ACTIONS = ["Watch a new game", "Watch a recorded game", "Run full evaluation"]
 TAP_SPEEDS = ("30", "20", "15", "12")
@@ -149,7 +149,7 @@ def _record_arg(path: Path) -> str:
 
 
 def _harness_selection(name: str, config_path: Path) -> tuple[list[str], list[str]]:
-    """Prompt for a 006 or 008-015 action; return CLI args and summary lines."""
+    """Prompt for a 006 or 008-016 action; return CLI args and summary lines."""
     number = name.partition("-")[0]
     config = json.loads(config_path.read_text(encoding="utf-8"))
     action = _choose("Action", HARNESS_ACTIONS)
