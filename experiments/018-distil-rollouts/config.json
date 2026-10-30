@@ -1,0 +1,23 @@
+{
+ "game": {
+  "ruleset": "classic_ntsc_double_killscreen",
+  "mode": "endless",
+  "start_level": 18,
+  "height": 0
+ },
+ "line_cap": 430,
+ "frame_cap": 150000,
+ "formats": [
+  {
+   "tap_hz": 30,
+   "reaction_ms": 300
+  }
+ ],
+ "teacher": "017's agent (reach_plan_016 with 015's numbers, 016's rollouts and 017's commit rollouts)",
+ "student": "reach_plan_018: the same agent with rollout.hpp's fitted re-rank score in place of the rollouts, at the same decisions and over the same candidates",
+ "distil_games": 200,
+ "fit_games": 160,
+ "ridge": 1e-06,
+ "dev_check_games": 100,
+ "dev_seeds": "experiments/013-deeper-search/seeds.json dev_seeds (the first dev_check_games)"
+}

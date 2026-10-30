@@ -21,22 +21,84 @@
 // count and depth: the commit search's best options (Searcher::commit_candidates), and
 // rollouts whose first piece, the unknown preview, is drawn with the NES odds after the
 // current piece. Off by the same rule, the commit decision is the Searcher's alone.
+//
+// Experiment 018: the same decisions can instead be re-ranked by a fitted linear score
+// (RerankModel, set_rerank): no rollouts are played, and each candidate scores
+// w[model] . rerank_features(...), the first of equal scores winning. And with
+// set_dump, every re-ranked decision's candidates are written out as DistilRows (their
+// features and the rollouts' mean return), the data the score is fitted to.
 #pragma once
 
+#include <array>
+#include <cmath>
 #include <cstdint>
 #include <vector>
 
 #include "board.hpp"
 #include "eval.hpp"
 #include "search.hpp"
+#include "value.hpp"
 
 namespace fallgorithm {
+
+// Experiment 018's re-rank features of one candidate, in this order: 1 if it is the
+// search's own choice (else 0), the search's total (Searcher::Candidate::total; its own
+// value instead when the total is not finite, which happens when the search finds some
+// piece with no placement), 1 if that total includes the extra ply, 1 if it was not
+// finite, the candidate's own value (value_of, as the rollouts' return starts), four
+// flags for 1, 2, 3 and 4 cleared rows, and value.hpp's 18 board features of the
+// settled board.
+constexpr int rerank_features_count = 9 + board_features;
+// One weight vector for the decisions with the preview known (Experiment 016's band),
+// one for the commit decision below the double killscreen and one from it on.
+constexpr int rerank_models = 3;
+constexpr int rerank_weights = rerank_models * rerank_features_count;
+
+struct RerankModel {
+    std::array<double, rerank_weights> weights{};
+};
+
+inline int rerank_model(bool preview, int level) {
+    return preview ? 0 : level < killscreen_level ? 1 : 2;
+}
+
+inline std::array<double, rerank_features_count> rerank_features(
+    bool searched, const Searcher::Candidate& candidate, double own) {
+    std::array<double, rerank_features_count> x{};
+    const bool finite = std::isfinite(candidate.total);
+    x[0] = searched ? 1.0 : 0.0;
+    x[1] = finite ? candidate.total : own;
+    x[2] = candidate.deep ? 1.0 : 0.0;
+    x[3] = finite ? 0.0 : 1.0;
+    x[4] = own;
+    if (candidate.cleared > 0) {
+        x[4 + candidate.cleared] = 1.0;
+    }
+    const auto board = board_feature_values(candidate.settled);
+    for (int index = 0; index < board_features; ++index) {
+        x[9 + index] = board[index];
+    }
+    return x;
+}
+
+// One candidate of a re-ranked decision: the model it belongs to, the level, its place
+// in the search's order, the rollouts' mean return, and its features.
+struct DistilRow {
+    int model, level, rank;
+    double mean;
+    std::array<double, rerank_features_count> x;
+};
 
 class RolloutSearcher {
 public:
     RolloutSearcher() = default;
     RolloutSearcher(const Searcher& searcher, const Params& params)
         : searcher_(searcher), policy_(searcher), params_(params) {}
+
+    // Experiment 018: re-rank by ``model`` instead of rollouts (nullptr: rollouts).
+    void set_rerank(const RerankModel* model) { rerank_ = model; }
+    // Experiment 018: append every rollout-ranked decision's candidates to ``rows``.
+    void set_dump(std::vector<DistilRow>* rows) { dump_ = rows; }
 
     bool search(const Position& position, Choice& choice) {
         if (!searcher_.search(position, choice)) {
@@ -60,9 +122,37 @@ public:
         if (candidates_.size() < 2) {
             return true;
         }
-        draw_sequences(position, count, depth);
         const int phase =
             phase_of(params_, position.level, position.drought, position.columns);
+        const int model = rerank_model(preview, position.level);
+        if (rerank_) {
+            // The search's own choice wins unless another candidate scores higher (so
+            // all-zero weights play the Searcher's game); among others, the first.
+            int best = searcher_.chosen();
+            bool have_best = false;
+            double best_score = 0.0;
+            for (const Searcher::Candidate& candidate : candidates_) {
+                const double own = value_of(
+                    params_, phase, candidate.cleared, candidate.settled,
+                    level_for_lines(position.lines + candidate.cleared, position.start_level));
+                const bool searched = candidate.order == searcher_.chosen();
+                const auto x = rerank_features(searched, candidate, own);
+                double score = 0.0;
+                for (int k = 0; k < rerank_features_count; ++k) {
+                    score += rerank_->weights[model * rerank_features_count + k] * x[k];
+                }
+                if (!have_best || score > best_score || (score == best_score && searched)) {
+                    best = candidate.order;
+                    best_score = score;
+                    have_best = true;
+                }
+            }
+            if (best == searcher_.chosen()) {
+                return true;  // ``choice`` is already the search's
+            }
+            return searcher_.choose(best, choice);
+        }
+        draw_sequences(position, count, depth);
         int best = 0;
         double best_mean = 0.0;
         for (int index = 0; index < static_cast<int>(candidates_.size()); ++index) {
@@ -79,6 +169,11 @@ public:
                 total += first + value;
             }
             const double mean = total / static_cast<double>(sequences_.size());
+            if (dump_) {
+                dump_->push_back({model, position.level, index, mean,
+                                  rerank_features(candidate.order == searcher_.chosen(),
+                                                  candidate, first)});
+            }
             if (index == 0 || mean > best_mean) {
                 best = index;
                 best_mean = mean;
@@ -173,6 +268,8 @@ private:
 
     Searcher searcher_, policy_;
     Params params_{};
+    const RerankModel* rerank_ = nullptr;
+    std::vector<DistilRow>* dump_ = nullptr;
     Choice choice_;
     std::vector<Searcher::Candidate> candidates_;
     std::vector<std::vector<int>> sequences_;

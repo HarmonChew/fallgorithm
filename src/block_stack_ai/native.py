@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 11
+ABI_VERSION = 12
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -66,7 +66,13 @@ BOARD_FEATURES = 18
 BAND_WEIGHTS = 2 + 2 * BOARD_FEATURES
 VALUE_WEIGHTS = 3 * BAND_WEIGHTS
 AGENT_KINDS = ("reach_plan", "reach_plan_extra_ply", "value", "reach_plan_014",
-               "reach_plan_016")
+               "reach_plan_016", "reach_plan_018")
+# Experiment 018 (native/rollout.hpp): the re-ranker's 3 models of 9 + 18 features, and
+# fn_distil_game's rows (model, level, rank, the rollouts' mean, then the features).
+RERANK_FEATURES = 9 + BOARD_FEATURES
+RERANK_WEIGHTS = 3 * RERANK_FEATURES
+DISTIL_STRIDE = 4 + RERANK_FEATURES
+DISTIL_CAPACITY = 40_000 * DISTIL_STRIDE
 
 Columns = C.c_uint32 * WIDTH
 
@@ -215,6 +221,11 @@ def load() -> Any:
                                     C.POINTER(C.c_int64), C.POINTER(C.c_double),
                                     C.POINTER(C.c_double), C.POINTER(C.c_double)]
     lib.fn_play_game_ex.restype = C.c_int
+    lib.fn_distil_game.argtypes = [C.POINTER(Params), C.c_char_p, C.c_char_p, C.c_int, C.c_int,
+                                   C.c_int, C.c_int, C.c_int, C.c_int, C.c_int,
+                                   C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int64),
+                                   C.POINTER(C.c_double), C.c_int, C.POINTER(C.c_int)]
+    lib.fn_distil_game.restype = C.c_int
     lib.fn_board_features.argtypes = [Columns, C.POINTER(C.c_double)]
     lib.fn_board_features.restype = None
     lib.fn_board_value.argtypes = [C.POINTER(C.c_double), C.c_int, Columns, C.c_int, C.c_int]
@@ -403,16 +414,20 @@ def play_game_ex(agent: str, game: dict[str, Any], seed: int, *, line_cap: int, 
     unknown pieces weighed by the NES odds (Experiment 014); ``reach_plan_016`` is that agent
     with the rollout re-ranking of ``params``' rollout settings (Experiment 016, and 017's
     at the commit decision; no
-    exploration and no ``fit``); ``value`` uses the learned
-    ``weights``.
+    exploration and no ``fit``); ``reach_plan_018`` is that agent with the re-ranker's
+    ``weights`` (:data:`RERANK_WEIGHTS`) in place of the rollouts (Experiment 018);
+    ``value`` uses the learned ``weights``.
     With ``fit``, also returns the game's least-squares sums (``gram``, 114 x 114 row by row,
     ``target``, and ``totals``: count, sum and sum of squares of the targets). ``explore`` is
     the chance, per piece, of a random reachable placement, and ``explore_start`` the number
     of random placements a game starts with (self-play only).
     """
     kind = AGENT_KINDS.index(agent)
-    if (kind == 2) != (weights is not None) or (kind != 2) != (params is not None):
-        raise ValueError(f"{agent} takes {'weights' if kind == 2 else 'params'} only")
+    if (kind in (2, 5)) != (weights is not None) or (kind != 2) != (params is not None):
+        raise ValueError(f"{agent} takes {'weights' if kind == 2 else 'params'}"
+                         f"{' and weights' if kind == 5 else ' only'}")
+    if kind == 5 and len(weights) != RERANK_WEIGHTS:
+        raise ValueError(f"the re-ranker takes {RERANK_WEIGHTS} weights, not {len(weights)}")
     inputs = (C.c_uint8 * max(1, frame_cap))()
     out = (C.c_int64 * 11)()
     gram = (C.c_double * (VALUE_WEIGHTS * VALUE_WEIGHTS))() if fit else None
@@ -420,6 +435,7 @@ def play_game_ex(agent: str, game: dict[str, Any], seed: int, *, line_cap: int, 
     totals = (C.c_double * 3)() if fit else None
     status = load().fn_play_game_ex(
         kind, C.byref(params) if params is not None else None,
+        (C.c_double * RERANK_WEIGHTS)(*weights) if kind == 5 else
         _weights(weights) if weights is not None else None, game["ruleset"].encode(),
         game["mode"].encode(), game["start_level"], game["height"], seed, line_cap, frame_cap,
         limits.tap_interval, limits.reaction_frames, explore, explore_start, explore_seed,
@@ -436,3 +452,28 @@ def play_game_ex(agent: str, game: dict[str, Any], seed: int, *, line_cap: int, 
     if fit:
         played |= {"gram": list(gram), "target": list(target), "totals": list(totals)}
     return played
+
+
+def distil_game(game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: int,
+                limits: Limits, params: Params) -> tuple[dict[str, Any], list[tuple[float, ...]]]:
+    """One ``reach_plan_016`` game (:func:`play_game_ex`'s result) and every
+    rollout-ranked decision's candidates (Experiment 018's data), each row as
+    :data:`DISTIL_STRIDE` numbers: model, level, rank, the rollouts' mean, the features."""
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    rows = (C.c_double * DISTIL_CAPACITY)()
+    count = C.c_int(0)
+    status = load().fn_distil_game(
+        C.byref(params), game["ruleset"].encode(), game["mode"].encode(), game["start_level"],
+        game["height"], seed, line_cap, frame_cap, limits.tap_interval, limits.reaction_frames,
+        inputs, max(1, frame_cap), out, rows, DISTIL_CAPACITY, C.byref(count))
+    if status:
+        raise NativeError(f"fn_distil_game failed with {status}")
+    played_count, frames, reason, pieces, adjusts, switches, score, lines, level, start, end = out
+    played = {"inputs": bytes(inputs[:played_count]), "frames": frames,
+              "stopping_reason": STOP_REASONS[reason], "pieces": pieces, "adjusts": adjusts,
+              "switches": switches, "score": score, "lines": lines, "level": level,
+              "initial_state_hash": f"{start & (1 << 64) - 1:016x}",
+              "final_state_hash": f"{end & (1 << 64) - 1:016x}"}
+    found = [tuple(rows[i * DISTIL_STRIDE:(i + 1) * DISTIL_STRIDE]) for i in range(count.value)]
+    return played, found

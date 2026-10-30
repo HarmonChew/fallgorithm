@@ -139,6 +139,9 @@ public:
                                  [](const Ranked& a, const Ranked& b) { return a.total > b.total; });
             }
             ranked_sorted_ = commit_ply;
+            deep_count_ = commit_ply ? std::min(params_.commit_beam,
+                                                static_cast<int>(ranked_.size()))
+                                     : 0;
         } else {
             const int preview_drought = next_drought(position.drought, position.next_piece);
             paths_.clear();
@@ -192,23 +195,32 @@ public:
         choice.orientation = best->placement.orientation;
         choice.x = best->placement.x;
         choice.y = best->placement.y;
+        chosen_ = static_cast<int>(best - current_.data());
         return root_.masks(best->placement, choice.masks);
     }
+
+    // Experiment 018: the option index the last search chose (when it found one).
+    int chosen() const { return chosen_; }
 
     // Experiment 016: after a search with the preview known that found a placement (only
     // then are ``paths_`` this search's), the ``count`` best options
     // in the order that search ranked them (the preview path's value, ties in the option
-    // order), each as (option index, cleared rows, settled board).
+    // order), each as (option index, cleared rows, settled board, and Experiment 018's
+    // search total: the preview path's value here, the commit search's ranking total
+    // after a commit search, and whether that total includes 015's extra ply).
     struct Candidate {
         int order, cleared;
         Columns settled;
+        double total;
+        bool deep;
     };
     void candidates(int count, std::vector<Candidate>& out) const {
         out.clear();
         const int size = std::min(count, static_cast<int>(paths_.size()));
         for (int index = 0; index < size; ++index) {
             const Option& option = current_[paths_[index].order];
-            out.push_back({paths_[index].order, option.cleared, option.settled});
+            out.push_back(
+                {paths_[index].order, option.cleared, option.settled, paths_[index].value, false});
         }
     }
 
@@ -226,7 +238,8 @@ public:
         const int size = std::min(count, static_cast<int>(ranked_.size()));
         for (int index = 0; index < size; ++index) {
             const Option& option = current_[ranked_[index].order];
-            out.push_back({ranked_[index].order, option.cleared, option.settled});
+            out.push_back({ranked_[index].order, option.cleared, option.settled,
+                           ranked_[index].total, index < deep_count_});
         }
     }
 
@@ -365,6 +378,7 @@ private:
     std::vector<Option> current_;
     std::vector<Path> paths_;
     std::vector<Ranked> ranked_;
+    int chosen_ = 0, deep_count_ = 0;
     bool ranked_sorted_ = false;
 };
 
