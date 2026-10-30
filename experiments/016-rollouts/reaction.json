@@ -1,0 +1,189 @@
+{
+ "question": "What does the preview delay cost 015's agent, band by band (dev seeds)?",
+ "seeds": "Experiment 013's first 200 dev seeds",
+ "games": 200,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "293f3ee767b533a2175e45f605e46fd6f7520871",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "numbers": {
+  "build_tetrises": 29.788698986143274,
+  "build_premature_clear": -1.073946142126443,
+  "build_holes": -15.276334720862385,
+  "build_aggregate_height": -0.1209122041701578,
+  "build_bumpiness": -0.9561828972815446,
+  "build_max_height": -0.5243284186911991,
+  "build_reserve": 5.018997068935409,
+  "build_overflow": 1.2869445815766996,
+  "spend_lines_cleared": 2.0537673708249677,
+  "spend_holes": -2.1866333657527663,
+  "spend_aggregate_height": 0.16624097555547737,
+  "spend_bumpiness": -0.025496684369312406,
+  "spend_max_height": 1.0441841982692475,
+  "spend_row_transitions": -1.114182114571442,
+  "spend_column_transitions": -2.5519444027682487,
+  "spend_edge_depth": -1.5248381291952173,
+  "height_budget": 10,
+  "survival_budget": 3,
+  "survival_level": 38,
+  "drought_bound": 18,
+  "clear_points": 37.74268445034382,
+  "killscreen_budget": 1,
+  "commit_ply_level": 29,
+  "commit_beam": 2
+ },
+ "runs": {
+  "300": {
+   "mean_score": 1364562.4,
+   "mean_lines": 370.95,
+   "line_cap_share": 0.325,
+   "score_by_band": {
+    "18": 429919,
+    "19-28": 406611,
+    "29-38": 403680,
+    "39+": 124353
+   },
+   "seconds_per_game": 1.38
+  },
+  "150": {
+   "mean_score": 1514824.8,
+   "mean_lines": 385.015,
+   "line_cap_share": 0.405,
+   "score_by_band": {
+    "18": 433547,
+    "19-28": 439002,
+    "29-38": 491810,
+    "39+": 150466
+   },
+   "seconds_per_game": 1.56
+  },
+  "0": {
+   "mean_score": 1626822.6,
+   "mean_lines": 414.435,
+   "line_cap_share": 0.825,
+   "score_by_band": {
+    "18": 430023,
+    "19-28": 438957,
+    "29-38": 550237,
+    "39+": 207607
+   },
+   "seconds_per_game": 0.69
+  }
+ },
+ "paired_vs_benchmark": {
+  "150": {
+   "total": {
+    "score": {
+     "mean": 150262.4,
+     "ci95_low": 104493.1,
+     "ci95_high": 197161.7,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 14.065,
+     "ci95_low": 3.11,
+     "ci95_high": 25.235,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 143,
+     "lower": 57,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 3628.0,
+     "ci95_low": -4534.8,
+     "ci95_high": 11730.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 32390.9,
+     "ci95_low": 16408.3,
+     "ci95_high": 48461.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 88130.0,
+     "ci95_low": 59093.4,
+     "ci95_high": 117298.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 26113.5,
+     "ci95_low": 5525.3,
+     "ci95_high": 47070.7,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  },
+  "0": {
+   "total": {
+    "score": {
+     "mean": 262260.2,
+     "ci95_low": 217392.1,
+     "ci95_high": 307737.1,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 43.485,
+     "ci95_low": 33.02,
+     "ci95_high": 53.945,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 159,
+     "lower": 41,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 103.6,
+     "ci95_low": -8081.6,
+     "ci95_high": 8153.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 32345.8,
+     "ci95_low": 15587.1,
+     "ci95_high": 48720.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 146556.7,
+     "ci95_low": 120218.6,
+     "ci95_high": 173343.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 83254.1,
+     "ci95_low": 64786.9,
+     "ci95_high": 101936.3,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  }
+ }
+}

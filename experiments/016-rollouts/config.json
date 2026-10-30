@@ -23,7 +23,7 @@
   "d5_n32_b4": {"rollout_from_level": 18, "rollout_to_level": 28, "rollout_beam": 4, "rollout_count": 32, "rollout_depth": 5, "rollout_death": 1000},
   "d3_n48_b4": {"rollout_from_level": 18, "rollout_to_level": 28, "rollout_beam": 4, "rollout_count": 48, "rollout_depth": 3, "rollout_death": 1000}
  },
- "rollout": null,
+ "rollout": {"rollout_from_level": 18, "rollout_to_level": 28, "rollout_beam": 4, "rollout_count": 32, "rollout_depth": 5, "rollout_death": 1000},
  "dev_seeds": "experiments/013-deeper-search/seeds.json dev_seeds (the first depth_check_games)",
  "heldout": {
   "seeds": "Experiment 012's 1,000 held-out seeds",
