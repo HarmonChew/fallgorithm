@@ -190,6 +190,34 @@ public:
         return root_.masks(best->placement, choice.masks);
     }
 
+    // Experiment 016: after a search with the preview known that found a placement (only
+    // then are ``paths_`` this search's), the ``count`` best options
+    // in the order that search ranked them (the preview path's value, ties in the option
+    // order), each as (option index, cleared rows, settled board).
+    struct Candidate {
+        int order, cleared;
+        Columns settled;
+    };
+    void candidates(int count, std::vector<Candidate>& out) const {
+        out.clear();
+        const int size = std::min(count, static_cast<int>(paths_.size()));
+        for (int index = 0; index < size; ++index) {
+            const Option& option = current_[paths_[index].order];
+            out.push_back({paths_[index].order, option.cleared, option.settled});
+        }
+    }
+
+    // Experiment 016: the last search's option ``order`` as its choice, with its masks.
+    bool choose(int order, Choice& choice) {
+        const Reach& placement = current_[order].placement;
+        choice = Choice{};
+        choice.found = true;
+        choice.orientation = placement.orientation;
+        choice.x = placement.x;
+        choice.y = placement.y;
+        return root_.masks(placement, choice.masks);
+    }
+
     // Experiment 013's exploration: after a search, the root placement ``pick`` picks
     // (modulo their count) in place of the searched one.
     bool random_choice(std::uint64_t pick, Choice& choice) {

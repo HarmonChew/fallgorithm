@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 9
+ABI_VERSION = 10
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -39,23 +39,30 @@ WEIGHT_NAMES = (
     "spend_edge_depth", "clear_points",
 )
 INTEGER_NAMES = ("height_budget", "survival_budget", "survival_level", "drought_bound",
-                 "killscreen_budget", "commit_ply_level", "commit_beam")
+                 "killscreen_budget", "commit_ply_level", "commit_beam", "rollout_from_level",
+                 "rollout_to_level", "rollout_beam", "rollout_count", "rollout_depth",
+                 "rollout_death")
 # Experiment 014's two numbers (C++ only, not in tunedplan): their defaults change
 # nothing, and a set ``killscreen_budget`` is rounded and clamped like the others.
 EXTRA_DEFAULTS = {"clear_points": 0.0, "killscreen_budget": -1}
 KILLSCREEN_BUDGET_RANGE = (0, 14)
 # Experiment 015's search settings (C++ only, not tuned): the commit search's extra ply
-# from ``commit_ply_level`` (-1: never) for its ``commit_beam`` best placements. They
-# appear in a resolved dict only when given, so earlier experiments' numbers resolve
-# as before.
-SEARCH_DEFAULTS = {"commit_ply_level": -1, "commit_beam": 0}
+# from ``commit_ply_level`` (-1: never) for its ``commit_beam`` best placements, and
+# Experiment 016's (native/rollout.hpp): rollout re-ranking from ``rollout_from_level`` to
+# ``rollout_to_level`` of the ``rollout_beam`` best placements, ``rollout_count`` rollouts of
+# ``rollout_depth`` pieces, and the loss of a rollout that tops out. They appear in a
+# resolved dict only when given, so earlier experiments' numbers resolve as before.
+SEARCH_DEFAULTS = {"commit_ply_level": -1, "commit_beam": 0, "rollout_from_level": -1,
+                   "rollout_to_level": -1, "rollout_beam": 0, "rollout_count": 0,
+                   "rollout_depth": 0, "rollout_death": 0}
 PHASES = (wellplan.BUILD, wellplan.SPEND)
 # Experiment 013 (native/value.hpp): 3 level bands of 2 + 2 * 18 weights; the agents
 # of fn_play_game_ex.
 BOARD_FEATURES = 18
 BAND_WEIGHTS = 2 + 2 * BOARD_FEATURES
 VALUE_WEIGHTS = 3 * BAND_WEIGHTS
-AGENT_KINDS = ("reach_plan", "reach_plan_extra_ply", "value", "reach_plan_014")
+AGENT_KINDS = ("reach_plan", "reach_plan_extra_ply", "value", "reach_plan_014",
+               "reach_plan_016")
 
 Columns = C.c_uint32 * WIDTH
 
@@ -71,7 +78,7 @@ class Params(C.Structure):
 
 def resolve(values: dict[str, float] | None = None) -> dict[str, Any]:
     """:func:`block_stack_ai.tunedplan.resolve`, plus Experiment 014's two numbers and,
-    when given, Experiment 015's search settings (whole numbers, -1 or more and 0 or more)."""
+    when given, Experiment 015's and 016's search settings (whole numbers, -1 or more and 0 or more)."""
     values = dict(values or {})
     search = {name: values.pop(name) for name in SEARCH_DEFAULTS if name in values}
     extras = {name: values.pop(name, default) for name, default in EXTRA_DEFAULTS.items()}
@@ -389,7 +396,9 @@ def play_game_ex(agent: str, game: dict[str, Any], seed: int, *, line_cap: int, 
 
     ``reach_plan`` plays exactly as :func:`play_game`; ``reach_plan_extra_ply`` looks one
     unknown piece further at the adjust search; ``reach_plan_014`` does too, with the
-    unknown pieces weighed by the NES odds (Experiment 014); ``value`` uses the learned
+    unknown pieces weighed by the NES odds (Experiment 014); ``reach_plan_016`` is that agent
+    with the rollout re-ranking of ``params``' rollout settings (Experiment 016, no
+    exploration and no ``fit``); ``value`` uses the learned
     ``weights``.
     With ``fit``, also returns the game's least-squares sums (``gram``, 114 x 114 row by row,
     ``target``, and ``totals``: count, sum and sum of squares of the targets). ``explore`` is

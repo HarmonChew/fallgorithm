@@ -1,0 +1,32 @@
+{
+ "game": {
+  "ruleset": "classic_ntsc_double_killscreen",
+  "mode": "endless",
+  "start_level": 18,
+  "height": 0
+ },
+ "line_cap": 430,
+ "frame_cap": 150000,
+ "agent": "reach_plan_016 (native): 015's agent (reach_plan_014 with the commit ply) with rollout re-ranking (rollout.hpp) at the decision with the preview known, from rollout_from_level to rollout_to_level",
+ "numbers": "experiments/015-fast-commit/final_params.json (resolved) with 015's commit ply, not re-tuned",
+ "formats": [
+  {
+   "tap_hz": 30,
+   "reaction_ms": 300
+  }
+ ],
+ "reaction_check_ms": [300, 150, 0],
+ "depth_check_games": 100,
+ "depth_check": {
+  "d5_n16_b3": {"rollout_from_level": 18, "rollout_to_level": 28, "rollout_beam": 3, "rollout_count": 16, "rollout_depth": 5, "rollout_death": 1000},
+  "d10_n16_b4": {"rollout_from_level": 18, "rollout_to_level": 28, "rollout_beam": 4, "rollout_count": 16, "rollout_depth": 10, "rollout_death": 1000},
+  "d5_n32_b4": {"rollout_from_level": 18, "rollout_to_level": 28, "rollout_beam": 4, "rollout_count": 32, "rollout_depth": 5, "rollout_death": 1000},
+  "d3_n48_b4": {"rollout_from_level": 18, "rollout_to_level": 28, "rollout_beam": 4, "rollout_count": 48, "rollout_depth": 3, "rollout_death": 1000}
+ },
+ "rollout": null,
+ "dev_seeds": "experiments/013-deeper-search/seeds.json dev_seeds (the first depth_check_games)",
+ "heldout": {
+  "seeds": "Experiment 012's 1,000 held-out seeds",
+  "baseline": "Experiment 015's agent (fast_deep): final numbers with the commit ply"
+ }
+}

@@ -12,6 +12,7 @@
 #include "reach.hpp"
 #include "search.hpp"
 #include "agent.hpp"
+#include "rollout.hpp"
 #include "value.hpp"
 
 #if defined(_WIN32)
@@ -24,7 +25,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 9;
+constexpr int abi_version = 10;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -293,7 +294,8 @@ FN_API int fn_play_game(const Params* params, const char* ruleset, const char* m
 // by ``agent``: 0 reach_plan with ``params``, 1 the same with the extra ply
 // (search.hpp's depth check), 2 the learned value with ``weights`` (value.hpp's 114,
 // and ``line_cap`` as the model's cap), 3 the extra ply with the NES odds (Experiment
-// 014). When ``gram`` is given, the game's boards
+// 014), 4 that agent with Experiment 016's rollout re-ranking (rollout.hpp; no
+// exploration, no ``gram``). When ``gram`` is given, the game's boards
 // are added to value.hpp's least-squares sums (FitSums, add_game; only the line
 // cap matters there): ``gram`` (114 x 114), ``target`` (114) and ``totals`` (count, sum,
 // sum of squares of the targets). ``explore``, ``explore_start`` and ``explore_seed``
@@ -307,8 +309,10 @@ FN_API int fn_play_game_ex(int agent_kind, const Params* params, const double* w
                            double* totals) {
     if (!ruleset || !mode || seed < 0 || seed > 0xffff || line_cap < 0 || frame_cap < 0 ||
         capacity < frame_cap || interval < 1 || reaction < 0 || agent_kind < 0 ||
-        agent_kind > 3 || (agent_kind != 2 && !params) || (agent_kind == 2 && !weights) ||
-        (gram && (!target || !totals)) || start_level < 0 || start_level >= 20 ||
+        agent_kind > 4 || (agent_kind != 2 && !params) || (agent_kind == 2 && !weights) ||
+        (gram && (!target || !totals)) ||
+        (agent_kind == 4 && (gram || explore != 0.0 || explore_start != 0)) || start_level < 0 ||
+        start_level >= 20 ||
         !(explore >= 0.0 && explore <= 1.0) || explore_start < 0) {
         return -1;
     }
@@ -328,7 +332,14 @@ FN_API int fn_play_game_ex(int agent_kind, const Params* params, const double* w
         std::vector<BoardSample>* keep = gram ? &samples : nullptr;
         std::uint64_t final_score = 0;
         int status = 0;
-        if (agent_kind == 2) {
+        if (agent_kind == 4) {
+            Searcher searcher(*params);
+            searcher.set_extra_ply(true);
+            searcher.set_nes_odds(true);
+            BasicAgent<RolloutSearcher> agent(RolloutSearcher(searcher, *params), interval,
+                                              reaction);
+            status = run_game(config, agent, line_cap, frame_cap, inputs, out, keep, final_score);
+        } else if (agent_kind == 2) {
             BasicAgent<ValueSearcher> agent(ValueSearcher(model), interval, reaction);
             agent.set_explore(explore, explore_start, explore_seed);
             status = run_game(config, agent, line_cap, frame_cap, inputs, out, keep, final_score);

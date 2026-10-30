@@ -29,6 +29,13 @@ struct Params {
     // unchanged): from level ``commit_ply_level`` on, the commit search looks one unknown
     // piece further for its ``commit_beam`` best placements (search.hpp).
     int commit_ply_level, commit_beam;
+    // Experiment 016 (search settings, not tuned; the defaults -1 and 0 leave the agent
+    // unchanged): from ``rollout_from_level`` to ``rollout_to_level``, the decision with
+    // the preview known re-ranks its ``rollout_beam`` best placements by ``rollout_count``
+    // rollouts of ``rollout_depth`` pieces each; a rollout that tops out loses
+    // ``rollout_death`` (rollout.hpp).
+    int rollout_from_level, rollout_to_level, rollout_beam, rollout_count, rollout_depth,
+        rollout_death;
 };
 
 // Experiment 014: the level where the double killscreen starts, and the NES points of
