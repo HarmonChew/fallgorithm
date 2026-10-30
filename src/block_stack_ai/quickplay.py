@@ -1,4 +1,4 @@
-"""One-game and full-evaluation helpers for Experiments 006 and 008-016.
+"""One-game and full-evaluation helpers for Experiments 006 and 008-017.
 
 Those experiments have their own harnesses and configs, so the stock runner
 cannot play them. This module plays one game with the harness's own single-game
@@ -13,15 +13,16 @@ import math
 from pathlib import Path
 import random
 
-from . import experiment006, experiment008, experiment009, experiment010, experiment011, experiment012, experiment013, experiment014, experiment015, experiment016, watchrecord
+from . import experiment006, experiment008, experiment009, experiment010, experiment011, experiment012, experiment013, experiment014, experiment015, experiment016, experiment017, watchrecord
 
 EXPERIMENTS = {"006": experiment006, "008": experiment008, "009": experiment009,
                "010": experiment010, "011": experiment011, "012": experiment012,
                "013": experiment013, "014": experiment014,
-               "015": experiment015, "016": experiment016}
+               "015": experiment015, "016": experiment016,
+               "017": experiment017}
 TRAINED = ("009", "010", "011", "012", "013", "014", "015")  # learned parameters (012-015 their own, the rest 009's)
 RECORD_AGENT = {"012": "cem", "013": "deep", "014": "points", "015": "fast_deep",
-                "016": "rollout"}  # records with baseline agents too; the menu shows the trained one
+                "016": "rollout", "017": "commit_rollout"}  # records with baseline agents too; the menu shows the trained one
 SURVIVAL = "survival_plan"
 TAP_HZ, REACTION_MS, JOBS = 30, 300, 30
 MAX_TAP_HZ = 30  # limits.py silently caps faster rates
@@ -32,7 +33,7 @@ def experiment_id(selection: str) -> str:
     number = selection.partition("-")[0]
     if number.isdecimal() and f"{int(number):03d}" in EXPERIMENTS:
         return f"{int(number):03d}"
-    raise ValueError(f"Experiment {selection!r} has no single-game command; choose 006, 008, 009, 010, 011, 012, 013, 014, 015 or 016.")
+    raise ValueError(f"Experiment {selection!r} has no single-game command; choose 006, 008, 009, 010, 011, 012, 013, 014, 015, 016 or 017.")
 
 
 def record_path(experiment: str) -> Path:
@@ -56,8 +57,8 @@ def play_game(experiment: str, *, seed: int | None = None, agent: str | None = N
               reaction_ms: float | None = None, export_only: bool = False) -> int:
     """Play one fresh game headless, then show it paused in the desktop window.
 
-    006 takes an agent; 008-016 take tap speed and reaction time (009, 010 and 011 play
-    Experiment 009's trained parameters, 012-015 their own, 016 015's). Options that do not apply are rejected, not ignored.
+    006 takes an agent; 008-017 take tap speed and reaction time (009, 010 and 011 play
+    Experiment 009's trained parameters, 012-015 their own, 016 and 017 015's). Options that do not apply are rejected, not ignored.
     """
     experiment = experiment_id(experiment)
     module = EXPERIMENTS[experiment]
@@ -70,7 +71,7 @@ def play_game(experiment: str, *, seed: int | None = None, agent: str | None = N
     game = config["game"]
     if experiment == "006":
         if tap_hz is not None or reaction_ms is not None:
-            raise ValueError("--tap-hz and --reaction-ms apply to Experiments 008-016 only.")
+            raise ValueError("--tap-hz and --reaction-ms apply to Experiments 008-017 only.")
         agent = agent or SURVIVAL
         if agent not in module.AGENTS:
             raise ValueError(f"Agent must be one of: {', '.join(module.AGENTS)}")
@@ -96,7 +97,7 @@ def play_game(experiment: str, *, seed: int | None = None, agent: str | None = N
                 raise ValueError(f"Experiment {experiment} has no trained parameters yet "
                                  "(final_params.json).")
             settings["params"] = module._load(module.FINAL_PARAMS)["resolved"]
-        wait = "a few minutes" if experiment == "016" else "a second or two" \
+        wait = "a few minutes" if experiment in ("016", "017") else "a second or two" \
             if experiment in ("011", "012", "013", "014", "015") else "a minute or two"
         print(f"Playing {experiment} at {tap_hz:g} Hz, {reaction_ms:g} ms reaction, seed {seed}, "
               f"up to {settings['line_cap']} lines. This can take {wait}...", flush=True)
@@ -115,5 +116,5 @@ def play_game(experiment: str, *, seed: int | None = None, agent: str | None = N
 def evaluate(experiment: str, jobs: int = JOBS) -> int:
     """Run the harness's full evaluation (it prints where the record went)."""
     number = experiment_id(experiment)
-    command = "evaluate" if number in TRAINED or number == "016" else "run"
+    command = "evaluate" if number in TRAINED or number in ("016", "017") else "run"
     return EXPERIMENTS[number].main([command, "--jobs", str(jobs)])

@@ -1,7 +1,7 @@
 # Experiment 017 - plan: rollout re-ranking at the commit decision, from level 29
 
-Status: plan and protocol written after the dev-seed depth check and before any held-out
-game. `predeclared.md` is not edited afterwards.
+Status: done 2026-10-30; see `notes.md` for the result. Plan and protocol were written
+after the dev-seed depth check and before any held-out game. `predeclared.md` is not edited afterwards.
 
 ## Why
 

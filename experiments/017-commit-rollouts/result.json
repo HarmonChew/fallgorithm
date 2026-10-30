@@ -1,0 +1,423 @@
+{
+ "experiment": "017-commit-rollouts",
+ "question": "Does 016's agent with rollout re-ranking at the commit decision beat 016's agent on 012's held-out seeds?",
+ "record": {
+  "path": "runs/20261030T135245839743Z-017/run.json.gz",
+  "sha256": "d4bdb148e71c4f769ce633a922afa1cff1e14fe40c631010f8ae392e12dd9489",
+  "created_at": "2026-10-30T13:52:45.816179+00:00"
+ },
+ "baseline_record": {
+  "path": "experiments/016-rollouts/records/run.json.gz",
+  "sha256": "1606b288d5b6649d5cfffa0d7359432157daca4b09fc21af39bc8073383870ee"
+ },
+ "identity_check": "016's agent replayed input for input on the first 30 held-out seeds",
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "0cab88889ebd5a6e843f76c0292039a464645c1b",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "engine_fingerprint": "f63c80b5400d4b14415c53e5034dfec8f292ff331e86785a6be5a04a9614ac31",
+ "commit_rollout": {
+  "commit_rollout_from_level": 29,
+  "commit_rollout_to_level": 99,
+  "commit_rollout_beam": 4,
+  "commit_rollout_count": 16,
+  "commit_rollout_depth": 10
+ },
+ "params": {
+  "build_tetrises": 29.788698986143274,
+  "build_premature_clear": -1.073946142126443,
+  "build_holes": -15.276334720862385,
+  "build_aggregate_height": -0.1209122041701578,
+  "build_bumpiness": -0.9561828972815446,
+  "build_max_height": -0.5243284186911991,
+  "build_reserve": 5.018997068935409,
+  "build_overflow": 1.2869445815766996,
+  "spend_lines_cleared": 2.0537673708249677,
+  "spend_holes": -2.1866333657527663,
+  "spend_aggregate_height": 0.16624097555547737,
+  "spend_bumpiness": -0.025496684369312406,
+  "spend_max_height": 1.0441841982692475,
+  "spend_row_transitions": -1.114182114571442,
+  "spend_column_transitions": -2.5519444027682487,
+  "spend_edge_depth": -1.5248381291952173,
+  "height_budget": 10,
+  "survival_budget": 3,
+  "survival_level": 38,
+  "drought_bound": 18,
+  "clear_points": 37.74268445034382,
+  "killscreen_budget": 1,
+  "commit_ply_level": 29,
+  "commit_beam": 2,
+  "rollout_from_level": 18,
+  "rollout_to_level": 28,
+  "rollout_beam": 4,
+  "rollout_count": 32,
+  "rollout_depth": 5,
+  "rollout_death": 1000
+ },
+ "heldout": {
+  "games": 1000,
+  "commit_rollout": {
+   "games": 1000,
+   "lines": {
+    "mean": 393.0,
+    "median": 415.0,
+    "p5": 310.0,
+    "p10": 336.9,
+    "p90": 431.0
+   },
+   "score": {
+    "mean": 1799692.4,
+    "median": 1844460.0,
+    "p5": 1387940.0,
+    "p10": 1508676.0,
+    "p90": 2094276.0
+   },
+   "top_out_pct": 54.1,
+   "reached_level_29_pct": 99.5,
+   "reached_level_39_pct": 93.8,
+   "reached_line_cap_pct": 45.9,
+   "frame_limit_stops": 0,
+   "adjust_switch_pct": 12.6,
+   "clear_sizes": {
+    "singles": 97606,
+    "doubles": 36083,
+    "triples": 11308,
+    "tetrises": 47337
+   },
+   "tetris_rate": 0.4817
+  },
+  "rollout": {
+   "games": 1000,
+   "lines": {
+    "mean": 375.9,
+    "median": 389.0,
+    "p5": 257.9,
+    "p10": 290.0,
+    "p90": 431.0
+   },
+   "score": {
+    "mean": 1545388.7,
+    "median": 1582120.0,
+    "p5": 1073598.0,
+    "p10": 1218820.0,
+    "p90": 1801062.0
+   },
+   "top_out_pct": 61.8,
+   "reached_level_29_pct": 99.5,
+   "reached_level_39_pct": 83.6,
+   "reached_line_cap_pct": 38.2,
+   "frame_limit_stops": 0,
+   "adjust_switch_pct": 13.2,
+   "clear_sizes": {
+    "singles": 103036,
+    "doubles": 36479,
+    "triples": 10738,
+    "tetrises": 41921
+   },
+   "tetris_rate": 0.4461
+  },
+  "paired_commit_rollout_minus_rollout": {
+   "score": {
+    "mean": 254303.7,
+    "ci95_low": 235044.5,
+    "ci95_high": 273131.72,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": 17.152,
+    "ci95_low": 12.653,
+    "ci95_high": 21.611,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 799,
+    "lower": 196,
+    "equal": 5
+   }
+  },
+  "seconds_per_game": {
+   "commit_rollout": 493.44,
+   "rollout": 248.27
+  }
+ },
+ "depth_check": {
+  "29+_b4_n32_d5 - rollout": {
+   "total": {
+    "score": {
+     "mean": 234144.4,
+     "ci95_low": 178972.6,
+     "ci95_high": 291505.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 14.97,
+     "ci95_low": 2.21,
+     "ci95_high": 28.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 77,
+     "lower": 21,
+     "equal": 2
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 121738.0,
+     "ci95_low": 91091.4,
+     "ci95_high": 153676.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 112406.4,
+     "ci95_low": 77468.8,
+     "ci95_high": 148140.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  },
+  "29-38_b4_n32_d5 - rollout": {
+   "total": {
+    "score": {
+     "mean": 149155.8,
+     "ci95_low": 99725.6,
+     "ci95_high": 201050.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 12.32,
+     "ci95_low": -0.7,
+     "ci95_high": 25.93,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 66,
+     "lower": 32,
+     "equal": 2
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 121738.0,
+     "ci95_low": 91091.4,
+     "ci95_high": 153676.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 27417.8,
+     "ci95_low": -746.2,
+     "ci95_high": 56433.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  },
+  "29+_b3_n16_d5 - rollout": {
+   "total": {
+    "score": {
+     "mean": 161738.4,
+     "ci95_low": 100770.4,
+     "ci95_high": 221907.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 3.08,
+     "ci95_low": -11.08,
+     "ci95_high": 17.74,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 73,
+     "lower": 25,
+     "equal": 2
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 102926.8,
+     "ci95_low": 64086.2,
+     "ci95_high": 141927.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 58811.6,
+     "ci95_low": 23902.8,
+     "ci95_high": 94134.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  },
+  "29+_b4_n16_d10 - rollout": {
+   "total": {
+    "score": {
+     "mean": 294692.8,
+     "ci95_low": 238997.8,
+     "ci95_high": 354308.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 28.75,
+     "ci95_low": 16.14,
+     "ci95_high": 42.06,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 87,
+     "lower": 11,
+     "equal": 2
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 126010.8,
+     "ci95_low": 92184.4,
+     "ci95_high": 160783.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 168682.0,
+     "ci95_low": 133090.6,
+     "ci95_high": 205554.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  },
+  "29+_b6_n32_d5 - rollout": {
+   "total": {
+    "score": {
+     "mean": 196126.0,
+     "ci95_low": 141389.0,
+     "ci95_high": 253486.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 8.03,
+     "ci95_low": -5.54,
+     "ci95_high": 22.01,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 72,
+     "lower": 26,
+     "equal": 2
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 121634.4,
+     "ci95_low": 92763.4,
+     "ci95_high": 151798.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 74491.6,
+     "ci95_low": 37651.6,
+     "ci95_high": 112017.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  }
+ },
+ "success_rule": "95% CI of the paired mean score difference (commit_rollout minus rollout) on 012's 1,000 held-out seeds entirely above 0",
+ "success": true
+}

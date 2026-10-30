@@ -1,4 +1,4 @@
-"""Menu flows and commands for Experiments 006 and 008-016."""
+"""Menu flows and commands for Experiments 006 and 008-017."""
 
 from __future__ import annotations
 
@@ -112,8 +112,8 @@ def test_watch_record_finds_the_record_from_another_directory(tmp_path, monkeypa
     (["--experiment", "008", "--reaction-ms", "-1"], "0 ms or more"),
     (["--experiment", "008", "--reaction-ms", "inf"], "0 ms or more"),
     (["--experiment", "008", "--agent", "survival_plan"], "006 only"),
-    (["--experiment", "006", "--tap-hz", "30"], "008-016 only"),
-    (["--experiment", "006", "--reaction-ms", "0"], "008-016 only"),
+    (["--experiment", "006", "--tap-hz", "30"], "008-017 only"),
+    (["--experiment", "006", "--reaction-ms", "0"], "008-017 only"),
 ])
 def test_play_game_rejects_bad_or_inapplicable_options(arguments, message, capsys):
     assert cli.main(["play-game", *arguments]) == 1
@@ -127,7 +127,7 @@ def test_start_level_is_gone():
 
 def test_bad_experiment_is_reported(capsys):
     assert cli.main(["play-game", "--experiment", "001"]) == 1
-    assert "choose 006, 008, 009, 010, 011, 012, 013, 014, 015 or 016" in capsys.readouterr().err
+    assert "choose 006, 008, 009, 010, 011, 012, 013, 014, 015, 016 or 017" in capsys.readouterr().err
 
 
 def test_experiments_lists_006_and_008(capsys):
@@ -390,4 +390,25 @@ def test_a_new_016_game_plays_the_rollout_agent():
     expected = e16.play_native(
         ("rollout", 7, dict(config, frame_cap=1500, fast_deep_params=e16.fast_deep_params(),
                             formats=[fmt])))
+    assert episode["inputs"] == expected["inputs"] and episode["result"]["frames"] == 1500
+
+
+def test_017_is_wired_into_the_launcher(menu, monkeypatch):
+    assert quickplay.experiment_id("17") == "017"
+    assert "017" not in quickplay.TRAINED and quickplay.RECORD_AGENT["017"] == "commit_rollout"
+    calls = []
+    monkeypatch.setattr(quickplay.experiment017, "main", lambda argv: calls.append(argv) or 0)
+    assert quickplay.evaluate("017", 5) == 0
+    assert calls == [["evaluate", "--jobs", "5"]]
+
+
+def test_a_new_017_game_plays_the_commit_rollout_agent():
+    e17 = quickplay.experiment017
+    config = e17._load(e17.CONFIG)
+    fmt = {"tap_hz": 30, "reaction_ms": 300}
+    episode = e17._play((0, fmt, 7, dict(config, frame_cap=1500)))
+    expected = e17.play_native(
+        ("commit_rollout", 7, dict(config, frame_cap=1500, rollout_params=e17.rollout_params(),
+                                   formats=[fmt])))
+    assert episode["agent"] == "commit_rollout"
     assert episode["inputs"] == expected["inputs"] and episode["result"]["frames"] == 1500
