@@ -1,6 +1,7 @@
 # Experiment 021 - plan: a network that ranks the search's top moves
 
-Status: approved by the owner 2026-10-31. `predeclared.md` is written after
+Status: approved by the owner 2026-10-31; steps 0-3 done 2026-10-31, milestone 1 met
+(`notes.md`). `predeclared.md` is written after
 the dev checks and before any held-out game.
 
 ## Why
@@ -58,7 +59,7 @@ per decision instead of ~100 simulated pieces.
 2. **Offline check** on 60 held-back games, 018's table: per decision kind, how often
    each picks the rollouts' best, and the average loss against it, for the search alone,
    the network, and the half-rollouts. **Stop** if the network's loss is not below the
-   search's in all three kinds (018's line: 1.38 / 8.77 / 7.93).
+   search's in all three kinds (018's search: 1.38 / 8.77 / 7.93).
 3. **Dev check** on 020's dev seeds 0-99 (`dev_baselines.json` already has 015 = 1,323k
    and 017 = 1,810k there), confirm a keeper on 100-199. Milestone 1: clearly beat 015
    at a few seconds a game. **Stop** if, after one fix (more data or a bigger net), it is
