@@ -300,6 +300,10 @@ struct BoardSample {
     Columns columns;
     int lines;
     std::uint64_t score;
+    // Experiment 020: pieces since the last I (the piece that left the board counted),
+    // and that piece (-1 before the first).
+    int drought = 0;
+    int last = -1;
 };
 
 inline void add_game(const ValueModel& model, const std::vector<BoardSample>& samples,

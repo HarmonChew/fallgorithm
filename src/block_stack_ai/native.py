@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 13
+ABI_VERSION = 14
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -76,6 +76,11 @@ RERANK_FEATURES = 9 + BOARD_FEATURES
 RERANK_WEIGHTS = 3 * RERANK_FEATURES
 DISTIL_STRIDE = 4 + RERANK_FEATURES
 DISTIL_CAPACITY = 40_000 * DISTIL_STRIDE
+# Experiment 020 (fn_dump_game): per board, the ten visible columns, lines, score so far,
+# drought, the piece that left it (-1 for the first), then the 18 board features.
+DUMP_STRIDE = WIDTH + 4 + BOARD_FEATURES
+# A game has at most (430 * 10 + 200) / 4 + 1 = 1,126 pieces at the 430-line cap.
+DUMP_CAPACITY = 2_000 * DUMP_STRIDE
 
 Columns = C.c_uint32 * WIDTH
 
@@ -229,6 +234,13 @@ def load() -> Any:
                                    C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int64),
                                    C.POINTER(C.c_double), C.c_int, C.POINTER(C.c_int)]
     lib.fn_distil_game.restype = C.c_int
+    lib.fn_dump_stride.restype = C.c_int
+    lib.fn_dump_game.argtypes = [C.c_int, C.POINTER(Params), C.c_char_p, C.c_char_p, C.c_int,
+                                 C.c_int, C.c_int, C.c_int, C.c_int, C.c_int, C.c_int,
+                                 C.c_double, C.c_int, C.c_uint64, C.POINTER(C.c_uint8), C.c_int,
+                                 C.POINTER(C.c_int64), C.POINTER(C.c_int32), C.c_int,
+                                 C.POINTER(C.c_int)]
+    lib.fn_dump_game.restype = C.c_int
     lib.fn_board_features.argtypes = [Columns, C.POINTER(C.c_double)]
     lib.fn_board_features.restype = None
     lib.fn_board_value.argtypes = [C.POINTER(C.c_double), C.c_int, Columns, C.c_int, C.c_int]
@@ -238,6 +250,8 @@ def load() -> Any:
     if lib.fn_abi_version() != ABI_VERSION:
         raise NativeError(f"{path} has ABI version {lib.fn_abi_version()}, expected "
                           f"{ABI_VERSION}. Rebuild with scripts/build_native.py.")
+    if lib.fn_dump_stride() != DUMP_STRIDE:
+        raise NativeError(f"{path} disagrees on the dump row layout. Rebuild it.")
     if lib.fn_params_size() != C.sizeof(Params):
         raise NativeError(f"{path} disagrees on the Params layout. Rebuild it.")
     return lib
@@ -480,3 +494,33 @@ def distil_game(game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: in
               "final_state_hash": f"{end & (1 << 64) - 1:016x}"}
     found = [tuple(rows[i * DISTIL_STRIDE:(i + 1) * DISTIL_STRIDE]) for i in range(count.value)]
     return played, found
+
+
+def dump_game(agent: str, game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: int,
+              limits: Limits, params: Params, explore: float = 0.0, explore_start: int = 0,
+              explore_seed: int = 0) -> tuple[dict[str, Any], bytes]:
+    """One game by ``reach_plan``, ``reach_plan_extra_ply`` or ``reach_plan_014``
+    (:func:`play_game_ex`'s result, exploration included) and every board a piece left
+    (Experiment 020's data): :data:`DUMP_STRIDE` int32 numbers per board, native byte
+    order, one board per spawn."""
+    kind = AGENT_KINDS.index(agent)
+    if kind not in (0, 1, 3):
+        raise ValueError(f"{agent} has no board dump")
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    rows = (C.c_int32 * DUMP_CAPACITY)()
+    count = C.c_int(0)
+    status = load().fn_dump_game(
+        kind, C.byref(params), game["ruleset"].encode(), game["mode"].encode(),
+        game["start_level"], game["height"], seed, line_cap, frame_cap, limits.tap_interval,
+        limits.reaction_frames, explore, explore_start, explore_seed, inputs, max(1, frame_cap),
+        out, rows, DUMP_CAPACITY, C.byref(count))
+    if status:
+        raise NativeError(f"fn_dump_game failed with {status}")
+    played_count, frames, reason, pieces, adjusts, switches, score, lines, level, start, end = out
+    played = {"inputs": bytes(inputs[:played_count]), "frames": frames,
+              "stopping_reason": STOP_REASONS[reason], "pieces": pieces, "adjusts": adjusts,
+              "switches": switches, "score": score, "lines": lines, "level": level,
+              "initial_state_hash": f"{start & (1 << 64) - 1:016x}",
+              "final_state_hash": f"{end & (1 << 64) - 1:016x}"}
+    return played, C.string_at(rows, count.value * DUMP_STRIDE * 4)

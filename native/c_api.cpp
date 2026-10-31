@@ -25,7 +25,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 13;
+constexpr int abi_version = 14;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -427,6 +427,72 @@ FN_API int fn_distil_game(const Params* params, const char* ruleset, const char*
             }
         }
         *row_count = static_cast<int>(found.size());
+        return 0;
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 020's data: one game by agent 0, 1 or 3 of fn_play_game_ex (its arguments
+// and outputs, exploration included, no ``weights`` or ``gram``), and every board a
+// piece left (agent.hpp's samples, one per spawn) in ``rows``, each as dump_stride
+// numbers: the ten columns' visible rows (bit r is visible row r, row 0 at the top), the
+// lines, the score so far, the drought, the piece that left the board (-1 for the first
+// board), then value.hpp's 18 board features. The game's final score is ``out``'s.
+// Returns 0, -1 for bad arguments, -2 if ``rows`` is too small, -3 if the agent failed.
+constexpr int dump_stride = width + 4 + board_features;
+
+FN_API int fn_dump_stride() { return dump_stride; }
+
+FN_API int fn_dump_game(int agent_kind, const Params* params, const char* ruleset,
+                        const char* mode, int start_level, int height, int seed, int line_cap,
+                        int frame_cap, int interval, int reaction, double explore,
+                        int explore_start, std::uint64_t explore_seed, std::uint8_t* inputs,
+                        int capacity, std::int64_t* out, std::int32_t* rows, int row_capacity,
+                        int* row_count) {
+    if (!params || !rows || !row_count || !ruleset || !mode || seed < 0 || seed > 0xffff ||
+        line_cap < 0 || frame_cap < 0 || capacity < frame_cap || interval < 1 ||
+        reaction < 0 || start_level < 0 || start_level >= 20 || row_capacity < 0 ||
+        (agent_kind != 0 && agent_kind != 1 && agent_kind != 3) ||
+        !(explore >= 0.0 && explore <= 1.0) || explore_start < 0) {
+        return -1;
+    }
+    try {
+        blocks::Config config;
+        if (!make_config(ruleset, mode, start_level, height, seed, config)) {
+            return -1;
+        }
+        Searcher searcher(*params);
+        searcher.set_extra_ply(agent_kind != 0);
+        searcher.set_nes_odds(agent_kind == 3);
+        Agent agent(searcher, interval, reaction);
+        agent.set_explore(explore, explore_start, explore_seed);
+        std::vector<BoardSample> samples;
+        std::uint64_t final_score = 0;
+        const int status =
+            run_game(config, agent, line_cap, frame_cap, inputs, out, &samples, final_score);
+        if (status) {
+            return status;
+        }
+        if (static_cast<long long>(samples.size()) * dump_stride > row_capacity) {
+            return -2;
+        }
+        for (std::size_t index = 0; index < samples.size(); ++index) {
+            const BoardSample& sample = samples[index];
+            std::int32_t* row = rows + index * dump_stride;
+            for (int column = 0; column < width; ++column) {
+                row[column] = static_cast<std::int32_t>(sample.columns[column] >> hidden_rows);
+            }
+            row[width] = sample.lines;
+            row[width + 1] = static_cast<std::int32_t>(sample.score);  // ~6M at most by 430 lines
+            row[width + 2] = sample.drought;
+            row[width + 3] = sample.last;
+            const auto f = board_feature_values(sample.columns);
+            for (int k = 0; k < board_features; ++k) {
+                row[width + 4 + k] = static_cast<std::int32_t>(f[k]);
+            }
+        }
+        *row_count = static_cast<int>(samples.size());
         return 0;
     } catch (const std::exception&) {
         return -1;

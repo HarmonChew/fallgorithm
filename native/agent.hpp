@@ -176,19 +176,23 @@ struct GameResult {
 
 // experiment010._play's loop: the stop rules are checked before each frame's input.
 // Returns false only if the agent failed. With ``samples`` (Experiment 013), also
-// keeps the board, lines and score at every spawn, so each board a piece left.
+// keeps the board, lines and score at every spawn, so each board a piece left (and,
+// for Experiment 020, the drought and the piece that left it).
 template <class AnyAgent>
 bool play_game(blocks::Game& game, AnyAgent& agent, int line_cap, int frame_cap,
                std::vector<std::uint8_t>& inputs, GameResult& result,
                std::vector<BoardSample>* samples = nullptr) {
     inputs.clear();
     long long sampled = -1;
+    int last = -1, drought = 0;
     while (true) {
         const blocks::State& state = game.state();
         if (samples && state.phase == blocks::Phase::Active &&
             static_cast<long long>(state.piece_count) != sampled) {
             sampled = state.piece_count;
-            samples->push_back({visible_columns(state), state.lines, state.score});
+            samples->push_back({visible_columns(state), state.lines, state.score, drought, last});
+            last = static_cast<int>(state.current);
+            drought = next_drought(drought, last);
         }
         if (game.terminal()) {
             result.reason = state.phase == blocks::Phase::ChallengeComplete ? challenge_complete

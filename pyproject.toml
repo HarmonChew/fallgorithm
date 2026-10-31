@@ -9,6 +9,10 @@ description = "Small, reproducible frame-input experiments with Block Stack"
 requires-python = ">=3.10"
 dependencies = ["block-stack>=0.1.0"]
 
+[project.optional-dependencies]
+# Experiment 020's value network (training, and its data files).
+value = ["numpy>=2.0", "torch==2.14.0"]
+
 [project.scripts]
 block-stack-ai = "block_stack_ai.cli:main"
 fallgorithm = "block_stack_ai.cli:main"
