@@ -27,7 +27,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 18;
+constexpr int abi_version = 19;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -607,6 +607,84 @@ FN_API int fn_rank_game(const unsigned char* net, int net_size, const Params* pa
         BasicAgent<RolloutSearcher> agent(ranked, interval, reaction);
         std::uint64_t final_score = 0;
         return run_game(config, agent, line_cap, frame_cap, inputs, out, nullptr, final_score);
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 022's agent: fn_distil_game's agent (017's) with the commit decision from
+// ``from_level`` on scored by ``count`` playouts to ``line_cap`` (rollout.hpp's
+// set_playout), placed by the rank network ``net``'s picks (null: the commit search
+// alone). ``counts`` receives the playouts played, their placements and the playouts cut
+// short. With ``rows`` (not null), the playout-ranked decisions' candidates as
+// fn_rank_distil_game's rows, the means in points_unit. Returns as fn_distil_game (-1 also
+// for a ``net`` that is not a rank network).
+FN_API int fn_playout_game(const unsigned char* net, int net_size, int from_level, int count,
+                           const Params* params, const char* ruleset, const char* mode,
+                           int start_level, int height, int seed, int line_cap, int frame_cap,
+                           int interval, int reaction, std::uint8_t* inputs, int capacity,
+                           std::int64_t* out, std::int64_t* counts, double* rows,
+                           int row_capacity, int* row_count) {
+    if (!params || !counts || !row_count || !ruleset || !mode || seed < 0 || seed > 0xffff ||
+        line_cap < 0 || frame_cap < 0 || capacity < frame_cap || interval < 1 ||
+        reaction < 0 || start_level < 0 || start_level >= 20 || row_capacity < 0 ||
+        net_size < 0 || count < 1 || from_level < 0) {
+        return -1;
+    }
+    try {
+        blocks::Config config;
+        ValueNetwork network;
+        if (!make_config(ruleset, mode, start_level, height, seed, config) ||
+            (net && !network.load(net, static_cast<std::size_t>(net_size), rank_magic,
+                                  rank_inputs_count))) {
+            return -1;
+        }
+        Searcher searcher(*params);
+        searcher.set_extra_ply(true);
+        searcher.set_nes_odds(true);
+        std::vector<DistilRow> found;
+        RolloutSearcher rollouts(searcher, *params);
+        if (rows) {
+            rollouts.set_dump(&found);
+        }
+        rollouts.set_playout(net ? &network : nullptr, line_cap, from_level, count);
+        BasicAgent<RolloutSearcher> agent(rollouts, interval, reaction);
+        std::uint64_t final_score = 0;
+        const int status =
+            run_game(config, agent, line_cap, frame_cap, inputs, out, nullptr, final_score);
+        if (status) {
+            return status;
+        }
+        counts[0] = agent.searcher().playouts;
+        counts[1] = agent.searcher().playout_pieces;
+        counts[2] = agent.searcher().playouts_cut;
+        *row_count = 0;
+        if (!rows) {
+            return 0;
+        }
+        if (static_cast<long long>(found.size()) * rank_distil_stride > row_capacity) {
+            return -2;
+        }
+        for (std::size_t index = 0; index < found.size(); ++index) {
+            const DistilRow& f = found[index];
+            double* row = rows + index * rank_distil_stride;
+            const double head[10] = {static_cast<double>(f.model), static_cast<double>(f.level),
+                                     static_cast<double>(f.rank), f.mean, f.mean_even,
+                                     f.mean_odd, static_cast<double>(f.piece),
+                                     static_cast<double>(f.next), static_cast<double>(f.lines),
+                                     static_cast<double>(f.drought)};
+            for (int k = 0; k < 10; ++k) {
+                row[k] = head[k];
+            }
+            for (int column = 0; column < width; ++column) {
+                row[10 + column] = static_cast<double>(f.settled[column] >> hidden_rows);
+            }
+            for (int k = 0; k < rerank_features_count; ++k) {
+                row[10 + width + k] = f.x[k];
+            }
+        }
+        *row_count = static_cast<int>(found.size());
+        return 0;
     } catch (const std::exception&) {
         return -1;
     }

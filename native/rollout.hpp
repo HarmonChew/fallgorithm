@@ -50,6 +50,17 @@
 // (set_blend): each candidate scores its rollouts' mean plus weight[model] times the rank
 // network's output (both in the rollouts' units), the first of equal scores winning.
 // With all weights 0 the pick is 017's.
+//
+// Experiment 022: from ``from_level`` on (set_playout), the commit decision's candidates
+// (the same commit_rollout_beam best) are scored by playouts to the end of the game
+// instead: ``count`` games from each candidate's board, every piece drawn with the NES odds
+// and placed as the fast agent places it at a commit decision (the commit search, preview
+// hidden, from the spawn; re-ranked by the rank network when one is given, as the rank
+// agent does), until a piece has no placement or the lines reach ``line_cap``. A playout's
+// return is the real points its clears earn, the candidate's own included, in units of a
+// Tetris at level 18 (points_unit); the best mean wins (the first of equal means). The same
+// piece sequences are used for every candidate, each drawn from its own splitmix64 stream
+// seeded by the position, so a game stays a pure function of its seed.
 #pragma once
 
 #include <algorithm>
@@ -181,11 +192,28 @@ public:
         blend_weights_ = weights;
     }
 
+    // Experiment 022: from level ``from_level`` on, the commit decision by ``count``
+    // playouts to ``line_cap`` (``count`` 0: off), placed by the rank network ``net``'s
+    // picks (nullptr: the commit search alone).
+    void set_playout(const ValueNetwork* net, int line_cap, int from_level, int count) {
+        playout_net_ = net;
+        playout_line_cap_ = line_cap;
+        playout_from_level_ = from_level;
+        playout_count_ = count;
+    }
+
+    // Experiment 022's counts: playouts played, their placements, and playouts stopped
+    // by playout_max_pieces before the game ended (expected 0).
+    long long playouts = 0, playout_pieces = 0, playouts_cut = 0;
+
     bool search(const Position& position, Choice& choice) {
         if (!searcher_.search(position, choice)) {
             return false;
         }
         const bool preview = position.next_piece >= 0;
+        if (!preview && playout_count_ > 0 && position.level >= playout_from_level_) {
+            return playout_search(position, choice);
+        }
         const int from = preview ? params_.rollout_from_level : params_.commit_rollout_from_level;
         const int to = preview ? params_.rollout_to_level : params_.commit_rollout_to_level;
         const int beam = preview ? params_.rollout_beam : params_.commit_rollout_beam;
@@ -293,6 +321,142 @@ public:
     }
 
 private:
+    // A playout can never need more pieces than this (430 lines are 1,075 pieces).
+    static constexpr int playout_max_pieces = 4000;
+
+    // Experiment 022's commit decision: the commit search's commit_rollout_beam best
+    // candidates, each scored by its mean playout return.
+    bool playout_search(const Position& position, Choice& choice) {
+        if (!choice.found || params_.commit_rollout_beam < 2) {
+            return true;
+        }
+        searcher_.commit_candidates(params_.commit_rollout_beam, candidates_);
+        if (candidates_.size() < 2) {
+            return true;
+        }
+        seed_playouts(position);
+        const int phase = phase_of(params_, position.level, position.drought, position.columns);
+        int best = 0;
+        double best_mean = 0.0;
+        for (int index = 0; index < static_cast<int>(candidates_.size()); ++index) {
+            const Searcher::Candidate& candidate = candidates_[index];
+            const int lines = position.lines + candidate.cleared;
+            const double first =
+                clear_reward(candidate.cleared, lines, position.start_level) / points_unit;
+            double total = 0.0, halves[2] = {0.0, 0.0};
+            for (int at = 0; at < playout_count_; ++at) {
+                double value = 0.0;
+                if (!playout(position, candidate.settled, lines, at, value)) {
+                    return false;
+                }
+                total += first + value;
+                halves[at % 2] += first + value;
+            }
+            const double mean = total / static_cast<double>(playout_count_);
+            if (dump_) {
+                const double own = value_of(params_, phase, candidate.cleared, candidate.settled,
+                                            level_for_lines(lines, position.start_level));
+                const double even = static_cast<double>((playout_count_ + 1) / 2);
+                const double odd = static_cast<double>(playout_count_ / 2);
+                dump_->push_back({rerank_model(false, position.level), position.level, index,
+                                  mean,
+                                  rerank_features(candidate.order == searcher_.chosen(),
+                                                  candidate, own),
+                                  candidate.settled, halves[0] / even,
+                                  odd > 0 ? halves[1] / odd : halves[0] / even, position.piece,
+                                  position.next_piece, position.lines, position.drought});
+            }
+            if (index == 0 || mean > best_mean) {
+                best = index;
+                best_mean = mean;
+            }
+        }
+        return searcher_.choose(candidates_[best].order, choice);
+    }
+
+    // One playout (sequence ``at``) from ``columns`` with ``lines`` cleared, its points
+    // after the candidate's own in ``total``. Returns false only if a search's walk back
+    // failed.
+    bool playout(const Position& start, Columns columns, int lines, int at, double& total) {
+        total = 0.0;
+        playouts += 1;
+        int drought = start.drought, previous = start.piece;
+        for (int step = 0; lines < playout_line_cap_; ++step) {
+            if (step == playout_max_pieces) {
+                playouts_cut += 1;
+                return true;
+            }
+            const int piece = playout_piece(at, step, previous);
+            previous = piece;
+            drought = next_drought(drought, piece);
+            const int level = level_for_lines(lines, start.start_level);
+            const Position position{columns, piece, -1, Flight{}, drought, level, lines,
+                                    start.start_level, start.double_killscreen,
+                                    start.interval};
+            if (!fast_commit(position, choice_)) {
+                return false;
+            }
+            if (!choice_.found) {
+                return true;  // topped out
+            }
+            playout_pieces += 1;
+            const Settled settled =
+                settle(columns, piece, choice_.orientation, choice_.x, choice_.y);
+            lines += settled.cleared;
+            total += clear_reward(settled.cleared, lines, start.start_level) / points_unit;
+            columns = settled.columns;
+        }
+        return true;
+    }
+
+    // The fast agent's commit decision: the commit search, re-ranked by the playout
+    // network over the same candidates as the rank agent's (its commit band).
+    bool fast_commit(const Position& position, Choice& choice) {
+        if (!policy_.search(position, choice)) {
+            return false;
+        }
+        if (!playout_net_ || !choice.found || params_.commit_rollout_beam < 2 ||
+            params_.commit_rollout_count < 1 || params_.commit_rollout_depth < 1 ||
+            position.level < params_.commit_rollout_from_level ||
+            position.level > params_.commit_rollout_to_level) {
+            return true;
+        }
+        policy_.commit_candidates(params_.commit_rollout_beam, policy_candidates_);
+        if (policy_candidates_.size() < 2) {
+            return true;
+        }
+        const int phase = phase_of(params_, position.level, position.drought, position.columns);
+        const int best = rank_pick(policy_, *playout_net_, playout_line_cap_, position,
+                                   rerank_model(false, position.level), -1, phase,
+                                   policy_candidates_, params_);
+        return best == policy_.chosen() || policy_.choose(best, choice);
+    }
+
+    // One stream per playout, seeded by the position (as draw_sequences) and its index.
+    void seed_playouts(const Position& position) {
+        std::uint64_t state = 0x3c6ef372fe94f82bull;
+        for (int column = 0; column < width; ++column) {
+            state = mix(state ^ position.columns[column]);
+        }
+        state = mix(state ^ static_cast<std::uint64_t>(position.piece));
+        state = mix(state ^ static_cast<std::uint64_t>(position.lines));
+        streams_.resize(playout_count_);
+        playout_sequences_.resize(playout_count_);
+        for (int at = 0; at < playout_count_; ++at) {
+            streams_[at] = mix(state ^ static_cast<std::uint64_t>(at));
+            playout_sequences_[at].clear();
+        }
+    }
+
+    // Playout ``at``'s piece ``step`` (drawn when first asked for, after ``previous``).
+    int playout_piece(int at, int step, int previous) {
+        std::vector<int>& sequence = playout_sequences_[at];
+        if (static_cast<int>(sequence.size()) <= step) {
+            sequence.push_back(draw(streams_[at], previous));
+        }
+        return sequence[step];
+    }
+
     // The rank network's pick among ``candidates`` of ``searcher``'s last search (its
     // option index): the highest output, the search's own choice winning ties. ``next``
     // is the preview the network is shown (-1: none).
@@ -436,6 +600,10 @@ private:
     Choice choice_;
     std::vector<Searcher::Candidate> candidates_;
     std::vector<std::vector<int>> sequences_;
+    const ValueNetwork* playout_net_ = nullptr;
+    int playout_line_cap_ = 0, playout_from_level_ = 0, playout_count_ = 0;
+    std::vector<std::uint64_t> streams_;
+    std::vector<std::vector<int>> playout_sequences_;
 };
 
 }  // namespace fallgorithm

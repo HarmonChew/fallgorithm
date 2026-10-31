@@ -1,0 +1,246 @@
+{
+ "question": "step 0's timing probe: 017's agent, playouts off, and the playout variants on four seeds",
+ "seeds": "Experiment 021's first four distil seeds (not dev or held-out seeds)",
+ "note": "playouts_off plays from_level 100 (never); its inputs match 017's game on every seed. rank_n64 was played by the same build in the noise check (its games' seconds not kept). Inputs hashes are sha256's first 12 hex digits. rank_agent is 021's rank agent alone (rank_game, rank_pilot.bin), for scale.",
+ "games": {
+  "rank_n64": [
+   {
+    "seed": 24451,
+    "score": 2121380,
+    "lines": 432
+   },
+   {
+    "seed": 32650,
+    "score": 1750100,
+    "lines": 341
+   },
+   {
+    "seed": 34518,
+    "score": 1502420,
+    "lines": 377
+   },
+   {
+    "seed": 64845,
+    "score": 1732220,
+    "lines": 367
+   }
+  ],
+  "rank_n16": [
+   {
+    "seed": 24451,
+    "score": 1619860,
+    "lines": 348,
+    "seconds": 622,
+    "playouts": 4288,
+    "playout_pieces": 414020,
+    "playouts_cut": 0,
+    "inputs_sha256_12": "84da730c5965"
+   },
+   {
+    "seed": 32650,
+    "score": 1693220,
+    "lines": 332,
+    "seconds": 239,
+    "playouts": 752,
+    "playout_pieces": 11241,
+    "playouts_cut": 0,
+    "inputs_sha256_12": "536c50bc5d40"
+   },
+   {
+    "seed": 34518,
+    "score": 1564920,
+    "lines": 392,
+    "seconds": 1126,
+    "playouts": 11440,
+    "playout_pieces": 1044770,
+    "playouts_cut": 0,
+    "inputs_sha256_12": "6269f6b00bf1"
+   },
+   {
+    "seed": 64845,
+    "score": 1719920,
+    "lines": 360,
+    "seconds": 755,
+    "playouts": 6016,
+    "playout_pieces": 599022,
+    "playouts_cut": 0,
+    "inputs_sha256_12": "75e346afbcba"
+   }
+  ],
+  "search_n16": [
+   {
+    "seed": 24451,
+    "score": 1649220,
+    "lines": 362,
+    "seconds": 645,
+    "playouts": 6752,
+    "playout_pieces": 499693,
+    "playouts_cut": 0,
+    "inputs_sha256_12": "26ceef0895a6"
+   },
+   {
+    "seed": 32650,
+    "score": 1760760,
+    "lines": 343,
+    "seconds": 273,
+    "playouts": 2208,
+    "playout_pieces": 36633,
+    "playouts_cut": 0,
+    "inputs_sha256_12": "66e58bd6bdc4"
+   },
+   {
+    "seed": 34518,
+    "score": 1496420,
+    "lines": 356,
+    "seconds": 697,
+    "playouts": 5584,
+    "playout_pieces": 535234,
+    "playouts_cut": 0,
+    "inputs_sha256_12": "2a51b5ea1978"
+   },
+   {
+    "seed": 64845,
+    "score": 1702580,
+    "lines": 356,
+    "seconds": 550,
+    "playouts": 5424,
+    "playout_pieces": 367525,
+    "playouts_cut": 0,
+    "inputs_sha256_12": "e97ec76695cf"
+   }
+  ],
+  "017": [
+   {
+    "seed": 24451,
+    "score": 1941860,
+    "lines": 430,
+    "seconds": 336,
+    "inputs_sha256_12": "535e3a20c558"
+   },
+   {
+    "seed": 32650,
+    "score": 1774120,
+    "lines": 355,
+    "seconds": 264,
+    "inputs_sha256_12": "6bd9f01bffc9"
+   },
+   {
+    "seed": 34518,
+    "score": 1867260,
+    "lines": 430,
+    "seconds": 318,
+    "inputs_sha256_12": "3622e1110e72"
+   },
+   {
+    "seed": 64845,
+    "score": 1957480,
+    "lines": 431,
+    "seconds": 342,
+    "inputs_sha256_12": "9d4c50df5f66"
+   }
+  ],
+  "playouts_off": [
+   {
+    "seed": 24451,
+    "score": 1941860,
+    "lines": 430,
+    "seconds": 333,
+    "playouts": 0,
+    "playout_pieces": 0,
+    "playouts_cut": 0,
+    "inputs_sha256_12": "535e3a20c558"
+   },
+   {
+    "seed": 32650,
+    "score": 1774120,
+    "lines": 355,
+    "seconds": 275,
+    "playouts": 0,
+    "playout_pieces": 0,
+    "playouts_cut": 0,
+    "inputs_sha256_12": "6bd9f01bffc9"
+   },
+   {
+    "seed": 34518,
+    "score": 1867260,
+    "lines": 430,
+    "seconds": 334,
+    "playouts": 0,
+    "playout_pieces": 0,
+    "playouts_cut": 0,
+    "inputs_sha256_12": "3622e1110e72"
+   },
+   {
+    "seed": 64845,
+    "score": 1957480,
+    "lines": 431,
+    "seconds": 339,
+    "playouts": 0,
+    "playout_pieces": 0,
+    "playouts_cut": 0,
+    "inputs_sha256_12": "9d4c50df5f66"
+   }
+  ],
+  "rank_agent": [
+   {
+    "seed": 24451,
+    "score": 1482560,
+    "lines": 430
+   },
+   {
+    "seed": 32650,
+    "score": 1462940,
+    "lines": 381
+   },
+   {
+    "seed": 34518,
+    "score": 1518240,
+    "lines": 348
+   },
+   {
+    "seed": 64845,
+    "score": 1662160,
+    "lines": 396
+   }
+  ]
+ },
+ "paired_vs_017": {
+  "rank_n64": [
+   179520,
+   -24020,
+   -364840,
+   -225260
+  ],
+  "rank_n16": [
+   -322000,
+   -80900,
+   -302340,
+   -237560
+  ],
+  "search_n16": [
+   -292640,
+   -13360,
+   -370840,
+   -254900
+  ],
+  "playouts_off": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "noise_check": {
+  "variant": "rank_n16",
+  "decisions": 353,
+  "even_best_is_odd_best": 0.436,
+  "chance": 0.25,
+  "median_split_half_correlation": 0.52,
+  "mean_split_half_correlation": 0.36,
+  "picked_the_search_first": 0.572,
+  "mean_spread_points": 61258,
+  "mean_gain_over_search_first_points": 12284,
+  "mean_playout_return_points": 102918,
+  "rule": "level 39+ commit decisions of the four rank_n16 games (dump on); per decision the candidates' even-playout and odd-playout means (8 each)"
+ }
+}

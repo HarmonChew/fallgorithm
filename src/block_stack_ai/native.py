@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 18
+ABI_VERSION = 19
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -262,6 +262,12 @@ def load() -> Any:
     lib.fn_rank_rollout_game.argtypes = [C.c_char_p, C.c_int, C.c_int, C.POINTER(C.c_double)] + \
         lib.fn_distil_game.argtypes
     lib.fn_rank_rollout_game.restype = C.c_int
+    lib.fn_playout_game.argtypes = [C.c_char_p, C.c_int, C.c_int, C.c_int, C.POINTER(Params),
+                                    C.c_char_p, C.c_char_p, C.c_int, C.c_int, C.c_int, C.c_int,
+                                    C.c_int, C.c_int, C.c_int, C.POINTER(C.c_uint8), C.c_int,
+                                    C.POINTER(C.c_int64), C.POINTER(C.c_int64),
+                                    C.POINTER(C.c_double), C.c_int, C.POINTER(C.c_int)]
+    lib.fn_playout_game.restype = C.c_int
     lib.fn_rank_values.argtypes = [C.c_char_p, C.c_int, C.POINTER(C.c_double), C.c_int, C.c_int,
                                    C.c_int, C.POINTER(C.c_double)]
     lib.fn_rank_values.restype = C.c_int
@@ -636,6 +642,33 @@ def rank_rollout_game(net: bytes | None, game: dict[str, Any], seed: int, *, net
     s = RANK_DISTIL_STRIDE
     found = [tuple(rows[i * s:(i + 1) * s]) for i in range(count.value)] if dump else []
     return _played(inputs, out), found
+
+
+def playout_game(net: bytes | None, game: dict[str, Any], seed: int, *, from_level: int,
+                 count: int, line_cap: int, frame_cap: int, limits: Limits, params: Params,
+                 dump: bool = False) -> tuple[dict[str, Any], list[tuple[float, ...]]]:
+    """Experiment 022: :func:`rank_distil_game`'s game (017's agent) with the commit
+    decision from level ``from_level`` on scored by ``count`` playouts to ``line_cap``,
+    placed by the rank network ``net``'s picks (``None``: the commit search alone), and the
+    playout-ranked decisions' rows when ``dump`` (means in points_unit). The result also
+    holds ``playouts``, ``playout_pieces`` and ``playouts_cut``."""
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    counts = (C.c_int64 * 3)()
+    rows = (C.c_double * RANK_DISTIL_CAPACITY)() if dump else None
+    count_rows = C.c_int(0)
+    status = load().fn_playout_game(
+        net, len(net or b""), from_level, count, C.byref(params), game["ruleset"].encode(),
+        game["mode"].encode(), game["start_level"], game["height"], seed, line_cap, frame_cap,
+        limits.tap_interval, limits.reaction_frames, inputs, max(1, frame_cap), out, counts,
+        rows, RANK_DISTIL_CAPACITY if dump else 0, C.byref(count_rows))
+    if status:
+        raise NativeError(f"fn_playout_game failed with {status}")
+    s = RANK_DISTIL_STRIDE
+    found = [tuple(rows[i * s:(i + 1) * s]) for i in range(count_rows.value)] if dump else []
+    played = _played(inputs, out) | dict(zip(("playouts", "playout_pieces", "playouts_cut"),
+                                             counts[:3]))
+    return played, found
 
 
 def rank_values(net: bytes, rows: list[tuple[float, ...]], *, line_cap: int,

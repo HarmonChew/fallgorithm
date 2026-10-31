@@ -1,0 +1,30 @@
+{
+ "game": {
+  "ruleset": "classic_ntsc_double_killscreen",
+  "mode": "endless",
+  "start_level": 18,
+  "height": 0
+ },
+ "line_cap": 430,
+ "frame_cap": 150000,
+ "formats": [
+  {
+   "tap_hz": 30,
+   "reaction_ms": 300
+  }
+ ],
+ "agent": "017's agent (reach_plan_016 with 015's numbers, 016's rollouts and 017's commit rollouts) with the commit decision from playout_from_level on scored by playouts to the line cap (native playout_game)",
+ "playout_from_level": 39,
+ "rank_net": "experiments/021-rank-net/rank_pilot.bin",
+ "variants": {
+  "rank_n16": {"policy": "rank", "count": 16},
+  "search_n16": {"policy": "search", "count": 16}
+ },
+ "variants_note": "policy rank: the playouts' placements re-ranked by rank_net (021's rank agent at a commit decision); search: the commit search alone (015's agent)",
+ "dev_seeds": "experiments/020-value-net/seeds.json dev_seeds: compare on the next 100 (part 1, the fair ones for rollout settings), confirm a keeper on the first 100 (part 0); 017's games there are in 020's dev_baselines.json",
+ "heldout": {
+  "seeds": "Experiment 012's 1,000 held-out seeds",
+  "baseline": "Experiment 017's agent: experiments/017-commit-rollouts/records/run.json.gz",
+  "rule": "only for an agent that beats 017 on the dev seeds"
+ }
+}

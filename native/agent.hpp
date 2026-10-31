@@ -96,6 +96,7 @@ public:
     }
 
     int pieces = 0, adjusts = 0, switches = 0, explored = 0;
+    const Search& searcher() const { return searcher_; }  // Experiment 022's counts
 
 private:
     // ReachAgent._decide. A switch is a change of (orientation, x); y is not compared.
