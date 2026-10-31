@@ -1,7 +1,8 @@
 # Experiment 022 - plan: score the killscreen by real points to the game's end
 
-Status: chosen by the owner 2026-11-01 ("a better target"); step 0 done and stopped there
-the same day (`notes.md`: the playouts lose to 017 on every probe seed but one). `predeclared.md` would be written
+Status: chosen by the owner 2026-11-01 ("a better target"); step 0 done and its direct
+playouts stopped the same day (`notes.md`: they lose to 017 on 11 of 12 probe games);
+step 3 (train on the playout scores, `step3.md`) started the same day. `predeclared.md` would be written
 after the dev checks and before any held-out game.
 
 ## Why

@@ -61,6 +61,12 @@
 // Tetris at level 18 (points_unit); the best mean wins (the first of equal means). The same
 // piece sequences are used for every candidate, each drawn from its own splitmix64 stream
 // seeded by the position, so a game stays a pure function of its seed.
+//
+// Experiment 022 step 3: or (count 0) the same decision is re-ranked by a killscreen
+// network (set_killscreen_net) fitted to those playouts' means: the highest output among
+// the same candidates, the search's own choice winning ties. The playouts' own placements
+// use the playout network (set_playout's ``net``), so a network fitted on one round's
+// playouts can place the next round's.
 #pragma once
 
 #include <algorithm>
@@ -193,14 +199,18 @@ public:
     }
 
     // Experiment 022: from level ``from_level`` on, the commit decision by ``count``
-    // playouts to ``line_cap`` (``count`` 0: off), placed by the rank network ``net``'s
-    // picks (nullptr: the commit search alone).
+    // playouts to ``line_cap`` (``count`` 0: off, or the killscreen network), placed by
+    // the rank network ``net``'s picks (nullptr: the commit search alone).
     void set_playout(const ValueNetwork* net, int line_cap, int from_level, int count) {
         playout_net_ = net;
         playout_line_cap_ = line_cap;
         playout_from_level_ = from_level;
         playout_count_ = count;
     }
+
+    // Experiment 022 step 3: from set_playout's ``from_level`` on, with ``count`` 0, the
+    // commit decision re-ranked by ``net`` (nullptr: as without it).
+    void set_killscreen_net(const ValueNetwork* net) { killscreen_net_ = net; }
 
     // Experiment 022's counts: playouts played, their placements, and playouts stopped
     // by playout_max_pieces before the game ended (expected 0).
@@ -211,7 +221,8 @@ public:
             return false;
         }
         const bool preview = position.next_piece >= 0;
-        if (!preview && playout_count_ > 0 && position.level >= playout_from_level_) {
+        if (!preview && position.level >= playout_from_level_ &&
+            (playout_count_ > 0 || killscreen_net_)) {
             return playout_search(position, choice);
         }
         const int from = preview ? params_.rollout_from_level : params_.commit_rollout_from_level;
@@ -334,8 +345,14 @@ private:
         if (candidates_.size() < 2) {
             return true;
         }
-        seed_playouts(position);
         const int phase = phase_of(params_, position.level, position.drought, position.columns);
+        if (playout_count_ == 0) {  // step 3: the killscreen network
+            const int best = rank_pick(searcher_, *killscreen_net_, playout_line_cap_, position,
+                                       rerank_model(false, position.level), -1, phase,
+                                       candidates_, params_);
+            return best == searcher_.chosen() || searcher_.choose(best, choice);
+        }
+        seed_playouts(position);
         int best = 0;
         double best_mean = 0.0;
         for (int index = 0; index < static_cast<int>(candidates_.size()); ++index) {
@@ -601,6 +618,7 @@ private:
     std::vector<Searcher::Candidate> candidates_;
     std::vector<std::vector<int>> sequences_;
     const ValueNetwork* playout_net_ = nullptr;
+    const ValueNetwork* killscreen_net_ = nullptr;
     int playout_line_cap_ = 0, playout_from_level_ = 0, playout_count_ = 0;
     std::vector<std::uint64_t> streams_;
     std::vector<std::vector<int>> playout_sequences_;

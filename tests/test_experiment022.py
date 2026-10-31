@@ -56,3 +56,26 @@ def test_bad_arguments_are_refused():
         _playout(count=0)
     with pytest.raises(native.NativeError):
         _playout(net=b"not a network")
+
+
+def test_the_killscreen_network_as_the_rank_network_plays_the_rank_agents_game(tmp_path):
+    # SMALL's commit band starts at 18, so the killscreen network from 18 re-ranks the
+    # same commit decisions over the same candidates as the rank agent.
+    _, net = _net(tmp_path)
+    played, _ = native.playout_game(None, GAME, _seed(), from_level=18, count=0, **ARGS,
+                                    params=native.params(SMALL), rank=net, killscreen=net)
+    alone = native.rank_game(net, GAME, _seed(), **ARGS, params=native.params(SMALL))
+    assert {k: v for k, v in played.items() if not k.startswith("playout")} == alone
+    assert played["playouts"] == 0
+
+
+def test_a_killscreen_network_changes_only_the_commit_decisions_from_its_level(tmp_path):
+    _, net = _net(tmp_path)
+    _, other = _net(tmp_path, seed=1)
+    off, _ = native.playout_game(None, GAME, _seed(), from_level=100, count=0, **ARGS,
+                                 params=native.params(SMALL), rank=net, killscreen=other)
+    alone = native.rank_game(net, GAME, _seed(), **ARGS, params=native.params(SMALL))
+    assert {k: v for k, v in off.items() if not k.startswith("playout")} == alone
+    with pytest.raises(native.NativeError):  # playouts and a killscreen network at once
+        native.playout_game(None, GAME, _seed(), from_level=18, count=2, **ARGS,
+                            params=native.params(SMALL), killscreen=other)

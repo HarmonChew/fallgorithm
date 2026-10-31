@@ -34,7 +34,8 @@ them, not on a stronger one: 017's 10-piece rollouts are scored by a value that 
 encodes 017-like play, and that wins.
 
 **Stop rule (step 1).** No dev check was run: on the probe seeds no variant comes near
-017, and a dev check would cost ~4 hours of the machine. 022 stops before step 2.
+017, and a dev check would cost ~4 hours of the machine. The direct playouts stop before
+step 2; step 3 (the first idea below) goes on (`step3.md`).
 
 What would still be worth trying, from this:
 

@@ -17,8 +17,14 @@
  "playout_from_level": 39,
  "rank_net": "experiments/021-rank-net/rank_pilot.bin",
  "variants": {
-  "rank_n16": {"policy": "rank", "count": 16},
-  "search_n16": {"policy": "search", "count": 16}
+  "rank_n16": {
+   "policy": "rank",
+   "count": 16
+  },
+  "search_n16": {
+   "policy": "search",
+   "count": 16
+  }
  },
  "variants_note": "policy rank: the playouts' placements re-ranked by rank_net (021's rank agent at a commit decision); search: the commit search alone (015's agent)",
  "dev_seeds": "experiments/020-value-net/seeds.json dev_seeds: compare on the next 100 (part 1, the fair ones for rollout settings), confirm a keeper on the first 100 (part 0); 017's games there are in 020's dev_baselines.json",
@@ -26,5 +32,27 @@
   "seeds": "Experiment 012's 1,000 held-out seeds",
   "baseline": "Experiment 017's agent: experiments/017-commit-rollouts/records/run.json.gz",
   "rule": "only for an agent that beats 017 on the dev seeds"
+ },
+ "step3": {
+  "plan": "step3.md",
+  "games": 400,
+  "count": 16,
+  "check_share": 0.2,
+  "collect_note": "a round's game: 021's rank agent below playout_from_level, the commit decision from it scored by count playouts placed by the round's playout network (round 1: rank_net; round r > 1: round r - 1's killscreen network); every playout-scored decision's candidates kept",
+  "fit": {
+   "hidden": 256,
+   "hidden2": 128,
+   "batch": 512,
+   "batch_note": "decisions per step",
+   "epochs": 30,
+   "lr": 0.001,
+   "lr_note": "Adam, one-cycle schedule peaking at lr",
+   "torch_seed": 22,
+   "weights_name": "killscreen_{}.bin"
+  },
+  "agents": {
+   "017_ks": "017's agent below playout_from_level, the killscreen network from it (no playouts)",
+   "rank_ks": "021's rank agent below playout_from_level, the killscreen network from it"
+  }
  }
 }
