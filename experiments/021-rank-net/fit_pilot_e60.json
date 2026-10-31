@@ -1,0 +1,257 @@
+{
+ "data": {
+  "directory": "runs/021-data/pilot",
+  "created_at": "2026-10-31T12:00:24.738895+00:00",
+  "rollout_net": null,
+  "versions_at_start": [
+   {
+    "engine": {
+     "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+     "dirty": false,
+     "kind": "committed"
+    },
+    "fallgorithm": {
+     "commit": "f1b23e61e80f228ce33259a6ed7990f9bb6d3601",
+     "dirty": false,
+     "kind": "committed"
+    }
+   }
+  ],
+  "versions_at_end": {
+   "engine": {
+    "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+    "dirty": false,
+    "kind": "committed"
+   },
+   "fallgorithm": {
+    "commit": "f1b23e61e80f228ce33259a6ed7990f9bb6d3601",
+    "dirty": false,
+    "kind": "committed"
+   }
+  },
+  "games": 300,
+  "fit_games": 240,
+  "rows": 1183769,
+  "mean_score": 1773797.9,
+  "fit_decisions": 237804
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "3dcda8b061599226b9987c958c60dd84bd79057a",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "torch": "2.14.0+cu130",
+ "settings": {
+  "hidden": 256,
+  "hidden2": 128,
+  "batch": 512,
+  "batch_note": "decisions per step",
+  "epochs": 60,
+  "lr": 0.001,
+  "lr_note": "Adam, one-cycle schedule peaking at lr",
+  "torch_seed": 21,
+  "weights_name": "rank_{}.bin"
+ },
+ "check_share": 0.2,
+ "target_scale": [
+  43.9361,
+  84.5185,
+  108.7256
+ ],
+ "weights": {
+  "path": "experiments/021-rank-net/rank_pilot_e60.bin",
+  "sha256": "a76adb819ba41b20ffc3edca61736cae8eac0622503e3038a9a67fd36a572700"
+ },
+ "native_max_difference": 0.000507354736328125,
+ "native_pick_flips": {
+  "flips": 0,
+  "decisions": 505
+ },
+ "training_log": [
+  {
+   "step": 2786,
+   "loss": 0.2081,
+   "network_loss": {
+    "preview 18-28": 1.4027,
+    "commit 29-38": 7.9253,
+    "commit 39+": 10.1773
+   },
+   "seconds": 3.1
+  },
+  {
+   "step": 5572,
+   "loss": 0.1881,
+   "network_loss": {
+    "preview 18-28": 1.2052,
+    "commit 29-38": 6.7238,
+    "commit 39+": 7.9711
+   },
+   "seconds": 6.0
+  },
+  {
+   "step": 8358,
+   "loss": 0.0943,
+   "network_loss": {
+    "preview 18-28": 1.2241,
+    "commit 29-38": 6.2266,
+    "commit 39+": 7.0519
+   },
+   "seconds": 8.8
+  },
+  {
+   "step": 11144,
+   "loss": 0.103,
+   "network_loss": {
+    "preview 18-28": 1.271,
+    "commit 29-38": 6.0026,
+    "commit 39+": 6.1293
+   },
+   "seconds": 11.6
+  },
+  {
+   "step": 13930,
+   "loss": 0.086,
+   "network_loss": {
+    "preview 18-28": 1.0911,
+    "commit 29-38": 5.8049,
+    "commit 39+": 6.1121
+   },
+   "seconds": 14.4
+  },
+  {
+   "step": 16716,
+   "loss": 0.0726,
+   "network_loss": {
+    "preview 18-28": 1.0903,
+    "commit 29-38": 5.9488,
+    "commit 39+": 5.7753
+   },
+   "seconds": 17.2
+  },
+  {
+   "step": 19502,
+   "loss": 0.1675,
+   "network_loss": {
+    "preview 18-28": 1.0629,
+    "commit 29-38": 5.8502,
+    "commit 39+": 5.8077
+   },
+   "seconds": 20.0
+  },
+  {
+   "step": 22288,
+   "loss": 0.1095,
+   "network_loss": {
+    "preview 18-28": 1.0383,
+    "commit 29-38": 5.6419,
+    "commit 39+": 5.4459
+   },
+   "seconds": 22.7
+  },
+  {
+   "step": 25074,
+   "loss": 0.0867,
+   "network_loss": {
+    "preview 18-28": 1.0281,
+    "commit 29-38": 5.6686,
+    "commit 39+": 5.5434
+   },
+   "seconds": 25.4
+  },
+  {
+   "step": 27860,
+   "loss": 0.0805,
+   "network_loss": {
+    "preview 18-28": 1.0305,
+    "commit 29-38": 5.582,
+    "commit 39+": 5.4993
+   },
+   "seconds": 28.3
+  }
+ ],
+ "checked_games": {
+  "preview 18-28": {
+   "decisions": 34712,
+   "search_agrees": 0.868,
+   "search_loss": 1.356,
+   "search_odd_loss": 1.5431,
+   "network_agrees": 0.8756,
+   "network_loss": 1.0305,
+   "network_odd_loss": 1.2019,
+   "even_rollouts_agrees": 0.9464,
+   "even_rollouts_loss": 0.1612,
+   "even_rollouts_odd_loss": 0.636
+  },
+  "commit 29-38": {
+   "decisions": 14110,
+   "search_agrees": 0.753,
+   "search_loss": 8.1149,
+   "search_odd_loss": 10.535,
+   "network_agrees": 0.777,
+   "network_loss": 5.582,
+   "network_odd_loss": 8.1303,
+   "even_rollouts_agrees": 0.8458,
+   "even_rollouts_loss": 2.4368,
+   "even_rollouts_odd_loss": 10.0368
+  },
+  "commit 39+": {
+   "decisions": 10259,
+   "search_agrees": 0.7633,
+   "search_loss": 8.7895,
+   "search_odd_loss": 10.4785,
+   "network_agrees": 0.7519,
+   "network_loss": 5.4993,
+   "network_odd_loss": 7.3888,
+   "even_rollouts_agrees": 0.8468,
+   "even_rollouts_loss": 1.9172,
+   "even_rollouts_odd_loss": 7.9099
+  }
+ },
+ "fitted_games": {
+  "preview 18-28": {
+   "decisions": 138090,
+   "search_agrees": 0.8673,
+   "search_loss": 1.3651,
+   "search_odd_loss": 1.5367,
+   "network_agrees": 0.876,
+   "network_loss": 1.0344,
+   "network_odd_loss": 1.2043,
+   "even_rollouts_agrees": 0.9453,
+   "even_rollouts_loss": 0.1657,
+   "even_rollouts_odd_loss": 0.6573
+  },
+  "commit 29-38": {
+   "decisions": 57103,
+   "search_agrees": 0.7503,
+   "search_loss": 8.3607,
+   "search_odd_loss": 10.8047,
+   "network_agrees": 0.7804,
+   "network_loss": 5.1436,
+   "network_odd_loss": 7.557,
+   "even_rollouts_agrees": 0.846,
+   "even_rollouts_loss": 2.421,
+   "even_rollouts_odd_loss": 9.7694
+  },
+  "commit 39+": {
+   "decisions": 42611,
+   "search_agrees": 0.7569,
+   "search_loss": 9.7031,
+   "search_odd_loss": 11.8525,
+   "network_agrees": 0.7548,
+   "network_loss": 5.0477,
+   "network_odd_loss": 7.1862,
+   "even_rollouts_agrees": 0.8503,
+   "even_rollouts_loss": 1.9801,
+   "even_rollouts_odd_loss": 8.2233
+  }
+ },
+ "stop_rule": "stop if the network's loss is not below the search's in all three decision kinds (checked games, full means)",
+ "stop": false
+}

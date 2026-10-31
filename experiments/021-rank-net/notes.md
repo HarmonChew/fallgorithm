@@ -1,7 +1,8 @@
 # Experiment 021 - a network that ranks the search's top moves
 
-Status: steps 0-3 done 2026-10-31; milestone 1 met. Step 4 (what it unlocks) is next, chosen
-with the owner. Plan in `plan.md`; no `predeclared.md` and no held-out run yet. The bar stays
+Status: steps 0-3 done 2026-10-31, milestone 1 met; step 4 (the network inside 017's
+rollouts) and step 4b (blended into 017's picks) stopped 2026-11-01, neither above 017.
+Plan in `plan.md`; no `predeclared.md` and no held-out run. The bar stays
 017's agent: 1,800k, 393.0 lines on 012's held-out seeds.
 
 ## Question
@@ -106,3 +107,40 @@ The blend beats the 8 rollouts alone in every kind, on both halves of the checke
 
 017 averages 16 rollouts (half the noise), so the dev check plays both those weights
 (`blend_full`) and half of them (`blend_half`), with no network inside the rollouts.
+
+**Stopped: neither is above 017.** On dev seeds 100-199 (code 3dcda8b,
+`dev_check_rollouts_rank_pilot_blend_half_blend_full_part1.json`):
+
+| dev seeds 100-199 | blend_half | blend_full | 017's agent |
+| --- | --- | --- | --- |
+| mean score | 1,802k | 1,787k | 1,840k |
+| paired against 017 | -38k (CI -110k to +33k), 48 of 100 | -53k (-124k to +14k), 49 of 100 | |
+| mean lines | 394.4 | 390.9 | 398.6 |
+| seconds per game | 480 | 454 | 426 |
+
+## A diagnostic: twice the training
+
+A throwaway fit with twice the steps (the pilot given twice) ended lower, so the pilot was
+refitted with 60 epochs (`fit_pilot_e60.json`, `rank_pilot_e60.bin`; recorded as a working
+tree: the new `--epochs` option was uncommitted, and the outputs were untracked). Its checked-games loss is 6-7% lower (1.03 / 5.58 / 5.50
+against 1.11 / 5.96 / 5.91), but the rank agent with it plays worse: 1,479k on dev seeds 0-99
+and 1,539k on 100-199, -53k and -52k against the 30-epoch network on the same seeds
+(neither significant alone, both the same way; `dev_check_rank_pilot_e60_part0.json`,
+`_part1`). The 30-epoch network stays the rank agent's.
+
+## What step 4 taught
+
+* **Using the network more never played better.** Three ways (inside the rollouts, blended
+  into the picks, fitted harder) gave six paired means, all below their baseline (-33k to
+  -64k), none significantly. The two we could check offline both agreed better with the
+  rollouts there. The blend in particular removes rollout noise offline (-24% to -26% at
+  29+) and gained nothing online; our reading is that 16 rollouts' noise is not what
+  limits 017.
+* **Our reading: 021 is capped by its target.** The network learns 017's 10-piece rollout
+  return, which sums the hand-built placement value. Beating 017 likely needs a better
+  target (a longer or truer measure of a move's worth), not a cheaper or less noisy copy of
+  this one. Untried within step 4: a fourth kind for the in-rollout 29+ decisions, and the
+  round-1 loop.
+* **What 021 leaves:** the rank agent (`rank_pilot.bin`), +206k to +209k over 015 at 015's
+  speed (1.5 s a game, ~300x faster than 017). It is the fastest strong agent we have, so
+  anything that needs many games (a CEM retune, a self-play target) can now use it.

@@ -1,0 +1,167 @@
+{
+ "question": "does blending the network into the rollouts' mean pick better than the rollouts alone (even half scored on the odd half)?",
+ "data": "runs/021-data/pilot",
+ "checked_games": 60,
+ "weights": {
+  "path": "experiments/021-rank-net/rank_pilot.bin",
+  "sha256": "e42caa5223cbe6e0345fba835b7a08cfd0e82a9e20b400bb4c7adb9efdb5db4b"
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "3dcda8b061599226b9987c958c60dd84bd79057a",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "odd_loss": {
+  "preview 18-28": {
+   "decisions": 34712,
+   "w=0": {
+    "first_half": 0.6169,
+    "second_half": 0.6551,
+    "all": 0.636
+   },
+   "w=0.25": {
+    "first_half": 0.5789,
+    "second_half": 0.5766,
+    "all": 0.5778
+   },
+   "w=0.5": {
+    "first_half": 0.6088,
+    "second_half": 0.5846,
+    "all": 0.5967
+   },
+   "w=1": {
+    "first_half": 0.7084,
+    "second_half": 0.6667,
+    "all": 0.6876
+   },
+   "w=1.5": {
+    "first_half": 0.7884,
+    "second_half": 0.7457,
+    "all": 0.7671
+   },
+   "w=2": {
+    "first_half": 0.8634,
+    "second_half": 0.8098,
+    "all": 0.8367
+   },
+   "w=3": {
+    "first_half": 0.9482,
+    "second_half": 0.9105,
+    "all": 0.9294
+   },
+   "w=5": {
+    "first_half": 1.0612,
+    "second_half": 1.02,
+    "all": 1.0406
+   },
+   "network": {
+    "first_half": 1.2789,
+    "second_half": 1.2977,
+    "all": 1.2883
+   }
+  },
+  "commit 29-38": {
+   "decisions": 14110,
+   "w=0": {
+    "first_half": 9.9831,
+    "second_half": 10.0938,
+    "all": 10.0368
+   },
+   "w=0.25": {
+    "first_half": 8.4441,
+    "second_half": 8.7154,
+    "all": 8.5757
+   },
+   "w=0.5": {
+    "first_half": 7.9146,
+    "second_half": 8.1464,
+    "all": 8.027
+   },
+   "w=1": {
+    "first_half": 7.5217,
+    "second_half": 8.0082,
+    "all": 7.7577
+   },
+   "w=1.5": {
+    "first_half": 7.1787,
+    "second_half": 7.7755,
+    "all": 7.4682
+   },
+   "w=2": {
+    "first_half": 7.1422,
+    "second_half": 7.6702,
+    "all": 7.3983
+   },
+   "w=3": {
+    "first_half": 7.3389,
+    "second_half": 8.0224,
+    "all": 7.6704
+   },
+   "w=5": {
+    "first_half": 7.4015,
+    "second_half": 8.3592,
+    "all": 7.8661
+   },
+   "network": {
+    "first_half": 7.8546,
+    "second_half": 9.0801,
+    "all": 8.449
+   }
+  },
+  "commit 39+": {
+   "decisions": 10259,
+   "w=0": {
+    "first_half": 7.3609,
+    "second_half": 8.4833,
+    "all": 7.9099
+   },
+   "w=0.25": {
+    "first_half": 6.333,
+    "second_half": 7.0871,
+    "all": 6.7018
+   },
+   "w=0.5": {
+    "first_half": 6.0025,
+    "second_half": 6.3854,
+    "all": 6.1898
+   },
+   "w=1": {
+    "first_half": 5.8554,
+    "second_half": 6.1975,
+    "all": 6.0227
+   },
+   "w=1.5": {
+    "first_half": 5.8927,
+    "second_half": 6.4661,
+    "all": 6.1732
+   },
+   "w=2": {
+    "first_half": 6.1942,
+    "second_half": 6.5389,
+    "all": 6.3628
+   },
+   "w=3": {
+    "first_half": 6.2846,
+    "second_half": 6.973,
+    "all": 6.6213
+   },
+   "w=5": {
+    "first_half": 6.8578,
+    "second_half": 7.1609,
+    "all": 7.0061
+   },
+   "network": {
+    "first_half": 7.5444,
+    "second_half": 7.8837,
+    "all": 7.7103
+   }
+  }
+ }
+}

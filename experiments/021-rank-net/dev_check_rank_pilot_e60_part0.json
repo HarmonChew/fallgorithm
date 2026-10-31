@@ -1,0 +1,672 @@
+{
+ "question": "The rank agent against 015's and 017's agents, on 020's dev seeds",
+ "seeds": "Experiment 020's dev seeds 0 to 99",
+ "games": 100,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "3dcda8b061599226b9987c958c60dd84bd79057a",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "weights": {
+  "path": "experiments/021-rank-net/rank_pilot_e60.bin",
+  "sha256": "a76adb819ba41b20ffc3edca61736cae8eac0622503e3038a9a67fd36a572700"
+ },
+ "runs": {
+  "rank": {
+   "mean_score": 1478931.6,
+   "mean_lines": 349.74,
+   "line_cap_share": 0.23,
+   "score_by_band": {
+    "18": 450047,
+    "19-28": 416907,
+    "29-38": 478008,
+    "39+": 133970
+   },
+   "seconds_per_game": 1.56,
+   "tetris_rate": 0.4475
+  },
+  "fast_deep": {
+   "mean_score": 1322772.4,
+   "mean_lines": 361.4,
+   "line_cap_share": 0.37,
+   "score_by_band": {
+    "18": 432504,
+    "19-28": 403802,
+    "29-38": 365790,
+    "39+": 120676
+   },
+   "seconds_per_game": 1.59,
+   "tetris_rate": 0.3732
+  },
+  "commit_rollout": {
+   "mean_score": 1809683.4,
+   "mean_lines": 393.62,
+   "line_cap_share": 0.44,
+   "score_by_band": {
+    "18": 510063,
+    "19-28": 479509,
+    "29-38": 556423,
+    "39+": 263689
+   },
+   "seconds_per_game": 470.14,
+   "tetris_rate": 0.4849
+  }
+ },
+ "paired": {
+  "rank - fast_deep": {
+   "total": {
+    "score": {
+     "mean": 156159.2,
+     "ci95_low": 56959.8,
+     "ci95_high": 255128.8,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -11.66,
+     "ci95_low": -32.36,
+     "ci95_high": 8.98,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 63,
+     "lower": 37,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 17543.4,
+     "ci95_low": -3855.0,
+     "ci95_high": 38916.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 13104.8,
+     "ci95_low": -19806.2,
+     "ci95_high": 44587.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 112217.6,
+     "ci95_low": 59810.8,
+     "ci95_high": 165200.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 13293.4,
+     "ci95_low": -23771.6,
+     "ci95_high": 51442.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  },
+  "rank - commit_rollout": {
+   "total": {
+    "score": {
+     "mean": -330751.8,
+     "ci95_low": -433411.6,
+     "ci95_high": -232312.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -43.88,
+     "ci95_low": -62.71,
+     "ci95_high": -26.49,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 25,
+     "lower": 75,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": -60015.6,
+     "ci95_low": -78555.0,
+     "ci95_high": -41984.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": -62601.8,
+     "ci95_low": -92783.8,
+     "ci95_high": -33220.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": -78415.2,
+     "ci95_low": -126492.6,
+     "ci95_high": -31556.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -129719.2,
+     "ci95_low": -173717.2,
+     "ci95_high": -87078.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  }
+ },
+ "per_game": [
+  {
+   "seed": 18174,
+   "score": 1338040,
+   "lines": 332
+  },
+  {
+   "seed": 62498,
+   "score": 2010400,
+   "lines": 431
+  },
+  {
+   "seed": 48556,
+   "score": 1150220,
+   "lines": 281
+  },
+  {
+   "seed": 20553,
+   "score": 450540,
+   "lines": 162
+  },
+  {
+   "seed": 18046,
+   "score": 1448440,
+   "lines": 331
+  },
+  {
+   "seed": 32341,
+   "score": 1875760,
+   "lines": 430
+  },
+  {
+   "seed": 2728,
+   "score": 2128140,
+   "lines": 424
+  },
+  {
+   "seed": 18833,
+   "score": 1652660,
+   "lines": 407
+  },
+  {
+   "seed": 40805,
+   "score": 1865420,
+   "lines": 403
+  },
+  {
+   "seed": 13712,
+   "score": 1587360,
+   "lines": 375
+  },
+  {
+   "seed": 10102,
+   "score": 1334140,
+   "lines": 336
+  },
+  {
+   "seed": 42758,
+   "score": 1512980,
+   "lines": 385
+  },
+  {
+   "seed": 14455,
+   "score": 1330880,
+   "lines": 352
+  },
+  {
+   "seed": 57756,
+   "score": 1529540,
+   "lines": 333
+  },
+  {
+   "seed": 19239,
+   "score": 1493160,
+   "lines": 362
+  },
+  {
+   "seed": 29,
+   "score": 1729960,
+   "lines": 431
+  },
+  {
+   "seed": 54405,
+   "score": 1338500,
+   "lines": 307
+  },
+  {
+   "seed": 5728,
+   "score": 1228280,
+   "lines": 363
+  },
+  {
+   "seed": 916,
+   "score": 1747940,
+   "lines": 430
+  },
+  {
+   "seed": 46530,
+   "score": 808640,
+   "lines": 245
+  },
+  {
+   "seed": 4142,
+   "score": 1869580,
+   "lines": 431
+  },
+  {
+   "seed": 37587,
+   "score": 1675540,
+   "lines": 352
+  },
+  {
+   "seed": 13620,
+   "score": 1870720,
+   "lines": 404
+  },
+  {
+   "seed": 1954,
+   "score": 1704140,
+   "lines": 391
+  },
+  {
+   "seed": 11259,
+   "score": 237880,
+   "lines": 104
+  },
+  {
+   "seed": 56437,
+   "score": 1631220,
+   "lines": 343
+  },
+  {
+   "seed": 58820,
+   "score": 1238040,
+   "lines": 336
+  },
+  {
+   "seed": 25642,
+   "score": 1554940,
+   "lines": 430
+  },
+  {
+   "seed": 57783,
+   "score": 314260,
+   "lines": 109
+  },
+  {
+   "seed": 18599,
+   "score": 1901020,
+   "lines": 416
+  },
+  {
+   "seed": 6138,
+   "score": 1697260,
+   "lines": 344
+  },
+  {
+   "seed": 2411,
+   "score": 1868300,
+   "lines": 430
+  },
+  {
+   "seed": 19107,
+   "score": 1796100,
+   "lines": 430
+  },
+  {
+   "seed": 32764,
+   "score": 1511240,
+   "lines": 336
+  },
+  {
+   "seed": 43878,
+   "score": 870800,
+   "lines": 248
+  },
+  {
+   "seed": 26848,
+   "score": 1572360,
+   "lines": 337
+  },
+  {
+   "seed": 20265,
+   "score": 1436120,
+   "lines": 354
+  },
+  {
+   "seed": 26873,
+   "score": 1745080,
+   "lines": 418
+  },
+  {
+   "seed": 36360,
+   "score": 1361880,
+   "lines": 317
+  },
+  {
+   "seed": 53786,
+   "score": 1800840,
+   "lines": 431
+  },
+  {
+   "seed": 33309,
+   "score": 1462240,
+   "lines": 430
+  },
+  {
+   "seed": 6916,
+   "score": 1855700,
+   "lines": 405
+  },
+  {
+   "seed": 38352,
+   "score": 163780,
+   "lines": 65
+  },
+  {
+   "seed": 15180,
+   "score": 1411360,
+   "lines": 353
+  },
+  {
+   "seed": 19383,
+   "score": 1835800,
+   "lines": 410
+  },
+  {
+   "seed": 30203,
+   "score": 1393560,
+   "lines": 313
+  },
+  {
+   "seed": 34669,
+   "score": 1955900,
+   "lines": 430
+  },
+  {
+   "seed": 38359,
+   "score": 1127320,
+   "lines": 384
+  },
+  {
+   "seed": 3975,
+   "score": 1385380,
+   "lines": 331
+  },
+  {
+   "seed": 25058,
+   "score": 1240300,
+   "lines": 335
+  },
+  {
+   "seed": 54587,
+   "score": 1415700,
+   "lines": 336
+  },
+  {
+   "seed": 41530,
+   "score": 1685780,
+   "lines": 430
+  },
+  {
+   "seed": 4132,
+   "score": 1804180,
+   "lines": 355
+  },
+  {
+   "seed": 35922,
+   "score": 1766580,
+   "lines": 330
+  },
+  {
+   "seed": 44660,
+   "score": 64980,
+   "lines": 26
+  },
+  {
+   "seed": 30367,
+   "score": 1686240,
+   "lines": 430
+  },
+  {
+   "seed": 20274,
+   "score": 784980,
+   "lines": 234
+  },
+  {
+   "seed": 56027,
+   "score": 1406620,
+   "lines": 356
+  },
+  {
+   "seed": 6414,
+   "score": 1062100,
+   "lines": 283
+  },
+  {
+   "seed": 43849,
+   "score": 1506340,
+   "lines": 371
+  },
+  {
+   "seed": 34869,
+   "score": 2102840,
+   "lines": 430
+  },
+  {
+   "seed": 753,
+   "score": 1898000,
+   "lines": 419
+  },
+  {
+   "seed": 25892,
+   "score": 1568160,
+   "lines": 339
+  },
+  {
+   "seed": 46740,
+   "score": 1015240,
+   "lines": 236
+  },
+  {
+   "seed": 10462,
+   "score": 1590960,
+   "lines": 361
+  },
+  {
+   "seed": 43070,
+   "score": 1024620,
+   "lines": 285
+  },
+  {
+   "seed": 64041,
+   "score": 1531400,
+   "lines": 331
+  },
+  {
+   "seed": 40797,
+   "score": 759220,
+   "lines": 230
+  },
+  {
+   "seed": 4763,
+   "score": 1646320,
+   "lines": 351
+  },
+  {
+   "seed": 30535,
+   "score": 1736480,
+   "lines": 430
+  },
+  {
+   "seed": 2865,
+   "score": 1307640,
+   "lines": 303
+  },
+  {
+   "seed": 37561,
+   "score": 2059660,
+   "lines": 432
+  },
+  {
+   "seed": 62602,
+   "score": 1298660,
+   "lines": 335
+  },
+  {
+   "seed": 18916,
+   "score": 1474280,
+   "lines": 331
+  },
+  {
+   "seed": 36123,
+   "score": 1274200,
+   "lines": 401
+  },
+  {
+   "seed": 39527,
+   "score": 1867840,
+   "lines": 430
+  },
+  {
+   "seed": 22069,
+   "score": 1630360,
+   "lines": 359
+  },
+  {
+   "seed": 58653,
+   "score": 1895620,
+   "lines": 430
+  },
+  {
+   "seed": 12528,
+   "score": 1541660,
+   "lines": 358
+  },
+  {
+   "seed": 33237,
+   "score": 1454000,
+   "lines": 338
+  },
+  {
+   "seed": 43066,
+   "score": 1585480,
+   "lines": 331
+  },
+  {
+   "seed": 2216,
+   "score": 1764820,
+   "lines": 373
+  },
+  {
+   "seed": 50749,
+   "score": 1773180,
+   "lines": 380
+  },
+  {
+   "seed": 11728,
+   "score": 1863020,
+   "lines": 431
+  },
+  {
+   "seed": 43466,
+   "score": 937300,
+   "lines": 237
+  },
+  {
+   "seed": 28128,
+   "score": 1764720,
+   "lines": 431
+  },
+  {
+   "seed": 47781,
+   "score": 1195840,
+   "lines": 272
+  },
+  {
+   "seed": 64877,
+   "score": 1899060,
+   "lines": 430
+  },
+  {
+   "seed": 5048,
+   "score": 1599860,
+   "lines": 349
+  },
+  {
+   "seed": 53633,
+   "score": 1434560,
+   "lines": 334
+  },
+  {
+   "seed": 47295,
+   "score": 1650020,
+   "lines": 355
+  },
+  {
+   "seed": 37576,
+   "score": 1275440,
+   "lines": 310
+  },
+  {
+   "seed": 23973,
+   "score": 952260,
+   "lines": 236
+  },
+  {
+   "seed": 36779,
+   "score": 1665080,
+   "lines": 401
+  },
+  {
+   "seed": 6155,
+   "score": 1466060,
+   "lines": 314
+  },
+  {
+   "seed": 41621,
+   "score": 1422140,
+   "lines": 372
+  },
+  {
+   "seed": 29314,
+   "score": 1775140,
+   "lines": 404
+  },
+  {
+   "seed": 50677,
+   "score": 1344740,
+   "lines": 335
+  },
+  {
+   "seed": 54465,
+   "score": 1805560,
+   "lines": 432
+  },
+  {
+   "seed": 48682,
+   "score": 1808560,
+   "lines": 430
+  }
+ ]
+}

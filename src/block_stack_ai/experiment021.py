@@ -350,11 +350,12 @@ def _predict(model: e20.ValueNet, rows: torch.Tensor, line_cap: int,
                           for i in range(0, len(rows), batch)])
 
 
-def fit_run(directories: list[Path], device: str, name: str) -> dict[str, Any]:
+def fit_run(directories: list[Path], device: str, name: str,
+            epochs: int | None = None) -> dict[str, Any]:
     """Fit the network on the first games of each run and report on the rest (step 2;
-    step 4 fits several runs at once)."""
+    step 4 fits several runs at once; ``epochs`` overrides the config's)."""
     config = _load(CONFIG)
-    settings = config["fit"]
+    settings = config["fit"] | ({"epochs": epochs} if epochs else {})
     torch.manual_seed(settings["torch_seed"])
     runs, all_rows, fit_mask, run_of = [], [], [], []
     for directory in directories:
@@ -621,6 +622,7 @@ def main(argv: list[str] | None = None) -> int:
     fit.add_argument("data", type=Path, nargs="*", default=[DATA_ROOT / "pilot"])
     fit.add_argument("--name", help="the fit's name (default: the one run's folder name)")
     fit.add_argument("--device", default="cuda:0")
+    fit.add_argument("--epochs", type=int, help="override the config's epochs")
     check = commands.add_parser("dev-check", help="the rank agent on dev seeds")
     check.add_argument("weights", type=Path)
     check.add_argument("--part", type=int, choices=(0, 1), default=0)
@@ -659,7 +661,7 @@ def main(argv: list[str] | None = None) -> int:
             weights = EXPERIMENT_ROOT / _load(CONFIG)["fit"]["weights_name"].format(name)
             if path.exists() or weights.exists():
                 raise ValueError(f"{path.name} or {weights.name} exists; pick another --name")
-            _write(path, fit_run(directories, args.device, name))
+            _write(path, fit_run(directories, args.device, name, args.epochs))
             print(f"Wrote {path}")
         elif args.command == "blend-check":
             path = EXPERIMENT_ROOT / f"blend_{args.weights.stem}.json"

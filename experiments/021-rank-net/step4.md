@@ -2,7 +2,8 @@
 
 Status: approved by the owner 2026-10-31 ("push through to a meaningful result"). Step 1 ran
 2026-11-01: neither variant above 017, so the stop rule fired (`notes.md`). Step 4b below
-(added 2026-11-01 under the same mandate) blends the network into 017's own picks instead.
+(added 2026-11-01 under the same mandate) blends the network into 017's own picks instead;
+it stopped too (-38k and -53k against 017 on dev seeds 100-199). No held-out run.
 
 ## Why
 
