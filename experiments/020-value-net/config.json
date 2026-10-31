@@ -1,0 +1,57 @@
+{
+ "game": {
+  "ruleset": "classic_ntsc_double_killscreen",
+  "mode": "endless",
+  "start_level": 18,
+  "height": 0
+ },
+ "line_cap": 430,
+ "agent": "the value-network agent (native, from step 3); round 0 data from 015's agent",
+ "frame_cap": 150000,
+ "formats": [
+  {
+   "tap_hz": 30,
+   "reaction_ms": 300
+  }
+ ],
+ "dev_seed_count": 200,
+ "round0": {
+  "agent": "015's agent (fast_deep: reach_plan_014 with 015's numbers and commit ply)",
+  "games": 20000,
+  "explore": 0.01,
+  "explore_start": 0,
+  "explore_note": "1%, not the plan's 5%: on 60 scratch seeds (no dev or held-out seed) 5% left 1 game of 60 reaching level 39 (015's agent alone: 48; 1%: 37), so the data would have had almost no 39+ boards"
+ },
+ "dev_seeds": "seeds.json dev_seeds: compare on the first 100, confirm a keeper on the next 100",
+ "heldout": {
+  "seeds": "Experiment 012's 1,000 held-out seeds",
+  "baseline": "Experiment 017's agent: experiments/017-commit-rollouts/records/run.json.gz"
+ },
+ "fit": {
+  "hidden": 256,
+  "hidden2": 128,
+  "batch": 4096,
+  "epochs": 8,
+  "lr": 0.001,
+  "lr_note": "Adam, one-cycle schedule peaking at lr",
+  "torch_seed": 20,
+  "check_share": 0.1,
+  "min_gain": 0.1,
+  "weights_name": "value_{}.bin",
+  "probe": {
+   "heights": [
+    8,
+    12,
+    16
+   ],
+   "lines": {
+    "19-28": 180,
+    "39+": 340
+   },
+   "drought": 5,
+   "last": 5,
+   "note": "Tetris-ready stacks (column 9 empty; with even lines only multiples of 4 can occur); V must fall at each step in both, and lose a larger share of V(8) at 39+; last 5 is T"
+  }
+ },
+ "seeds_note": "Training seeds are labelled fallgorithm020/train/v<round> (round 0: v0). The 16-bit seeds hold only 30,720 distinct start states, so later rounds draw fresh labels but may reuse earlier rounds' training start states (never a dev, held-out or excluded one); their games differ because the agent does."
+}

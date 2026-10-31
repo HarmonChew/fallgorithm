@@ -85,3 +85,74 @@ def test_a_dump_too_small_for_the_game_is_refused():
         (C.c_uint8 * 150000)(), 150000, (C.c_int64 * 11)(), (C.c_int32 * S)(), S,
         C.byref(count))
     assert status == -2 and count.value == -7
+
+
+# ---------------------------------------------------------------- the harness (steps 1-2)
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
+from block_stack_ai import experiment020 as e20  # noqa: E402
+
+
+def test_boards_keep_each_row_and_the_points_still_to_come():
+    played, data = _dump(**EXPLORE)
+    rows = _rows(data)
+    found = e20.boards(7, {"score": played["score"]}, data)
+    assert found["columns"].tolist() == [list(r[:10]) for r in rows]
+    assert found["target"].tolist() == [played["score"] - r[11] for r in rows]
+    assert found["lines"].tolist() == [r[10] for r in rows]
+    assert found["drought"].tolist() == [r[12] for r in rows]
+    assert found["last"].tolist() == [r[13] for r in rows]
+    assert found["features"].tolist() == [list(r[14:]) for r in rows]
+    assert set(found["game"].tolist()) == {7}
+
+
+def test_inputs_put_each_cell_band_and_piece_in_its_place():
+    columns = torch.tensor([[1 << 19] + [0] * 8 + [1 << 0]])  # bottom-left, top-right
+    x = e20.inputs(columns, torch.arange(18)[None], torch.tensor([235]), torch.tensor([4]),
+                   torch.tensor([5]), 430)[0]
+    assert x.shape == (e20.INPUTS,) == (231,)
+    assert x[:200].nonzero().flatten().tolist() == [9, 190]  # row 0 col 9, row 19 col 0
+    at = 200 + 18
+    assert x[200:at].tolist() == list(range(18))
+    assert x[at:at + 4].tolist() == [0, 0, 1, 0]  # 235 lines: level 29-38
+    assert x[at + 4].item() == pytest.approx(1.95) and x[at + 5].item() == 4
+    assert x[at + 6:].tolist() == [0, 0, 0, 0, 0, 1, 0]  # T
+    none = e20.inputs(columns, torch.zeros(1, 18), torch.tensor([0]), torch.tensor([0]),
+                      torch.tensor([-1]), 430)[0]
+    assert none[at + 6:].sum().item() == 0 and none[at:at + 4].tolist() == [1, 0, 0, 0]
+    assert e20.speed_band(torch.tensor([129, 130, 229, 230, 329, 330])).tolist() == \
+        [0, 1, 1, 2, 2, 3]
+
+
+def test_export_folds_the_normalisation_and_reads_back(tmp_path):
+    torch.manual_seed(0)
+    model = e20.ValueNet(16, 8, torch.rand(e20.INPUTS), torch.rand(e20.INPUTS) + 0.5)
+    sha = e20.export(model, tmp_path / "v.bin")
+    again = e20.read_export(tmp_path / "v.bin")
+    x = torch.rand(50, e20.INPUTS) * 3
+    assert torch.allclose(model(x), again(x), atol=1e-4)
+    assert len(sha) == 64 and (tmp_path / "v.bin").stat().st_size == \
+        16 + 4 * (e20.INPUTS * 16 + 16 + 16 * 8 + 8 + 8 + 1)
+
+
+def test_probe_boards_are_tetris_ready_stacks():
+    boards = e20.probe_boards([0, 4])
+    assert boards[0].tolist() == [0] * 10
+    assert boards[1].tolist() == [0xF0000] * 9 + [0]
+    features = native.board_features(tuple(c << 2 for c in boards[1].tolist()))
+    assert features[0] == 0 and features[3] == 36  # no holes, aggregate height 9 x 4
+
+
+def test_the_linear_baselines_recover_a_linear_target():
+    rng = np.random.default_rng(1)
+    n = 3000
+    lines = torch.from_numpy(rng.integers(0, 430, n))
+    features = torch.from_numpy(rng.integers(0, 20, (n, 18)))
+    left = (430 - lines) / 100
+    target = ((3 + 2 * left + features[:, 4] - 0.5 * features[:, 2] * left) * e20.TETRIS_18)
+    t = {"lines": lines, "features": features, "target": target.round().long()}
+    found = e20.linear_baselines(t, t, 430)
+    y = t["target"].double() / e20.TETRIS_18
+    assert torch.allclose(found["linear_013"], y, atol=5e-3)  # the small ridge
