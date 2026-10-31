@@ -32,8 +32,15 @@
 // w[model] . rerank_features(...), the first of equal scores winning. And with
 // set_dump, every re-ranked decision's candidates are written out as DistilRows (their
 // features and the rollouts' mean return), the data the score is fitted to.
+//
+// Experiment 021: or by a rank network (net.hpp, set_rank_net) reading each candidate's
+// settled board and rank_inputs: the same decisions and candidates, the highest output
+// winning (the search's own choice on ties). The DistilRows also keep each candidate's
+// board, the decision's pieces, lines and drought, and the means of the even and of the
+// odd rollouts (two independent halves, to measure how noisy the mean is).
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -41,6 +48,7 @@
 
 #include "board.hpp"
 #include "eval.hpp"
+#include "net.hpp"
 #include "search.hpp"
 #include "value.hpp"
 
@@ -87,12 +95,45 @@ inline std::array<double, rerank_features_count> rerank_features(
 }
 
 // One candidate of a re-ranked decision: the model it belongs to, the level, its place
-// in the search's order, the rollouts' mean return, and its features.
+// in the search's order, the rollouts' mean return, and its features; and (Experiment
+// 021) its settled board, the means of the even and the odd rollouts, the current and the
+// preview piece (-1: not known), and the lines and drought before the placement.
 struct DistilRow {
     int model, level, rank;
     double mean;
     std::array<double, rerank_features_count> x;
+    Columns settled;
+    double mean_even, mean_odd;
+    int piece, next, lines, drought;
 };
+
+// Experiment 021's rank network inputs after the 200 cells, in this order: the rerank
+// features, the model (one-hot), the current piece (one-hot), the preview (one-hot; all
+// 0 when not known), the lines left before ``line_cap`` after the candidate's clear (in
+// hundreds, 0 at least), the level / 10 and the drought (before the placement).
+static_assert(rank_dense == rerank_features_count + rerank_models + 2 * piece_types + 3);
+
+inline std::array<float, rank_dense> rank_inputs(
+    int model, int piece, int next, int lines_after, int line_cap, int level, int drought,
+    const std::array<double, rerank_features_count>& x) {
+    std::array<float, rank_dense> out{};
+    for (int k = 0; k < rerank_features_count; ++k) {
+        out[k] = static_cast<float>(x[k]);
+    }
+    int at = rerank_features_count;
+    out[at + model] = 1.0f;
+    at += rerank_models;
+    out[at + piece] = 1.0f;
+    at += piece_types;
+    if (next >= 0) {
+        out[at + next] = 1.0f;
+    }
+    at += piece_types;
+    out[at] = static_cast<float>(std::max(0, line_cap - lines_after)) / 100.0f;
+    out[at + 1] = static_cast<float>(level) / 10.0f;
+    out[at + 2] = static_cast<float>(drought);
+    return out;
+}
 
 class RolloutSearcher {
 public:
@@ -104,6 +145,12 @@ public:
     void set_rerank(const RerankModel* model) { rerank_ = model; }
     // Experiment 018: append every rollout-ranked decision's candidates to ``rows``.
     void set_dump(std::vector<DistilRow>* rows) { dump_ = rows; }
+    // Experiment 021: re-rank by the rank network ``net`` (nullptr: rollouts), its lines
+    // left counted to ``line_cap``.
+    void set_rank_net(const ValueNetwork* net, int line_cap) {
+        rank_net_ = net;
+        line_cap_ = line_cap;
+    }
 
     bool search(const Position& position, Choice& choice) {
         if (!searcher_.search(position, choice)) {
@@ -134,6 +181,32 @@ public:
         const int phase =
             phase_of(params_, position.level, position.drought, position.columns);
         const int model = rerank_model(preview, position.level);
+        if (rank_net_) {
+            // As the linear re-ranker below: the search's own choice wins ties.
+            int best = searcher_.chosen();
+            bool have_best = false;
+            double best_score = 0.0;
+            for (const Searcher::Candidate& candidate : candidates_) {
+                const double own = value_of(
+                    params_, phase, candidate.cleared, candidate.settled,
+                    level_for_lines(position.lines + candidate.cleared, position.start_level));
+                const bool searched = candidate.order == searcher_.chosen();
+                const auto dense = rank_inputs(
+                    model, position.piece, position.next_piece,
+                    position.lines + candidate.cleared, line_cap_, position.level,
+                    position.drought, rerank_features(searched, candidate, own));
+                const double score = rank_forward(*rank_net_, candidate.settled, dense.data());
+                if (!have_best || score > best_score || (score == best_score && searched)) {
+                    best = candidate.order;
+                    best_score = score;
+                    have_best = true;
+                }
+            }
+            if (best == searcher_.chosen()) {
+                return true;
+            }
+            return searcher_.choose(best, choice);
+        }
         if (rerank_) {
             // The search's own choice wins unless another candidate scores higher (so
             // all-zero weights play the Searcher's game); among others, the first.
@@ -169,19 +242,25 @@ public:
             const int lines = position.lines + candidate.cleared;
             const double first = value_of(params_, phase, candidate.cleared, candidate.settled,
                                           level_for_lines(lines, position.start_level));
-            double total = 0.0;
-            for (const std::vector<int>& sequence : sequences_) {
+            double total = 0.0, halves[2] = {0.0, 0.0};
+            for (std::size_t at = 0; at < sequences_.size(); ++at) {
                 double value = 0.0;
-                if (!rollout(position, candidate.settled, lines, sequence, depth, value)) {
+                if (!rollout(position, candidate.settled, lines, sequences_[at], depth, value)) {
                     return false;
                 }
                 total += first + value;
+                halves[at % 2] += first + value;
             }
             const double mean = total / static_cast<double>(sequences_.size());
             if (dump_) {
+                const double even = static_cast<double>((sequences_.size() + 1) / 2);
+                const double odd = static_cast<double>(sequences_.size() / 2);
                 dump_->push_back({model, position.level, index, mean,
                                   rerank_features(candidate.order == searcher_.chosen(),
-                                                  candidate, first)});
+                                                  candidate, first),
+                                  candidate.settled, halves[0] / even,
+                                  odd > 0 ? halves[1] / odd : halves[0] / even, position.piece,
+                                  position.next_piece, position.lines, position.drought});
             }
             if (index == 0 || mean > best_mean) {
                 best = index;
@@ -278,6 +357,8 @@ private:
     Searcher searcher_, policy_;
     Params params_{};
     const RerankModel* rerank_ = nullptr;
+    const ValueNetwork* rank_net_ = nullptr;
+    int line_cap_ = 0;
     std::vector<DistilRow>* dump_ = nullptr;
     Choice choice_;
     std::vector<Searcher::Candidate> candidates_;

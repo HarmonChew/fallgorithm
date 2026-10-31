@@ -1,0 +1,37 @@
+{
+ "game": {
+  "ruleset": "classic_ntsc_double_killscreen",
+  "mode": "endless",
+  "start_level": 18,
+  "height": 0
+ },
+ "line_cap": 430,
+ "frame_cap": 150000,
+ "formats": [
+  {
+   "tap_hz": 30,
+   "reaction_ms": 300
+  }
+ ],
+ "teacher": "017's agent (reach_plan_016 with 015's numbers, 016's rollouts and 017's commit rollouts)",
+ "student": "the rank agent (native rank_game): the same agent with the rank network in place of the rollouts, at the same decisions and over the same candidates",
+ "distil_games": 300,
+ "check_share": 0.2,
+ "fit": {
+  "hidden": 256,
+  "hidden2": 128,
+  "batch": 512,
+  "batch_note": "decisions per step",
+  "epochs": 30,
+  "lr": 0.001,
+  "lr_note": "Adam, one-cycle schedule peaking at lr",
+  "torch_seed": 21,
+  "weights_name": "rank_{}.bin"
+ },
+ "dev_seeds": "experiments/020-value-net/seeds.json dev_seeds: compare on the first 100 (part 0), confirm a keeper on the next 100 (part 1); 015's and 017's games there are in 020's dev_baselines.json",
+ "heldout": {
+  "seeds": "Experiment 012's 1,000 held-out seeds",
+  "baseline": "Experiment 017's agent: experiments/017-commit-rollouts/records/run.json.gz",
+  "rule": "only for an agent that beats 017 on the dev seeds"
+ }
+}

@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 15
+ABI_VERSION = 16
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -81,6 +81,12 @@ DISTIL_CAPACITY = 40_000 * DISTIL_STRIDE
 DUMP_STRIDE = WIDTH + 4 + BOARD_FEATURES
 # A game has at most (430 * 10 + 200) / 4 + 1 = 1,126 pieces at the 430-line cap.
 DUMP_CAPACITY = 2_000 * DUMP_STRIDE
+# Experiment 021 (fn_rank_distil_game): per candidate, model, level, rank, the rollouts'
+# mean, the even and the odd rollouts' means, the current piece, the preview (-1: not
+# known), lines, drought, the settled board's ten visible columns, then the rerank features.
+RANK_DISTIL_HEAD = 10
+RANK_DISTIL_STRIDE = RANK_DISTIL_HEAD + WIDTH + RERANK_FEATURES
+RANK_DISTIL_CAPACITY = 40_000 * RANK_DISTIL_STRIDE
 
 Columns = C.c_uint32 * WIDTH
 
@@ -250,6 +256,16 @@ def load() -> Any:
                                 C.c_uint64, C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int64),
                                 C.POINTER(C.c_int32), C.c_int, C.POINTER(C.c_int)]
     lib.fn_net_game.restype = C.c_int
+    lib.fn_rank_distil_stride.restype = C.c_int
+    lib.fn_rank_distil_game.argtypes = lib.fn_distil_game.argtypes
+    lib.fn_rank_distil_game.restype = C.c_int
+    lib.fn_rank_values.argtypes = [C.c_char_p, C.c_int, C.POINTER(C.c_double), C.c_int, C.c_int,
+                                   C.c_int, C.POINTER(C.c_double)]
+    lib.fn_rank_values.restype = C.c_int
+    lib.fn_rank_game.argtypes = [C.c_char_p, C.c_int, C.POINTER(Params), C.c_char_p, C.c_char_p,
+                                 C.c_int, C.c_int, C.c_int, C.c_int, C.c_int, C.c_int, C.c_int,
+                                 C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int64)]
+    lib.fn_rank_game.restype = C.c_int
     lib.fn_board_features.argtypes = [Columns, C.POINTER(C.c_double)]
     lib.fn_board_features.restype = None
     lib.fn_board_value.argtypes = [C.POINTER(C.c_double), C.c_int, Columns, C.c_int, C.c_int]
@@ -259,7 +275,7 @@ def load() -> Any:
     if lib.fn_abi_version() != ABI_VERSION:
         raise NativeError(f"{path} has ABI version {lib.fn_abi_version()}, expected "
                           f"{ABI_VERSION}. Rebuild with scripts/build_native.py.")
-    if lib.fn_dump_stride() != DUMP_STRIDE:
+    if lib.fn_dump_stride() != DUMP_STRIDE or lib.fn_rank_distil_stride() != RANK_DISTIL_STRIDE:
         raise NativeError(f"{path} disagrees on the dump row layout. Rebuild it.")
     if lib.fn_params_size() != C.sizeof(Params):
         raise NativeError(f"{path} disagrees on the Params layout. Rebuild it.")
@@ -571,3 +587,48 @@ def net_game(net: bytes, game: dict[str, Any], seed: int, *, line_cap: int, fram
         raise NativeError(f"fn_net_game failed with {status}")
     return _played(inputs, out), (C.string_at(rows, count.value * DUMP_STRIDE * 4)
                                   if dump else None)
+
+
+def rank_distil_game(game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: int,
+                     limits: Limits, params: Params) -> tuple[dict[str, Any], list[tuple[float, ...]]]:
+    """:func:`distil_game`'s game and Experiment 021's rows, :data:`RANK_DISTIL_STRIDE`
+    numbers each (see the constant)."""
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    rows = (C.c_double * RANK_DISTIL_CAPACITY)()
+    count = C.c_int(0)
+    status = load().fn_rank_distil_game(
+        C.byref(params), game["ruleset"].encode(), game["mode"].encode(), game["start_level"],
+        game["height"], seed, line_cap, frame_cap, limits.tap_interval, limits.reaction_frames,
+        inputs, max(1, frame_cap), out, rows, RANK_DISTIL_CAPACITY, C.byref(count))
+    if status:
+        raise NativeError(f"fn_rank_distil_game failed with {status}")
+    s = RANK_DISTIL_STRIDE
+    return _played(inputs, out), [tuple(rows[i * s:(i + 1) * s]) for i in range(count.value)]
+
+
+def rank_values(net: bytes, rows: list[tuple[float, ...]], *, line_cap: int,
+                start_level: int) -> list[float]:
+    """The rank network's outputs for rows of :func:`rank_distil_game`'s layout
+    (Experiment 021; ``net`` is experiment021.export's bytes)."""
+    flat = [v for row in rows for v in row]
+    buffer = (C.c_double * max(1, len(flat)))(*flat)
+    out = (C.c_double * max(1, len(rows)))()
+    if load().fn_rank_values(net, len(net), buffer, len(rows), line_cap, start_level, out):
+        raise NativeError("fn_rank_values failed (not a rank network, or a bad row?)")
+    return list(out[:len(rows)])
+
+
+def rank_game(net: bytes, game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: int,
+              limits: Limits, params: Params) -> dict[str, Any]:
+    """One game by Experiment 021's agent: ``reach_plan_016`` with ``params`` and the rank
+    network ``net`` in place of the rollouts (:func:`play_game_ex`'s result)."""
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    status = load().fn_rank_game(
+        net, len(net), C.byref(params), game["ruleset"].encode(), game["mode"].encode(),
+        game["start_level"], game["height"], seed, line_cap, frame_cap, limits.tap_interval,
+        limits.reaction_frames, inputs, max(1, frame_cap), out)
+    if status:
+        raise NativeError(f"fn_rank_game failed with {status}")
+    return _played(inputs, out)

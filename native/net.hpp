@@ -21,6 +21,12 @@ constexpr int net_cells = width * height;
 constexpr int net_inputs = net_cells + 18 + 4 + 1 + 1 + piece_types;
 constexpr std::int32_t net_magic = 0x30323046;
 
+// Experiment 021's rank network (experiment021.RankNet), the same shape: the 200 cells,
+// then rank_dense numbers rollout.hpp's rank_inputs writes.
+constexpr int rank_dense = 47;
+constexpr int rank_inputs_count = net_cells + rank_dense;
+constexpr std::int32_t rank_magic = 0x31323046;
+
 struct ValueNetwork {
     int hidden = 0, hidden2 = 0;
     std::vector<float> w1, b1, w2, b2, w3;  // w1: one row of ``hidden`` per input
@@ -28,7 +34,12 @@ struct ValueNetwork {
 
     // experiment020.export's bytes. Returns false if they are not a network for
     // net_inputs inputs.
-    bool load(const unsigned char* data, std::size_t size);
+    bool load(const unsigned char* data, std::size_t size) {
+        return load(data, size, net_magic, net_inputs);
+    }
+    // An export with this ``magic`` and ``inputs`` (Experiment 021: rank_magic,
+    // rank_inputs_count).
+    bool load(const unsigned char* data, std::size_t size, std::int32_t magic, int inputs);
 };
 
 // The network's output for one settled board (``columns`` with the hidden rows, which
@@ -37,5 +48,9 @@ struct ValueNetwork {
 // lines left before the cap, the drought and the piece that left it (-1: none).
 double net_forward(const ValueNetwork& net, const Columns& columns, const double* features,
                    int band, int lines_left, int drought, int last);
+
+// Experiment 021: the rank network's output for one candidate's settled board and its
+// rank_dense other inputs.
+double rank_forward(const ValueNetwork& net, const Columns& columns, const float* dense);
 
 }  // namespace fallgorithm

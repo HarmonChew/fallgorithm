@@ -230,23 +230,25 @@ def inputs(columns: torch.Tensor, features: torch.Tensor, lines: torch.Tensor,
 
 
 class ValueNet(torch.nn.Module):
-    """INPUTS -> hidden -> hidden2 -> 1 with ReLUs, inputs normalised by fixed numbers."""
+    """INPUTS (or ``inputs``) -> hidden -> hidden2 -> 1 with ReLUs, inputs normalised by
+    fixed numbers."""
 
-    def __init__(self, hidden: int, hidden2: int, mean: torch.Tensor, std: torch.Tensor):
+    def __init__(self, hidden: int, hidden2: int, mean: torch.Tensor, std: torch.Tensor,
+                 inputs: int = INPUTS):
         super().__init__()
         self.register_buffer("mean", mean)
         self.register_buffer("std", std)
         self.layers = torch.nn.Sequential(
-            torch.nn.Linear(INPUTS, hidden), torch.nn.ReLU(), torch.nn.Linear(hidden, hidden2),
+            torch.nn.Linear(inputs, hidden), torch.nn.ReLU(), torch.nn.Linear(hidden, hidden2),
             torch.nn.ReLU(), torch.nn.Linear(hidden2, 1))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.layers((x - self.mean) / self.std).squeeze(1)
 
 
-def export(model: ValueNet, path: Path) -> str:
+def export(model: ValueNet, path: Path, magic: int = 0x30323046) -> str:
     """The weights as native/net.hpp reads them, normalisation folded into the first
-    layer: a header of int32 (magic 0x30323046, INPUTS, hidden, hidden2), then float32
+    layer: a header of int32 (``magic``, the inputs, hidden, hidden2), then float32
     first-layer rows (one per input), its biases, the second layer's rows (one per output),
     its biases, the output weights and bias. Returns the file's sha256."""
     first, _, second, _, third = model.layers
@@ -255,28 +257,29 @@ def export(model: ValueNet, path: Path) -> str:
         b1 = first.bias.double() - (w1 * model.mean.double()).sum(1)
         parts = [w1.T, b1, second.weight.double(), second.bias.double(),
                  third.weight.double().squeeze(0), third.bias.double()]
-    header = np.array([0x30323046, INPUTS, first.out_features, second.out_features], np.int32)
+    header = np.array([magic, first.in_features, first.out_features, second.out_features],
+                      np.int32)
     data = header.tobytes() + b"".join(p.float().cpu().numpy().astype("<f4").tobytes()
                                        for p in parts)
     path.write_bytes(data)
     return hashlib.sha256(data).hexdigest()
 
 
-def read_export(path: Path) -> ValueNet:
+def read_export(path: Path, magic: int = 0x30323046, inputs: int = INPUTS) -> ValueNet:
     """A ValueNet with an exported file's weights (mean 0, std 1: folded)."""
     data = path.read_bytes()
-    magic, n_in, hidden, hidden2 = np.frombuffer(data[:16], "<i4")
-    if magic != 0x30323046 or n_in != INPUTS:
-        raise ValueError(f"{path} is not a value network for these inputs")
+    found, n_in, hidden, hidden2 = np.frombuffer(data[:16], "<i4")
+    if found != magic or n_in != inputs:
+        raise ValueError(f"{path} is not a network for these inputs")
     numbers = torch.from_numpy(np.frombuffer(data[16:], "<f4").copy())
-    model = ValueNet(int(hidden), int(hidden2), torch.zeros(INPUTS), torch.ones(INPUTS))
+    model = ValueNet(int(hidden), int(hidden2), torch.zeros(inputs), torch.ones(inputs), inputs)
     first, _, second, _, third = model.layers
-    sizes = [INPUTS * hidden, hidden, hidden * hidden2, hidden2, hidden2, 1]
+    sizes = [inputs * hidden, hidden, hidden * hidden2, hidden2, hidden2, 1]
     if sum(sizes) != len(numbers):
         raise ValueError(f"{path} has the wrong length")
     chunks = torch.split(numbers, sizes)
     with torch.no_grad():
-        first.weight.copy_(chunks[0].reshape(INPUTS, hidden).T)
+        first.weight.copy_(chunks[0].reshape(inputs, hidden).T)
         first.bias.copy_(chunks[1])
         second.weight.copy_(chunks[2].reshape(hidden2, hidden))
         second.bias.copy_(chunks[3])

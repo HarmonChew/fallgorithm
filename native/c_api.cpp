@@ -27,7 +27,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 15;
+constexpr int abi_version = 16;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -430,6 +430,147 @@ FN_API int fn_distil_game(const Params* params, const char* ruleset, const char*
         }
         *row_count = static_cast<int>(found.size());
         return 0;
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 021's data: fn_distil_game's game, and every rollout-ranked decision's
+// candidates in ``rows``, each as rank_distil_stride numbers: model, level, rank, the
+// rollouts' mean, the even rollouts' mean, the odd ones', the current piece, the preview
+// (-1: not known), the lines and the drought before the placement, the settled board's ten
+// columns' visible rows (bit r is visible row r, row 0 at the top), then the rerank
+// features. Returns as fn_distil_game.
+constexpr int rank_distil_stride = 10 + width + rerank_features_count;
+
+FN_API int fn_rank_distil_stride() { return rank_distil_stride; }
+
+FN_API int fn_rank_distil_game(const Params* params, const char* ruleset, const char* mode,
+                               int start_level, int height, int seed, int line_cap,
+                               int frame_cap, int interval, int reaction, std::uint8_t* inputs,
+                               int capacity, std::int64_t* out, double* rows, int row_capacity,
+                               int* row_count) {
+    if (!params || !rows || !row_count || !ruleset || !mode || seed < 0 || seed > 0xffff ||
+        line_cap < 0 || frame_cap < 0 || capacity < frame_cap || interval < 1 ||
+        reaction < 0 || start_level < 0 || start_level >= 20 || row_capacity < 0) {
+        return -1;
+    }
+    try {
+        blocks::Config config;
+        if (!make_config(ruleset, mode, start_level, height, seed, config)) {
+            return -1;
+        }
+        Searcher searcher(*params);
+        searcher.set_extra_ply(true);
+        searcher.set_nes_odds(true);
+        std::vector<DistilRow> found;
+        RolloutSearcher rollouts(searcher, *params);
+        rollouts.set_dump(&found);
+        BasicAgent<RolloutSearcher> agent(rollouts, interval, reaction);
+        std::uint64_t final_score = 0;
+        const int status =
+            run_game(config, agent, line_cap, frame_cap, inputs, out, nullptr, final_score);
+        if (status) {
+            return status;
+        }
+        if (static_cast<long long>(found.size()) * rank_distil_stride > row_capacity) {
+            return -2;
+        }
+        for (std::size_t index = 0; index < found.size(); ++index) {
+            const DistilRow& f = found[index];
+            double* row = rows + index * rank_distil_stride;
+            const double head[10] = {static_cast<double>(f.model), static_cast<double>(f.level),
+                                     static_cast<double>(f.rank), f.mean, f.mean_even,
+                                     f.mean_odd, static_cast<double>(f.piece),
+                                     static_cast<double>(f.next), static_cast<double>(f.lines),
+                                     static_cast<double>(f.drought)};
+            for (int k = 0; k < 10; ++k) {
+                row[k] = head[k];
+            }
+            for (int column = 0; column < width; ++column) {
+                row[10 + column] = static_cast<double>(f.settled[column] >> hidden_rows);
+            }
+            for (int k = 0; k < rerank_features_count; ++k) {
+                row[10 + width + k] = f.x[k];
+            }
+        }
+        *row_count = static_cast<int>(found.size());
+        return 0;
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 021: the rank network's outputs for ``count`` rows of fn_rank_distil_game's
+// layout (for the tests); ``net`` is experiment021.export's bytes. Returns 0, or -1 for
+// bad arguments.
+FN_API int fn_rank_values(const unsigned char* net, int net_size, const double* rows, int count,
+                          int line_cap, int start_level, double* out) {
+    if (!net || net_size < 0 || !rows || count < 0 || !out || line_cap < 0 ||
+        start_level < 0 || start_level >= 20) {
+        return -1;
+    }
+    ValueNetwork network;
+    if (!network.load(net, static_cast<std::size_t>(net_size), rank_magic, rank_inputs_count)) {
+        return -1;
+    }
+    for (int index = 0; index < count; ++index) {
+        const double* row = rows + static_cast<std::size_t>(index) * rank_distil_stride;
+        const int model = static_cast<int>(row[0]), piece = static_cast<int>(row[6]);
+        const int next = static_cast<int>(row[7]);
+        if (model < 0 || model >= rerank_models || piece < 0 || piece >= piece_types ||
+            next < -1 || next >= piece_types) {
+            return -1;
+        }
+        Columns columns{};
+        for (int column = 0; column < width; ++column) {
+            columns[column] = static_cast<std::uint32_t>(row[10 + column]) << hidden_rows;
+        }
+        std::array<double, rerank_features_count> x{};
+        int cleared = 0;
+        for (int k = 0; k < rerank_features_count; ++k) {
+            x[k] = row[10 + width + k];
+        }
+        for (int k = 1; k <= 4; ++k) {
+            cleared += x[4 + k] != 0.0 ? k : 0;
+        }
+        const auto dense = rank_inputs(model, piece, next, static_cast<int>(row[8]) + cleared,
+                                       line_cap, static_cast<int>(row[1]),
+                                       static_cast<int>(row[9]), x);
+        out[index] = rank_forward(network, columns, dense.data());
+    }
+    return 0;
+}
+
+// Experiment 021's agent: fn_distil_game's agent (017's) with the rank network ``net``
+// in place of the rollouts, at the same decisions; fn_play_game_ex's outputs.
+// Returns 0, -1 for bad arguments (or a ``net`` that is not a rank network), -3 if the
+// agent failed.
+FN_API int fn_rank_game(const unsigned char* net, int net_size, const Params* params,
+                        const char* ruleset, const char* mode, int start_level, int height,
+                        int seed, int line_cap, int frame_cap, int interval, int reaction,
+                        std::uint8_t* inputs, int capacity, std::int64_t* out) {
+    if (!net || net_size < 0 || !params || !ruleset || !mode || seed < 0 || seed > 0xffff ||
+        line_cap < 0 || frame_cap < 0 || capacity < frame_cap || interval < 1 ||
+        reaction < 0 || start_level < 0 || start_level >= 20) {
+        return -1;
+    }
+    try {
+        blocks::Config config;
+        ValueNetwork network;
+        if (!make_config(ruleset, mode, start_level, height, seed, config) ||
+            !network.load(net, static_cast<std::size_t>(net_size), rank_magic,
+                          rank_inputs_count)) {
+            return -1;
+        }
+        Searcher searcher(*params);
+        searcher.set_extra_ply(true);
+        searcher.set_nes_odds(true);
+        RolloutSearcher ranked(searcher, *params);
+        ranked.set_rank_net(&network, line_cap);
+        BasicAgent<RolloutSearcher> agent(ranked, interval, reaction);
+        std::uint64_t final_score = 0;
+        return run_game(config, agent, line_cap, frame_cap, inputs, out, nullptr, final_score);
     } catch (const std::exception&) {
         return -1;
     }
