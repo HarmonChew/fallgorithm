@@ -1,6 +1,9 @@
 # Experiment 020 - plan: a learned value network
 
-Status: approved by the owner 2026-10-31; step 0 under way.
+Status: approved by the owner 2026-10-31. Step 2's stop rule fired (V0's validation error only
+1.2% below 013's linear model, against 10%; the probe passed); the owner chose to go on to
+the step 3 dev check anyway, since one game's future is too noisy for the error to tell
+the two apart. V0 then lost badly (see notes); step 3's one fix is round 1's data.
 `predeclared.md` is written after the dev checks and before any held-out game.
 
 ## Why

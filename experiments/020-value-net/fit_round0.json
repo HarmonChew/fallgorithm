@@ -1,0 +1,272 @@
+{
+ "data": {
+  "directory": "runs/020-data/round0",
+  "created_at": "2026-10-31T09:58:43.710583+00:00",
+  "versions": {
+   "engine": {
+    "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+    "dirty": false,
+    "kind": "committed"
+   },
+   "fallgorithm": {
+    "commit": "9d0479643994c200e085fb6cf0615075fee80f79",
+    "dirty": false,
+    "kind": "committed"
+   }
+  },
+  "games": 20000,
+  "train_games": 18000,
+  "train_boards": 15630595,
+  "frame_limit_games_dropped": 0,
+  "check_boards": 1740729
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "9d0479643994c200e085fb6cf0615075fee80f79",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "torch": "2.14.0+cu130",
+ "settings": {
+  "hidden": 256,
+  "hidden2": 128,
+  "batch": 4096,
+  "epochs": 8,
+  "lr": 0.001,
+  "lr_note": "Adam, one-cycle schedule peaking at lr",
+  "torch_seed": 20,
+  "check_share": 0.1,
+  "min_gain": 0.1,
+  "weights_name": "value_{}.bin",
+  "probe": {
+   "heights": [
+    8,
+    12,
+    16
+   ],
+   "lines": {
+    "19-28": 180,
+    "39+": 340
+   },
+   "drought": 5,
+   "last": 5,
+   "note": "Tetris-ready stacks (column 9 empty; with even lines only multiples of 4 can occur); V must fall at each step in both, and lose a larger share of V(8) at 39+; last 5 is T"
+  }
+ },
+ "weights": {
+  "path": "experiments/020-value-net/value_round0.bin",
+  "sha256": "5dd9e7464ac532da58fc94aac9fb96bfc90750266066e8349456413570a1524b"
+ },
+ "unit": "points / 22,800 (a Tetris at level 18)",
+ "training_log": [
+  {
+   "step": 3052,
+   "check": {
+    "mse": 104.7398,
+    "r2": 0.6708,
+    "mse_by_band": {
+     "18": 161.7338,
+     "19-28": 112.2199,
+     "29-38": 43.3867,
+     "39+": 11.6365
+    }
+   },
+   "seconds": 15.9
+  },
+  {
+   "step": 6104,
+   "check": {
+    "mse": 103.7139,
+    "r2": 0.674,
+    "mse_by_band": {
+     "18": 161.3409,
+     "19-28": 111.3191,
+     "29-38": 42.6764,
+     "39+": 7.2854
+    }
+   },
+   "seconds": 34.5
+  },
+  {
+   "step": 9156,
+   "check": {
+    "mse": 103.5566,
+    "r2": 0.6745,
+    "mse_by_band": {
+     "18": 161.1193,
+     "19-28": 111.2419,
+     "29-38": 42.6024,
+     "39+": 6.9679
+    }
+   },
+   "seconds": 55.2
+  },
+  {
+   "step": 12208,
+   "check": {
+    "mse": 103.4689,
+    "r2": 0.6748,
+    "mse_by_band": {
+     "18": 161.1751,
+     "19-28": 111.0346,
+     "29-38": 42.3867,
+     "39+": 6.9542
+    }
+   },
+   "seconds": 74.8
+  },
+  {
+   "step": 15260,
+   "check": {
+    "mse": 103.5874,
+    "r2": 0.6744,
+    "mse_by_band": {
+     "18": 161.1459,
+     "19-28": 111.1515,
+     "29-38": 42.59,
+     "39+": 7.4297
+    }
+   },
+   "seconds": 88.3
+  },
+  {
+   "step": 18312,
+   "check": {
+    "mse": 103.4609,
+    "r2": 0.6748,
+    "mse_by_band": {
+     "18": 161.1997,
+     "19-28": 111.1253,
+     "29-38": 42.2621,
+     "39+": 6.8213
+    }
+   },
+   "seconds": 107.9
+  },
+  {
+   "step": 21364,
+   "check": {
+    "mse": 103.5588,
+    "r2": 0.6745,
+    "mse_by_band": {
+     "18": 161.2828,
+     "19-28": 111.3712,
+     "29-38": 42.2237,
+     "39+": 6.8782
+    }
+   },
+   "seconds": 126.7
+  },
+  {
+   "step": 24416,
+   "check": {
+    "mse": 103.4726,
+    "r2": 0.6748,
+    "mse_by_band": {
+     "18": 161.1685,
+     "19-28": 111.2656,
+     "29-38": 42.1971,
+     "39+": 6.8163
+    }
+   },
+   "seconds": 140.2
+  },
+  {
+   "step": 27468,
+   "check": {
+    "mse": 103.4505,
+    "r2": 0.6749,
+    "mse_by_band": {
+     "18": 161.1277,
+     "19-28": 111.2896,
+     "29-38": 42.1614,
+     "39+": 6.7689
+    }
+   },
+   "seconds": 153.6
+  },
+  {
+   "step": 30520,
+   "check": {
+    "mse": 103.4359,
+    "r2": 0.6749,
+    "mse_by_band": {
+     "18": 161.1493,
+     "19-28": 111.2443,
+     "29-38": 42.1176,
+     "39+": 6.7683
+    }
+   },
+   "seconds": 168.7
+  }
+ ],
+ "check_errors": {
+  "network": {
+   "mse": 103.4359,
+   "r2": 0.6749,
+   "mse_by_band": {
+    "18": 161.1493,
+    "19-28": 111.2443,
+    "29-38": 42.1176,
+    "39+": 6.7683
+   }
+  },
+  "lines_left_x_points_per_line": {
+   "mse": 118.1278,
+   "r2": 0.6287,
+   "mse_by_band": {
+    "18": 167.8975,
+    "19-28": 125.759,
+    "29-38": 69.5251,
+    "39+": 23.0399
+   }
+  },
+  "linear_013": {
+   "mse": 104.7375,
+   "r2": 0.6708,
+   "mse_by_band": {
+    "18": 161.6648,
+    "19-28": 113.832,
+    "29-38": 43.5635,
+    "39+": 7.206
+   }
+  }
+ },
+ "mse_below_linear_013": 0.0124,
+ "probe": {
+  "heights": [
+   8,
+   12,
+   16
+  ],
+  "19-28": {
+   "lines": 180,
+   "value": [
+    28.832,
+    28.517,
+    12.624
+   ],
+   "falls": true,
+   "share_lost": 0.5622
+  },
+  "39+": {
+   "lines": 340,
+   "value": [
+    4.052,
+    3.736,
+    -0.344
+   ],
+   "falls": true,
+   "share_lost": 1.085
+  },
+  "passes": true
+ },
+ "stop_rule": "stop if the network's validation MSE is not at least 10% below 013's linear model's, or the probe fails",
+ "stop": true
+}
