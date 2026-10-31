@@ -22,6 +22,11 @@
 // rollouts whose first piece, the unknown preview, is drawn with the NES odds after the
 // current piece. Off by the same rule, the commit decision is the Searcher's alone.
 //
+// Experiment 019: from the double killscreen (level 39) on, the commit decision's count and
+// depth can be set apart (Params::killscreen_rollout_count and _depth; 0 keeps the
+// commit_rollout_ ones). The 29-38 adjust decision (preview known) is 016's band, so
+// rollout_to_level 38 re-ranks it with 016's settings; no code is needed for that.
+//
 // Experiment 018: the same decisions can instead be re-ranked by a fitted linear score
 // (RerankModel, set_rerank): no rollouts are played, and each candidate scores
 // w[model] . rerank_features(...), the first of equal scores winning. And with
@@ -108,8 +113,12 @@ public:
         const int from = preview ? params_.rollout_from_level : params_.commit_rollout_from_level;
         const int to = preview ? params_.rollout_to_level : params_.commit_rollout_to_level;
         const int beam = preview ? params_.rollout_beam : params_.commit_rollout_beam;
-        const int count = preview ? params_.rollout_count : params_.commit_rollout_count;
-        const int depth = preview ? params_.rollout_depth : params_.commit_rollout_depth;
+        int count = preview ? params_.rollout_count : params_.commit_rollout_count;
+        int depth = preview ? params_.rollout_depth : params_.commit_rollout_depth;
+        if (!preview && position.level >= killscreen_level) {  // Experiment 019
+            count = params_.killscreen_rollout_count > 0 ? params_.killscreen_rollout_count : count;
+            depth = params_.killscreen_rollout_depth > 0 ? params_.killscreen_rollout_depth : depth;
+        }
         if (!choice.found || beam < 2 || count < 1 || depth < 1 || position.level < from ||
             position.level > to) {
             return true;
