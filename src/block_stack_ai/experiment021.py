@@ -4,6 +4,7 @@
     python -m block_stack_ai.experiment021 collect [--jobs N]
     python -m block_stack_ai.experiment021 fit [DATA] [--device cuda:0]
     python -m block_stack_ai.experiment021 dev-check WEIGHTS [--part 0|1] [--jobs N]
+    python -m block_stack_ai.experiment021 blend-check WEIGHTS [DATA]
     python -m block_stack_ai.experiment021 dev-check-rollouts WEIGHTS [--part 0|1] [--jobs N]
     python -m block_stack_ai.experiment021 round-seeds ROUND
     python -m block_stack_ai.experiment021 collect --round ROUND --weights W --to-level L
@@ -23,9 +24,10 @@ three saw). ``dev-check`` plays the rank agent (``rank_game``) on Experiment 020
 seeds, paired against 015's and 017's agents (020's dev_baselines.json).
 
 Step 4 (``step4.md``): ``dev-check-rollouts`` plays 017's agent with the rank network
-re-ranking the rollouts' own placements (native ``rank_rollout_game``), once per variant
-of config ``step4.variants`` (the last level where the rollouts use it), paired against
-017's. ``round-seeds`` selects fresh seeds for a round of data, ``collect --round`` plays
+re-ranking the rollouts' own placements (native ``rank_rollout_game``) and/or blended into
+the rollout-ranked picks (step 4b), once per variant of config ``step4.variants`` (the last
+level where the rollouts use it, or {to_level, blend}), paired against 017's.
+``blend-check`` is step 4b's offline check of the blend on a run's checked games. ``round-seeds`` selects fresh seeds for a round of data, ``collect --round`` plays
 that agent on them (the same rows), and ``fit`` takes several runs (each run's last
 ``check_share`` of games are checked).
 """
@@ -497,16 +499,72 @@ def dev_check(weights: Path, jobs: int, part: int = 0) -> dict[str, Any]:
     }
 
 
-def dev_rollout_game(job: tuple[str, int, str, int]) -> dict[str, Any]:
+def _variant(setting: int | dict[str, Any]) -> tuple[int, tuple[float, float, float] | None]:
+    """A step 4 variant's (to_level, blend): a bare number is the to_level alone."""
+    if isinstance(setting, int):
+        return setting, None
+    blend = setting.get("blend")
+    return setting["to_level"], tuple(blend) if blend is not None else None
+
+
+BLEND_WEIGHTS = (0.0, 0.25, 0.5, 1.0, 1.5, 2.0, 3.0, 5.0)
+
+
+def blend_check(directory: Path, weights: Path) -> dict[str, Any]:
+    """Step 4b's offline check on a run's checked games: per decision kind, what a pick by
+    the even rollouts' mean plus w times the network's output loses judged by the odd
+    rollouts alone (which neither saw), for each w of :data:`BLEND_WEIGHTS` and for the
+    network alone; separately on the first and second half of the checked games."""
+    config = _load(CONFIG)
+    header, games, rows, game = load_data(directory)
+    split = len(games) - round(len(games) * config["check_share"])
+    middle = split + (len(games) - split) // 2
+    keep = game >= split
+    rows, game = rows[keep], game[keep]
+    model = read_export(weights).double().eval()
+    with torch.no_grad():
+        net = model(inputs(torch.from_numpy(rows).double(), config["line_cap"])).numpy().ravel()
+    starts = np.flatnonzero(rows[:, RANK] == 0).tolist() + [len(rows)]
+    names = [f"w={w:g}" for w in BLEND_WEIGHTS] + ["network"]
+    totals = np.zeros((3, 2, len(names)))
+    counts = np.zeros((3, 2))
+    for begin, end in zip(starts, starts[1:]):
+        if end - begin < 2:
+            continue
+        kind, half = int(rows[begin, MODEL]), int(game[begin] >= middle)
+        even, odd, out = rows[begin:end, EVEN], rows[begin:end, ODD], net[begin:end]
+        scores = [even + w * out for w in BLEND_WEIGHTS] + [out]
+        for k, score in enumerate(scores):
+            totals[kind, half, k] += odd.max() - odd[_first_best(score.tolist())]
+        counts[kind, half] += 1
+    return {
+        "question": "does blending the network into the rollouts' mean pick better than the "
+                    "rollouts alone (even half scored on the odd half)?",
+        "data": str(directory.relative_to(runner.PROJECT_ROOT)), "checked_games": len(games) - split,
+        "weights": {"path": str(weights.resolve().relative_to(runner.PROJECT_ROOT)),
+                    "sha256": hashlib.sha256(weights.read_bytes()).hexdigest()},
+        "versions": runner._record_versions(),
+        "odd_loss": {name: {"decisions": int(counts[m].sum())} | {
+            label: {"first_half": round(totals[m, 0, k] / max(1, counts[m, 0]), 4),
+                    "second_half": round(totals[m, 1, k] / max(1, counts[m, 1]), 4),
+                    "all": round(totals[m, :, k].sum() / max(1, counts[m].sum()), 4)}
+            for k, label in enumerate(names)} for m, name in enumerate(MODELS)},
+    }
+
+
+def dev_rollout_game(job: tuple[str, int, str, Any]) -> dict[str, Any]:
     """One dev game by 017's agent with the rank network ``weights`` re-ranking its
-    rollouts' placements up to ``to_level`` (step 4), replayed for its score by band."""
-    name, seed, weights, to_level = job
+    rollouts' placements up to the variant's to_level (step 4) and blended into its
+    rollout-ranked picks by the variant's blend weights (step 4b), replayed for its score
+    by band."""
+    name, seed, weights, setting = job
+    to_level, blend = _variant(setting)
     config = _load(CONFIG)
     tick = time.perf_counter()
     played, _ = native.rank_rollout_game(
         (runner.PROJECT_ROOT / weights).read_bytes(), config["game"], seed,
         net_to_level=to_level, line_cap=config["line_cap"], frame_cap=config["frame_cap"],
-        limits=e13._limits(config), params=native.params(agent_params()))
+        limits=e13._limits(config), params=native.params(agent_params()), blend=blend)
     seconds = time.perf_counter() - tick
     return {"name": name, "seed": seed, "score": played["score"], "lines": played["lines"],
             "seconds": seconds} | e20._replay(config, seed, played)
@@ -515,7 +573,7 @@ def dev_rollout_game(job: tuple[str, int, str, int]) -> dict[str, Any]:
 def dev_check_rollouts(weights: Path, jobs: int, part: int = 1,
                        variants: list[str] | None = None) -> dict[str, Any]:
     """Step 4's agents (config ``step4.variants``: name -> the last level where the
-    rollouts use the network) on one part of 020's dev seeds, paired against 017's agent
+    rollouts use the network, or {to_level, blend}) on one part of 020's dev seeds, paired against 017's agent
     (and 015's) there."""
     stored = _load(e20.DEV_BASELINES)
     if str(part) not in stored:
@@ -536,7 +594,8 @@ def dev_check_rollouts(weights: Path, jobs: int, part: int = 1,
                  f"{(part + 1) * len(base['seeds']) - 1}", "games": len(base["seeds"]),
         "versions": runner._record_versions(),
         "weights": {"path": relative, "sha256": hashlib.sha256(weights.read_bytes()).hexdigest()},
-        "variants": {name: {"rollout_net_to_level": level} for name, level in chosen.items()},
+        "variants": {name: dict(zip(("rollout_net_to_level", "blend"), _variant(setting)))
+                     for name, setting in chosen.items()},
         "runs": {name: e20.summary(games) for name, games in runs.items()} |
                 {name: e20.summary(base["games"][name]) for name in e20.BASELINES},
         "paired": {f"{name} - {other}": {"total": e12.paired(games, base["games"][other]),
@@ -566,6 +625,9 @@ def main(argv: list[str] | None = None) -> int:
     check.add_argument("weights", type=Path)
     check.add_argument("--part", type=int, choices=(0, 1), default=0)
     check.add_argument("--jobs", type=int, default=30)
+    blend = commands.add_parser("blend-check", help="step 4b's offline blend check")
+    blend.add_argument("weights", type=Path)
+    blend.add_argument("data", type=Path, nargs="?", default=DATA_ROOT / "pilot")
     rollouts = commands.add_parser("dev-check-rollouts",
                                    help="017's agent with the rank network in its rollouts")
     rollouts.add_argument("weights", type=Path)
@@ -598,6 +660,10 @@ def main(argv: list[str] | None = None) -> int:
             if path.exists() or weights.exists():
                 raise ValueError(f"{path.name} or {weights.name} exists; pick another --name")
             _write(path, fit_run(directories, args.device, name))
+            print(f"Wrote {path}")
+        elif args.command == "blend-check":
+            path = EXPERIMENT_ROOT / f"blend_{args.weights.stem}.json"
+            _write(path, blend_check(args.data.resolve(), args.weights))
             print(f"Wrote {path}")
         elif args.command == "dev-check-rollouts":
             names = "_".join(args.variants) if args.variants else "all"

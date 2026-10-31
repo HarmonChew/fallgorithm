@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 17
+ABI_VERSION = 18
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -259,7 +259,7 @@ def load() -> Any:
     lib.fn_rank_distil_stride.restype = C.c_int
     lib.fn_rank_distil_game.argtypes = lib.fn_distil_game.argtypes
     lib.fn_rank_distil_game.restype = C.c_int
-    lib.fn_rank_rollout_game.argtypes = [C.c_char_p, C.c_int, C.c_int] + \
+    lib.fn_rank_rollout_game.argtypes = [C.c_char_p, C.c_int, C.c_int, C.POINTER(C.c_double)] + \
         lib.fn_distil_game.argtypes
     lib.fn_rank_rollout_game.restype = C.c_int
     lib.fn_rank_values.argtypes = [C.c_char_p, C.c_int, C.POINTER(C.c_double), C.c_int, C.c_int,
@@ -612,16 +612,22 @@ def rank_distil_game(game: dict[str, Any], seed: int, *, line_cap: int, frame_ca
 
 def rank_rollout_game(net: bytes | None, game: dict[str, Any], seed: int, *, net_to_level: int,
                       line_cap: int, frame_cap: int, limits: Limits, params: Params,
-                      dump: bool = False) -> tuple[dict[str, Any], list[tuple[float, ...]]]:
+                      dump: bool = False, blend: tuple[float, float, float] | None = None
+                      ) -> tuple[dict[str, Any], list[tuple[float, ...]]]:
     """:func:`rank_distil_game`'s game with the rollouts' own placements re-ranked by the
     rank network ``net`` up to level ``net_to_level`` (Experiment 021 step 4; ``None``:
-    017's rollouts), and its rows when ``dump`` (else none)."""
+    017's rollouts), and its rows when ``dump`` (else none). With ``blend`` (one weight per
+    decision kind, step 4b), each rollout-ranked pick is by the rollouts' mean plus that
+    weight times ``net``'s output."""
+    if blend is not None and (len(blend) != 3 or not all(math.isfinite(w) for w in blend)):
+        raise ValueError(f"blend needs three finite weights, not {blend}")
     inputs = (C.c_uint8 * max(1, frame_cap))()
     out = (C.c_int64 * 11)()
     rows = (C.c_double * RANK_DISTIL_CAPACITY)() if dump else None
     count = C.c_int(0)
     status = load().fn_rank_rollout_game(
-        net, len(net or b""), net_to_level, C.byref(params), game["ruleset"].encode(),
+        net, len(net or b""), net_to_level,
+        (C.c_double * 3)(*blend) if blend is not None else None, C.byref(params), game["ruleset"].encode(),
         game["mode"].encode(), game["start_level"], game["height"], seed, line_cap, frame_cap,
         limits.tap_interval, limits.reaction_frames, inputs, max(1, frame_cap), out, rows,
         RANK_DISTIL_CAPACITY if dump else 0, C.byref(count))

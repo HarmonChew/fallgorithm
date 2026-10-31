@@ -27,7 +27,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 17;
+constexpr int abi_version = 18;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -447,10 +447,12 @@ FN_API int fn_rank_distil_stride() { return rank_distil_stride; }
 
 // Experiment 021 step 4: the same game with the rollouts' placements re-ranked by the
 // rank network ``net`` up to level ``net_to_level`` (``net`` null: 017's rollouts), and
-// the rows only when ``rows`` is not null. Returns as fn_distil_game (-1 also for a
-// ``net`` that is not a rank network).
+// the rows only when ``rows`` is not null. Step 4b: with ``blend`` (three weights, one
+// per decision kind; null: none), each rollout-ranked pick is by the rollouts' mean plus
+// that weight times ``net``'s output. Returns as fn_distil_game (-1 also for a ``net``
+// that is not a rank network, or ``blend`` without one).
 FN_API int fn_rank_rollout_game(const unsigned char* net, int net_size, int net_to_level,
-                                const Params* params, const char* ruleset, const char* mode,
+                                const double* blend, const Params* params, const char* ruleset, const char* mode,
                                 int start_level, int height, int seed, int line_cap,
                                 int frame_cap, int interval, int reaction,
                                 std::uint8_t* inputs, int capacity, std::int64_t* out,
@@ -458,7 +460,7 @@ FN_API int fn_rank_rollout_game(const unsigned char* net, int net_size, int net_
     if (!params || !row_count || !ruleset || !mode || seed < 0 || seed > 0xffff ||
         line_cap < 0 || frame_cap < 0 || capacity < frame_cap || interval < 1 ||
         reaction < 0 || start_level < 0 || start_level >= 20 || row_capacity < 0 ||
-        net_size < 0) {
+        net_size < 0 || (blend && !net)) {
         return -1;
     }
     try {
@@ -479,6 +481,9 @@ FN_API int fn_rank_rollout_game(const unsigned char* net, int net_size, int net_
         }
         if (net) {
             rollouts.set_rollout_net(&network, line_cap, net_to_level);
+        }
+        if (blend) {
+            rollouts.set_blend(&network, line_cap, {blend[0], blend[1], blend[2]});
         }
         BasicAgent<RolloutSearcher> agent(rollouts, interval, reaction);
         std::uint64_t final_score = 0;
@@ -527,7 +532,7 @@ FN_API int fn_rank_distil_game(const Params* params, const char* ruleset, const 
     if (!rows) {
         return -1;
     }
-    return fn_rank_rollout_game(nullptr, 0, 0, params, ruleset, mode, start_level, height,
+    return fn_rank_rollout_game(nullptr, 0, 0, nullptr, params, ruleset, mode, start_level, height,
                                 seed, line_cap, frame_cap, interval, reaction, inputs,
                                 capacity, out, rows, row_capacity, row_count);
 }

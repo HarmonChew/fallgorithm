@@ -198,3 +198,15 @@ def test_above_rollout_to_level_the_rollouts_use_the_commit_model(tmp_path):
                                          params=params, dump=True)
     assert {int(r[e21.MODEL]) for r in rows} == {1}
     assert [r[e21.MEAN] for r in ranked] != [r[e21.MEAN] for r in rows]
+
+
+def test_a_zero_blend_is_017s_and_a_huge_one_is_the_rank_agents(tmp_path):
+    _, net = _net(tmp_path)
+    params = native.params(SMALL)
+    off = dict(net_to_level=17, **ARGS, params=params)
+    assert native.rank_rollout_game(net, GAME, _seed(), **off, dump=True,
+                                    blend=(0.0, 0.0, 0.0)) == _rank_distil()
+    huge, _ = native.rank_rollout_game(net, GAME, _seed(), **off, blend=(1e9, 1e9, 1e9))
+    assert huge == native.rank_game(net, GAME, _seed(), **ARGS, params=params)
+    with pytest.raises(native.NativeError):
+        native.rank_rollout_game(None, GAME, _seed(), **off, blend=(1.0, 1.0, 1.0))

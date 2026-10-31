@@ -45,6 +45,11 @@
 // placement knows its preview; above rollout_to_level (where the network only learnt the
 // commit decision) it is scored by the commit model with the preview hidden. Off (no
 // network), the rollouts are 017's.
+//
+// Experiment 021 step 4b: or the rollout-ranked decision's own pick blends the two
+// (set_blend): each candidate scores its rollouts' mean plus weight[model] times the rank
+// network's output (both in the rollouts' units), the first of equal scores winning.
+// With all weights 0 the pick is 017's.
 #pragma once
 
 #include <algorithm>
@@ -166,6 +171,15 @@ public:
         rollout_line_cap_ = line_cap;
         rollout_net_to_level_ = to_level;
     }
+    // Experiment 021 step 4b: the rollout-ranked pick by the mean plus ``weights[model]``
+    // times ``net``'s output (nullptr: the mean alone), its lines left counted to
+    // ``line_cap``.
+    void set_blend(const ValueNetwork* net, int line_cap,
+                   const std::array<double, rerank_models>& weights) {
+        blend_net_ = net;
+        blend_line_cap_ = line_cap;
+        blend_weights_ = weights;
+    }
 
     bool search(const Position& position, Choice& choice) {
         if (!searcher_.search(position, choice)) {
@@ -249,6 +263,13 @@ public:
                 halves[at % 2] += first + value;
             }
             const double mean = total / static_cast<double>(sequences_.size());
+            double score = mean;
+            if (blend_net_ && blend_weights_[model] != 0.0) {
+                score += blend_weights_[model] *
+                         rank_score(*blend_net_, blend_line_cap_, position, model,
+                                    position.next_piece, candidate,
+                                    candidate.order == searcher_.chosen(), first);
+            }
             if (dump_) {
                 const double even = static_cast<double>((sequences_.size() + 1) / 2);
                 const double odd = static_cast<double>(sequences_.size() / 2);
@@ -259,9 +280,9 @@ public:
                                   odd > 0 ? halves[1] / odd : halves[0] / even, position.piece,
                                   position.next_piece, position.lines, position.drought});
             }
-            if (index == 0 || mean > best_mean) {
+            if (index == 0 || score > best_mean) {
                 best = index;
-                best_mean = mean;
+                best_mean = score;
             }
         }
         return searcher_.choose(candidates_[best].order, choice);
@@ -287,11 +308,8 @@ private:
                 params, phase, candidate.cleared, candidate.settled,
                 level_for_lines(position.lines + candidate.cleared, position.start_level));
             const bool searched = candidate.order == searcher.chosen();
-            const auto dense = rank_inputs(model, position.piece, next,
-                                           position.lines + candidate.cleared, line_cap,
-                                           position.level, position.drought,
-                                           rerank_features(searched, candidate, own));
-            const double score = rank_forward(net, candidate.settled, dense.data());
+            const double score =
+                rank_score(net, line_cap, position, model, next, candidate, searched, own);
             if (!have_best || score > best_score || (score == best_score && searched)) {
                 best = candidate.order;
                 best_score = score;
@@ -299,6 +317,17 @@ private:
             }
         }
         return best;
+    }
+
+    // The rank network's output for one candidate (``own``: its placement's value).
+    static double rank_score(const ValueNetwork& net, int line_cap, const Position& position,
+                             int model, int next, const Searcher::Candidate& candidate,
+                             bool searched, double own) {
+        const auto dense = rank_inputs(model, position.piece, next,
+                                       position.lines + candidate.cleared, line_cap,
+                                       position.level, position.drought,
+                                       rerank_features(searched, candidate, own));
+        return rank_forward(net, candidate.settled, dense.data());
     }
 
     // One rollout from ``columns`` with ``lines`` cleared, its return in ``total``:
@@ -398,6 +427,9 @@ private:
     const ValueNetwork* rank_net_ = nullptr;
     int line_cap_ = 0;
     const ValueNetwork* rollout_net_ = nullptr;
+    const ValueNetwork* blend_net_ = nullptr;
+    int blend_line_cap_ = 0;
+    std::array<double, rerank_models> blend_weights_{};
     int rollout_line_cap_ = 0, rollout_net_to_level_ = 0;
     std::vector<Searcher::Candidate> policy_candidates_;
     std::vector<DistilRow>* dump_ = nullptr;

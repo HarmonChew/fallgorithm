@@ -73,3 +73,36 @@ Paired against 015: +209k (95% CI +126k to +293k, higher on 76 of 100) on seeds 
   +118k). Fewer games reach the line cap (23% and 29% against 37% and 34%).
 * **The gap to 017 is largest at 39+** (-107k and -112k of the -278k and -249k), where the
   network also picks the rollouts' best slightly less often than the search does.
+
+## Step 4: the network inside 017's rollouts (stopped)
+
+Plan in `step4.md`; code d551a36. 017's agent with the rank network re-ranking its rollouts'
+own placements (the policy search's top 4), on dev seeds 100-199 against 017's games there
+(`dev_check_rollouts_rank_pilot_all_part1.json`):
+
+| dev seeds 100-199 | net in rollouts at 18-28 | net in rollouts at all levels | 017's agent |
+| --- | --- | --- | --- |
+| mean score | 1,776k | 1,807k | 1,840k |
+| paired against 017 | -64k (CI -129k to +2k), 47 of 100 | -33k (-93k to +26k), 48 of 100 | |
+| mean lines | 388.8 | 397.4 | 398.6 |
+| seconds per game | 481 | 499 | 426 |
+
+Neither is above 017, so step 4's stop rule fired. A better rollout policy did not make
+better rollouts: our reading (not measured) is that a rollout's return is still summed by the
+hand-built placement value over 10 pieces, and the network's moves are the ones that score
+less on that sum now for more later, which a 10-piece rollout does not see.
+
+## Step 4b: the network blended into 017's picks
+
+The pilot's halves allow an offline test of a different use: pick by the even rollouts' mean
+plus w times the network's output, judged on the odd rollouts (`blend_rank_pilot.json`).
+The blend beats the 8 rollouts alone in every kind, on both halves of the checked games:
+
+| odd-half loss | 8 rollouts alone | best blend | network alone |
+| --- | --- | --- | --- |
+| preview 18-28 | 0.636 | 0.578 (w 0.25) | 1.288 |
+| commit 29-38 | 10.04 | 7.40 (w 2) | 8.45 |
+| commit 39+ | 7.91 | 6.02 (w 1) | 7.71 |
+
+017 averages 16 rollouts (half the noise), so the dev check plays both those weights
+(`blend_full`) and half of them (`blend_half`), with no network inside the rollouts.

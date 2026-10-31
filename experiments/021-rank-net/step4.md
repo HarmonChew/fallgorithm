@@ -1,7 +1,8 @@
 # Experiment 021 step 4 - plan: the rank network as the rollout policy
 
-Status: DRAFT 2026-10-31, awaiting the owner's review. The owner chose this branch of step 4
-after step 3 (`notes.md`).
+Status: approved by the owner 2026-10-31 ("push through to a meaningful result"). Step 1 ran
+2026-11-01: neither variant above 017, so the stop rule fired (`notes.md`). Step 4b below
+(added 2026-11-01 under the same mandate) blends the network into 017's own picks instead.
 
 ## Why
 
@@ -54,3 +55,12 @@ where the matching in-rollout kind is the one the network never learnt. The 18-2
 variant is the safe one and touches the smaller part of the gap (-40k to -57k a band at 18
 and 19-28). If the preview-hidden variant fails at 29+, the next fix is a fourth kind: dump
 the in-rollout 29+ decisions and train on them (round 1 data with rollouts at 29+).
+
+## Step 4b: the network blended into 017's picks
+
+At each of 017's rollout-ranked decisions, a candidate scores its rollouts' mean plus
+w[kind] times the network's output (both in rollout points), no network inside the rollouts.
+The offline check on the pilot (`blend-check`) chose the weights. Dev check on seeds 100-199
+against 017 (1,840k): `blend_full` [0.25, 2, 1] and `blend_half` [0.125, 1, 0.5].
+**Keeper** if one is above 017 by its paired mean with the CI above 0; confirm on dev seeds
+0-99 (017 = 1,810k); then `predeclared.md` and the held-out run (012's 1,000 seeds, bar 1,800k).

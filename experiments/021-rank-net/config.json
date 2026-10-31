@@ -38,9 +38,26 @@
   "plan": "step4.md",
   "variants": {
    "rollouts_18_28": 28,
-   "rollouts_all": 99
+   "rollouts_all": 99,
+   "blend_half": {
+    "to_level": 17,
+    "blend": [
+     0.125,
+     1.0,
+     0.5
+    ]
+   },
+   "blend_full": {
+    "to_level": 17,
+    "blend": [
+     0.25,
+     2.0,
+     1.0
+    ]
+   }
   },
   "variants_note": "the last level where the rollouts' own placements are re-ranked by the rank network; above rollout_to_level (28) by the commit model with the preview hidden",
-  "round_games": 300
+  "round_games": 300,
+  "blend_note": "step 4b: the rollout-ranked pick by the rollouts' mean plus blend[kind] times the network's output; blend_full = the best weights for 8 rollouts on the pilot's checked games (even half scored on the odd half), blend_half = those halved for 017's 16 rollouts (half the rollout noise); to_level 17 = no network inside the rollouts"
  }
 }
