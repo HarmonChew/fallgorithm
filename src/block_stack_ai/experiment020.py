@@ -1,8 +1,9 @@
 """Run Experiment 020: a learned value network.
 
-    python -m block_stack_ai.experiment020 seeds
-    python -m block_stack_ai.experiment020 collect [--jobs N]
-    python -m block_stack_ai.experiment020 fit DATA [--device cuda:0]
+    python -m block_stack_ai.experiment020 seeds [--round R]
+    python -m block_stack_ai.experiment020 collect [--round R] [--jobs N]
+    python -m block_stack_ai.experiment020 fit DATA [DATA ...] [--device cuda:0]
+    python -m block_stack_ai.experiment020 dev-check WEIGHTS [--prefilter K] [--part 0|1] [--jobs N]
 
 ``seeds`` selects the new dev seeds (``fallgorithm020/dev/v1``) and round 0's training
 seeds (``fallgorithm020/train/v0``). ``collect`` plays 015's agent on the training
@@ -11,7 +12,9 @@ seeds, with config.json's light exploration, and keeps every board a piece left
 to runs/ (it is large, and each game is a pure function of its seed and settings).
 ``fit`` fits the value network to a round's boards (PyTorch), writes its weights under
 the experiment directory and checks it offline (step 2): validation error against two
-baselines, and the probe of 013's failure (taller must be worse).
+baselines, and the probe of 013's failure (taller must be worse). ``dev-check`` plays the
+network agent (native/netsearch.hpp) on dev seeds 0-99 (part 0) or 100-199 (part 1), paired
+against 015's and 017's agents (their games stored once in dev_baselines.json).
 """
 
 from __future__ import annotations
@@ -21,6 +24,7 @@ import hashlib
 import json
 import sys
 import time
+from collections import Counter
 from datetime import datetime, timezone
 from multiprocessing import Pool
 from pathlib import Path
@@ -30,8 +34,9 @@ import numpy as np
 import torch
 
 from . import experiment006, experiment012 as e12, experiment013 as e13
-from . import experiment016 as e16, experiment018 as e18, native, runner
-from .engine import EngineError
+from . import experiment015 as e15, experiment016 as e16, experiment018 as e18
+from . import experiment019 as e19, native, runner
+from .engine import EngineError, create_game
 
 EXPERIMENT_ROOT = runner.PROJECT_ROOT / "experiments" / "020-value-net"
 CONFIG = EXPERIMENT_ROOT / "config.json"
@@ -100,16 +105,47 @@ def _limits(config: dict[str, Any]) -> Any:
     return e13._limits(config)
 
 
-def dump_game(job: tuple[int, int, dict[str, Any]]) -> tuple[int, dict[str, Any], bytes]:
-    """One round-0 game by 015's agent with exploration, and its boards."""
-    index, seed, config = job
-    explore = config["round0"]
+def draw_round_seeds(round_index: int) -> dict[str, Any]:
+    """seeds.json with a later round's training seeds added: fresh labels, but start
+    states may repeat earlier rounds' training ones (never a dev, held-out or excluded one,
+    nor one of an earlier round's check games, held back by ``fit``); see config.json's
+    seeds_note."""
+    stored = _load(SEEDS)
+    if round_index < 1 or str(round_index) in stored["train_seeds"]:
+        raise ValueError(f"round {round_index}'s seeds are already chosen (or are round 0's)")
+    share = _load(CONFIG)["fit"]["check_share"]
+    checked = [seed for seeds in stored["train_seeds"].values()
+               for seed in seeds[len(seeds) - round(len(seeds) * share):]]
+    seen = {_identity(seed) for seed in stored["excluded_seeds"] + stored["dev_seeds"] + checked}
+    stored["train_seeds"][str(round_index)] = _draw(
+        TRAIN_LABEL.format(round_index, "{}"), _load(CONFIG)[f"round{round_index}"]["games"], seen)
+    return stored
+
+
+def round_seeds(round_index: int) -> list[int]:
+    found = _load(SEEDS)["train_seeds"].get(str(round_index))
+    if found is None:
+        raise ValueError(f"no seeds for round {round_index}: run `seeds --round {round_index}`")
+    return found
+
+
+def dump_game(job: tuple[int, int, int, dict[str, Any]]) -> tuple[int, dict[str, Any], bytes]:
+    """One training game and its boards: round 0 by 015's agent, a later round by the
+    network agent with that round's weights and prefilter; both with exploration."""
+    round_index, index, seed, config = job
+    settings = config[f"round{round_index}"]
+    explore = {"explore": settings["explore"], "explore_start": settings["explore_start"],
+               "explore_seed": round_index << 16 | seed}
+    common = {"line_cap": config["line_cap"], "frame_cap": config["frame_cap"],
+              "limits": _limits(config), "params": native.params(e16.fast_deep_params())}
     tick = time.perf_counter()
-    played, rows = native.dump_game(
-        e16.KINDS["fast_deep"], config["game"], seed, line_cap=config["line_cap"],
-        frame_cap=config["frame_cap"], limits=_limits(config),
-        params=native.params(e16.fast_deep_params()), explore=explore["explore"],
-        explore_start=explore["explore_start"], explore_seed=seed)
+    if round_index == 0:
+        played, rows = native.dump_game(e16.KINDS["fast_deep"], config["game"], seed,
+                                        **common, **explore)
+    else:
+        played, rows = native.net_game(
+            (runner.PROJECT_ROOT / settings["weights"]).read_bytes(), config["game"], seed,
+            prefilter=settings["prefilter"], dump=True, **common, **explore)
     summary = {"seed": seed, "score": played["score"], "lines": played["lines"],
                "pieces": played["pieces"], "stopping_reason": played["stopping_reason"],
                "seconds": round(time.perf_counter() - tick, 2)}
@@ -127,17 +163,17 @@ def boards(index: int, summary: dict[str, Any], rows: bytes) -> dict[str, np.nda
             "game": np.full(len(x), index, dtype=np.int32)}
 
 
-def collect(jobs: int) -> Path:
-    """Round 0's data: ``boards.npz`` (every game's boards, in seed order) and
+def collect(round_index: int, jobs: int) -> Path:
+    """A round's data: ``boards.npz`` (every game's boards, in seed order) and
     ``data.json`` (the settings, code versions and each game's result)."""
     config = _load(CONFIG)
-    seeds = _load(SEEDS)["train_seeds"]["0"]
-    directory = DATA_ROOT / "round0"
+    seeds = round_seeds(round_index)
+    directory = DATA_ROOT / f"round{round_index}"
     directory.mkdir(parents=True, exist_ok=False)
     tick = time.time()
     parts, games = [], []
     with Pool(jobs) as pool:
-        for index, summary, rows in pool.imap(dump_game, [(i, s, config)
+        for index, summary, rows in pool.imap(dump_game, [(round_index, i, s, config)
                                                           for i, s in enumerate(seeds)],
                                               chunksize=4):
             parts.append(boards(index, summary, rows))
@@ -148,8 +184,11 @@ def collect(jobs: int) -> Path:
     np.savez(directory / "boards.npz",
              **{key: np.concatenate([p[key] for p in parts]) for key in parts[0]})
     header = {"created_at": datetime.now(timezone.utc).isoformat(),
-              "versions": runner._record_versions(), "agent": "015's agent (fast_deep)",
-              "params": e16.fast_deep_params(), "round0": config["round0"],
+              "versions": runner._record_versions(), "round": round_index,
+              "params": e16.fast_deep_params(), "settings": config[f"round{round_index}"],
+              "weights_sha256": None if round_index == 0 else hashlib.sha256(
+                  (runner.PROJECT_ROOT / config[f"round{round_index}"]["weights"]).read_bytes()
+              ).hexdigest(),
               "wall_seconds": round(time.time() - tick, 1), "games": games}
     (directory / "data.json").write_text(json.dumps(header, indent=1) + "\n",
                                          encoding="utf-8")
@@ -355,22 +394,33 @@ def probe(model: ValueNet, config: dict[str, Any], device: str) -> dict[str, Any
     return out
 
 
-def fit_round(directory: Path, device: str) -> dict[str, Any]:
-    """Fit the network on a round's boards; validation on the last ``check_share`` of the
-    games (whole games held back), against the two linear baselines."""
+def fit_round(directories: list[Path], device: str) -> dict[str, Any]:
+    """Fit the network on one or more rounds' boards; validation on the last
+    ``check_share`` of each round's games (whole games held back), against the two linear
+    baselines."""
     config = _load(CONFIG)
     settings = config["fit"]
     torch.manual_seed(settings["torch_seed"])
-    data = load_boards(directory)
-    header = json.loads((directory / "data.json").read_text(encoding="utf-8"))
-    cut = [i for i, g in enumerate(header["games"]) if g["stopping_reason"] == "frame_limit"]
-    # The empty first board of each game has no piece behind it; a game cut by the frame
-    # cap has cut-short targets.
-    keep = (data["last"] >= 0) & ~np.isin(data["game"], cut)
-    games = int(data["game"].max()) + 1
-    split = games - round(games * settings["check_share"])
-    train = _tensors(data, keep & (data["game"] < split), device)
-    check = _tensors(data, keep & (data["game"] >= split), device)
+    parts, headers, offset, cut, split_games = [], [], 0, 0, 0
+    for directory in directories:
+        data = load_boards(directory)
+        header = json.loads((directory / "data.json").read_text(encoding="utf-8"))
+        frame_cut = [i for i, g in enumerate(header["games"])
+                     if g["stopping_reason"] == "frame_limit"]
+        games = len(header["games"])
+        split = games - round(games * settings["check_share"])
+        # The empty first board of each game has no piece behind it; a game cut by the
+        # frame cap has cut-short targets.
+        data["keep"] = (data["last"] >= 0) & ~np.isin(data["game"], frame_cut)
+        data["checked"] = data["game"] >= split
+        data["game"] = data["game"] + offset
+        parts.append(data)
+        headers.append(header)
+        offset, cut, split_games = offset + games, cut + len(frame_cut), split_games + split
+    data = {key: np.concatenate([p[key] for p in parts]) for key in parts[0]}
+    games = offset
+    train = _tensors(data, data["keep"] & ~data["checked"], device)
+    check = _tensors(data, data["keep"] & data["checked"], device)
     cap = config["line_cap"]
     n = len(train["lines"])
     sample = _batch_inputs(train, torch.randint(n, (200_000,), device=device), cap)
@@ -403,7 +453,7 @@ def fit_round(directory: Path, device: str) -> dict[str, Any]:
                         "seconds": round(time.time() - tick, 1)})
             print(log[-1], file=sys.stderr, flush=True)
     model.eval()
-    weights = EXPERIMENT_ROOT / settings["weights_name"].format(directory.name)
+    weights = EXPERIMENT_ROOT / settings["weights_name"].format(directories[-1].name)
     sha = export(model, weights)
     baselines = linear_baselines(train, check, cap)
     errors = {"network": _errors(_predict(model, check, cap), check)} | {
@@ -411,10 +461,11 @@ def fit_round(directory: Path, device: str) -> dict[str, Any]:
     gain = 1 - errors["network"]["mse"] / errors["linear_013"]["mse"]
     checked = probe(model, config, device)
     return {
-        "data": {"directory": str(directory.relative_to(runner.PROJECT_ROOT)),
-                 "created_at": header["created_at"], "versions": header["versions"],
-                 "games": games, "train_games": split, "train_boards": n,
-                 "frame_limit_games_dropped": len(cut),
+        "data": {"directories": [str(d.relative_to(runner.PROJECT_ROOT)) for d in directories],
+                 "created_at": [h["created_at"] for h in headers],
+                 "versions": [h["versions"] for h in headers],
+                 "games": games, "train_games": split_games, "train_boards": n,
+                 "frame_limit_games_dropped": cut,
                  "check_boards": len(check["lines"])},
         "versions": runner._record_versions(), "torch": torch.__version__,
         "settings": settings, "weights": {"path": str(weights.relative_to(runner.PROJECT_ROOT)),
@@ -429,25 +480,142 @@ def fit_round(directory: Path, device: str) -> dict[str, Any]:
     }
 
 
+# ---------------------------------------------------------------- dev check (step 3)
+
+DEV_BASELINES = EXPERIMENT_ROOT / "dev_baselines.json"
+BASELINES = ("fast_deep", "commit_rollout")  # 015's agent and 017's
+BANDS = e16.BANDS
+
+
+def baseline_numbers(name: str) -> dict[str, Any]:
+    return e16.fast_deep_params() if name == "fast_deep" else e19.commit_rollout_params()
+
+
+def dev_seeds(part: int) -> list[int]:
+    """Dev seeds 0-99 (part 0, for comparisons) or 100-199 (part 1, to confirm a keeper)."""
+    games = _load(CONFIG)["dev_games"]
+    return _load(SEEDS)["dev_seeds"][part * games:(part + 1) * games]
+
+
+def _replay(config: dict[str, Any], seed: int, played: dict[str, Any]) -> dict[str, Any]:
+    """A C++ game replayed on the Python binding: its score by the band of the level at
+    each piece's spawn (016's rule) and the lines it cleared by Tetrises."""
+    score: Counter[str] = Counter()
+    count, band = -1, BANDS[0]
+    with create_game(**config["game"], seed=seed) as game:
+        state = game.state
+        for mask in played["inputs"]:
+            if state.phase == "active" and state.piece_count != count:
+                count, band = state.piece_count, e15._band(state.level)
+            before = state.score
+            state, _ = game.step(mask)
+            score[band] += state.score - before
+    if (state.score, state.lines) != (played["score"], played["lines"]):
+        raise ValueError(f"seed {seed}: the replay does not match the C++ game")
+    return {"bands": {b: score[b] for b in BANDS},
+            "tetris_lines": 4 * state.stats.clear_counts["four_line"]}
+
+
+def dev_game(job: tuple[str, int, str | None, int]) -> dict[str, Any]:
+    """One dev game by a baseline (``weights`` None) or the network agent with the weights
+    file ``weights`` (relative to the project) and ``prefilter``."""
+    name, seed, weights, prefilter = job
+    config = _load(CONFIG)
+    tick = time.perf_counter()
+    if weights is None:
+        played = native.play_game_ex(
+            e16.KINDS["fast_deep"] if name == "fast_deep" else "reach_plan_016",
+            config["game"], seed, line_cap=config["line_cap"], frame_cap=config["frame_cap"],
+            limits=_limits(config), params=native.params(baseline_numbers(name)))
+    else:
+        played, _ = native.net_game((runner.PROJECT_ROOT / weights).read_bytes(),
+                                    config["game"], seed, line_cap=config["line_cap"],
+                                    frame_cap=config["frame_cap"], limits=_limits(config),
+                                    params=native.params(e16.fast_deep_params()),
+                                    prefilter=prefilter)
+    seconds = time.perf_counter() - tick
+    return {"name": name, "seed": seed, "score": played["score"], "lines": played["lines"],
+            "seconds": seconds} | _replay(config, seed, played)
+
+
+def summary(games: list[dict[str, Any]]) -> dict[str, Any]:
+    return e16._summary(games) | {"tetris_rate": round(
+        sum(g["tetris_lines"] for g in games) / max(1, sum(g["lines"] for g in games)), 4)}
+
+
+def dev_baselines(jobs: int, part: int) -> dict[str, Any]:
+    """015's and 017's agents on one part of the dev seeds (stored once, in
+    dev_baselines.json, since neither changes)."""
+    stored = _load(DEV_BASELINES) if DEV_BASELINES.exists() else {}
+    if str(part) not in stored:
+        seeds = dev_seeds(part)
+        with Pool(jobs) as pool:
+            found = pool.map(dev_game, [(name, seed, None, 0) for name in reversed(BASELINES)
+                                        for seed in seeds], chunksize=1)
+        stored[str(part)] = {"seeds": seeds, "versions": runner._record_versions(),
+                             "games": {name: [g for g in found if g["name"] == name]
+                                       for name in BASELINES}}
+        _write(DEV_BASELINES, stored)
+    return stored[str(part)]
+
+
+def dev_check(weights: Path, prefilter: int, jobs: int, part: int = 0) -> dict[str, Any]:
+    """The network agent with ``weights`` and ``prefilter`` (0: none) on one part of the dev
+    seeds, paired against 015's and 017's agents. A diagnostic, not part of the success
+    rule."""
+    relative = str(weights.resolve().relative_to(runner.PROJECT_ROOT))
+    base = dev_baselines(jobs, part)
+    with Pool(jobs) as pool:
+        games = pool.map(dev_game, [("net", seed, relative, prefilter) for seed in base["seeds"]],
+                         chunksize=1)
+    return {
+        "question": "The network agent against 015's and 017's agents, on the dev seeds",
+        "seeds": f"Experiment 020's dev seeds {part * len(games)} to "
+                 f"{(part + 1) * len(games) - 1}", "games": len(games),
+        "versions": runner._record_versions(),
+        "prefilter": prefilter, "weights": {"path": relative,
+                    "sha256": hashlib.sha256(weights.read_bytes()).hexdigest()},
+        "runs": {"net": summary(games)} | {name: summary(base["games"][name])
+                                           for name in BASELINES},
+        "paired": {f"net - {name}": {"total": e12.paired(games, base["games"][name]),
+                                     "by_band": e16._band_pairs(games, base["games"][name])}
+                   for name in BASELINES},
+        "per_game": [{key: g[key] for key in ("seed", "score", "lines")} for g in games],
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m block_stack_ai.experiment020")
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("seeds", help="select the dev and round-0 training seeds")
-    commands.add_parser("collect", help="round 0's boards from 015's agent").add_argument(
-        "--jobs", type=int, default=30)
+    commands.add_parser("seeds", help="select the dev and round-0 training seeds (or a "
+                        "later round's)").add_argument("--round", type=int, default=0)
+    collect_parser = commands.add_parser("collect", help="a round's training boards")
+    collect_parser.add_argument("--round", type=int, default=0)
+    collect_parser.add_argument("--jobs", type=int, default=30)
     fit = commands.add_parser("fit", help="fit the network to a round's boards")
-    fit.add_argument("data", type=Path)
+    fit.add_argument("data", type=Path, nargs="+")
     fit.add_argument("--device", default="cuda:0")
+    check = commands.add_parser("dev-check", help="the network agent on dev seeds")
+    check.add_argument("weights", type=Path)
+    check.add_argument("--prefilter", type=int, default=0)
+    check.add_argument("--part", type=int, choices=(0, 1), default=0)
+    check.add_argument("--jobs", type=int, default=30)
     args = parser.parse_args(argv)
     try:
         if args.command == "seeds":
-            _write(SEEDS, select_seeds())
+            _write(SEEDS, select_seeds() if args.round == 0 else draw_round_seeds(args.round))
             print(f"Wrote {SEEDS}")
         elif args.command == "collect":
-            print(f"Data: {collect(args.jobs)}")
+            print(f"Data: {collect(args.round, args.jobs)}")
+        elif args.command == "dev-check":
+            path = EXPERIMENT_ROOT / (f"dev_check_{args.weights.stem}_k{args.prefilter}"
+                                      f"_part{args.part}.json")
+            _write(path, dev_check(args.weights, args.prefilter, args.jobs, args.part))
+            print(f"Wrote {path}")
         else:
-            found = fit_round(args.data.resolve(), args.device)
-            path = EXPERIMENT_ROOT / f"fit_{args.data.resolve().name}.json"
+            directories = [d.resolve() for d in args.data]
+            found = fit_round(directories, args.device)
+            path = EXPERIMENT_ROOT / f"fit_{directories[-1].name}.json"
             _write(path, found)
             print(f"Wrote {path}")
     except (EngineError, native.NativeError, OSError, KeyError, ValueError,

@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 14
+ABI_VERSION = 15
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -155,10 +155,10 @@ def _engine_sources() -> set[Path]:
 
 
 def _build_sources() -> set[Path]:
-    """``native/CMakeLists.txt``, ``c_api.cpp``, every ``native/`` header it includes, and
+    """``native/CMakeLists.txt``, the ``.cpp`` files, every ``native/`` header they include, and
     the engine core it links."""
     found = {SOURCE_DIR / "CMakeLists.txt"} | _engine_sources()
-    pending = [SOURCE_DIR / "c_api.cpp"]
+    pending = sorted(SOURCE_DIR.glob("*.cpp"))  # c_api.cpp and net.cpp (Experiment 020)
     while pending:
         source = pending.pop()
         if source in found or not source.is_file():
@@ -241,6 +241,15 @@ def load() -> Any:
                                  C.POINTER(C.c_int64), C.POINTER(C.c_int32), C.c_int,
                                  C.POINTER(C.c_int)]
     lib.fn_dump_game.restype = C.c_int
+    lib.fn_net_values.argtypes = [C.c_char_p, C.c_int, C.POINTER(C.c_int32), C.c_int, C.c_int,
+                                  C.c_int, C.POINTER(C.c_double)]
+    lib.fn_net_values.restype = C.c_int
+    lib.fn_net_game.argtypes = [C.c_char_p, C.c_int, C.POINTER(Params), C.c_int, C.c_char_p,
+                                C.c_char_p, C.c_int, C.c_int,
+                                C.c_int, C.c_int, C.c_int, C.c_int, C.c_int, C.c_double, C.c_int,
+                                C.c_uint64, C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int64),
+                                C.POINTER(C.c_int32), C.c_int, C.POINTER(C.c_int)]
+    lib.fn_net_game.restype = C.c_int
     lib.fn_board_features.argtypes = [Columns, C.POINTER(C.c_double)]
     lib.fn_board_features.restype = None
     lib.fn_board_value.argtypes = [C.POINTER(C.c_double), C.c_int, Columns, C.c_int, C.c_int]
@@ -496,6 +505,15 @@ def distil_game(game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: in
     return played, found
 
 
+def _played(inputs: Any, out: Any) -> dict[str, Any]:
+    count, frames, reason, pieces, adjusts, switches, score, lines, level, start, end = out
+    return {"inputs": bytes(inputs[:count]), "frames": frames,
+            "stopping_reason": STOP_REASONS[reason], "pieces": pieces, "adjusts": adjusts,
+            "switches": switches, "score": score, "lines": lines, "level": level,
+            "initial_state_hash": f"{start & (1 << 64) - 1:016x}",
+            "final_state_hash": f"{end & (1 << 64) - 1:016x}"}
+
+
 def dump_game(agent: str, game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: int,
               limits: Limits, params: Params, explore: float = 0.0, explore_start: int = 0,
               explore_seed: int = 0) -> tuple[dict[str, Any], bytes]:
@@ -517,10 +535,39 @@ def dump_game(agent: str, game: dict[str, Any], seed: int, *, line_cap: int, fra
         out, rows, DUMP_CAPACITY, C.byref(count))
     if status:
         raise NativeError(f"fn_dump_game failed with {status}")
-    played_count, frames, reason, pieces, adjusts, switches, score, lines, level, start, end = out
-    played = {"inputs": bytes(inputs[:played_count]), "frames": frames,
-              "stopping_reason": STOP_REASONS[reason], "pieces": pieces, "adjusts": adjusts,
-              "switches": switches, "score": score, "lines": lines, "level": level,
-              "initial_state_hash": f"{start & (1 << 64) - 1:016x}",
-              "final_state_hash": f"{end & (1 << 64) - 1:016x}"}
-    return played, C.string_at(rows, count.value * DUMP_STRIDE * 4)
+    return _played(inputs, out), C.string_at(rows, count.value * DUMP_STRIDE * 4)
+
+
+def net_values(net: bytes, rows: bytes, *, line_cap: int, start_level: int) -> list[float]:
+    """The value network's values, in points, of boards in :func:`dump_game`'s row layout
+    (Experiment 020; ``net`` is experiment020.export's bytes)."""
+    count = len(rows) // (4 * DUMP_STRIDE)
+    buffer = (C.c_int32 * max(1, count * DUMP_STRIDE)).from_buffer_copy(
+        rows.ljust(4 * max(1, count * DUMP_STRIDE), b"\0"))
+    out = (C.c_double * max(1, count))()
+    if load().fn_net_values(net, len(net), buffer, count, line_cap, start_level, out):
+        raise NativeError("fn_net_values failed (not a network for these inputs?)")
+    return list(out[:count])
+
+
+def net_game(net: bytes, game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: int,
+             limits: Limits, params: Params | None = None, prefilter: int = 0,
+             explore: float = 0.0, explore_start: int = 0, explore_seed: int = 0,
+             dump: bool = False) -> tuple[dict[str, Any], bytes | None]:
+    """One game by Experiment 020's network agent (native/netsearch.hpp), as
+    :func:`play_game_ex`'s result, and with ``dump`` its boards as :func:`dump_game`'s.
+    With ``prefilter``, the hand search with ``params`` keeps that many placements first."""
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    rows = (C.c_int32 * DUMP_CAPACITY)() if dump else None
+    count = C.c_int(0)
+    status = load().fn_net_game(
+        net, len(net), C.byref(params) if params is not None else None, prefilter,
+        game["ruleset"].encode(), game["mode"].encode(), game["start_level"],
+        game["height"], seed, line_cap, frame_cap, limits.tap_interval, limits.reaction_frames,
+        explore, explore_start, explore_seed, inputs, max(1, frame_cap), out, rows,
+        DUMP_CAPACITY if dump else 0, C.byref(count))
+    if status:
+        raise NativeError(f"fn_net_game failed with {status}")
+    return _played(inputs, out), (C.string_at(rows, count.value * DUMP_STRIDE * 4)
+                                  if dump else None)

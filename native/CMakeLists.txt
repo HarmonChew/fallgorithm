@@ -15,7 +15,7 @@ set(BLOCK_STACK_BUILD_PYTHON OFF)
 set(BLOCK_STACK_BUILD_TESTS OFF)
 add_subdirectory("${BLOCK_STACK_ROOT}" block-stack EXCLUDE_FROM_ALL)
 
-add_library(fallgorithm_native SHARED c_api.cpp)
+add_library(fallgorithm_native SHARED c_api.cpp net.cpp)
 target_link_libraries(fallgorithm_native PRIVATE blocks_core)
 set_target_properties(fallgorithm_native PROPERTIES CXX_VISIBILITY_PRESET hidden
                       VISIBILITY_INLINES_HIDDEN ON)
@@ -26,4 +26,11 @@ else()
     # multiply-add rounds once instead of twice, so it is never allowed here:
     # the C++ must compute exactly the same values. No -ffast-math either.
     target_compile_options(fallgorithm_native PRIVATE -Wall -Wextra -Wpedantic -fno-fast-math -ffp-contract=off)
+endif()
+
+# Experiment 020's value network has no Python twin, so the rule above does not bind it:
+# float32 with fused multiply-adds and the host's vector instructions. These options come
+# after the target's, so they win for net.cpp alone.
+if(NOT MSVC)
+    set_source_files_properties(net.cpp PROPERTIES COMPILE_OPTIONS "-O3;-march=native;-ffp-contract=fast")
 endif()

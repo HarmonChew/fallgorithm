@@ -53,5 +53,15 @@
    "note": "Tetris-ready stacks (column 9 empty; with even lines only multiples of 4 can occur); V must fall at each step in both, and lose a larger share of V(8) at 39+; last 5 is T"
   }
  },
- "seeds_note": "Training seeds are labelled fallgorithm020/train/v<round> (round 0: v0). The 16-bit seeds hold only 30,720 distinct start states, so later rounds draw fresh labels but may reuse earlier rounds' training start states (never a dev, held-out or excluded one); their games differ because the agent does."
+ "seeds_note": "Training seeds are labelled fallgorithm020/train/v<round> (round 0: v0). The 16-bit seeds hold only 30,720 distinct start states, so later rounds draw fresh labels but may reuse earlier rounds' training start states (never a dev, held-out or excluded one); their games differ because the agent does.",
+ "dev_games": 100,
+ "round1": {
+  "agent": "the network agent with V0 (value_round0.bin) and 015's search as a 2-placement prefilter",
+  "weights": "experiments/020-value-net/value_round0.bin",
+  "prefilter": 2,
+  "games": 10000,
+  "explore": 0.01,
+  "explore_start": 0,
+  "note": "step 3's one fix (more data): V0 alone and with prefilters of 2-12 lost badly to 015 on 60 held-back round-0 training seeds; its own games show it the boards its choices lead to"
+ }
 }

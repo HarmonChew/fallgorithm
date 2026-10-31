@@ -156,3 +156,74 @@ def test_the_linear_baselines_recover_a_linear_target():
     found = e20.linear_baselines(t, t, 430)
     y = t["target"].double() / e20.TETRIS_18
     assert torch.allclose(found["linear_013"], y, atol=5e-3)  # the small ridge
+
+
+# ---------------------------------------------------------------- the network agent (step 3)
+
+def _random_net(tmp_path, seed=0):
+    torch.manual_seed(seed)
+    x = torch.rand(1000, e20.INPUTS) * 4
+    model = e20.ValueNet(64, 32, x.mean(0), x.std(0) + 0.1)
+    path = tmp_path / "net.bin"
+    e20.export(model, path)
+    return model, path.read_bytes()
+
+
+def test_the_cpp_network_matches_pytorch(tmp_path):
+    model, net = _random_net(tmp_path)
+    data = b"".join(_dump(line_cap=430, explore=0.02, explore_seed=s)[1] for s in range(12))
+    found = e20.boards(0, {"score": 0}, data)
+    t = {key: torch.from_numpy(found[key].astype(np.int32 if key == "columns" else
+                                                 found[key].dtype)) for key in found}
+    x = e20.inputs(t["columns"], t["features"], t["lines"], t["drought"], t["last"], 430)
+    expected = model.double()(x.double()).tolist()
+    got = [v / e20.TETRIS_18 for v in native.net_values(net, data, line_cap=430,
+                                                         start_level=18)]
+    assert len(got) >= 2000
+    assert max(abs(a - b) for a, b in zip(got, expected)) < 1e-4
+
+
+def test_the_network_is_worth_nothing_at_the_cap(tmp_path):
+    _, net = _random_net(tmp_path)
+    row = struct.pack(f"={S}i", *([0] * 10 + [430, 0, 0, 5] + [0] * 18))
+    assert native.net_values(net, row, line_cap=430, start_level=18) == [0.0]
+    with pytest.raises(native.NativeError):
+        native.net_values(net[:-4], row, line_cap=430, start_level=18)
+
+
+def test_net_games_repeat_and_dump_their_boards(tmp_path):
+    _, net = _random_net(tmp_path)
+    args = dict(line_cap=430, frame_cap=150000, limits=Limits(30, 300), explore=0.05,
+                explore_seed=3)
+    played, rows = native.net_game(net, GAME, _seed(), dump=True, **args)
+    again, none = native.net_game(net, GAME, _seed(), **args)
+    assert played == again and none is None
+    assert len(rows) == played["pieces"] * S * 4
+
+
+def test_the_prefilter_keeps_the_hand_search_s_best_placements(tmp_path):
+    _, net = _random_net(tmp_path)
+    args = dict(line_cap=430, frame_cap=150000, limits=Limits(30, 300),
+                params=native.params(e16.fast_deep_params()))
+    two, _ = native.net_game(net, GAME, _seed(), prefilter=2, **args)
+    assert native.net_game(net, GAME, _seed(), prefilter=2, **args)[0] == two
+    assert native.net_game(net, GAME, _seed(), **args)[0] != two
+    with pytest.raises(native.NativeError):
+        native.net_game(net, GAME, _seed(), line_cap=430, frame_cap=150000,
+                        limits=Limits(30, 300), prefilter=2)  # the prefilter needs params
+
+
+def test_later_rounds_draw_fresh_seeds_away_from_dev_held_out_and_check_games(monkeypatch,
+                                                                             tmp_path):
+    stored = e20._load(e20.SEEDS)
+    real = e20._load
+    monkeypatch.setattr(e20, "_load", lambda p: real(p) | (
+        {"round9": {"games": 50}} if p == e20.CONFIG else {}))
+    seeds = e20.draw_round_seeds(9)["train_seeds"]["9"]
+    assert len(seeds) == 50
+    round0 = stored["train_seeds"]["0"]
+    protected = {e20._identity(s) for s in stored["excluded_seeds"] + stored["dev_seeds"] +
+                 round0[len(round0) - 2000:]}
+    assert not protected & {e20._identity(s) for s in seeds}
+    with pytest.raises(ValueError):
+        e20.round_seeds(9)  # not stored until written

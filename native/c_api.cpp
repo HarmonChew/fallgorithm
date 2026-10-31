@@ -14,6 +14,8 @@
 #include "agent.hpp"
 #include "rollout.hpp"
 #include "value.hpp"
+#include "net.hpp"
+#include "netsearch.hpp"
 
 #if defined(_WIN32)
 #define FN_API extern "C" __declspec(dllexport)
@@ -25,7 +27,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 14;
+constexpr int abi_version = 15;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -442,6 +444,35 @@ FN_API int fn_distil_game(const Params* params, const char* ruleset, const char*
 // Returns 0, -1 for bad arguments, -2 if ``rows`` is too small, -3 if the agent failed.
 constexpr int dump_stride = width + 4 + board_features;
 
+namespace {
+
+// fn_dump_game's rows for ``samples``. Returns 0, or -2 if they do not fit.
+int write_rows(const std::vector<BoardSample>& samples, std::int32_t* rows, int row_capacity,
+               int* row_count) {
+    if (static_cast<long long>(samples.size()) * dump_stride > row_capacity) {
+        return -2;
+    }
+    for (std::size_t index = 0; index < samples.size(); ++index) {
+        const BoardSample& sample = samples[index];
+        std::int32_t* row = rows + index * dump_stride;
+        for (int column = 0; column < width; ++column) {
+            row[column] = static_cast<std::int32_t>(sample.columns[column] >> hidden_rows);
+        }
+        row[width] = sample.lines;
+        row[width + 1] = static_cast<std::int32_t>(sample.score);  // ~6M at most by 430 lines
+        row[width + 2] = sample.drought;
+        row[width + 3] = sample.last;
+        const auto f = board_feature_values(sample.columns);
+        for (int k = 0; k < board_features; ++k) {
+            row[width + 4 + k] = static_cast<std::int32_t>(f[k]);
+        }
+    }
+    *row_count = static_cast<int>(samples.size());
+    return 0;
+}
+
+}  // namespace
+
 FN_API int fn_dump_stride() { return dump_stride; }
 
 FN_API int fn_dump_game(int agent_kind, const Params* params, const char* ruleset,
@@ -474,26 +505,81 @@ FN_API int fn_dump_game(int agent_kind, const Params* params, const char* rulese
         if (status) {
             return status;
         }
-        if (static_cast<long long>(samples.size()) * dump_stride > row_capacity) {
-            return -2;
+        return write_rows(samples, rows, row_capacity, row_count);
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 020: the value network's values, in points, of ``count`` boards (for the
+// tests), each as fn_dump_game's row layout's first 14 numbers (columns' visible rows,
+// lines, score, drought, last piece). ``net`` is experiment020.export's bytes. Returns 0,
+// or -1 for bad arguments.
+FN_API int fn_net_values(const unsigned char* net, int net_size, const std::int32_t* rows,
+                         int count, int line_cap, int start_level, double* out) {
+    if (!net || net_size < 0 || !rows || count < 0 || !out || start_level < 0 ||
+        start_level >= 20 || line_cap < 0) {
+        return -1;
+    }
+    ValueNetwork network;
+    if (!network.load(net, static_cast<std::size_t>(net_size))) {
+        return -1;
+    }
+    NetSearcher searcher(&network, line_cap);
+    for (int index = 0; index < count; ++index) {
+        const std::int32_t* row = rows + static_cast<std::size_t>(index) * dump_stride;
+        Columns columns{};
+        for (int column = 0; column < width; ++column) {
+            columns[column] = static_cast<std::uint32_t>(row[column]) << hidden_rows;
         }
-        for (std::size_t index = 0; index < samples.size(); ++index) {
-            const BoardSample& sample = samples[index];
-            std::int32_t* row = rows + index * dump_stride;
-            for (int column = 0; column < width; ++column) {
-                row[column] = static_cast<std::int32_t>(sample.columns[column] >> hidden_rows);
-            }
-            row[width] = sample.lines;
-            row[width + 1] = static_cast<std::int32_t>(sample.score);  // ~6M at most by 430 lines
-            row[width + 2] = sample.drought;
-            row[width + 3] = sample.last;
-            const auto f = board_feature_values(sample.columns);
-            for (int k = 0; k < board_features; ++k) {
-                row[width + 4 + k] = static_cast<std::int32_t>(f[k]);
-            }
+        if (row[width] < 0 || row[width + 3] < -1 || row[width + 3] >= piece_types) {
+            return -1;
         }
-        *row_count = static_cast<int>(samples.size());
-        return 0;
+        out[index] = searcher.value(columns, row[width], row[width + 2], row[width + 3],
+                                    start_level);
+    }
+    return 0;
+}
+
+// Experiment 020's agent: one game by netsearch.hpp's search with the network ``net``
+// (fn_dump_game's arguments and outputs otherwise, exploration included). With
+// ``prefilter`` above 0, the hand search with ``params`` keeps that many placements
+// first. ``rows`` may be null; given, it receives the game's boards as fn_dump_game's.
+// Returns 0, -1 for bad arguments, -2 if ``rows`` is too small, -3 if the agent failed.
+FN_API int fn_net_game(const unsigned char* net, int net_size, const Params* params,
+                       int prefilter, const char* ruleset,
+                       const char* mode, int start_level, int height, int seed, int line_cap,
+                       int frame_cap, int interval, int reaction, double explore,
+                       int explore_start, std::uint64_t explore_seed, std::uint8_t* inputs,
+                       int capacity, std::int64_t* out, std::int32_t* rows, int row_capacity,
+                       int* row_count) {
+    if (!net || net_size < 0 || prefilter < 0 || (prefilter > 0 && !params) || !ruleset ||
+        !mode || seed < 0 || seed > 0xffff ||
+        line_cap < 0 || frame_cap < 0 || capacity < frame_cap || interval < 1 ||
+        reaction < 0 || start_level < 0 || start_level >= 20 || (rows && !row_count) ||
+        row_capacity < 0 || !(explore >= 0.0 && explore <= 1.0) || explore_start < 0) {
+        return -1;
+    }
+    try {
+        blocks::Config config;
+        ValueNetwork network;
+        if (!make_config(ruleset, mode, start_level, height, seed, config) ||
+            !network.load(net, static_cast<std::size_t>(net_size))) {
+            return -1;
+        }
+        BasicAgent<NetSearcher> agent(prefilter > 0
+                                          ? NetSearcher(&network, line_cap, *params, prefilter)
+                                          : NetSearcher(&network, line_cap),
+                                      interval, reaction);
+        agent.set_explore(explore, explore_start, explore_seed);
+        std::vector<BoardSample> samples;
+        std::uint64_t final_score = 0;
+        const int status = run_game(config, agent, line_cap, frame_cap, inputs, out,
+                                    rows ? &samples : nullptr, final_score);
+        if (status || !rows) {
+            return status;
+        }
+        return write_rows(samples, rows, row_capacity, row_count);
     } catch (const std::exception&) {
         return -1;
     }
