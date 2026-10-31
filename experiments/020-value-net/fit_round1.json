@@ -1,0 +1,292 @@
+{
+ "data": {
+  "directories": [
+   "runs/020-data/round0",
+   "runs/020-data/round1"
+  ],
+  "created_at": [
+   "2026-10-31T09:58:43.710583+00:00",
+   "2026-10-31T10:26:40.194493+00:00"
+  ],
+  "versions": [
+   {
+    "engine": {
+     "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+     "dirty": false,
+     "kind": "committed"
+    },
+    "fallgorithm": {
+     "commit": "9d0479643994c200e085fb6cf0615075fee80f79",
+     "dirty": false,
+     "kind": "committed"
+    }
+   },
+   {
+    "engine": {
+     "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+     "dirty": false,
+     "kind": "committed"
+    },
+    "fallgorithm": {
+     "commit": "7fdfaa8619d056cc1ef7292dc68cbd75c445d7e4",
+     "dirty": false,
+     "kind": "committed"
+    }
+   }
+  ],
+  "games": 30000,
+  "train_games": 27000,
+  "train_boards": 17549579,
+  "frame_limit_games_dropped": 0,
+  "check_boards": 1953169
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "7fdfaa8619d056cc1ef7292dc68cbd75c445d7e4",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "torch": "2.14.0+cu130",
+ "settings": {
+  "hidden": 256,
+  "hidden2": 128,
+  "batch": 4096,
+  "epochs": 8,
+  "lr": 0.001,
+  "lr_note": "Adam, one-cycle schedule peaking at lr",
+  "torch_seed": 20,
+  "check_share": 0.1,
+  "min_gain": 0.1,
+  "weights_name": "value_{}.bin",
+  "probe": {
+   "heights": [
+    8,
+    12,
+    16
+   ],
+   "lines": {
+    "19-28": 180,
+    "39+": 340
+   },
+   "drought": 5,
+   "last": 5,
+   "note": "Tetris-ready stacks (column 9 empty; with even lines only multiples of 4 can occur); V must fall at each step in both, and lose a larger share of V(8) at 39+; last 5 is T"
+  }
+ },
+ "weights": {
+  "path": "experiments/020-value-net/value_round1.bin",
+  "sha256": "6d02e1ae827ceb4392acb9f9c4ceb099d2b23aa4cccb6e69cbd16aabc6624f2c"
+ },
+ "unit": "points / 22,800 (a Tetris at level 18)",
+ "training_log": [
+  {
+   "step": 3427,
+   "check": {
+    "mse": 126.3716,
+    "r2": 0.628,
+    "mse_by_band": {
+     "18": 197.6984,
+     "19-28": 113.9141,
+     "29-38": 44.0337,
+     "39+": 9.6242
+    }
+   },
+   "seconds": 22.4
+  },
+  {
+   "step": 6854,
+   "check": {
+    "mse": 120.1261,
+    "r2": 0.6464,
+    "mse_by_band": {
+     "18": 184.8825,
+     "19-28": 112.862,
+     "29-38": 43.1495,
+     "39+": 7.8664
+    }
+   },
+   "seconds": 44.7
+  },
+  {
+   "step": 10281,
+   "check": {
+    "mse": 119.125,
+    "r2": 0.6493,
+    "mse_by_band": {
+     "18": 181.9529,
+     "19-28": 113.3056,
+     "29-38": 44.1905,
+     "39+": 7.373
+    }
+   },
+   "seconds": 67.4
+  },
+  {
+   "step": 13708,
+   "check": {
+    "mse": 117.0812,
+    "r2": 0.6553,
+    "mse_by_band": {
+     "18": 178.7359,
+     "19-28": 112.1539,
+     "29-38": 42.7079,
+     "39+": 7.0975
+    }
+   },
+   "seconds": 90.3
+  },
+  {
+   "step": 17135,
+   "check": {
+    "mse": 116.754,
+    "r2": 0.6563,
+    "mse_by_band": {
+     "18": 178.0579,
+     "19-28": 111.9112,
+     "29-38": 42.8605,
+     "39+": 7.1161
+    }
+   },
+   "seconds": 111.9
+  },
+  {
+   "step": 20562,
+   "check": {
+    "mse": 116.1603,
+    "r2": 0.658,
+    "mse_by_band": {
+     "18": 176.8622,
+     "19-28": 111.7967,
+     "29-38": 42.6897,
+     "39+": 7.0743
+    }
+   },
+   "seconds": 133.0
+  },
+  {
+   "step": 23989,
+   "check": {
+    "mse": 115.8283,
+    "r2": 0.659,
+    "mse_by_band": {
+     "18": 176.1425,
+     "19-28": 111.8567,
+     "29-38": 42.5873,
+     "39+": 6.9622
+    }
+   },
+   "seconds": 154.8
+  },
+  {
+   "step": 27416,
+   "check": {
+    "mse": 115.6149,
+    "r2": 0.6596,
+    "mse_by_band": {
+     "18": 175.7139,
+     "19-28": 111.8136,
+     "29-38": 42.5282,
+     "39+": 6.9421
+    }
+   },
+   "seconds": 176.5
+  },
+  {
+   "step": 30843,
+   "check": {
+    "mse": 115.5179,
+    "r2": 0.6599,
+    "mse_by_band": {
+     "18": 175.4132,
+     "19-28": 111.9262,
+     "29-38": 42.5603,
+     "39+": 6.932
+    }
+   },
+   "seconds": 197.7
+  },
+  {
+   "step": 34270,
+   "check": {
+    "mse": 115.4187,
+    "r2": 0.6602,
+    "mse_by_band": {
+     "18": 175.3023,
+     "19-28": 111.834,
+     "29-38": 42.4419,
+     "39+": 6.9099
+    }
+   },
+   "seconds": 220.2
+  }
+ ],
+ "check_errors": {
+  "network": {
+   "mse": 115.4187,
+   "r2": 0.6602,
+   "mse_by_band": {
+    "18": 175.3023,
+    "19-28": 111.834,
+    "29-38": 42.4419,
+    "39+": 6.9099
+   }
+  },
+  "lines_left_x_points_per_line": {
+   "mse": 239.3136,
+   "r2": 0.2955,
+   "mse_by_band": {
+    "18": 426.325,
+    "19-28": 151.3373,
+    "29-38": 55.3052,
+    "39+": 15.6418
+   }
+  },
+  "linear_013": {
+   "mse": 139.0589,
+   "r2": 0.5906,
+   "mse_by_band": {
+    "18": 223.7286,
+    "19-28": 119.9314,
+    "29-38": 43.6776,
+    "39+": 7.2486
+   }
+  }
+ },
+ "mse_below_linear_013": 0.17,
+ "probe": {
+  "heights": [
+   8,
+   12,
+   16
+  ],
+  "19-28": {
+   "lines": 180,
+   "value": [
+    28.775,
+    27.322,
+    8.511
+   ],
+   "falls": true,
+   "share_lost": 0.7042
+  },
+  "39+": {
+   "lines": 340,
+   "value": [
+    3.175,
+    3.965,
+    1.389
+   ],
+   "falls": false,
+   "share_lost": 0.5626
+  },
+  "passes": false
+ },
+ "stop_rule": "stop if the network's validation MSE is not at least 10% below 013's linear model's, or the probe fails",
+ "stop": true
+}

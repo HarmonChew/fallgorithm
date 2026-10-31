@@ -3,7 +3,9 @@
 Status: approved by the owner 2026-10-31. Step 2's stop rule fired (V0's validation error only
 1.2% below 013's linear model, against 10%; the probe passed); the owner chose to go on to
 the step 3 dev check anyway, since one game's future is too noisy for the error to tell
-the two apart. V0 then lost badly (see notes); step 3's one fix is round 1's data.
+the two apart. V0 then lost badly on 60 held-back training seeds (scratch; not run on the
+dev seeds), and so did step 3's one fix (round 1's data) on dev seeds 0-99: stopped at step
+3 by its stop rule. See notes.md. (Round 0's training label is `fallgorithm020/train/v0`.)
 `predeclared.md` is written after the dev checks and before any held-out game.
 
 ## Why
