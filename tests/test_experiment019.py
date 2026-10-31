@@ -69,8 +69,10 @@ def test_check_late_wants_settings_that_change_017s_agent():
 
 
 def test_every_dev_check_variant_runs():
-    for late in e19._load(e19.CONFIG)["dev_check"].values():
+    config = e19._load(e19.CONFIG)
+    for late in config["dev_check"].values():
         e19.check_late(late)
+    assert set(config["recheck"]) <= set(config["dev_check"])
 
 
 def test_019s_agents_play_games_that_replay_on_the_python_engine():

@@ -1,6 +1,7 @@
 """Run Experiment 019: spend the rollouts where they pay.
 
     python -m block_stack_ai.experiment019 dev-check [--jobs N]
+    python -m block_stack_ai.experiment019 recheck [--jobs N]
     python -m block_stack_ai.experiment019 evaluate [--jobs N]
     python -m block_stack_ai.experiment019 verify RECORD [--jobs N]
     python -m block_stack_ai.experiment019 summarize RECORD [--jobs N]
@@ -39,6 +40,7 @@ from .engine import EngineError
 EXPERIMENT_ROOT = runner.PROJECT_ROOT / "experiments" / "019-late-rollouts"
 CONFIG = EXPERIMENT_ROOT / "config.json"
 DEV_CHECK = EXPERIMENT_ROOT / "dev_check.json"
+RECHECK = EXPERIMENT_ROOT / "recheck.json"
 RESULT = EXPERIMENT_ROOT / "result.json"
 PREDECLARED = EXPERIMENT_ROOT / "predeclared.md"
 BASELINE_RECORD = e17.EXPERIMENT_ROOT / "records" / "run.json.gz"
@@ -72,13 +74,18 @@ def check_late(late: Any) -> dict[str, int]:
 
 # ---------------------------------------------------------------- dev check
 
-def dev_check(jobs: int) -> dict[str, Any]:
+def dev_check(jobs: int, recheck: bool = False) -> dict[str, Any]:
     """Each config.json variant on the dev seeds, paired by seed against 017's agent.
-    A diagnostic, not part of the success rule."""
+    A diagnostic, not part of the success rule. ``recheck``: config.json's
+    ``recheck`` variants on the dev seeds after the first ``dev_check_games``, which
+    017's settings were not chosen on (no 017 depth check to match there)."""
     config = _load(CONFIG)
-    seeds = _load(e13.SEEDS)["dev_seeds"][:config["dev_check_games"]]
+    games = config["dev_check_games"]
+    dev = _load(e13.SEEDS)["dev_seeds"]
+    seeds = dev[games:2 * games] if recheck else dev[:games]
     ms = config["formats"][0]["reaction_ms"]
-    variants = config["dev_check"]
+    variants = {name: config["dev_check"][name] for name in config["recheck"]} if recheck \
+        else config["dev_check"]
     base = e16._load(e16.CONFIG)["rollout"] | e17._load(e17.CONFIG)["commit_rollout"]
     same_game = ("game", "line_cap", "frame_cap", "formats")
     if any(config[key] != e16._load(e16.CONFIG)[key] for key in same_game):
@@ -90,7 +97,7 @@ def dev_check(jobs: int) -> dict[str, Any]:
         # 017's agent first: stop before the variants if it no longer plays 017's games.
         baseline = pool.map(e16.band_game, [("commit_rollout", "rollout", base, seed, ms)
                                             for seed in seeds], chunksize=1)
-        if not baseline_matches_017(e16._summary(baseline), len(seeds)):
+        if not recheck and not baseline_matches_017(e16._summary(baseline), len(seeds)):
             raise ValueError("017's agent on this build does not match 017's depth check")
         found = pool.map(e16.band_game, work, chunksize=1) + baseline
     runs = {name: [g for g in found if g["name"] == name]
@@ -98,11 +105,13 @@ def dev_check(jobs: int) -> dict[str, Any]:
     summaries = {name: e16._summary(games) for name, games in runs.items()}
     return {
         "question": "019's settings on 017's agent, on the dev seeds",
-        "seeds": f"Experiment 013's first {len(seeds)} dev seeds", "games": len(seeds),
+        "seeds": f"Experiment 013's dev seeds {games} to {2 * games - 1}" if recheck else
+        f"Experiment 013's first {len(seeds)} dev seeds", "games": len(seeds),
         "versions": runner._record_versions(), "numbers": commit_rollout_params(),
         "variants": variants,
         "runs": summaries,
-        "baseline_matches_017": baseline_matches_017(summaries["commit_rollout"], len(seeds)),
+        "baseline_matches_017": None if recheck else
+        baseline_matches_017(summaries["commit_rollout"], len(seeds)),
         "paired": {f"{name} - commit_rollout": {
             "total": e12.paired(games, runs["commit_rollout"]),
             "by_band": e16._band_pairs(games, runs["commit_rollout"])}
@@ -287,6 +296,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m block_stack_ai.experiment019")
     commands = parser.add_subparsers(dest="command", required=True)
     for name, text in (("dev-check", "019's settings on dev seeds"),
+                       ("recheck", "the closest settings on the next dev seeds"),
                        ("evaluate", "play late_rollout on the held-out seeds"),
                        ("verify", "replay a record on the engine"),
                        ("summarize", "write result.json from a record")):
@@ -299,6 +309,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "dev-check":
             _write(DEV_CHECK, dev_check(args.jobs))
             print(f"Wrote {DEV_CHECK}")
+        elif args.command == "recheck":
+            _write(RECHECK, dev_check(args.jobs, recheck=True))
+            print(f"Wrote {RECHECK}")
         elif args.command == "evaluate":
             print(f"Record: {evaluate(args.jobs)}")
         elif args.command == "verify":

@@ -23,6 +23,7 @@
   "adjust_29_38": {"rollout_to_level": 38},
   "adjust_29_38_ks_d20_n16": {"rollout_to_level": 38, "killscreen_rollout_depth": 20}
  },
+ "recheck": ["ks_d15_n16", "ks_d10_n32", "adjust_29_38"],
  "late": null,
  "identity_check_games": 30,
  "dev_seeds": "experiments/013-deeper-search/seeds.json dev_seeds (the first dev_check_games)",
