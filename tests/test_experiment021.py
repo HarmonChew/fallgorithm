@@ -147,3 +147,54 @@ def test_groups_pad_decisions_and_drop_single_candidates():
     rows[:, e21.MODEL] = [0, 0, 0, 1, 2, 2]
     index, kinds = e21._groups(rows, "cpu")
     assert index.tolist() == [[0, 1, 2], [4, 5, -1]] and kinds.tolist() == [0, 2]
+
+
+def test_rollouts_without_a_network_are_017s(tmp_path):
+    _, net = _net(tmp_path)
+    params = native.params(SMALL)
+    played, rows = _rank_distil()
+    assert native.rank_rollout_game(None, GAME, _seed(), net_to_level=99, **ARGS, params=params,
+                                    dump=True) == (played, rows)
+    assert native.rank_rollout_game(None, GAME, _seed(), net_to_level=99, **ARGS,
+                                    params=params) == (played, [])
+    # A network used at no level (below the start) changes nothing either.
+    assert native.rank_rollout_game(net, GAME, _seed(), net_to_level=17, **ARGS, params=params,
+                                    dump=True) == (played, rows)
+
+
+def test_a_constant_network_in_the_rollouts_plays_017s_rollouts(tmp_path):
+    model, _ = _net(tmp_path)
+    with torch.no_grad():
+        model.layers[-1].weight.zero_()
+    path = tmp_path / "flat.bin"
+    e21.export(model, path)
+    params = native.params(SMALL)
+    assert native.rank_rollout_game(path.read_bytes(), GAME, _seed(), net_to_level=99, **ARGS,
+                                    params=params, dump=True) == _rank_distil()
+
+
+def test_a_network_in_the_rollouts_changes_their_means_and_repeats(tmp_path):
+    _, net = _net(tmp_path)
+    params = native.params(SMALL)
+    _, rows = _rank_distil()
+    for level in (28, 99):
+        once = native.rank_rollout_game(net, GAME, _seed(), net_to_level=level, **ARGS,
+                                        params=params, dump=True)
+        assert once == native.rank_rollout_game(net, GAME, _seed(), net_to_level=level, **ARGS,
+                                                params=params, dump=True)
+        assert [r[e21.MEAN] for r in once[1]] != [r[e21.MEAN] for r in rows]
+    with pytest.raises(native.NativeError):
+        native.rank_rollout_game(b"nope", GAME, _seed(), net_to_level=99, **ARGS, params=params)
+
+
+def test_above_rollout_to_level_the_rollouts_use_the_commit_model(tmp_path):
+    # Preview rollouts off (band 18-17), so every rollout is a commit one and every
+    # placement in it is scored by the commit model with the preview hidden.
+    _, net = _net(tmp_path)
+    params = native.params(SMALL | {"rollout_to_level": 17})
+    _, rows = native.rank_rollout_game(None, GAME, _seed(), net_to_level=99, **ARGS,
+                                       params=params, dump=True)
+    _, ranked = native.rank_rollout_game(net, GAME, _seed(), net_to_level=99, **ARGS,
+                                         params=params, dump=True)
+    assert {int(r[e21.MODEL]) for r in rows} == {1}
+    assert [r[e21.MEAN] for r in ranked] != [r[e21.MEAN] for r in rows]

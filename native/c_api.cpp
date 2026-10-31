@@ -27,7 +27,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 16;
+constexpr int abi_version = 17;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -445,19 +445,28 @@ constexpr int rank_distil_stride = 10 + width + rerank_features_count;
 
 FN_API int fn_rank_distil_stride() { return rank_distil_stride; }
 
-FN_API int fn_rank_distil_game(const Params* params, const char* ruleset, const char* mode,
-                               int start_level, int height, int seed, int line_cap,
-                               int frame_cap, int interval, int reaction, std::uint8_t* inputs,
-                               int capacity, std::int64_t* out, double* rows, int row_capacity,
-                               int* row_count) {
-    if (!params || !rows || !row_count || !ruleset || !mode || seed < 0 || seed > 0xffff ||
+// Experiment 021 step 4: the same game with the rollouts' placements re-ranked by the
+// rank network ``net`` up to level ``net_to_level`` (``net`` null: 017's rollouts), and
+// the rows only when ``rows`` is not null. Returns as fn_distil_game (-1 also for a
+// ``net`` that is not a rank network).
+FN_API int fn_rank_rollout_game(const unsigned char* net, int net_size, int net_to_level,
+                                const Params* params, const char* ruleset, const char* mode,
+                                int start_level, int height, int seed, int line_cap,
+                                int frame_cap, int interval, int reaction,
+                                std::uint8_t* inputs, int capacity, std::int64_t* out,
+                                double* rows, int row_capacity, int* row_count) {
+    if (!params || !row_count || !ruleset || !mode || seed < 0 || seed > 0xffff ||
         line_cap < 0 || frame_cap < 0 || capacity < frame_cap || interval < 1 ||
-        reaction < 0 || start_level < 0 || start_level >= 20 || row_capacity < 0) {
+        reaction < 0 || start_level < 0 || start_level >= 20 || row_capacity < 0 ||
+        net_size < 0) {
         return -1;
     }
     try {
         blocks::Config config;
-        if (!make_config(ruleset, mode, start_level, height, seed, config)) {
+        ValueNetwork network;
+        if (!make_config(ruleset, mode, start_level, height, seed, config) ||
+            (net && !network.load(net, static_cast<std::size_t>(net_size), rank_magic,
+                                  rank_inputs_count))) {
             return -1;
         }
         Searcher searcher(*params);
@@ -465,13 +474,22 @@ FN_API int fn_rank_distil_game(const Params* params, const char* ruleset, const 
         searcher.set_nes_odds(true);
         std::vector<DistilRow> found;
         RolloutSearcher rollouts(searcher, *params);
-        rollouts.set_dump(&found);
+        if (rows) {
+            rollouts.set_dump(&found);
+        }
+        if (net) {
+            rollouts.set_rollout_net(&network, line_cap, net_to_level);
+        }
         BasicAgent<RolloutSearcher> agent(rollouts, interval, reaction);
         std::uint64_t final_score = 0;
         const int status =
             run_game(config, agent, line_cap, frame_cap, inputs, out, nullptr, final_score);
         if (status) {
             return status;
+        }
+        *row_count = 0;
+        if (!rows) {
+            return 0;
         }
         if (static_cast<long long>(found.size()) * rank_distil_stride > row_capacity) {
             return -2;
@@ -499,6 +517,19 @@ FN_API int fn_rank_distil_game(const Params* params, const char* ruleset, const 
     } catch (const std::exception&) {
         return -1;
     }
+}
+
+FN_API int fn_rank_distil_game(const Params* params, const char* ruleset, const char* mode,
+                               int start_level, int height, int seed, int line_cap,
+                               int frame_cap, int interval, int reaction, std::uint8_t* inputs,
+                               int capacity, std::int64_t* out, double* rows, int row_capacity,
+                               int* row_count) {
+    if (!rows) {
+        return -1;
+    }
+    return fn_rank_rollout_game(nullptr, 0, 0, params, ruleset, mode, start_level, height,
+                                seed, line_cap, frame_cap, interval, reaction, inputs,
+                                capacity, out, rows, row_capacity, row_count);
 }
 
 // Experiment 021: the rank network's outputs for ``count`` rows of fn_rank_distil_game's

@@ -38,6 +38,13 @@
 // winning (the search's own choice on ties). The DistilRows also keep each candidate's
 // board, the decision's pieces, lines and drought, and the means of the even and of the
 // odd rollouts (two independent halves, to measure how noisy the mean is).
+//
+// Experiment 021 step 4: the rollouts' own placements can be re-ranked by a rank network
+// too (set_rollout_net): after the policy's search, its rollout_beam best options are
+// scored as the rank agent scores a decision's, up to ``to_level``. Every rollout
+// placement knows its preview; above rollout_to_level (where the network only learnt the
+// commit decision) it is scored by the commit model with the preview hidden. Off (no
+// network), the rollouts are 017's.
 #pragma once
 
 #include <algorithm>
@@ -151,6 +158,14 @@ public:
         rank_net_ = net;
         line_cap_ = line_cap;
     }
+    // Experiment 021 step 4: the rollouts' placements re-ranked by ``net`` up to level
+    // ``to_level`` (nullptr: the policy's search alone), its lines left counted to
+    // ``line_cap``.
+    void set_rollout_net(const ValueNetwork* net, int line_cap, int to_level) {
+        rollout_net_ = net;
+        rollout_line_cap_ = line_cap;
+        rollout_net_to_level_ = to_level;
+    }
 
     bool search(const Position& position, Choice& choice) {
         if (!searcher_.search(position, choice)) {
@@ -182,28 +197,10 @@ public:
             phase_of(params_, position.level, position.drought, position.columns);
         const int model = rerank_model(preview, position.level);
         if (rank_net_) {
-            // As the linear re-ranker below: the search's own choice wins ties.
-            int best = searcher_.chosen();
-            bool have_best = false;
-            double best_score = 0.0;
-            for (const Searcher::Candidate& candidate : candidates_) {
-                const double own = value_of(
-                    params_, phase, candidate.cleared, candidate.settled,
-                    level_for_lines(position.lines + candidate.cleared, position.start_level));
-                const bool searched = candidate.order == searcher_.chosen();
-                const auto dense = rank_inputs(
-                    model, position.piece, position.next_piece,
-                    position.lines + candidate.cleared, line_cap_, position.level,
-                    position.drought, rerank_features(searched, candidate, own));
-                const double score = rank_forward(*rank_net_, candidate.settled, dense.data());
-                if (!have_best || score > best_score || (score == best_score && searched)) {
-                    best = candidate.order;
-                    best_score = score;
-                    have_best = true;
-                }
-            }
+            const int best = rank_pick(searcher_, *rank_net_, line_cap_, position, model,
+                                       position.next_piece, phase, candidates_, params_);
             if (best == searcher_.chosen()) {
-                return true;
+                return true;  // ``choice`` is already the search's
             }
             return searcher_.choose(best, choice);
         }
@@ -275,6 +272,35 @@ public:
     }
 
 private:
+    // The rank network's pick among ``candidates`` of ``searcher``'s last search (its
+    // option index): the highest output, the search's own choice winning ties. ``next``
+    // is the preview the network is shown (-1: none).
+    static int rank_pick(const Searcher& searcher, const ValueNetwork& net, int line_cap,
+                         const Position& position, int model, int next, int phase,
+                         const std::vector<Searcher::Candidate>& candidates,
+                         const Params& params) {
+        int best = searcher.chosen();
+        bool have_best = false;
+        double best_score = 0.0;
+        for (const Searcher::Candidate& candidate : candidates) {
+            const double own = value_of(
+                params, phase, candidate.cleared, candidate.settled,
+                level_for_lines(position.lines + candidate.cleared, position.start_level));
+            const bool searched = candidate.order == searcher.chosen();
+            const auto dense = rank_inputs(model, position.piece, next,
+                                           position.lines + candidate.cleared, line_cap,
+                                           position.level, position.drought,
+                                           rerank_features(searched, candidate, own));
+            const double score = rank_forward(net, candidate.settled, dense.data());
+            if (!have_best || score > best_score || (score == best_score && searched)) {
+                best = candidate.order;
+                best_score = score;
+                have_best = true;
+            }
+        }
+        return best;
+    }
+
     // One rollout from ``columns`` with ``lines`` cleared, its return in ``total``:
     // ``sequence`` holds the preview and then ``depth`` drawn pieces; piece t is
     // placed knowing piece t + 1. Returns false only if a search's walk back failed.
@@ -296,9 +322,21 @@ private:
                 total -= static_cast<double>(params_.rollout_death) * (depth - step);
                 return true;
             }
+            const int phase = phase_of(params_, level, drought, columns);
+            if (rollout_net_ && level <= rollout_net_to_level_ && params_.rollout_beam >= 2) {
+                policy_.candidates(params_.rollout_beam, policy_candidates_);
+                if (policy_candidates_.size() >= 2) {
+                    const int model = rerank_model(level <= params_.rollout_to_level, level);
+                    const int best = rank_pick(policy_, *rollout_net_, rollout_line_cap_,
+                                               position, model, model == 0 ? next : -1,
+                                               phase, policy_candidates_, params_);
+                    if (best != policy_.chosen() && !policy_.choose(best, choice_)) {
+                        return false;
+                    }
+                }
+            }
             const Settled settled =
                 settle(columns, piece, choice_.orientation, choice_.x, choice_.y);
-            const int phase = phase_of(params_, level, drought, columns);
             total += value_of(params_, phase, settled.cleared, settled.columns,
                               level_for_lines(lines + settled.cleared, start.start_level));
             lines += settled.cleared;
@@ -359,6 +397,9 @@ private:
     const RerankModel* rerank_ = nullptr;
     const ValueNetwork* rank_net_ = nullptr;
     int line_cap_ = 0;
+    const ValueNetwork* rollout_net_ = nullptr;
+    int rollout_line_cap_ = 0, rollout_net_to_level_ = 0;
+    std::vector<Searcher::Candidate> policy_candidates_;
     std::vector<DistilRow>* dump_ = nullptr;
     Choice choice_;
     std::vector<Searcher::Candidate> candidates_;

@@ -33,5 +33,14 @@
   "seeds": "Experiment 012's 1,000 held-out seeds",
   "baseline": "Experiment 017's agent: experiments/017-commit-rollouts/records/run.json.gz",
   "rule": "only for an agent that beats 017 on the dev seeds"
+ },
+ "step4": {
+  "plan": "step4.md",
+  "variants": {
+   "rollouts_18_28": 28,
+   "rollouts_all": 99
+  },
+  "variants_note": "the last level where the rollouts' own placements are re-ranked by the rank network; above rollout_to_level (28) by the commit model with the preview hidden",
+  "round_games": 300
  }
 }

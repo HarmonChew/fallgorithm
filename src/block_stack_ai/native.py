@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 16
+ABI_VERSION = 17
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -259,6 +259,9 @@ def load() -> Any:
     lib.fn_rank_distil_stride.restype = C.c_int
     lib.fn_rank_distil_game.argtypes = lib.fn_distil_game.argtypes
     lib.fn_rank_distil_game.restype = C.c_int
+    lib.fn_rank_rollout_game.argtypes = [C.c_char_p, C.c_int, C.c_int] + \
+        lib.fn_distil_game.argtypes
+    lib.fn_rank_rollout_game.restype = C.c_int
     lib.fn_rank_values.argtypes = [C.c_char_p, C.c_int, C.POINTER(C.c_double), C.c_int, C.c_int,
                                    C.c_int, C.POINTER(C.c_double)]
     lib.fn_rank_values.restype = C.c_int
@@ -605,6 +608,28 @@ def rank_distil_game(game: dict[str, Any], seed: int, *, line_cap: int, frame_ca
         raise NativeError(f"fn_rank_distil_game failed with {status}")
     s = RANK_DISTIL_STRIDE
     return _played(inputs, out), [tuple(rows[i * s:(i + 1) * s]) for i in range(count.value)]
+
+
+def rank_rollout_game(net: bytes | None, game: dict[str, Any], seed: int, *, net_to_level: int,
+                      line_cap: int, frame_cap: int, limits: Limits, params: Params,
+                      dump: bool = False) -> tuple[dict[str, Any], list[tuple[float, ...]]]:
+    """:func:`rank_distil_game`'s game with the rollouts' own placements re-ranked by the
+    rank network ``net`` up to level ``net_to_level`` (Experiment 021 step 4; ``None``:
+    017's rollouts), and its rows when ``dump`` (else none)."""
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    rows = (C.c_double * RANK_DISTIL_CAPACITY)() if dump else None
+    count = C.c_int(0)
+    status = load().fn_rank_rollout_game(
+        net, len(net or b""), net_to_level, C.byref(params), game["ruleset"].encode(),
+        game["mode"].encode(), game["start_level"], game["height"], seed, line_cap, frame_cap,
+        limits.tap_interval, limits.reaction_frames, inputs, max(1, frame_cap), out, rows,
+        RANK_DISTIL_CAPACITY if dump else 0, C.byref(count))
+    if status:
+        raise NativeError(f"fn_rank_rollout_game failed with {status}")
+    s = RANK_DISTIL_STRIDE
+    found = [tuple(rows[i * s:(i + 1) * s]) for i in range(count.value)] if dump else []
+    return _played(inputs, out), found
 
 
 def rank_values(net: bytes, rows: list[tuple[float, ...]], *, line_cap: int,

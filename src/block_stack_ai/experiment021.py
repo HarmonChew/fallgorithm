@@ -4,6 +4,10 @@
     python -m block_stack_ai.experiment021 collect [--jobs N]
     python -m block_stack_ai.experiment021 fit [DATA] [--device cuda:0]
     python -m block_stack_ai.experiment021 dev-check WEIGHTS [--part 0|1] [--jobs N]
+    python -m block_stack_ai.experiment021 dev-check-rollouts WEIGHTS [--part 0|1] [--jobs N]
+    python -m block_stack_ai.experiment021 round-seeds ROUND
+    python -m block_stack_ai.experiment021 collect --round ROUND --weights W --to-level L
+    python -m block_stack_ai.experiment021 fit DATA [DATA ...] --name NAME
 
 017's agent re-ranks the search's best placements by sampled rollouts, ~8 minutes a game.
 ``collect`` plays 017's agent on fresh distil seeds and keeps, at every rollout-ranked
@@ -17,6 +21,13 @@ network, the search alone and the even rollouts pick the rollouts' best and what
 loses against it (018's table; also judged on the odd rollouts alone, which none of the
 three saw). ``dev-check`` plays the rank agent (``rank_game``) on Experiment 020's dev
 seeds, paired against 015's and 017's agents (020's dev_baselines.json).
+
+Step 4 (``step4.md``): ``dev-check-rollouts`` plays 017's agent with the rank network
+re-ranking the rollouts' own placements (native ``rank_rollout_game``), once per variant
+of config ``step4.variants`` (the last level where the rollouts use it), paired against
+017's. ``round-seeds`` selects fresh seeds for a round of data, ``collect --round`` plays
+that agent on them (the same rows), and ``fit`` takes several runs (each run's last
+``check_share`` of games are checked).
 """
 
 from __future__ import annotations
@@ -101,15 +112,54 @@ def select_seeds() -> dict[str, Any]:
     }
 
 
+def round_seeds_path(round_: int) -> Path:
+    return EXPERIMENT_ROOT / f"seeds_round{round_}.json"
+
+
+def select_round_seeds(round_: int) -> dict[str, Any]:
+    """Fresh seeds for round ``round_`` of step 4's data (label v<round + 1>): as
+    :func:`select_seeds`, also excluding the pilot's distil seeds and earlier rounds'."""
+    config = _load(CONFIG)
+    earlier = set(_load(SEEDS)["distil_seeds"])
+    for r in range(1, round_):
+        earlier |= set(_load(round_seeds_path(r))["distil_seeds"])
+    excluded = sorted(set(_load(SEEDS)["excluded_seeds"]) | earlier)
+    label = f"fallgorithm021/distil/v{round_ + 1}/{{}}"
+    seen = {experiment006.native_identity(config["game"], seed) for seed in excluded}
+    selected, index = [], 0
+    while len(selected) < config["step4"]["round_games"]:
+        seed = experiment006._label_seed(label, index)
+        identity = experiment006.native_identity(config["game"], seed)
+        if identity not in seen:
+            selected.append(seed)
+            seen.add(identity)
+        index += 1
+    return {
+        "selection": _load(SEEDS)["selection"] + "; also not the pilot's distil seeds nor an "
+                     "earlier round's",
+        "label": label.replace("{}", "<index>"),
+        "excluded_seeds": excluded, "distil_seeds": selected,
+    }
+
+
 # ---------------------------------------------------------------- collect
 
-def distil_game(job: tuple[int, int]) -> tuple[int, dict[str, Any], np.ndarray]:
-    index, seed = job
+def distil_game(job: tuple[int, int] | tuple[int, int, str, int]
+                ) -> tuple[int, dict[str, Any], np.ndarray]:
+    """One distil game: 017's agent, or (step 4) with the rank network ``weights``
+    (relative to the project) in its rollouts up to level ``to_level``."""
+    index, seed = job[:2]
     config = _load(CONFIG)
     tick = time.perf_counter()
-    played, rows = native.rank_distil_game(
-        config["game"], seed, line_cap=config["line_cap"], frame_cap=config["frame_cap"],
-        limits=e13._limits(config), params=native.params(agent_params()))
+    if len(job) == 2:
+        played, rows = native.rank_distil_game(
+            config["game"], seed, line_cap=config["line_cap"], frame_cap=config["frame_cap"],
+            limits=e13._limits(config), params=native.params(agent_params()))
+    else:
+        played, rows = native.rank_rollout_game(
+            (runner.PROJECT_ROOT / job[2]).read_bytes(), config["game"], seed,
+            net_to_level=job[3], line_cap=config["line_cap"], frame_cap=config["frame_cap"],
+            limits=e13._limits(config), params=native.params(agent_params()), dump=True)
     summary = {"index": index, "seed": seed, "score": played["score"],
                "lines": played["lines"], "pieces": played["pieces"],
                "stopping_reason": played["stopping_reason"],
@@ -117,19 +167,38 @@ def distil_game(job: tuple[int, int]) -> tuple[int, dict[str, Any], np.ndarray]:
     return index, summary, np.array(rows, dtype=np.float64).reshape(-1, native.RANK_DISTIL_STRIDE)
 
 
-def collect(jobs: int, name: str = "pilot") -> Path:
+def collect(jobs: int, name: str = "pilot", round_: int = 0, weights: Path | None = None,
+            to_level: int = 0) -> Path:
     """The distil games into ``runs/021-data/<name>``: ``games/<index>.npy`` (each game's
     rows), ``games.jsonl`` (each game's result, as they finish) and ``data.json`` (the
     settings and code versions, at the start and at the end). Games already there are
-    kept, so a stopped run resumes."""
-    seeds = _load(SEEDS)["distil_seeds"]
+    kept, so a stopped run resumes. Round 0 is the pilot (017's agent, the distil seeds);
+    a later round plays on its own seeds with the rank network ``weights`` in the
+    rollouts up to ``to_level``."""
+    if round_:
+        if weights is None:
+            raise ValueError("a round after the pilot needs the rank network's weights")
+        if to_level < _load(CONFIG)["game"]["start_level"]:
+            raise ValueError(f"--to-level {to_level} is below the start level: the network "
+                             "would never be used")
+        seeds = _load(round_seeds_path(round_))["distil_seeds"]
+        relative = str(weights.resolve().relative_to(runner.PROJECT_ROOT))
+        rollout_net = {"path": relative, "to_level": to_level,
+                       "sha256": hashlib.sha256(weights.read_bytes()).hexdigest()}
+    else:
+        if weights is not None:
+            raise ValueError("the pilot (round 0) plays 017's agent: no weights")
+        seeds, rollout_net = _load(SEEDS)["distil_seeds"], None
     directory = DATA_ROOT / name
     (directory / "games").mkdir(parents=True, exist_ok=True)
     header_path = directory / "data.json"
     header = json.loads(header_path.read_text(encoding="utf-8")) if header_path.exists() else {
         "created_at": datetime.now(timezone.utc).isoformat(), "params": agent_params(),
         "features": e18.FEATURES, "seeds": seeds, "versions_at_start": []}
-    if header["params"] != agent_params() or header["seeds"] != seeds:
+    if rollout_net:
+        header.setdefault("rollout_net", rollout_net)
+    if (header["params"] != agent_params() or header["seeds"] != seeds
+            or header.get("rollout_net") != rollout_net):
         raise ValueError(f"{directory} holds another run")
     header["versions_at_start"].append(runner._record_versions())
     _write(header_path, header)
@@ -138,6 +207,8 @@ def collect(jobs: int, name: str = "pilot") -> Path:
     done = {json.loads(line)["index"] for line in
             (log_path.read_text(encoding="utf-8").splitlines() if log_path.exists() else [])}
     todo = [(i, s) for i, s in enumerate(seeds) if i not in done]
+    if rollout_net:
+        todo = [(i, s, rollout_net["path"], to_level) for i, s in todo]
     tick = time.time()
     with Pool(jobs) as pool, log_path.open("a", encoding="utf-8") as log:
         for index, summary, rows in pool.imap_unordered(distil_game, todo, chunksize=1):
@@ -277,19 +348,34 @@ def _predict(model: e20.ValueNet, rows: torch.Tensor, line_cap: int,
                           for i in range(0, len(rows), batch)])
 
 
-def fit_run(directory: Path, device: str) -> dict[str, Any]:
-    """Fit the network on the first games of a run and report on the rest (step 2)."""
+def fit_run(directories: list[Path], device: str, name: str) -> dict[str, Any]:
+    """Fit the network on the first games of each run and report on the rest (step 2;
+    step 4 fits several runs at once)."""
     config = _load(CONFIG)
     settings = config["fit"]
     torch.manual_seed(settings["torch_seed"])
-    header, games, rows, game = load_data(directory)
-    if header["params"] != agent_params() or list(header["features"]) != list(e18.FEATURES):
-        raise ValueError(f"{directory} is not 017's agent with these features")
-    if not np.isfinite(rows).all():
-        raise ValueError(f"{directory} holds a number that is not finite")
-    split = len(games) - round(len(games) * config["check_share"])
+    runs, all_rows, fit_mask, run_of = [], [], [], []
+    for directory in directories:
+        header, games, rows, game = load_data(directory)
+        if header["params"] != agent_params() or list(header["features"]) != list(e18.FEATURES):
+            raise ValueError(f"{directory} is not 017's agent with these features")
+        if not np.isfinite(rows).all():
+            raise ValueError(f"{directory} holds a number that is not finite")
+        split = len(games) - round(len(games) * config["check_share"])
+        runs.append({"directory": str(directory.relative_to(runner.PROJECT_ROOT)),
+                     "created_at": header["created_at"],
+                     "rollout_net": header.get("rollout_net"),
+                     "versions_at_start": header["versions_at_start"],
+                     "versions_at_end": header.get("versions_at_end"),
+                     "games": len(games), "fit_games": split, "rows": len(rows),
+                     "mean_score": round(sum(g["score"] for g in games) / len(games), 1)})
+        all_rows.append(rows)
+        fit_mask.append(game < split)
+        run_of.append(np.full(len(rows), len(runs) - 1, dtype=np.int32))
+    rows, fitting = np.concatenate(all_rows), np.concatenate(fit_mask)
+    check_run = np.concatenate(run_of)[~fitting]
     cap = config["line_cap"]
-    train_rows, check_rows = rows[game < split], rows[game >= split]
+    train_rows, check_rows = rows[fitting], rows[~fitting]
     train = torch.from_numpy(train_rows).to(device)
     check = torch.from_numpy(check_rows).to(device)
     index, kinds = _groups(train_rows, device)
@@ -333,31 +419,37 @@ def fit_run(directory: Path, device: str) -> dict[str, Any]:
                         "seconds": round(time.time() - tick, 1)})
             print(log[-1], file=sys.stderr, flush=True)
     model.eval()
-    weights = EXPERIMENT_ROOT / settings["weights_name"].format(directory.name)
+    weights = EXPERIMENT_ROOT / settings["weights_name"].format(name)
     sha = export(model, weights)
     scores = _predict(model, check, cap).double().cpu().numpy()
     # The C++ network on the first check rows must give the same outputs.
     sample_rows = [tuple(r) for r in check_rows[:2000].tolist()]
     native_scores = native.rank_values(weights.read_bytes(), sample_rows, line_cap=cap,
                                        start_level=config["game"]["start_level"])
+    # float32 rounding grows with the outputs' size, so also count the decisions (whole
+    # ones among those rows) where the C++ net would pick another candidate.
+    sample_decision = decision_index(check_rows[:2000])
+    flips = sum(int(np.argmax(np.asarray(native_scores)[sample_decision == d]) !=
+                    np.argmax(scores[:2000][sample_decision == d]))
+                for d in range(int(sample_decision[-1])))  # the last may be cut off
     checked = table(check_rows, scores)
     fitted = table(train_rows, _predict(model, train, cap).double().cpu().numpy())
-    stop = not all(checked[name]["network_loss"] < checked[name]["search_loss"]
-                   for name in MODELS)
+    stop = not all(checked[kind]["network_loss"] < checked[kind]["search_loss"]
+                   for kind in MODELS)
+    data = runs[0] if len(runs) == 1 else {"runs": runs}
+    by_run = {} if len(runs) == 1 else {
+        run["directory"]: table(check_rows[check_run == r], scores[check_run == r])
+        for r, run in enumerate(runs)}
     return {
-        "data": {"directory": str(directory.relative_to(runner.PROJECT_ROOT)),
-                 "created_at": header["created_at"],
-                 "versions_at_start": header["versions_at_start"],
-                 "versions_at_end": header.get("versions_at_end"),
-                 "games": len(games), "fit_games": split, "rows": len(rows),
-                 "mean_score": round(sum(g["score"] for g in games) / len(games), 1),
-                 "fit_decisions": n},
+        "data": data | {"fit_decisions": n},
         "versions": runner._record_versions(), "torch": torch.__version__,
         "settings": settings, "check_share": config["check_share"],
         "target_scale": [round(v, 4) for v in scale.tolist()],
         "weights": {"path": str(weights.relative_to(runner.PROJECT_ROOT)), "sha256": sha},
         "native_max_difference": max(abs(a - b) for a, b in zip(native_scores, scores)),
-        "training_log": log, "checked_games": checked, "fitted_games": fitted,
+        "native_pick_flips": {"flips": flips, "decisions": int(sample_decision[-1])},
+        "training_log": log, "checked_games": checked} | (
+        {"checked_games_by_run": by_run} if by_run else {}) | {"fitted_games": fitted,
         "stop_rule": "stop if the network's loss is not below the search's in all three "
                      "decision kinds (checked games, full means)",
         "stop": stop,
@@ -405,32 +497,115 @@ def dev_check(weights: Path, jobs: int, part: int = 0) -> dict[str, Any]:
     }
 
 
+def dev_rollout_game(job: tuple[str, int, str, int]) -> dict[str, Any]:
+    """One dev game by 017's agent with the rank network ``weights`` re-ranking its
+    rollouts' placements up to ``to_level`` (step 4), replayed for its score by band."""
+    name, seed, weights, to_level = job
+    config = _load(CONFIG)
+    tick = time.perf_counter()
+    played, _ = native.rank_rollout_game(
+        (runner.PROJECT_ROOT / weights).read_bytes(), config["game"], seed,
+        net_to_level=to_level, line_cap=config["line_cap"], frame_cap=config["frame_cap"],
+        limits=e13._limits(config), params=native.params(agent_params()))
+    seconds = time.perf_counter() - tick
+    return {"name": name, "seed": seed, "score": played["score"], "lines": played["lines"],
+            "seconds": seconds} | e20._replay(config, seed, played)
+
+
+def dev_check_rollouts(weights: Path, jobs: int, part: int = 1,
+                       variants: list[str] | None = None) -> dict[str, Any]:
+    """Step 4's agents (config ``step4.variants``: name -> the last level where the
+    rollouts use the network) on one part of 020's dev seeds, paired against 017's agent
+    (and 015's) there."""
+    stored = _load(e20.DEV_BASELINES)
+    if str(part) not in stored:
+        raise ValueError(f"020's dev_baselines.json has no part {part}; play it there first")
+    base = stored[str(part)]
+    chosen = _load(CONFIG)["step4"]["variants"]
+    chosen = {name: chosen[name] for name in (variants or chosen)}
+    relative = str(weights.resolve().relative_to(runner.PROJECT_ROOT))
+    todo = [(name, seed, relative, level) for name, level in chosen.items()
+            for seed in base["seeds"]]
+    with Pool(jobs) as pool:
+        played = pool.map(dev_rollout_game, todo, chunksize=1)
+    runs = {name: [g for g in played if g["name"] == name] for name in chosen}
+    return {
+        "question": "017's agent with the rank network in its rollouts against 017's agent, "
+                    "on 020's dev seeds",
+        "seeds": f"Experiment 020's dev seeds {part * len(base['seeds'])} to "
+                 f"{(part + 1) * len(base['seeds']) - 1}", "games": len(base["seeds"]),
+        "versions": runner._record_versions(),
+        "weights": {"path": relative, "sha256": hashlib.sha256(weights.read_bytes()).hexdigest()},
+        "variants": {name: {"rollout_net_to_level": level} for name, level in chosen.items()},
+        "runs": {name: e20.summary(games) for name, games in runs.items()} |
+                {name: e20.summary(base["games"][name]) for name in e20.BASELINES},
+        "paired": {f"{name} - {other}": {"total": e12.paired(games, base["games"][other]),
+                                         "by_band": e16._band_pairs(games, base["games"][other])}
+                   for name, games in runs.items() for other in e20.BASELINES},
+        "per_game": {name: [{key: g[key] for key in ("seed", "score", "lines")} for g in games]
+                     for name, games in runs.items()},
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m block_stack_ai.experiment021")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("seeds", help="select the distil seeds")
     collect_parser = commands.add_parser("collect", help="017's games and their decisions")
     collect_parser.add_argument("--jobs", type=int, default=30)
+    collect_parser.add_argument("--round", type=int, default=0, dest="round_")
+    collect_parser.add_argument("--weights", type=Path)
+    collect_parser.add_argument("--to-level", type=int, default=0)
+    round_seeds = commands.add_parser("round-seeds", help="select a step 4 round's seeds")
+    round_seeds.add_argument("round_", type=int, metavar="ROUND")
     fit = commands.add_parser("fit", help="fit the rank network and check it offline")
-    fit.add_argument("data", type=Path, nargs="?", default=DATA_ROOT / "pilot")
+    fit.add_argument("data", type=Path, nargs="*", default=[DATA_ROOT / "pilot"])
+    fit.add_argument("--name", help="the fit's name (default: the one run's folder name)")
     fit.add_argument("--device", default="cuda:0")
     check = commands.add_parser("dev-check", help="the rank agent on dev seeds")
     check.add_argument("weights", type=Path)
     check.add_argument("--part", type=int, choices=(0, 1), default=0)
     check.add_argument("--jobs", type=int, default=30)
+    rollouts = commands.add_parser("dev-check-rollouts",
+                                   help="017's agent with the rank network in its rollouts")
+    rollouts.add_argument("weights", type=Path)
+    rollouts.add_argument("--part", type=int, choices=(0, 1), default=1)
+    rollouts.add_argument("--variant", action="append", dest="variants")
+    rollouts.add_argument("--jobs", type=int, default=30)
     args = parser.parse_args(argv)
     try:
         if args.command == "seeds":
             _write(SEEDS, select_seeds())
             print(f"Wrote {SEEDS}")
-        elif args.command == "collect":
-            print(f"Data: {collect(args.jobs)}")
-        elif args.command == "fit":
-            directory = args.data.resolve()
-            path = EXPERIMENT_ROOT / f"fit_{directory.name}.json"
-            _write(path, fit_run(directory, args.device))
+        elif args.command == "round-seeds":
+            path = round_seeds_path(args.round_)
+            if path.exists():
+                raise ValueError(f"{path} exists")
+            _write(path, select_round_seeds(args.round_))
             print(f"Wrote {path}")
-        else:
+        elif args.command == "collect":
+            name = f"round{args.round_}" if args.round_ else "pilot"
+            print(f"Data: {collect(args.jobs, name, args.round_, args.weights, args.to_level)}")
+        elif args.command == "fit":
+            directories = [d.resolve() for d in args.data]
+            if not args.name and len(directories) > 1:
+                raise ValueError("a fit of several runs needs --name")
+            if len(set(directories)) != len(directories):
+                raise ValueError("a run is given twice")
+            name = args.name or directories[0].name
+            path = EXPERIMENT_ROOT / f"fit_{name}.json"
+            weights = EXPERIMENT_ROOT / _load(CONFIG)["fit"]["weights_name"].format(name)
+            if path.exists() or weights.exists():
+                raise ValueError(f"{path.name} or {weights.name} exists; pick another --name")
+            _write(path, fit_run(directories, args.device, name))
+            print(f"Wrote {path}")
+        elif args.command == "dev-check-rollouts":
+            names = "_".join(args.variants) if args.variants else "all"
+            path = (EXPERIMENT_ROOT /
+                    f"dev_check_rollouts_{args.weights.stem}_{names}_part{args.part}.json")
+            _write(path, dev_check_rollouts(args.weights, args.jobs, args.part, args.variants))
+            print(f"Wrote {path}")
+        elif args.command == "dev-check":
             path = EXPERIMENT_ROOT / f"dev_check_{args.weights.stem}_part{args.part}.json"
             _write(path, dev_check(args.weights, args.jobs, args.part))
             print(f"Wrote {path}")
