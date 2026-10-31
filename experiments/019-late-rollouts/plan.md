@@ -1,6 +1,7 @@
 # Experiment 019 - plan: spend the rollouts where they pay
 
-Status: agreed with the owner 2026-10-31; steps 1-2 done, recheck (step 2b) running.
+Status: stopped 2026-10-31 at step 2b by its stop rule (no variant beats 017's agent on
+the recheck seeds); see `notes.md`. Steps 3-4 were not run.
 `predeclared.md` is written after the dev check and before any held-out game.
 
 ## Why

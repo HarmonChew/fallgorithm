@@ -1,0 +1,277 @@
+{
+ "question": "019's settings on 017's agent, on the dev seeds",
+ "seeds": "Experiment 013's dev seeds 100 to 199",
+ "games": 100,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "0aac5357eda73560fd5684e0ce5a51416039fc66",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "numbers": {
+  "build_tetrises": 29.788698986143274,
+  "build_premature_clear": -1.073946142126443,
+  "build_holes": -15.276334720862385,
+  "build_aggregate_height": -0.1209122041701578,
+  "build_bumpiness": -0.9561828972815446,
+  "build_max_height": -0.5243284186911991,
+  "build_reserve": 5.018997068935409,
+  "build_overflow": 1.2869445815766996,
+  "spend_lines_cleared": 2.0537673708249677,
+  "spend_holes": -2.1866333657527663,
+  "spend_aggregate_height": 0.16624097555547737,
+  "spend_bumpiness": -0.025496684369312406,
+  "spend_max_height": 1.0441841982692475,
+  "spend_row_transitions": -1.114182114571442,
+  "spend_column_transitions": -2.5519444027682487,
+  "spend_edge_depth": -1.5248381291952173,
+  "height_budget": 10,
+  "survival_budget": 3,
+  "survival_level": 38,
+  "drought_bound": 18,
+  "clear_points": 37.74268445034382,
+  "killscreen_budget": 1,
+  "commit_ply_level": 29,
+  "commit_beam": 2,
+  "rollout_from_level": 18,
+  "rollout_to_level": 28,
+  "rollout_beam": 4,
+  "rollout_count": 32,
+  "rollout_depth": 5,
+  "rollout_death": 1000,
+  "commit_rollout_from_level": 29,
+  "commit_rollout_to_level": 99,
+  "commit_rollout_beam": 4,
+  "commit_rollout_count": 16,
+  "commit_rollout_depth": 10
+ },
+ "variants": {
+  "ks_d15_n16": {
+   "killscreen_rollout_depth": 15
+  },
+  "ks_d10_n32": {
+   "killscreen_rollout_count": 32
+  },
+  "adjust_29_38": {
+   "rollout_to_level": 38
+  }
+ },
+ "runs": {
+  "ks_d15_n16": {
+   "mean_score": 1801301.2,
+   "mean_lines": 395.55,
+   "line_cap_share": 0.5,
+   "score_by_band": {
+    "18": 515921,
+    "19-28": 484036,
+    "29-38": 550701,
+    "39+": 250643
+   },
+   "seconds_per_game": 515.62
+  },
+  "ks_d10_n32": {
+   "mean_score": 1824178.2,
+   "mean_lines": 393.56,
+   "line_cap_share": 0.46,
+   "score_by_band": {
+    "18": 515921,
+    "19-28": 484036,
+    "29-38": 550701,
+    "39+": 273520
+   },
+   "seconds_per_game": 565.29
+  },
+  "adjust_29_38": {
+   "mean_score": 1821058.2,
+   "mean_lines": 398.02,
+   "line_cap_share": 0.48,
+   "score_by_band": {
+    "18": 515921,
+    "19-28": 484036,
+    "29-38": 548375,
+    "39+": 272725
+   },
+   "seconds_per_game": 439.92
+  },
+  "commit_rollout": {
+   "mean_score": 1832750.6,
+   "mean_lines": 397.99,
+   "line_cap_share": 0.52,
+   "score_by_band": {
+    "18": 515921,
+    "19-28": 484036,
+    "29-38": 550701,
+    "39+": 282093
+   },
+   "seconds_per_game": 455.46
+  }
+ },
+ "baseline_matches_017": null,
+ "paired": {
+  "ks_d15_n16 - commit_rollout": {
+   "total": {
+    "score": {
+     "mean": -31449.4,
+     "ci95_low": -66898.4,
+     "ci95_high": 4000.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -2.44,
+     "ci95_low": -10.21,
+     "ci95_high": 5.41,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 39,
+     "lower": 54,
+     "equal": 7
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -31449.4,
+     "ci95_low": -66898.4,
+     "ci95_high": 4000.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  },
+  "ks_d10_n32 - commit_rollout": {
+   "total": {
+    "score": {
+     "mean": -8572.4,
+     "ci95_low": -46785.6,
+     "ci95_high": 28913.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -4.43,
+     "ci95_low": -11.59,
+     "ci95_high": 2.72,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 45,
+     "lower": 48,
+     "equal": 7
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -8572.4,
+     "ci95_low": -46785.6,
+     "ci95_high": 28913.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  },
+  "adjust_29_38 - commit_rollout": {
+   "total": {
+    "score": {
+     "mean": -11692.4,
+     "ci95_low": -30925.4,
+     "ci95_high": 7542.8,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 0.03,
+     "ci95_low": -3.56,
+     "ci95_high": 3.73,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 7,
+     "lower": 16,
+     "equal": 77
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": -2325.2,
+     "ci95_low": -8746.2,
+     "ci95_high": 4054.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -9367.2,
+     "ci95_low": -27692.8,
+     "ci95_high": 9017.8,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   }
+  }
+ }
+}
