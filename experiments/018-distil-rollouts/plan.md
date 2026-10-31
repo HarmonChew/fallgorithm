@@ -1,7 +1,7 @@
 # Experiment 018 - plan: distil the rollouts, retune, then rollouts on top
 
-Status: agreed with the owner 2026-10-30; step 1 (harness) in progress. The dev results,
-`predeclared.md` and the held-out run come later; this plan is updated as the steps land.
+Status: stopped at step 2 (2026-10-31) by its stop rule: the fitted score lost more than
+the search alone; see `notes.md`. Steps 3-5 were not run.
 
 ## Goal
 

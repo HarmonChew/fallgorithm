@@ -7,6 +7,7 @@
  },
  "line_cap": 430,
  "frame_cap": 150000,
+ "agent": "reach_plan_018 (native): 017's agent with a fitted linear re-rank score (rollout.hpp) in place of the rollouts; stopped at the fit (notes.md)",
  "formats": [
   {
    "tap_hz": 30,
