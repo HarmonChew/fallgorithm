@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 20
+ABI_VERSION = 21
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -250,6 +250,10 @@ def load() -> Any:
     lib.fn_net_values.argtypes = [C.c_char_p, C.c_int, C.POINTER(C.c_int32), C.c_int, C.c_int,
                                   C.c_int, C.POINTER(C.c_double)]
     lib.fn_net_values.restype = C.c_int
+    lib.fn_backup_values.argtypes = [C.c_char_p, C.c_int, C.POINTER(C.c_int32), C.c_int,
+                                     C.c_int, C.c_int, C.c_int, C.c_int,
+                                     C.POINTER(C.c_double), C.POINTER(C.c_int32)]
+    lib.fn_backup_values.restype = C.c_int
     lib.fn_net_game.argtypes = [C.c_char_p, C.c_int, C.POINTER(Params), C.c_int, C.c_char_p,
                                 C.c_char_p, C.c_int, C.c_int,
                                 C.c_int, C.c_int, C.c_int, C.c_int, C.c_int, C.c_double, C.c_int,
@@ -574,6 +578,24 @@ def net_values(net: bytes, rows: bytes, *, line_cap: int, start_level: int) -> l
     if load().fn_net_values(net, len(net), buffer, count, line_cap, start_level, out):
         raise NativeError("fn_net_values failed (not a network for these inputs?)")
     return list(out[:count])
+
+
+def backup_values(net: bytes, rows: bytes, *, line_cap: int, start_level: int,
+                  double_killscreen: bool, tap_interval: int,
+                  children: bool = False) -> tuple[list[float], bytes | None]:
+    """Experiment 023: each board's backup (native/netsearch.hpp NetSearcher::backup), in
+    points, for boards in :func:`dump_game`'s row layout, and with ``children`` each
+    board's 7 best next boards (one per next piece) in the same layout (lines -1: none)."""
+    count = len(rows) // (4 * DUMP_STRIDE)
+    buffer = (C.c_int32 * max(1, count * DUMP_STRIDE)).from_buffer_copy(
+        rows.ljust(4 * max(1, count * DUMP_STRIDE), b"\0"))
+    out = (C.c_double * max(1, count))()
+    found = (C.c_int32 * max(1, 7 * count * DUMP_STRIDE))() if children else None
+    if load().fn_backup_values(net, len(net), buffer, count, line_cap, start_level,
+                               int(double_killscreen), tap_interval, out, found):
+        raise NativeError("fn_backup_values failed (not a network for these inputs?)")
+    return list(out[:count]), (C.string_at(found, 7 * count * DUMP_STRIDE * 4)
+                               if children else None)
 
 
 def net_game(net: bytes, game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: int,

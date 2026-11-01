@@ -1,0 +1,43 @@
+{
+ "game": {
+  "ruleset": "classic_ntsc_double_killscreen",
+  "mode": "endless",
+  "start_level": 18,
+  "height": 0
+ },
+ "line_cap": 430,
+ "frame_cap": 150000,
+ "formats": [
+  {
+   "tap_hz": 30,
+   "reaction_ms": 300
+  }
+ ],
+ "start_weights": "experiments/020-value-net/value_round0.bin",
+ "start_note": "V0 = 020's round 0 network: fitted to the points 015's games went on to score",
+ "base": {
+  "source": "runs/020-data/round0",
+  "boards": 500000,
+  "check_from": 18000,
+  "check_boards": 50000,
+  "numpy_seed": 23,
+  "note": "training boards from 020's round 0 games 0-17,999, check boards from games 18,000-19,999 (020's held-back 10%)"
+ },
+ "fit": {
+  "batch": 4096,
+  "epochs": 3,
+  "lr": 0.0003,
+  "lr_note": "Adam, one-cycle schedule peaking at lr; warm-started from the last sweep's V",
+  "torch_seed": 23
+ },
+ "probe": {
+  "games": 100
+ },
+ "play": {
+  "games": 2000,
+  "explore": 0.01
+ },
+ "lambda": 0.95,
+ "lambda_note": "play rounds' boards are fitted to lambda-returns along their own games (the backup mixed with what the game went on to score), so a death many pieces later reaches the board that caused it; base boards and their children to the plain backup",
+ "play_rounds_kept": 4
+}

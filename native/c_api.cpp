@@ -27,7 +27,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 20;
+constexpr int abi_version = 21;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -811,6 +811,64 @@ FN_API int fn_net_values(const unsigned char* net, int net_size, const std::int3
                                     start_level);
     }
     return 0;
+}
+
+// Experiment 023: NetSearcher::backup of ``count`` boards in fn_dump_game's row layout
+// (its first 14 numbers are read), in points, into ``out``. With ``children`` (room for
+// 7 * count rows), each board's 7 best next boards (one per next piece, in piece order)
+// in the same layout: lines -1 for a piece with nowhere to go, the score 0, features
+// filled. Returns 0, or -1 for bad arguments.
+FN_API int fn_backup_values(const unsigned char* net, int net_size, const std::int32_t* rows,
+                            int count, int line_cap, int start_level, int double_killscreen,
+                            int interval, double* out, std::int32_t* children) {
+    if (!net || net_size < 0 || !rows || count < 0 || !out || start_level < 0 ||
+        start_level >= 20 || line_cap < 0 || interval < 1) {
+        return -1;
+    }
+    try {
+        ValueNetwork network;
+        if (!network.load(net, static_cast<std::size_t>(net_size))) {
+            return -1;
+        }
+        NetSearcher searcher(&network, line_cap);
+        NetSearcher::Child found[piece_types];
+        for (int index = 0; index < count; ++index) {
+            const std::int32_t* row = rows + static_cast<std::size_t>(index) * dump_stride;
+            Columns columns{};
+            for (int column = 0; column < width; ++column) {
+                columns[column] = static_cast<std::uint32_t>(row[column]) << hidden_rows;
+            }
+            if (row[width] < 0 || row[width + 2] < 0 || row[width + 3] < -1 ||
+                row[width + 3] >= piece_types) {
+                return -1;
+            }
+            out[index] = searcher.backup(columns, row[width], row[width + 2], row[width + 3],
+                                         start_level, double_killscreen != 0, interval,
+                                         children ? found : nullptr);
+            if (!children) {
+                continue;
+            }
+            for (int piece = 0; piece < piece_types; ++piece) {
+                std::int32_t* child = children +
+                    (static_cast<std::size_t>(index) * piece_types + piece) * dump_stride;
+                const NetSearcher::Child& c = found[piece];
+                for (int column = 0; column < width; ++column) {
+                    child[column] = static_cast<std::int32_t>(c.columns[column] >> hidden_rows);
+                }
+                child[width] = c.lines;
+                child[width + 1] = 0;
+                child[width + 2] = c.drought;
+                child[width + 3] = c.last;
+                const auto f = board_feature_values(c.columns);
+                for (int k = 0; k < board_features; ++k) {
+                    child[width + 4 + k] = static_cast<std::int32_t>(f[k]);
+                }
+            }
+        }
+        return 0;
+    } catch (const std::exception&) {
+        return -1;
+    }
 }
 
 // Experiment 020's agent: one game by netsearch.hpp's search with the network ``net``

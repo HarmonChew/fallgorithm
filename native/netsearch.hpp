@@ -109,6 +109,58 @@ public:
 
     static constexpr double tetris_points = 1200.0 * 19;  // experiment020.TETRIS_18
 
+    // Experiment 023's backup of a settled board (the next piece not yet known): the
+    // average, over the next piece by the NES odds after ``last`` (1/7 each for the first
+    // board, last -1), of its best placement from the spawn (the commit search's reach)
+    // by clear points plus the network's value of what it leaves; a piece with nowhere
+    // to go adds 0 (the game is over). 0 once the lines reach the cap. With ``children``
+    // (7 entries), each piece's best board, its lines, drought and the piece that left it
+    // (lines -1 if that piece has no placement).
+    struct Child {
+        Columns columns{};
+        int lines = -1, drought = 0, last = -1;
+    };
+    double backup(const Columns& columns, int lines, int drought, int last, int start_level,
+                  bool double_killscreen, int interval, Child* children = nullptr) {
+        if (lines >= line_cap_) {
+            if (children) {
+                for (int piece = 0; piece < piece_types; ++piece) {
+                    children[piece] = Child{};
+                }
+            }
+            return 0.0;
+        }
+        const int level = level_for_lines(lines, start_level);
+        double total = 0.0;
+        for (int piece = 0; piece < piece_types; ++piece) {
+            const double odds = last < 0 ? 1.0 / piece_types : nes_odds(last, piece);
+            ply_.run(columns, piece, Flight{}, gravity_period(level),
+                     gravity_rows(level, double_killscreen), interval, false);
+            const int after_drought = next_drought(drought, piece);
+            double best = minus_infinity;
+            Child child;
+            for (const Reach& placement : ply_.placements) {
+                const Settled settled = settle(columns, piece, placement.orientation,
+                                               placement.x, placement.y);
+                const int after = lines + settled.cleared;
+                const double value = clear_reward(settled.cleared, after, start_level) +
+                                     this->value(settled.columns, after, after_drought, piece,
+                                                 start_level);
+                if (value > best) {
+                    best = value;
+                    child = Child{settled.columns, after, after_drought, piece};
+                }
+            }
+            if (children) {
+                children[piece] = child;
+            }
+            if (best > minus_infinity) {
+                total += odds * best;
+            }
+        }
+        return total;
+    }
+
 private:
     // The search over the hand search's best ``prefilter_`` placements, in its order.
     bool search_prefiltered(const Position& position, Choice& choice) {
