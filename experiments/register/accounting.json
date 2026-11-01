@@ -169,7 +169,7 @@
     "pass": true
    }
   ],
-  "crossing_note": "boards at 428 and 429 lines (an open bottom row, uniform odds): each child that crosses 430 must be valued at its clear points plus 0, and the backup equal the mean of clear points plus value"
+  "crossing_note": "boards at 428 and 429 lines (one open column, uniform odds): each child that crosses 430 must be valued at its clear points plus 0, and the backup equal the mean of clear points plus value"
  },
  "c_topout": {
   "pass": true,
@@ -198,7 +198,7 @@
    "J": -7094.7381019592285,
    "L": -8330.183351039886
   },
-  "note": "the surviving pieces' values on this board are negative, so a top-out (0) beats surviving here: V extrapolates on near-dead boards. On real V boards all values were positive (min 7,651 over 928 boards of seed 13770); check d's min_child_value is the same minimum over its boards."
+  "note": "the surviving pieces' values on this board are negative, so a top-out (0) beats surviving here: V extrapolates on near-dead boards. On real V boards all values were positive (min 7,651 over 928 boards of seed 13770); check d's min_child_value is the minimum over its own 200 sampled boards of that seed (also positive)."
  },
  "d_odds": {
   "pass": true,
