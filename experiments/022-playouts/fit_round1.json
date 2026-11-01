@@ -1,0 +1,149 @@
+{
+ "data": {
+  "runs": [
+   {
+    "directory": "runs/022-data/round1",
+    "playout_net": {
+     "path": "experiments/021-rank-net/rank_pilot.bin",
+     "sha256": "e42caa5223cbe6e0345fba835b7a08cfd0e82a9e20b400bb4c7adb9efdb5db4b"
+    },
+    "games": 400,
+    "fit_games": 320,
+    "rows": 84678,
+    "versions_at_end": {
+     "engine": {
+      "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+      "dirty": false,
+      "kind": "committed"
+     },
+     "fallgorithm": {
+      "commit": "83f1c2464f3594773686bdf8295c1baa165acd2b",
+      "dirty": false,
+      "kind": "committed"
+     }
+    },
+    "mean_score": 1427613.1
+   }
+  ],
+  "fit_decisions": 16828
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "83f1c2464f3594773686bdf8295c1baa165acd2b",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "torch": "2.14.0+cu130",
+ "settings": {
+  "hidden": 256,
+  "hidden2": 128,
+  "batch": 512,
+  "batch_note": "decisions per step",
+  "epochs": 30,
+  "lr": 0.001,
+  "lr_note": "Adam, one-cycle schedule peaking at lr",
+  "torch_seed": 22,
+  "weights_name": "killscreen_{}.bin"
+ },
+ "target_scale": 1.1099,
+ "weights": {
+  "path": "experiments/022-playouts/killscreen_round1.bin",
+  "sha256": "cf44637c9665ab3c72346f94f445d0e2e020f8bf24b2d13865897a4c5b00872d"
+ },
+ "native_max_difference": 9.357929229736328e-06,
+ "training_log": [
+  {
+   "step": 98,
+   "loss": 0.8068,
+   "network_loss": 0.4284,
+   "seconds": 0.2
+  },
+  {
+   "step": 196,
+   "loss": 0.6045,
+   "network_loss": 0.3969,
+   "seconds": 0.3
+  },
+  {
+   "step": 294,
+   "loss": 0.5883,
+   "network_loss": 0.4016,
+   "seconds": 0.4
+  },
+  {
+   "step": 392,
+   "loss": 0.6329,
+   "network_loss": 0.4207,
+   "seconds": 0.5
+  },
+  {
+   "step": 490,
+   "loss": 0.5358,
+   "network_loss": 0.4256,
+   "seconds": 0.6
+  },
+  {
+   "step": 588,
+   "loss": 0.4818,
+   "network_loss": 0.4232,
+   "seconds": 0.7
+  },
+  {
+   "step": 686,
+   "loss": 0.4434,
+   "network_loss": 0.4269,
+   "seconds": 0.8
+  },
+  {
+   "step": 784,
+   "loss": 0.4761,
+   "network_loss": 0.4404,
+   "seconds": 0.9
+  },
+  {
+   "step": 882,
+   "loss": 0.4481,
+   "network_loss": 0.4453,
+   "seconds": 1.1
+  },
+  {
+   "step": 980,
+   "loss": 0.4173,
+   "network_loss": 0.4476,
+   "seconds": 1.2
+  }
+ ],
+ "checked_games": {
+  "decisions": 4465,
+  "search_agrees": 0.5854,
+  "search_loss": 0.4034,
+  "search_odd_loss": 0.6433,
+  "network_agrees": 0.4542,
+  "network_loss": 0.4476,
+  "network_odd_loss": 0.6832,
+  "even_rollouts_agrees": 0.7395,
+  "even_rollouts_loss": 0.1965,
+  "even_rollouts_odd_loss": 0.8681
+ },
+ "fitted_games": {
+  "decisions": 16828,
+  "search_agrees": 0.5797,
+  "search_loss": 0.4272,
+  "search_odd_loss": 0.6442,
+  "network_agrees": 0.5099,
+  "network_loss": 0.3002,
+  "network_odd_loss": 0.5182,
+  "even_rollouts_agrees": 0.7542,
+  "even_rollouts_loss": 0.18,
+  "even_rollouts_odd_loss": 0.8227
+ },
+ "units": "points_unit (a Tetris at level 18); losses against the playouts' best",
+ "stop_rule": "stop if the network's loss is not below the search's (checked games)",
+ "stop": true
+}

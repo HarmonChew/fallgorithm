@@ -45,3 +45,53 @@ What would still be worth trying, from this:
   the first round only has to beat the rank agent at 39+, not 017.
 * Shorter playouts with a better end: playout N pieces, then add a learnt or hand value.
   This brings back the hand value that 021 found to be the cap.
+
+## Step 3 round 1: the network fitted to the playout scores (2026-11-01)
+
+**Collect.** 400 games on the round 1 seeds (`fallgorithm022/collect/v1`): 021's rank agent
+below level 39, then 16 playouts per candidate (placed by `rank_pilot.bin`) at every 39+
+commit decision. Mean 1,428k; 84,678 candidate rows, 21,293 decisions; 4,506 s on 28 workers.
+
+**Fit** (`fit_round1.json`, `killscreen_round1.bin`; 30 epochs, 1.2 s on the GPU; native
+max difference 9e-6; its `fallgorithm` version reads working-tree only because the
+fit writes its weights file (untracked) before recording versions, the code is 83f1c24 as committed). Loss = points given up against the playouts' best pick, in Tetrises
+at level 18; "judged by the odd half" = the even 8 playouts choose, the other 8 judge,
+so it is the only column where the playouts do not grade their own pick.
+
+| last 80 games (checked, 4,465 decisions) | picks the best | loss | loss judged by the odd half |
+| --- | --- | --- | --- |
+| search alone (015's commit search) | 58.5% | **0.403** | **0.643** |
+| network | 45.4% | 0.448 | 0.683 |
+| even 8 playouts | 74.0% | 0.197 | 0.868 |
+
+| first 320 games (fitted, 16,828 decisions) | picks the best | loss | loss judged by the odd half |
+| --- | --- | --- | --- |
+| search alone | 58.0% | 0.427 | 0.644 |
+| network | 51.0% | 0.300 | 0.518 |
+
+**Stop rule fired:** the network's checked loss (0.448) is not below the search's (0.403),
+so round 1 stops and no dev check was run (no `017_ks` or `rank_ks` games). Step 3 and
+022 end here; the bar stays 017 (1,800k held-out).
+
+**Our reading.** The playout target is mostly noise. The last column is the fair test:
+when 8 playouts pick and 8 others judge, the playouts' pick is *worse* than the hand
+search's own pick (0.868 vs 0.643), and the network loses there too (0.683). So 8 futures
+to the end, played by the weak `rank_pilot` policy, tell up to 4 candidates apart worse
+than the hand value does; 16 only halves the noise's variance, and step 0 already lost
+with 16. The network learnt the fitted games
+well (0.300) but that does not carry over (0.448): with ~17k decisions of a noisy target it
+fits the noise. Its checked loss was lowest after 2 of 10 logged checks (0.397, step 196)
+and then rose; stopping there would have scraped under the search by 0.006, but that point
+is chosen on the checked games themselves and is far inside the noise, so it was not used.
+Stopping at round 1 also means the bias half of the idea (round 2's playouts by a better
+policy) was never tested; the rules need a fit that passes before any round 2.
+
+What would still be worth trying, from this:
+
+* More playouts per candidate would cut the noise only as the square root: 4x the
+  playouts (4x the 75-minute collect) halves it; our estimate is that this still lands near the search's level.
+* A shorter horizon with a better end (playout N pieces, then a value) is 017's rollout
+  again; 021 found its hand value to be the cap.
+* Guess: the target that worked so far is 017's own 10-piece rollouts; the remaining gap to
+  BetaTetris is more likely in how candidates are generated and searched at 39+ than in
+  scoring 4 given candidates.

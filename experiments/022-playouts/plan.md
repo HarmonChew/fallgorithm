@@ -2,8 +2,9 @@
 
 Status: chosen by the owner 2026-11-01 ("a better target"); step 0 done and its direct
 playouts stopped the same day (`notes.md`: they lose to 017 on 11 of 12 probe games);
-step 3 (train on the playout scores, `step3.md`) started the same day. `predeclared.md` would be written
-after the dev checks and before any held-out game.
+step 3 (train on the playout scores, `step3.md`) started the same day and stopped at
+round 1's fit (the network's checked loss 0.448 is not below the search's 0.403; notes.md).
+022 is closed: no dev check, no `predeclared.md`, no held-out run; the bar stays 017.
 
 ## Why
 

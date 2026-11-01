@@ -2,6 +2,7 @@
 
 Status: started 2026-11-01 after step 0 stopped the direct playouts (owner: "push forward
 to get experiment 22 done").
+Stopped 2026-11-01 at round 1's fit stop rule (no dev check, so no round 2; notes.md).
 
 ## Why
 
