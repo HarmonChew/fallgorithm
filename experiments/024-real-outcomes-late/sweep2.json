@@ -1,0 +1,123 @@
+{
+ "sweep": 2,
+ "created_at": "2026-11-01T12:20:15.967649+00:00",
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "6f08ec999bf674455ccad156e0d7a4a523f2a3a0",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "torch": "2.14.0+cu130",
+ "from": {
+  "path": "experiments/024-real-outcomes-late/value024_sweep1.bin",
+  "sha256": "7f383fa2ee26ebb77e693bd19b7b65411d9f353b61a337b4bf1226ad16473d2d"
+ },
+ "weights": {
+  "path": "experiments/024-real-outcomes-late/value024_sweep2.bin",
+  "sha256": "40bde6d14612bb0f197b82aebaa27e6e1eba5d373ff73b0c2e6a0c3a56bfd42a"
+ },
+ "outcome_from_lines": 230,
+ "boards": {
+  "train": 332924,
+  "train_left_out": 167076,
+  "children": 2323788,
+  "children_left_out": 6395,
+  "play": [
+   1913411,
+   1899021,
+   1912290,
+   1701194
+  ],
+  "play_late": [
+   745684,
+   734579,
+   745614,
+   534839
+  ],
+  "check": 50000
+ },
+ "play_rounds": [
+  "runs/024-data/play0-2",
+  "runs/024-data/play0-3",
+  "runs/024-data/play0-4",
+  "runs/024-data/play1"
+ ],
+ "lambda": 0.95,
+ "play_target_means": [
+  30.4054,
+  30.4098,
+  30.4143,
+  31.3692
+ ],
+ "settings": {
+  "batch": 4096,
+  "epochs": 3,
+  "lr": 0.0003,
+  "lr_note": "Adam, one-cycle schedule peaking at lr; warm-started from the last sweep's V",
+  "torch_seed": 23
+ },
+ "backup_seconds": 861.9,
+ "training_log": [
+  {
+   "step": 1476,
+   "loss": 9.9818,
+   "seconds": 1.1
+  },
+  {
+   "step": 2952,
+   "loss": 10.7529,
+   "seconds": 2.2
+  },
+  {
+   "step": 4428,
+   "loss": 9.4914,
+   "seconds": 3.3
+  },
+  {
+   "step": 5904,
+   "loss": 9.8573,
+   "seconds": 4.4
+  },
+  {
+   "step": 7380,
+   "loss": 10.9192,
+   "seconds": 5.6
+  }
+ ],
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "check": {
+  "note": "015's check boards against the old V's backup (all bands, as 023)",
+  "by_band": {
+   "18": {
+    "old_value": 46.347,
+    "backup": 46.475,
+    "new_value": 46.539,
+    "015_mc": 41.94
+   },
+   "19-28": {
+    "old_value": 29.398,
+    "backup": 29.616,
+    "new_value": 29.87,
+    "015_mc": 26.665
+   },
+   "29-38": {
+    "old_value": 16.404,
+    "backup": 16.627,
+    "new_value": 15.045,
+    "015_mc": 12.798
+   },
+   "39+": {
+    "old_value": 4.067,
+    "backup": 4.258,
+    "new_value": 3.949,
+    "015_mc": 3.828
+   }
+  }
+ }
+}

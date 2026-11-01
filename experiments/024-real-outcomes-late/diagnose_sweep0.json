@@ -1,0 +1,136 @@
+{
+ "sweep": 0,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "6f08ec999bf674455ccad156e0d7a4a523f2a3a0",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "weights": {
+  "path": "experiments/023-self-taught-value/value_sweep15.bin",
+  "sha256": "8281b013eedffb9115f4d4043d6d04ff617c9d778a632526c737035d27b359f6"
+ },
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "own_games": {
+  "play_round": "runs/024-data/play0-4",
+  "games": 2000,
+  "mean_score": 1703077.3,
+  "line_cap_share": 0.172,
+  "by_band": {
+   "18": {
+    "boards": 675265,
+    "value": 47.256,
+    "actual": 63.938,
+    "value_minus_actual": -16.682
+   },
+   "19-28": {
+    "boards": 491411,
+    "value": 30.818,
+    "actual": 41.524,
+    "value_minus_actual": -10.706
+   },
+   "29-38": {
+    "boards": 463829,
+    "value": 14.699,
+    "actual": 18.292,
+    "value_minus_actual": -3.593
+   },
+   "39+": {
+    "boards": 281785,
+    "value": 7.536,
+    "actual": 4.21,
+    "value_minus_actual": 3.327
+   }
+  },
+  "by_20_lines_value_actual": {
+   "230-249": [
+    20.29,
+    27.37
+   ],
+   "250-269": [
+    17.55,
+    23.03
+   ],
+   "270-289": [
+    14.53,
+    18.26
+   ],
+   "290-309": [
+    11.44,
+    13.16
+   ],
+   "310-329": [
+    8.7,
+    7.98
+   ],
+   "330-349": [
+    8.02,
+    6.01
+   ],
+   "350-369": [
+    8.25,
+    5.31
+   ],
+   "370-389": [
+    7.94,
+    4.14
+   ],
+   "390-409": [
+    7.24,
+    2.87
+   ],
+   "410-429": [
+    5.56,
+    1.11
+   ]
+  }
+ },
+ "ranking_017_games": {
+  "data": "runs/021-data/pilot",
+  "note": "the network rows are V's commit picks; the rollouts end in the hand value, which leans this check towards the search",
+  "table": {
+   "preview 18-28": {
+    "decisions": 172802,
+    "search_agrees": 0.8674,
+    "search_loss": 1.3633,
+    "search_odd_loss": 1.538,
+    "network_agrees": 0.6399,
+    "network_loss": 8.5566,
+    "network_odd_loss": 8.7163,
+    "even_rollouts_agrees": 0.9456,
+    "even_rollouts_loss": 0.1648,
+    "even_rollouts_odd_loss": 0.653
+   },
+   "commit 29-38": {
+    "decisions": 71213,
+    "search_agrees": 0.7508,
+    "search_loss": 8.312,
+    "search_odd_loss": 10.7513,
+    "network_agrees": 0.688,
+    "network_loss": 12.4094,
+    "network_odd_loss": 14.8117,
+    "even_rollouts_agrees": 0.846,
+    "even_rollouts_loss": 2.4241,
+    "even_rollouts_odd_loss": 9.8223
+   },
+   "commit 39+": {
+    "decisions": 52870,
+    "search_agrees": 0.7582,
+    "search_loss": 9.5259,
+    "search_odd_loss": 11.5859,
+    "network_agrees": 0.659,
+    "network_loss": 22.0953,
+    "network_odd_loss": 23.9701,
+    "even_rollouts_agrees": 0.8497,
+    "even_rollouts_loss": 1.9679,
+    "even_rollouts_odd_loss": 8.1625
+   }
+  }
+ }
+}
