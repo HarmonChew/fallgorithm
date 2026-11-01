@@ -214,7 +214,7 @@ def run(stage: str, arms: list[str], jobs: int) -> dict[str, Any]:
                 handles[arm].flush()
                 done[arm][episode["seed"]] = episode
                 print(" ".join(f"{a} {len(done[a])}/{len(seeds)} "
-                               f"{sum(e['result']['score'] for e in done[a].values()) / len(done[a]):,.0f}"
+                               f"{sum(e['result']['score'] for e in done[a].values()) / max(1, len(done[a])):,.0f}"
                                for a in arms), flush=True)
     finally:
         for handle in handles.values():
