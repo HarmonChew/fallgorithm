@@ -16,6 +16,7 @@
 #include "value.hpp"
 #include "net.hpp"
 #include "netsearch.hpp"
+#include "hybrid.hpp"
 
 #if defined(_WIN32)
 #define FN_API extern "C" __declspec(dllexport)
@@ -27,7 +28,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 22;
+constexpr int abi_version = 23;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -945,6 +946,43 @@ FN_API int fn_net_game(const unsigned char* net, int net_size, const Params* par
             return status;
         }
         return write_rows(samples, rows, row_capacity, row_count);
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 025: one game by hybrid.hpp's agent, 023's value agent (the network ``net``,
+// no prefilter) and 017's agent (``params``) switching at ``switch_level`` (``v_first`` 1:
+// V below it, 017 from it on; 0: the reverse). Returns as fn_play_game (-1 also for a
+// ``net`` that is not a value network).
+FN_API int fn_hybrid_game(const unsigned char* net, int net_size, const Params* params,
+                          int v_first, int switch_level, const char* ruleset, const char* mode,
+                          int start_level, int height, int seed, int line_cap, int frame_cap,
+                          int interval, int reaction, std::uint8_t* inputs, int capacity,
+                          std::int64_t* out) {
+    if (!net || !params || !ruleset || !mode || seed < 0 || seed > 0xffff || line_cap < 0 ||
+        frame_cap < 0 || capacity < frame_cap || interval < 1 || reaction < 0 ||
+        start_level < 0 || start_level >= 20 || net_size < 0 || switch_level < 0 ||
+        (v_first != 0 && v_first != 1)) {
+        return -1;
+    }
+    try {
+        blocks::Config config;
+        ValueNetwork network;
+        if (!make_config(ruleset, mode, start_level, height, seed, config) ||
+            !network.load(net, static_cast<std::size_t>(net_size))) {
+            return -1;
+        }
+        Searcher searcher(*params);
+        searcher.set_extra_ply(true);
+        searcher.set_nes_odds(true);
+        const RolloutSearcher rollouts(searcher, *params);
+        BasicAgent<HybridSearcher> agent(
+            HybridSearcher(rollouts, NetSearcher(&network, line_cap), v_first == 1,
+                           switch_level),
+            interval, reaction);
+        std::uint64_t final_score = 0;
+        return run_game(config, agent, line_cap, frame_cap, inputs, out, nullptr, final_score);
     } catch (const std::exception&) {
         return -1;
     }

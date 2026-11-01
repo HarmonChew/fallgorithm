@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 22
+ABI_VERSION = 23
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -271,6 +271,11 @@ def load() -> Any:
                                          C.c_int, C.c_int, C.c_int, C.c_int,
                                          C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int64)]
     lib.fn_leaf_rollout_game.restype = C.c_int
+    lib.fn_hybrid_game.argtypes = [C.c_char_p, C.c_int, C.POINTER(Params), C.c_int, C.c_int,
+                                   C.c_char_p, C.c_char_p, C.c_int, C.c_int, C.c_int, C.c_int,
+                                   C.c_int, C.c_int, C.c_int, C.POINTER(C.c_uint8), C.c_int,
+                                   C.POINTER(C.c_int64)]
+    lib.fn_hybrid_game.restype = C.c_int
     lib.fn_playout_game.argtypes = [C.c_char_p, C.c_int, C.c_char_p, C.c_int, C.c_char_p, C.c_int,
                                     C.c_int, C.c_int, C.POINTER(Params),
                                     C.c_char_p, C.c_char_p, C.c_int, C.c_int, C.c_int, C.c_int,
@@ -686,6 +691,24 @@ def leaf_rollout_game(net: bytes, game: dict[str, Any], seed: int, *, from_level
         limits.tap_interval, limits.reaction_frames, inputs, max(1, frame_cap), out)
     if status:
         raise NativeError(f"fn_leaf_rollout_game failed with {status}")
+    return _played(inputs, out)
+
+
+def hybrid_game(net: bytes, game: dict[str, Any], seed: int, *, v_first: bool,
+                switch_level: int, line_cap: int, frame_cap: int, limits: Limits,
+                params: Params) -> dict[str, Any]:
+    """Experiment 025: one game by native/hybrid.hpp's agent, 023's value agent (the network
+    ``net``) and 017's agent (``params``) switching at ``switch_level`` by the level at each
+    decision: with ``v_first`` the value agent plays below it and 017's from it on, without
+    the reverse."""
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    status = load().fn_hybrid_game(
+        net, len(net), C.byref(params), int(v_first), switch_level, game["ruleset"].encode(),
+        game["mode"].encode(), game["start_level"], game["height"], seed, line_cap, frame_cap,
+        limits.tap_interval, limits.reaction_frames, inputs, max(1, frame_cap), out)
+    if status:
+        raise NativeError(f"fn_hybrid_game failed with {status}")
     return _played(inputs, out)
 
 

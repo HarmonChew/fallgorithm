@@ -1,0 +1,228 @@
+{
+ "a_clear_points": {
+  "unit": "points: clear_points[cleared] * (level after the clear + 1)",
+  "017": {
+   "pass": true,
+   "games": 50,
+   "clears_checked": 9166,
+   "mismatches": 0,
+   "first_mismatches": [],
+   "frames_with_score_and_no_clear": 0,
+   "pieces_at_420_plus_per_game": [
+    28,
+    0,
+    0,
+    0,
+    0,
+    21,
+    23,
+    33,
+    16,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    23,
+    0,
+    0,
+    29,
+    0,
+    0,
+    27,
+    0,
+    38,
+    0,
+    0,
+    0,
+    0,
+    25,
+    30,
+    29,
+    0,
+    24,
+    0,
+    25,
+    15,
+    0,
+    0,
+    0,
+    0,
+    0,
+    16,
+    0,
+    29,
+    33,
+    0,
+    0,
+    29
+   ]
+  },
+  "v15": {
+   "pass": true,
+   "games": 20,
+   "clears_checked": 3594,
+   "mismatches": 0,
+   "first_mismatches": [],
+   "frames_with_score_and_no_clear": 0,
+   "pieces_at_420_plus_per_game": [
+    0,
+    0,
+    0,
+    35,
+    0,
+    46,
+    0,
+    0,
+    0,
+    0,
+    47,
+    37,
+    0,
+    0,
+    0,
+    49,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "pass": true
+ },
+ "b_cap": {
+  "pass": true,
+  "net_values_430_431": [
+   0.0,
+   0.0
+  ],
+  "backup_values_430_431": [
+   0.0,
+   0.0
+  ],
+  "crossing_the_cap": [
+   {
+    "lines": 428,
+    "board": [
+     3,
+     3,
+     3,
+     3,
+     3,
+     0,
+     3,
+     3,
+     3,
+     3
+    ],
+    "crossing": [
+     {
+      "piece": "J",
+      "lines_after": 430,
+      "clear_points": 5000.0,
+      "child_value": 0.0
+     },
+     {
+      "piece": "L",
+      "lines_after": 430,
+      "clear_points": 5000.0,
+      "child_value": 0.0
+     }
+    ],
+    "backup": -22644.442694527763,
+    "expected": -22644.442694527763,
+    "pass": true
+   },
+   {
+    "lines": 429,
+    "board": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     0,
+     1,
+     1,
+     1,
+     1
+    ],
+    "crossing": [
+     {
+      "piece": "J",
+      "lines_after": 430,
+      "clear_points": 2000.0,
+      "child_value": 0.0
+     },
+     {
+      "piece": "L",
+      "lines_after": 430,
+      "clear_points": 2000.0,
+      "child_value": 0.0
+     }
+    ],
+    "backup": -181850.15367780413,
+    "expected": -181850.15367780413,
+    "pass": true
+   }
+  ],
+  "crossing_note": "boards at 428 and 429 lines (an open bottom row, uniform odds): each child that crosses 430 must be valued at its clear points plus 0, and the backup equal the mean of clear points plus value"
+ },
+ "c_topout": {
+  "pass": true,
+  "board": [
+   65535,
+   524287,
+   131071,
+   16383,
+   262143,
+   0,
+   524287,
+   32767,
+   16383,
+   524287
+  ],
+  "pieces_without_a_placement": [
+   "O",
+   "S",
+   "T",
+   "Z"
+  ],
+  "backup": -20028.692822796955,
+  "expected_sum_over_pieces_with_a_child": -20028.692822796955,
+  "surviving_piece_values": {
+   "I": -128575.92830657959,
+   "J": -7094.7381019592285,
+   "L": -8330.183351039886
+  },
+  "note": "the surviving pieces' values on this board are negative, so a top-out (0) beats surviving here: V extrapolates on near-dead boards. On real V boards all values were positive (min 7,651 over 928 boards of seed 13770); check d's min_child_value is the same minimum over its boards."
+ },
+ "d_odds": {
+  "pass": true,
+  "seed": 13770,
+  "boards": 200,
+  "comparisons": 1600,
+  "max_abs_error_points": 2.3283064365386963e-10,
+  "min_child_value": 5540.567171573639,
+  "note": "self-consistency of the backup against the C++ nes_odds table; whether that table is NES-exact is Direction Phase 0's check"
+ },
+ "e_017_terminal": {
+  "facts": [
+   "native/rollout.hpp rollout(): a hand rollout that finds no placement for a piece (choice_.found false) returns at once with total -= rollout_death * (depth - step), so each missing placement of the remaining depth costs rollout_death.",
+   "The hand rollout() has no line-cap stop: its loop runs step < depth only, so it keeps placing and summing the hand value past 430 lines (leaf_rollout, 023's, stops at leaf_line_cap_).",
+   "The hand evaluation (value_of, eval.hpp) has no line-cap term; the lines only set the level (clear points and phase)."
+  ],
+  "rollout_death": 1000,
+  "region_size": {
+   "games": 50,
+   "mean_pieces_at_420_plus": 9.9,
+   "min": 0,
+   "max": 38
+  },
+  "note": "pieces spawned at 420+ lines in the replayed 017 games"
+ },
+ "pass": true
+}

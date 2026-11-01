@@ -209,7 +209,8 @@ def _board_stats(board: Any) -> dict[str, int]:
 
 
 def game_stats(config: dict[str, Any], seed: int, inputs: bytes) -> dict[str, Any]:
-    """One replay of a game: clears and points by level, points by band (the level at
+    """One replay of a game: clears and points by level (and the points of each clear
+    type, as scored), points by band (the level at
     each piece's spawn, as 020's ``_replay``), the state at first reaching levels 29 and
     39, and the pieces spawned."""
     by_level: dict[str, dict[str, int]] = {}
@@ -228,11 +229,15 @@ def game_stats(config: dict[str, Any], seed: int, inputs: bytes) -> dict[str, An
                             _board_stats(state.board)
             level, score, clears = state.level, state.score, dict(state.stats.clear_counts)
             state, _ = game.step(mask)
-            row = by_level.setdefault(str(level), dict.fromkeys(CLEARS, 0) | {"points": 0})
+            row = by_level.setdefault(str(level), dict.fromkeys(CLEARS, 0) | {"points": 0}
+                                      | {f"{clear}_points": 0 for clear in CLEARS})
             row["points"] += state.score - score
             bands[band] += state.score - score
             for clear in CLEARS:
-                row[clear] += state.stats.clear_counts[clear] - clears[clear]
+                made = state.stats.clear_counts[clear] - clears[clear]
+                row[clear] += made
+                if made:  # the engine scores a clear at the level after it
+                    row[f"{clear}_points"] += state.score - score
     return {"by_level": by_level, "bands": bands, "entry": entry, "pieces": count - 1}
 
 
@@ -240,15 +245,22 @@ def play_game(job: tuple[dict[str, Any], bytes | None, int]) -> dict[str, Any]:
     """A registered game (016's ``play_native``): played by the C++, replayed on the
     Python binding, the counters checked, and the game's statistics."""
     frozen, weights, seed = job
+    return checked_game(frozen, seed, lambda: native_game(frozen, weights, seed))
+
+
+def checked_game(frozen: dict[str, Any], seed: int, play: Any,
+                 agent: str | None = None) -> dict[str, Any]:
+    """:func:`play_game` for any ``play()`` returning a native played game; the episode's
+    agent is ``agent`` (default ``frozen["name"]``)."""
     with create_game(**frozen["game"], seed=seed) as game:
         initial_hash = runner._hash(game)
     tick = time.perf_counter()
-    played = native_game(frozen, weights, seed)
+    played = play()
     seconds = time.perf_counter() - tick
     if played["initial_state_hash"] != initial_hash:
         raise ValueError(f"seed {seed}: the C++ engine starts in another state than the "
                          "binding's; rebuild both from the same Block Stack checkout")
-    episode = {"agent": frozen["name"], "seed": seed, "initial_state_hash": initial_hash,
+    episode = {"agent": agent or frozen["name"], "seed": seed, "initial_state_hash": initial_hash,
                "inputs": base64.b64encode(played["inputs"]).decode("ascii")}
     result, problem = e9.replay_outcome(episode, frozen)
     if problem:
@@ -290,10 +302,14 @@ def play(name: str, agent: str, jobs: int, limit: int | None = None) -> Path:
     header = partial_header(agent, seeds, versions)
     done: dict[int, dict[str, Any]] = {}
     if partial.exists():
-        lines = partial.read_text(encoding="utf-8").split("\n")
+        text = partial.read_text(encoding="utf-8")
+        lines = text.split("\n")
         if json.loads(lines[0]) != header:
             raise ValueError(f"{partial} is from another run (agent, seeds, build or code); "
                              "move it away to start again")
+        if text and not text.endswith("\n"):  # a cut-off last line: end it before appending
+            with partial.open("a", encoding="utf-8") as handle:
+                handle.write("\n")
         for line in lines[1:]:
             try:
                 episode = json.loads(line)
