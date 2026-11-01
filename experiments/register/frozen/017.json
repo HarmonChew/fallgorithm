@@ -1,0 +1,70 @@
+{
+ "name": "017",
+ "description": "017's agent: 016's rollouts at the commit decision",
+ "kind": "play_game_ex",
+ "agent": "reach_plan_016",
+ "params": {
+  "build_tetrises": 29.788698986143274,
+  "build_premature_clear": -1.073946142126443,
+  "build_holes": -15.276334720862385,
+  "build_aggregate_height": -0.1209122041701578,
+  "build_bumpiness": -0.9561828972815446,
+  "build_max_height": -0.5243284186911991,
+  "build_reserve": 5.018997068935409,
+  "build_overflow": 1.2869445815766996,
+  "spend_lines_cleared": 2.0537673708249677,
+  "spend_holes": -2.1866333657527663,
+  "spend_aggregate_height": 0.16624097555547737,
+  "spend_bumpiness": -0.025496684369312406,
+  "spend_max_height": 1.0441841982692475,
+  "spend_row_transitions": -1.114182114571442,
+  "spend_column_transitions": -2.5519444027682487,
+  "spend_edge_depth": -1.5248381291952173,
+  "height_budget": 10,
+  "survival_budget": 3,
+  "survival_level": 38,
+  "drought_bound": 18,
+  "clear_points": 37.74268445034382,
+  "killscreen_budget": 1,
+  "commit_ply_level": 29,
+  "commit_beam": 2,
+  "rollout_from_level": 18,
+  "rollout_to_level": 28,
+  "rollout_beam": 4,
+  "rollout_count": 32,
+  "rollout_depth": 5,
+  "rollout_death": 1000,
+  "commit_rollout_from_level": 29,
+  "commit_rollout_to_level": 99,
+  "commit_rollout_beam": 4,
+  "commit_rollout_count": 16,
+  "commit_rollout_depth": 10
+ },
+ "game": {
+  "ruleset": "classic_ntsc_double_killscreen",
+  "mode": "endless",
+  "start_level": 18,
+  "height": 0
+ },
+ "line_cap": 430,
+ "frame_cap": 150000,
+ "formats": [
+  {
+   "tap_hz": 30,
+   "reaction_ms": 300
+  }
+ ],
+ "abi_version": 22,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "f6b55b8b5a7e0ba263e1ad9670828079fe9be5ef",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ }
+}

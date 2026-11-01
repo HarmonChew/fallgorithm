@@ -1,0 +1,36 @@
+{
+ "name": "v15",
+ "description": "023's self-taught value network, sweep 15, no prefilter",
+ "kind": "net_game",
+ "weights": {
+  "path": "experiments/023-self-taught-value/value_sweep15.bin",
+  "sha256": "8281b013eedffb9115f4d4043d6d04ff617c9d778a632526c737035d27b359f6"
+ },
+ "game": {
+  "ruleset": "classic_ntsc_double_killscreen",
+  "mode": "endless",
+  "start_level": 18,
+  "height": 0
+ },
+ "line_cap": 430,
+ "frame_cap": 150000,
+ "formats": [
+  {
+   "tap_hz": 30,
+   "reaction_ms": 300
+  }
+ ],
+ "abi_version": 22,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "f6b55b8b5a7e0ba263e1ad9670828079fe9be5ef",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ }
+}
