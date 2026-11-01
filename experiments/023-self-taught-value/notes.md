@@ -43,8 +43,40 @@ By band against 017 (100-199 / 0-99): level 18 +40k/+32k, 19-28 +31k/+41k, 29-38
 the whole gap is the killscreen, where V's agent scores less than 015's (-20k/0k) and
 reaches the line cap in 14% of games (017: 50%).
 
+## Milestone 2: V in 017's rollouts (`dev_check_leaf_part1.json`)
+
+Code 109c149. 017's agent, but from the variant's level on each rollout is scored by its
+real points plus sweep 15's V of the rollout's last board, in place of the hand value.
+Below that level the agent is 017 unchanged (the identity check replayed 3 of 017's
+stored dev games exactly with V off). Dev seeds 100-199, ~7 min a game, against 017
+(1,840k):
+
+| variant | mean | vs 017 (CI) | wins | 18 | 19-28 | 29-38 | 39+ | line cap |
+|---|---|---|---|---|---|---|---|---|
+| leaf_18 | 1,682k | -158k (-227k..-89k) | 33/100 | +73k | +41k | -122k | -149k | 14% |
+| leaf_29 | 1,617k | -223k (-283k..-164k) | 24/100 | 0 | 0 | -96k | -127k | 13% |
+| leaf_39 | 1,748k | -92k (-128k..-55k) | 33/100 (3 equal) | 0 | 0 | 0 | -92k | 24% |
+| 017 | 1,840k | | | | | | | 50% |
+
+All three lose to 017 with the CI below 0, so milestone 2 is not met: no confirmation on
+dev 0-99, no predeclared run. All three still beat milestone 1's fast agent
+(+232k..+363k).
+
+What it shows: V is the better judge of a board below level 29 (leaf_18 gains +73k at
+18 and +41k at 19-28; same direction as milestone 1's bands, larger at 18), but from 29
+on the hand value is better even inside the rollouts. With 017's play before the switch,
+V costs about the same at 29-38 (leaf_29: -96k) as at 39+ (leaf_39: -92k), and the leaf
+variants reach the line cap far less often (13-24% against 50%). V is weak from level 29
+on, not only on the killscreen, and rollouts do not fix it. leaf_18 makes more Tetrises
+than 017 (54.7% against 48.3%) but clears 37 fewer lines, so it may reach 29 with
+riskier stacks. (Band gaps after the switch
+level also include arriving with different boards, so they are not clean per-band
+effects.)
+
 ## Next
 
-Milestone 2 (plan): V in 017's rollouts in place of the hand value (new code), against
-017's 1,840k on dev 100-199. The bands suggest the gain should come at 39+, where
-017's rollouts do most of their work.
+V's weak spot is level 29 on. A possible cause (not tested): its training boards come
+from 015's games and its own, which play those levels worse than 017. Options: train V
+with more 29+ boards (e.g. from 017's games), or use V only below 29 and the hand value from 29 on
+(needs a "to level" bound in set_leaf_net; it was picked after seeing these bands, so it
+needs its own dev check on 100-199, then 0-99).
