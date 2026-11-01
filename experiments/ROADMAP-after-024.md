@@ -95,7 +95,9 @@ metric (mean final score, paired) and a minimum meaningful effect (40k) before e
 * **Fresh seed sets** with a register: for each set, the experiments and configurations
   that used it and whether its results were seen before a choice. Kinds: screening
   (reusable), development (compare shortlisted candidates), confirmation (one candidate),
-  held-out (one configuration per record attempt, no tuning after). Probe results are
+  held-out (one configuration per record attempt, no tuning after). 012's 1,000 seeds
+  have hosted every record attempt since 012, so they are the established record
+  benchmark, not an untouched test set. Probe results are
   screening only, never evidence.
 * **Frozen configurations** of 015, 017 and 023 sweep 15; terminal and reward accounting
   checked (0 at top-out and at the cap; V's next-piece odds NES, given the previous piece).
@@ -186,9 +188,10 @@ Check the gain transfers to boards V's own play reaches.
 ### Step 5 - learn sibling differences from a better teacher (expert iteration round 1)
 
 Add an auxiliary pairwise ranking loss: for each decision state, the differences
-(points + V) between sibling placements should match the reference differences from
-step 3's high-budget evaluations, weighted by how sure the reference is; keep the value
-loss. Label the states V's own play reaches where V and 017 disagree or V is unsure
+(points + V) between sibling placements should match reference differences computed by
+step 3's high-budget method, weighted by how sure the reference is; keep the value loss.
+The labels come from separate training states: step 3's audit states and their labels
+never enter training, hyperparameter choices or teacher labelling. Label the states V's own play reaches where V and 017 disagree or V is unsure
 (DAgger: the teacher labels the learner's states). One change against step 4's best
 network. If step 3 shows max bias is the main failure, swap in a double-estimator backup
 (C5) instead.
@@ -254,3 +257,9 @@ development run, confirmation, held-out paired against 017 on the same seeds). A
 nice-to-haves: an adaptive step 3 budget with audit states split by game, the
 nowhere-to-go chance as a diagnostic, exact expectimax only where tractable. Reference
 values are named reference-policy regret, and calibration stays as a diagnostic.
+
+Third round (version 3): approved for implementation ("no reason to conduct another broad
+roadmap revision"), with one must-have, made: step 5's labels come from step 3's method
+on separate training states, never from step 3's audit states. It also asked that 012's
+held-out seeds be called the established record benchmark rather than an untouched set,
+since they hosted several record attempts. Agreed; hybrids first.
