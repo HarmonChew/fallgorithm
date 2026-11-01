@@ -1,0 +1,98 @@
+{
+ "sweep": 1,
+ "created_at": "2026-11-01T00:49:54.371629+00:00",
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "d17cc47d0e3edc3c53fcf31d90822d09526e68d1",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "torch": "2.14.0+cu130",
+ "from": {
+  "path": "experiments/020-value-net/value_round0.bin",
+  "sha256": "5dd9e7464ac532da58fc94aac9fb96bfc90750266066e8349456413570a1524b"
+ },
+ "weights": {
+  "path": "experiments/023-self-taught-value/value_sweep1.bin",
+  "sha256": "82d6601aed719f036b9b63f003e30011627b8d93dd2f013712fb761271bb64c9"
+ },
+ "boards": {
+  "train": 500000,
+  "children": 3496593,
+  "check": 50000
+ },
+ "settings": {
+  "batch": 4096,
+  "epochs": 3,
+  "lr": 0.0003,
+  "lr_note": "Adam, one-cycle schedule peaking at lr; warm-started from the last sweep's V",
+  "torch_seed": 23
+ },
+ "backup_seconds": 340.1,
+ "training_log": [
+  {
+   "step": 585,
+   "loss": 0.1326,
+   "seconds": 0.5
+  },
+  {
+   "step": 1170,
+   "loss": 0.0916,
+   "seconds": 0.9
+  },
+  {
+   "step": 1755,
+   "loss": 0.0846,
+   "seconds": 1.4
+  },
+  {
+   "step": 2340,
+   "loss": 0.0852,
+   "seconds": 1.8
+  },
+  {
+   "step": 2925,
+   "loss": 0.0939,
+   "seconds": 2.2
+  }
+ ],
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "check": {
+  "backup_minus_old_value": 0.3686,
+  "new_value_minus_backup_rms": 0.3294,
+  "old_value_minus_backup_rms": 0.6605,
+  "by_band": {
+   "18": {
+    "old_value": 41.932,
+    "backup": 42.378,
+    "new_value": 42.313,
+    "015_mc": 41.94
+   },
+   "19-28": {
+    "old_value": 26.382,
+    "backup": 26.804,
+    "new_value": 26.734,
+    "015_mc": 26.665
+   },
+   "29-38": {
+    "old_value": 12.688,
+    "backup": 12.944,
+    "new_value": 12.884,
+    "015_mc": 12.798
+   },
+   "39+": {
+    "old_value": 3.851,
+    "backup": 4.045,
+    "new_value": 4.008,
+    "015_mc": 3.828
+   }
+  }
+ },
+ "train_backup_minus_children_backup": -0.2268
+}

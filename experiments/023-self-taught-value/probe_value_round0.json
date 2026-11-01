@@ -1,0 +1,605 @@
+{
+ "weights": {
+  "path": "experiments/020-value-net/value_round0.bin",
+  "sha256": "5dd9e7464ac532da58fc94aac9fb96bfc90750266066e8349456413570a1524b"
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "d17cc47d0e3edc3c53fcf31d90822d09526e68d1",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "runs": {
+  "net": {
+   "mean_score": 1873.4,
+   "mean_lines": 2.17,
+   "line_cap_share": 0.0,
+   "score_by_band": {
+    "18": 1873,
+    "19-28": 0,
+    "29-38": 0,
+    "39+": 0
+   },
+   "seconds_per_game": 0.2,
+   "tetris_rate": 0.0
+  },
+  "fast_deep": {
+   "mean_score": 1396266.4,
+   "mean_lines": 382.31,
+   "line_cap_share": 0.4,
+   "score_by_band": {
+    "18": 436237,
+    "19-28": 393138,
+    "29-38": 425684,
+    "39+": 141208
+   },
+   "seconds_per_game": 1.37,
+   "tetris_rate": 0.3619
+  },
+  "rank": {
+   "mean_score": 1483917.8,
+   "mean_lines": 354.73,
+   "line_cap_share": 0.2,
+   "score_by_band": {
+    "18": 452266,
+    "19-28": 410383,
+    "29-38": 485406,
+    "39+": 135863
+   },
+   "seconds_per_game": 1.34,
+   "tetris_rate": 0.4385
+  }
+ },
+ "paired": {
+  "net - fast_deep": {
+   "score": {
+    "mean": -1394393.0,
+    "ci95_low": -1438654.8,
+    "ci95_high": -1348974.6,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -380.14,
+    "ci95_low": -390.23,
+    "ci95_high": -369.5,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 0,
+    "lower": 100,
+    "equal": 0
+   }
+  },
+  "net - rank": {
+   "score": {
+    "mean": -1482044.4,
+    "ci95_low": -1550065.4,
+    "ci95_high": -1412537.4,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -352.56,
+    "ci95_low": -364.64,
+    "ci95_high": -339.87,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 0,
+    "lower": 100,
+    "equal": 0
+   }
+  }
+ },
+ "per_game": [
+  {
+   "seed": 2475,
+   "score": 4180,
+   "lines": 5
+  },
+  {
+   "seed": 41737,
+   "score": 1520,
+   "lines": 2
+  },
+  {
+   "seed": 8953,
+   "score": 7220,
+   "lines": 5
+  },
+  {
+   "seed": 40970,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 5898,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 12994,
+   "score": 1520,
+   "lines": 2
+  },
+  {
+   "seed": 3322,
+   "score": 3040,
+   "lines": 4
+  },
+  {
+   "seed": 28466,
+   "score": 1900,
+   "lines": 2
+  },
+  {
+   "seed": 48916,
+   "score": 2280,
+   "lines": 3
+  },
+  {
+   "seed": 61617,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 50787,
+   "score": 2660,
+   "lines": 3
+  },
+  {
+   "seed": 61967,
+   "score": 2280,
+   "lines": 3
+  },
+  {
+   "seed": 57895,
+   "score": 4940,
+   "lines": 6
+  },
+  {
+   "seed": 21227,
+   "score": 4180,
+   "lines": 5
+  },
+  {
+   "seed": 64048,
+   "score": 2660,
+   "lines": 3
+  },
+  {
+   "seed": 41471,
+   "score": 3800,
+   "lines": 5
+  },
+  {
+   "seed": 45637,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 4341,
+   "score": 1520,
+   "lines": 2
+  },
+  {
+   "seed": 33422,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 34337,
+   "score": 3420,
+   "lines": 4
+  },
+  {
+   "seed": 44967,
+   "score": 3420,
+   "lines": 4
+  },
+  {
+   "seed": 45442,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 51357,
+   "score": 2280,
+   "lines": 3
+  },
+  {
+   "seed": 31817,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 47493,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 47317,
+   "score": 1520,
+   "lines": 2
+  },
+  {
+   "seed": 43551,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 16544,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 63178,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 49601,
+   "score": 5320,
+   "lines": 6
+  },
+  {
+   "seed": 32101,
+   "score": 1520,
+   "lines": 2
+  },
+  {
+   "seed": 61384,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 42836,
+   "score": 15960,
+   "lines": 12
+  },
+  {
+   "seed": 31323,
+   "score": 1520,
+   "lines": 2
+  },
+  {
+   "seed": 61678,
+   "score": 3420,
+   "lines": 4
+  },
+  {
+   "seed": 11483,
+   "score": 4180,
+   "lines": 5
+  },
+  {
+   "seed": 46471,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 4046,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 24451,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 22519,
+   "score": 2280,
+   "lines": 3
+  },
+  {
+   "seed": 5093,
+   "score": 2280,
+   "lines": 3
+  },
+  {
+   "seed": 1739,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 3233,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 30328,
+   "score": 7980,
+   "lines": 6
+  },
+  {
+   "seed": 65028,
+   "score": 1520,
+   "lines": 2
+  },
+  {
+   "seed": 4179,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 9784,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 7342,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 60453,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 40441,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 55474,
+   "score": 5700,
+   "lines": 7
+  },
+  {
+   "seed": 9819,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 46339,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 11455,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 58561,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 21022,
+   "score": 1520,
+   "lines": 2
+  },
+  {
+   "seed": 17630,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 3398,
+   "score": 2660,
+   "lines": 3
+  },
+  {
+   "seed": 57159,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 43270,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 32725,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 1208,
+   "score": 3420,
+   "lines": 4
+  },
+  {
+   "seed": 7260,
+   "score": 2280,
+   "lines": 3
+  },
+  {
+   "seed": 37424,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 27219,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 20020,
+   "score": 2280,
+   "lines": 3
+  },
+  {
+   "seed": 34105,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 15925,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 53788,
+   "score": 3040,
+   "lines": 4
+  },
+  {
+   "seed": 65249,
+   "score": 1520,
+   "lines": 2
+  },
+  {
+   "seed": 15022,
+   "score": 2280,
+   "lines": 3
+  },
+  {
+   "seed": 43754,
+   "score": 2280,
+   "lines": 3
+  },
+  {
+   "seed": 26294,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 27495,
+   "score": 1520,
+   "lines": 2
+  },
+  {
+   "seed": 42718,
+   "score": 2280,
+   "lines": 3
+  },
+  {
+   "seed": 46808,
+   "score": 1900,
+   "lines": 2
+  },
+  {
+   "seed": 35250,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 15502,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 16251,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 36801,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 31898,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 60686,
+   "score": 1900,
+   "lines": 2
+  },
+  {
+   "seed": 63192,
+   "score": 3040,
+   "lines": 4
+  },
+  {
+   "seed": 36937,
+   "score": 1520,
+   "lines": 2
+  },
+  {
+   "seed": 10223,
+   "score": 4940,
+   "lines": 6
+  },
+  {
+   "seed": 25680,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 17687,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 10520,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 46649,
+   "score": 8740,
+   "lines": 10
+  },
+  {
+   "seed": 36106,
+   "score": 3040,
+   "lines": 4
+  },
+  {
+   "seed": 62209,
+   "score": 1520,
+   "lines": 2
+  },
+  {
+   "seed": 19328,
+   "score": 4560,
+   "lines": 6
+  },
+  {
+   "seed": 33925,
+   "score": 5700,
+   "lines": 7
+  },
+  {
+   "seed": 236,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 9029,
+   "score": 760,
+   "lines": 1
+  },
+  {
+   "seed": 45827,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 50381,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 22708,
+   "score": 0,
+   "lines": 0
+  },
+  {
+   "seed": 57107,
+   "score": 3040,
+   "lines": 4
+  },
+  {
+   "seed": 21155,
+   "score": 2660,
+   "lines": 3
+  }
+ ]
+}
