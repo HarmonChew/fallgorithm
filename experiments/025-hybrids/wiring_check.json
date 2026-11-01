@@ -1,0 +1,65 @@
+{
+ "experiment": "025-hybrids",
+ "games": [
+  {
+   "kind": "h_alone",
+   "seed": 61737,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "h_alone",
+   "seed": 24534,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "h_alone",
+   "seed": 27806,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "v_alone",
+   "seed": 59369,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "v_alone",
+   "seed": 10539,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "v_alone",
+   "seed": 15536,
+   "match": true,
+   "got": null,
+   "want": null
+  }
+ ],
+ "matched": true,
+ "frozen_sha256": {
+  "017": "42e66f89cc716ffd9104a7e63adf68d2b180e871453cedab1e9cbfcce43d4b4c",
+  "v15": "cf6fc0bc71daf608bdcce82cd2aaaccc74ba1b7ef43e07950d96e0fdc37a04fe"
+ },
+ "abi_version": 23,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "b61d3aac893e5be6d22fafdf739a4242d7d46a96",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
