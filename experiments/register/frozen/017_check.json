@@ -1,0 +1,20 @@
+{
+ "name": "017",
+ "compares": "inputs",
+ "games": 28,
+ "matched": 28,
+ "mismatches": [],
+ "abi_version": 22,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "22e4b5096d6b6f0dbafeb469654724e635eeb051",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
