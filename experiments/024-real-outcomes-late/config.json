@@ -1,0 +1,13 @@
+{
+ "start_weights": "experiments/023-self-taught-value/value_sweep15.bin",
+ "start_note": "V0 = 023's sweep 15 (its best probe V)",
+ "outcome_from_lines": 230,
+ "outcome_note": "from 230 lines (level 29) on: play boards fitted to the points their game actually went on to score (lambda 1); base boards and children left out",
+ "explore": 0.0,
+ "explore_note": "023 played with 1% random placements, which cost its rounds about 16% (play15 1,453k against the probe's 1,729k); real outcomes must be the agent's own, so none here",
+ "first_rounds": 4,
+ "first_rounds_note": "rounds 0-1 to 0-4: V0's games, 2,000 each, so sweep 1 trains on as many play boards as 023's sweeps",
+ "max_sweeps": 10,
+ "stop_after_flat": 3,
+ "settings_note": "game, caps, fit, games per round, lambda, rounds kept and the probe are 023's config.json, read from there"
+}
