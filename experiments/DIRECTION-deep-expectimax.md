@@ -93,6 +93,11 @@ what the agent can see: a known preview is used as known; an unknown piece is av
   often the full-width choice survives pruning, and how costly the excluded moves are
   (by the reference values once the audit exists); are pruning misses concentrated in
   high or damaged stacks?
+* **Bellman residual** on frozen 39+ (and 29-38) states: T V(x) - V(x), next to D1a.
+  V predicting 7.5 Tetrises to come where its games scored 4.2 is a gap between V and
+  its own policy's results, not proof that V disagrees with its own backup; the
+  residual says whether deeper search would be correcting an inconsistency, exploiting
+  errors, or changing decisions for another reason.
 
 Uses the v3 staged statistics (screen 100 fresh seeds, promote to 300-500 development
 seeds, confirm). **Go to Phase 2** if more search shows a meaningful full-game gain
@@ -125,7 +130,10 @@ Before any large training run, the roadmap's step 3 audit (independent reference
 regret on held-out states) must show that deeper search makes better decisions, not
 just different or higher-valued ones. Audit states never become training labels.
 
-Two arms with identical evaluation and comparable budgets, each one change from 023:
+Arms with identical evaluation and comparable budgets. To make the depth effect
+identifiable, the first two use the same expanded training set (own games, siblings,
+internal nodes) and differ only in target depth: **T V** (023's one-piece target) and
+**T^2 V**. The teacher-assisted arm adds 017 supervision on top of the better of the two.
 
 * **Self-search (TreeStrap):** targets y = T^k V_teacher (k = 2 first; 023 is k = 1),
   with the teacher network frozen for the whole round; the student is checked
@@ -202,3 +210,10 @@ before large training. Nice-to-haves also taken: adaptive search depth, a
 teacher-assisted arm beside self-search, a small staged engineering budget. Its view on
 the route: it slightly prefers search spent where decisions are uncertain plus
 teacher-assisted learning over pure self-TreeStrap; both arms are now in Phase 3.
+
+Second round (version 2): agreed, "ready for experimentation", with two last must-haves,
+made: the Bellman residual T V - V on frozen 39+ states in Phase 1 (my 7.5-vs-4.2 point
+showed V against its own policy's results, not inconsistency with its backup), and
+Phase 3's T V and T^2 V arms on the same training set so depth is not confounded with
+coverage. If Phase 1's scores are inconclusive but its ranking signs promising, the audit
+is finished before the direction is rejected.
