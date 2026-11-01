@@ -1,7 +1,7 @@
 # Roadmap after Experiment 024
 
-Written 2026-11-01 after 024 failed. Version 2: revised after an independent review by
-ChatGPT (web, high reasoning) of version 1; what changed and why is in section 7. Nothing
+Written 2026-11-01 after 024 failed. Version 3: revised after two rounds of independent
+review by ChatGPT (web, high reasoning); what changed and why is in section 7. Nothing
 here is built yet; each experiment still gets its own `plan.md` and the owner's go-ahead.
 
 ## 1. Where we are
@@ -26,7 +26,7 @@ pre-39 averages (differences; descriptive only, not a controlled comparison):
 |---|---|---|---|---|---|---|---|
 | 015 | 433k | 412k | 405k | 135k | 375 | 34% | 37% |
 | 023 V agent | 545k | 519k | 556k | 116k | 372 | 14% | 53% |
-| 017 | 505k | 488k | 571k | 276k | 399 | 50% | 48% |
+| 017 | 505k | 488k | 571k | 276k | 399 (393 held-out) | 50% | 48% |
 | BetaTetris NN | 637k | 592k | 734k | 380k | 392 | | |
 | gap 017 -> BT | 132k | 104k | 163k | 104k | | | |
 
@@ -57,7 +57,7 @@ There are two separate questions, and version 1 mixed them:
   different policies on different board distributions, so they do not say whether V is
   a worse *evaluator* at 39+, a shallower *searcher*, or arrives with worse boards.
 * **Why are we below BetaTetris?** About 79% of the 502k gap is before level 39, spread
-  over every band. Survival looks similar in mean lines (393 vs 392), but the full line
+  over every band. Survival looks similar in mean lines (017 393 held-out vs 392), but the full line
   distribution has not been compared. Fixing 39+ may be the cheapest gain; it is not the
   main competitive gap. The second question needs a score decomposition (clears of each
   type by level, per line played, survival to each boundary, conditional score).
@@ -67,11 +67,13 @@ What we know from the code (checked):
 * **017's rollouts do not score "points + final value".** Each rollout sums the hand
   evaluation of every placement (`rollout.hpp`, `value_of` per step). 023's milestone 2
   used points + V(last board). So milestone 2 changed the leaf, the scoring rule, and
-  kept the hand policy: it was not a clean test of V.
+  kept the hand policy: it was not a clean test of V, and is no longer counted as
+  evidence against V as a rollout leaf.
 * **Same seed does not mean same pieces.** The engine advances the NES RNG every frame,
   as the real game does, so two agents on one seed get different pieces once their timing
-  differs. Paired CIs are still valid but pair less tightly than assumed, and "same
-  arriving state" comparisons need saved state snapshots, not seeds.
+  differs. Seed pairing in full games is still valid (it is blocking, not identical
+  pieces), but may reduce variance little: measure it. "Same arriving state" comparisons
+  need saved full-state snapshots, not seeds.
 * **The probe and dev seeds are not fresh.** The 100 probe seeds chose 023's sweep 15;
   dev 0-99 chose 017's settings; dev 100-199 has been the check for 019-024. A best-of-
   many on them is biased upward.
@@ -79,31 +81,39 @@ What we know from the code (checked):
 Hypotheses, not established: max bias in the one-step backup; MSE in absolute points
 underweighting 39+ ranking; one network for every band; 024's failure being the loss of
 the comparison signal (024 also turned off exploration). 024 shows that better
-calibration did not give better moves: ranking, not calibration, is the target.
+calibration did not give better moves: action ranking is the priority for decisions;
+calibration and Bellman consistency stay as diagnostics, since a rollout leaf's scale
+must match the points summed before it.
 
 ## 4. The plan
 
 Principle: cheap and informative first; one change at a time; a predeclared primary
 metric (mean final score, paired) and a minimum meaningful effect (40k) before each run.
 
-### Step 0 - harness (prerequisite, ~1 day)
+### Step 0a - minimum before the hybrids (~1 day)
 
-* **Fresh seed sets** with a register of what each set has been used for: screening
+* **Fresh seed sets** with a register: for each set, the experiments and configurations
+  that used it and whether its results were seen before a choice. Kinds: screening
   (reusable), development (compare shortlisted candidates), confirmation (one candidate),
-  held-out (record runs only). Probe results are screening only, never evidence.
+  held-out (one configuration per record attempt, no tuning after). Probe results are
+  screening only, never evidence.
+* **Frozen configurations** of 015, 017 and 023 sweep 15; terminal and reward accounting
+  checked (0 at top-out and at the cap; V's next-piece odds NES, given the previous piece).
+* **Score and line reports**: points by level and clear type, line distribution (median,
+  <330, <230) for 017 and V, for comparison with BetaTetris's tables.
+
+### Step 0b - snapshot harness (before steps 2-3, not before step 1)
+
 * **Decision-state snapshots**: the full engine state (board, pieces, RNG, frame and tap
   timers, lines, drought) at sampled decisions from 015, 017 and V games, stratified by
   band and by which agent produced them. Each records the legal placements, each agent's
-  pick, V's and the hand search's scores. Lets every later step compare on identical
-  states.
-* **Audits**: 017's rollout accumulation (above), V's next-piece odds (NES, conditional on
-  the previous piece), terminal values (0 at top-out and at the cap).
-* **Score decomposition** of 017 and V by level and clear type, and line distributions
-  (median, <330, <230) for comparison with BetaTetris's tables.
+  pick, V's and the hand search's scores. Validated by replay: restoring a snapshot and
+  replaying the original inputs reproduces the original game exactly. The RNG state is in
+  the snapshot for faithful simulation but is never visible to the agents' search.
 
 ### Step 1 - hybrids: a new record candidate (~1-2 days)
 
-Full games on the development set, paired against 017:
+Full games, paired by seed against 017:
 
 | prefix | from the switch | switch at |
 |---|---|---|
@@ -113,9 +123,13 @@ Full games on the development set, paired against 017:
 
 The ~1.9M from adding band numbers is a motivating guess, not a threshold: whether V's
 arriving boards suit 017 is what the run measures. Report P(reach 39), the 39+ score
-over all games and conditional on reaching 39, entry-board height and holes. Keeper:
-paired mean above 017 with the CI above 0 and at least +40k, then the confirmation set,
-then a predeclared 1,000-game held-out run against 1,800k.
+over all games and conditional on reaching 39, entry-board height and holes.
+Progression (predeclared, no topping up until an interval looks good): screen all three
+on 100 development seeds; promote any with a paired mean of +40k or more to a larger
+development run (300-500 seeds); keep one if its paired mean is at least +40k with the CI
+above 0; confirm it on the confirmation set; then one predeclared 1,000-game held-out run,
+paired against 017's games on the same seeds (017 is deterministic per seed; replay a
+sample of its stored games first to prove the comparison is like for like).
 
 ### Step 2 - does more lookahead help V? (A1, ~1 day)
 
@@ -127,21 +141,40 @@ If full width helps and k = 2 does not, the beam is the problem, not depth. If f
 width does not help, that does not show V is good or bad: go to step 3. (If V were
 Bellman-consistent the two would agree; a gain means the extra explicit backup fixes V.)
 
-### Step 3 - same-state action-value audit (the missing measurement, ~2-3 days)
+### Step 3 - same-state action-value audit (the missing measurement)
 
-A few hundred 39+ (and 29-38) decision states from 017's and V's games, where the two
-agree and where they disagree. For the top candidate placements of each, a reference
-value from many continuations (common piece draws across candidates, a fixed strong
-continuation policy, high budget), checked by split halves. Near the cap (410-429
-lines), where few pieces remain, add exact or near-exact expectimax as a trusted
-reference. Measure for V, the hand search and 017: regret against the reference, top-1
-agreement, top-k recall, rank correlation, and whether V's overestimation sits on its
-own picks (a sign of the max exploiting its errors). Include the 2 x 2 of rollout policy
-(hand, V) x leaf (hand, V), with the rollout scoring rule fixed.
+39+ (and 29-38) decision states from 017's and V's games, where the two agree and where
+they disagree; audit states come from games kept apart from any later training labels
+(split by game, not by snapshot). For the top candidate placements of each, a reference
+value from many continuations under a fixed strong continuation policy. Each candidate
+starts from the same full state, RNG included, and the simulator then runs as the real
+game does (pieces may differ after different timings; that is correct; no forced common
+piece tape unless it is a validated surrogate). Checked by split halves, and the key
+preferences re-checked under a second continuation policy, since the reference is that
+policy's value, not the optimal one: the measure is **reference-policy regret**.
+
+Budget-adaptive: a pilot of 50-100 states with 2-3 leading candidates each, to measure
+the variance of candidate differences and the cost per comparison; then more states,
+with extra continuations where the ranking stays uncertain.
+
+Measure for V, the hand search and 017: reference-policy regret, top-1 agreement, top-k
+recall, rank correlation, calibration, Bellman residual, and whether V's overestimation
+sits on its own picks. Also the chance the next piece has nowhere to go (exact, under the
+NES odds) for each state, as a diagnostic of where the errors are. Exact expectimax only
+where the remaining tree is genuinely small (410-429 lines does not mean few pieces).
+
+The rollout 2 x 2 (rollout policy hand or V x leaf hand or V) uses one scoring rule:
+real points earned plus a leaf value in remaining-points units. The hand leaf needs a
+mapping from the hand evaluation to remaining points, fitted on separate data; without a
+credible mapping the leaf comparison is not read causally, only the policy effect with
+one leaf fixed. 017's own rule (the hand evaluation summed over every placement) is a
+fifth arm, which also shows how much of 017's strength comes from that summing.
+Depth, root candidates, continuations and budget are held fixed across arms.
 
 Decides what to train next: bad ranking on 017's states -> step 4; good ranking but bad
-calibration -> calibration is not the priority; deeper search worse than 1 ply -> max
-bias and pruning (C5); rollout policy dominates the leaf -> improve the policy first.
+calibration -> calibration is not the priority; deeper search worse than 1 ply -> first
+separate max bias, beam pruning and distribution shift, and only max bias leads to C5;
+rollout policy dominates the leaf -> improve the policy first.
 
 ### Step 4 - stronger-policy coverage (C4, single change, ~2 days)
 
@@ -189,7 +222,7 @@ Risks: hybrids may lose at the switch (V's greedier boards); step 3's reference 
 on its continuation policy (report it, check split halves); expert iteration can inherit
 017's mistakes.
 
-## 7. The review and what changed
+## 7. The reviews and what changed
 
 ChatGPT's review of version 1 (conversation "Review Tetris Research Plan", 2026-11-01)
 rated it 7/10 as an engineering plan and 5/10 as a causal plan: sensible instincts, but
@@ -211,3 +244,13 @@ it "treats plausible explanations as established causes". Accepted:
   existing backup; a deeper training backup would be T(TV).
 * Not adopted yet: a separate local-pattern value representation and reward shaping
   (kept as later options).
+
+Second round (version 2 -> 3): ChatGPT agreed with the direction and the order (hybrids
+before the audit), and asked for four must-haves, all made: step 0 split so the hybrids
+are not held up (0a/0b); one scoring rule for step 3's 2 x 2, with a fitted points scale
+for the hand leaf and 017's summed rule as a separate arm; the RNG protocol (same full
+state, natural RNG, hidden from search); and staged statistical gates (screen, larger
+development run, confirmation, held-out paired against 017 on the same seeds). Also its
+nice-to-haves: an adaptive step 3 budget with audit states split by game, the
+nowhere-to-go chance as a diagnostic, exact expectimax only where tractable. Reference
+values are named reference-policy regret, and calibration stays as a diagnostic.
