@@ -64,3 +64,29 @@ def test_lambda_returns_run_backwards_within_each_game():
     first_0 = 0.5 * 1 + 0.5 * (2 + last_0)  # its step to the next board, then that return
     assert list(found) == pytest.approx([first_0, last_0, 0.5 * 4 + 0.5 * 3])
     assert list(e23.lambda_returns(backup, data, 0.0)) == list(backup)
+
+
+# ---------------------------------------------------------------- milestone 2: V in 017's rollouts
+
+def _leaf(net, from_level):
+    from test_experiment021 import GAME, SMALL
+    from block_stack_ai.limits import Limits
+    from block_stack_ai import experiment013 as e13
+    seed = e13._load(e13.SEEDS)["dev_seeds"][1]
+    args = dict(line_cap=430, frame_cap=1500, limits=Limits(30, 300), params=native.params(SMALL))
+    leaf = native.leaf_rollout_game(net, GAME, seed, from_level=from_level, **args)
+    alone, _ = native.rank_rollout_game(None, GAME, seed, net_to_level=0, **args)
+    return leaf, alone
+
+
+def test_the_leaf_value_off_plays_017s_game_and_on_changes_it(tmp_path):
+    _, net = _random_net(tmp_path)
+    off, alone = _leaf(net, 100)
+    assert off == alone
+    on, _ = _leaf(net, 18)
+    assert on != alone and on == _leaf(net, 18)[0]  # a pure function of the seed
+
+
+def test_the_leaf_rollouts_refuse_a_bad_network():
+    with pytest.raises(native.NativeError):
+        _leaf(b"not a network", 18)

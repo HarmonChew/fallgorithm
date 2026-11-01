@@ -426,6 +426,50 @@ def dev_check(weights: Path, jobs: int, part: int) -> dict[str, Any]:
         "per_game": [{k: g[k] for k in ("seed", "score", "lines")} for g in games]}
 
 
+def _leaf_game(job: tuple[str, int, str, int]) -> dict[str, Any]:
+    """One dev game by 017's agent with V in its rollouts from ``from_level`` on, replayed
+    for its score by band."""
+    name, seed, weights, from_level = job
+    config = _load(CONFIG)
+    tick = time.perf_counter()
+    played = native.leaf_rollout_game(
+        (runner.PROJECT_ROOT / weights).read_bytes(), config["game"], seed,
+        from_level=from_level, line_cap=config["line_cap"], frame_cap=config["frame_cap"],
+        limits=e13._limits(config), params=native.params(e21.agent_params()))
+    seconds = time.perf_counter() - tick
+    return {"name": name, "seed": seed, "score": played["score"], "lines": played["lines"],
+            "seconds": seconds} | e20._replay(config, seed, played)
+
+
+def dev_check_leaf(jobs: int, part: int, variants: list[str] | None = None) -> dict[str, Any]:
+    """Milestone 2: 017's agent with V in its rollouts (config ``milestone2``) on one part
+    of 020's dev seeds, paired against 017's (and 015's) stored games there."""
+    stored = _load(e20.DEV_BASELINES)[str(part)]
+    settings = _load(CONFIG)["milestone2"]
+    chosen = {n: settings["variants"][n] for n in (variants or settings["variants"])}
+    weights = runner.PROJECT_ROOT / settings["weights"]
+    todo = [(n, s, settings["weights"], level) for n, level in chosen.items()
+            for s in stored["seeds"]]
+    with Pool(jobs) as pool:
+        played = pool.map(_leaf_game, todo, chunksize=1)
+    runs = {n: [g for g in played if g["name"] == n] for n in chosen}
+    return {"question": "017's agent with the self-taught value in its rollouts against "
+                        "017's agent, on dev seeds",
+            "seeds": f"Experiment 020's dev seeds {part * 100} to {part * 100 + 99}",
+            "variants": {n: {"from_level": level} for n, level in chosen.items()},
+            "weights": {"path": settings["weights"],
+                        "sha256": hashlib.sha256(weights.read_bytes()).hexdigest()},
+            "versions": runner._record_versions(),
+            "runs": {n: e20.summary(g) for n, g in runs.items()} |
+                    {n: e20.summary(g) for n, g in stored["games"].items()},
+            "paired": {f"{n} - {b}": e12.paired(g, base) for n, g in runs.items()
+                       for b, base in stored["games"].items()},
+            "by_band": {f"{n} - {b}": e16._band_pairs(g, base) for n, g in runs.items()
+                        for b, base in stored["games"].items()},
+            "per_game": {n: [{k: x[k] for k in ("seed", "score", "lines")} for x in g]
+                         for n, g in runs.items()}}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m block_stack_ai.experiment023")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -446,6 +490,10 @@ def main(argv: list[str] | None = None) -> int:
     dev.add_argument("weights", type=Path)
     dev.add_argument("--part", type=int, choices=(0, 1), default=1)
     dev.add_argument("--jobs", type=int, default=28)
+    leaf = commands.add_parser("dev-check-leaf", help="milestone 2: V in 017's rollouts")
+    leaf.add_argument("--part", type=int, choices=(0, 1), default=1)
+    leaf.add_argument("--variants", nargs="+")
+    leaf.add_argument("--jobs", type=int, default=28)
     args = parser.parse_args(argv)
     try:
         if args.command == "seeds":
@@ -466,6 +514,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Wrote {path}")
         elif args.command == "play":
             print(f"Data: {play(args.round, args.weights, args.jobs)}")
+        elif args.command == "dev-check-leaf":
+            name = "_".join(args.variants) if args.variants else "leaf"
+            path = EXPERIMENT_ROOT / f"dev_check_{name}_part{args.part}.json"
+            if path.exists():
+                raise ValueError(f"{path} exists already")
+            _write(path, dev_check_leaf(args.jobs, args.part, args.variants))
+            print(f"Wrote {path}")
         else:
             path = EXPERIMENT_ROOT / f"dev_check_{args.weights.stem}_part{args.part}.json"
             _write(path, dev_check(args.weights, args.jobs, args.part))

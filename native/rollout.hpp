@@ -67,6 +67,12 @@
 // the same candidates, the search's own choice winning ties. The playouts' own placements
 // use the playout network (set_playout's ``net``), so a network fitted on one round's
 // playouts can place the next round's.
+//
+// Experiment 023 milestone 2: from ``from_level`` on (set_leaf_net), the rollout-ranked
+// decisions keep their candidates, sequences and placements, but a rollout's return is
+// the real points of its clears (the candidate's own included) plus the value network's
+// value (netsearch.hpp's net_value) of the board it ends on, after ``depth`` pieces or at
+// the line cap; a rollout that tops out ends with its points alone (the game is over).
 #pragma once
 
 #include <algorithm>
@@ -78,6 +84,7 @@
 #include "board.hpp"
 #include "eval.hpp"
 #include "net.hpp"
+#include "netsearch.hpp"
 #include "search.hpp"
 #include "value.hpp"
 
@@ -208,6 +215,17 @@ public:
         playout_count_ = count;
     }
 
+    // Experiment 023 milestone 2: from level ``from_level`` on, the rollout-ranked
+    // decisions score each rollout by real points (the option's clear and the rollout's)
+    // plus the value network ``net``'s value of the board it ends on, a rollout that tops
+    // out by its points alone; a rollout stops at ``line_cap``. The rollouts' placements
+    // are still the Searcher's. (nullptr: 017's return, the summed hand values.)
+    void set_leaf_net(const ValueNetwork* net, int line_cap, int from_level) {
+        leaf_net_ = net;
+        leaf_line_cap_ = line_cap;
+        leaf_from_level_ = from_level;
+    }
+
     // Experiment 022 step 3: from set_playout's ``from_level`` on, with ``count`` 0, the
     // commit decision re-ranked by ``net`` (nullptr: as without it).
     void set_killscreen_net(const ValueNetwork* net) { killscreen_net_ = net; }
@@ -285,17 +303,25 @@ public:
             return searcher_.choose(best, choice);
         }
         draw_sequences(position, count, depth);
+        const bool leaf = leaf_net_ && position.level >= leaf_from_level_;
         int best = 0;
         double best_mean = 0.0;
         for (int index = 0; index < static_cast<int>(candidates_.size()); ++index) {
             const Searcher::Candidate& candidate = candidates_[index];
             const int lines = position.lines + candidate.cleared;
-            const double first = value_of(params_, phase, candidate.cleared, candidate.settled,
-                                          level_for_lines(lines, position.start_level));
+            const double first =
+                leaf ? clear_reward(candidate.cleared, lines, position.start_level)
+                     : value_of(params_, phase, candidate.cleared, candidate.settled,
+                                level_for_lines(lines, position.start_level));
             double total = 0.0, halves[2] = {0.0, 0.0};
             for (std::size_t at = 0; at < sequences_.size(); ++at) {
                 double value = 0.0;
-                if (!rollout(position, candidate.settled, lines, sequences_[at], depth, value)) {
+                const bool ok =
+                    leaf ? leaf_rollout(position, candidate.settled, lines, sequences_[at],
+                                        depth, value)
+                         : rollout(position, candidate.settled, lines, sequences_[at], depth,
+                                   value);
+                if (!ok) {
                     return false;
                 }
                 total += first + value;
@@ -555,6 +581,43 @@ private:
         return true;
     }
 
+    // Experiment 023's rollout (set_leaf_net): the same placements as rollout() without
+    // the rollout network, its return the points it clears plus the network's value of
+    // the board it ends on (none after a top-out), stopping at the line cap.
+    bool leaf_rollout(const Position& start, Columns columns, int lines,
+                      const std::vector<int>& sequence, int depth, double& total) {
+        total = 0.0;
+        int drought = start.drought;
+        // The network's drought counts the piece that left the board (the agent's
+        // current piece at a commit decision; at an adjust with an I preview it differs
+        // until that I is placed, the first rollout piece).
+        int value_drought = start.drought, last = start.piece;
+        for (int step = 0; step < depth && lines < leaf_line_cap_; ++step) {
+            const int piece = sequence[step], next = sequence[step + 1];
+            drought = piece == I || next == I ? 0 : drought + 1;
+            const int level = level_for_lines(lines, start.start_level);
+            const Position position{columns, piece, next, Flight{}, drought, level, lines,
+                                    start.start_level, start.double_killscreen,
+                                    start.interval};
+            if (!policy_.search(position, choice_)) {
+                return false;
+            }
+            if (!choice_.found) {
+                return true;  // topped out: no more points
+            }
+            const Settled settled =
+                settle(columns, piece, choice_.orientation, choice_.x, choice_.y);
+            lines += settled.cleared;
+            total += clear_reward(settled.cleared, lines, start.start_level);
+            columns = settled.columns;
+            value_drought = next_drought(value_drought, piece);
+            last = piece;
+        }
+        total += net_value(*leaf_net_, leaf_line_cap_, columns, lines, value_drought, last,
+                           start.start_level);
+        return true;
+    }
+
     // ``count`` sequences of the preview and ``depth`` pieces drawn with the NES odds
     // after the piece before, from a stream seeded by the position. An unknown preview
     // (the commit decision) is drawn first, after the current piece.
@@ -619,6 +682,8 @@ private:
     std::vector<std::vector<int>> sequences_;
     const ValueNetwork* playout_net_ = nullptr;
     const ValueNetwork* killscreen_net_ = nullptr;
+    const ValueNetwork* leaf_net_ = nullptr;
+    int leaf_line_cap_ = 0, leaf_from_level_ = 0;
     int playout_line_cap_ = 0, playout_from_level_ = 0, playout_count_ = 0;
     std::vector<std::uint64_t> streams_;
     std::vector<std::vector<int>> playout_sequences_;

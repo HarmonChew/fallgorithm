@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 21
+ABI_VERSION = 22
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -266,6 +266,11 @@ def load() -> Any:
     lib.fn_rank_rollout_game.argtypes = [C.c_char_p, C.c_int, C.c_int, C.POINTER(C.c_double)] + \
         lib.fn_distil_game.argtypes
     lib.fn_rank_rollout_game.restype = C.c_int
+    lib.fn_leaf_rollout_game.argtypes = [C.c_char_p, C.c_int, C.c_int, C.POINTER(Params),
+                                         C.c_char_p, C.c_char_p, C.c_int, C.c_int, C.c_int,
+                                         C.c_int, C.c_int, C.c_int, C.c_int,
+                                         C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int64)]
+    lib.fn_leaf_rollout_game.restype = C.c_int
     lib.fn_playout_game.argtypes = [C.c_char_p, C.c_int, C.c_char_p, C.c_int, C.c_char_p, C.c_int,
                                     C.c_int, C.c_int, C.POINTER(Params),
                                     C.c_char_p, C.c_char_p, C.c_int, C.c_int, C.c_int, C.c_int,
@@ -665,6 +670,23 @@ def rank_rollout_game(net: bytes | None, game: dict[str, Any], seed: int, *, net
     s = RANK_DISTIL_STRIDE
     found = [tuple(rows[i * s:(i + 1) * s]) for i in range(count.value)] if dump else []
     return _played(inputs, out), found
+
+
+def leaf_rollout_game(net: bytes, game: dict[str, Any], seed: int, *, from_level: int,
+                      line_cap: int, frame_cap: int, limits: Limits,
+                      params: Params) -> dict[str, Any]:
+    """017's game (``params``) with the rollout-ranked decisions from ``from_level`` on
+    scored by real points plus the value network ``net``'s value of each rollout's last
+    board (Experiment 023 milestone 2; ``from_level`` 100: 017's game)."""
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    status = load().fn_leaf_rollout_game(
+        net, len(net), from_level, C.byref(params), game["ruleset"].encode(),
+        game["mode"].encode(), game["start_level"], game["height"], seed, line_cap, frame_cap,
+        limits.tap_interval, limits.reaction_frames, inputs, max(1, frame_cap), out)
+    if status:
+        raise NativeError(f"fn_leaf_rollout_game failed with {status}")
+    return _played(inputs, out)
 
 
 def playout_game(net: bytes | None, game: dict[str, Any], seed: int, *, from_level: int,

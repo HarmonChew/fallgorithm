@@ -39,5 +39,14 @@
  },
  "lambda": 0.95,
  "lambda_note": "play rounds' boards are fitted to lambda-returns along their own games (the backup mixed with what the game went on to score), so a death many pieces later reaches the board that caused it; base boards and their children to the plain backup",
- "play_rounds_kept": 4
+ "play_rounds_kept": 4,
+ "milestone2": {
+  "weights": "experiments/023-self-taught-value/value_sweep15.bin",
+  "variants": {
+   "leaf_18": 18,
+   "leaf_29": 29,
+   "leaf_39": 39
+  },
+  "note": "017's agent with its rollout-ranked decisions from the variant's level on scored by real points plus V of each rollout's last board (rollout.hpp set_leaf_net); V = sweep 15, the best probe"
+ }
 }

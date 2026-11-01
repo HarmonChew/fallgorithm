@@ -29,6 +29,23 @@
 
 namespace fallgorithm {
 
+constexpr double net_tetris_points = 1200.0 * 19;  // experiment020.TETRIS_18
+
+// The value network's value of a settled board, in points (0 once the lines reach the
+// cap): ``drought`` counts ``last``, the piece that left the board.
+inline double net_value(const ValueNetwork& net, int line_cap, const Columns& columns,
+                        int lines, int drought, int last, int start_level) {
+    if (lines >= line_cap) {
+        return 0.0;
+    }
+    const auto f = board_feature_values(columns);
+    const int level = level_for_lines(lines, start_level);
+    const int band = level <= start_level ? 0 : level < 29 ? 1
+                     : level < double_gravity_level ? 2 : 3;
+    return net_tetris_points *
+           net_forward(net, columns, f.data(), band, line_cap - lines, drought, last);
+}
+
 class NetSearcher {
 public:
     NetSearcher(const ValueNetwork* net, int line_cap) : net_(net), line_cap_(line_cap) {}
@@ -40,15 +57,7 @@ public:
 
     // The network's value, in points (0 once the lines reach the cap).
     double value(const Columns& columns, int lines, int drought, int last, int start_level) const {
-        if (lines >= line_cap_) {
-            return 0.0;
-        }
-        const auto f = board_feature_values(columns);
-        const int level = level_for_lines(lines, start_level);
-        const int band = level <= start_level ? 0 : level < 29 ? 1
-                         : level < double_gravity_level ? 2 : 3;
-        return tetris_points * net_forward(*net_, columns, f.data(), band, line_cap_ - lines,
-                                           drought, last);
+        return net_value(*net_, line_cap_, columns, lines, drought, last, start_level);
     }
 
     bool search(const Position& position, Choice& choice) {
@@ -107,7 +116,7 @@ public:
         return root_.masks(placement, choice.masks);
     }
 
-    static constexpr double tetris_points = 1200.0 * 19;  // experiment020.TETRIS_18
+    static constexpr double tetris_points = net_tetris_points;
 
     // Experiment 023's backup of a settled board (the next piece not yet known): the
     // average, over the next piece by the NES odds after ``last`` (1/7 each for the first

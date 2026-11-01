@@ -27,7 +27,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 21;
+constexpr int abi_version = 22;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -519,6 +519,41 @@ FN_API int fn_rank_rollout_game(const unsigned char* net, int net_size, int net_
         }
         *row_count = static_cast<int>(found.size());
         return 0;
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 023 milestone 2: 017's game (fn_rank_rollout_game without a network) with
+// the rollout-ranked decisions from level ``from_level`` on scored by real points plus
+// the value network ``net``'s value of each rollout's last board (rollout.hpp
+// set_leaf_net). Returns as fn_play_game (-1 also for a ``net`` that is not a value
+// network).
+FN_API int fn_leaf_rollout_game(const unsigned char* net, int net_size, int from_level,
+                                const Params* params, const char* ruleset, const char* mode,
+                                int start_level, int height, int seed, int line_cap,
+                                int frame_cap, int interval, int reaction,
+                                std::uint8_t* inputs, int capacity, std::int64_t* out) {
+    if (!net || !params || !ruleset || !mode || seed < 0 || seed > 0xffff || line_cap < 0 ||
+        frame_cap < 0 || capacity < frame_cap || interval < 1 || reaction < 0 ||
+        start_level < 0 || start_level >= 20 || net_size < 0 || from_level < 0) {
+        return -1;
+    }
+    try {
+        blocks::Config config;
+        ValueNetwork network;
+        if (!make_config(ruleset, mode, start_level, height, seed, config) ||
+            !network.load(net, static_cast<std::size_t>(net_size))) {
+            return -1;
+        }
+        Searcher searcher(*params);
+        searcher.set_extra_ply(true);
+        searcher.set_nes_odds(true);
+        RolloutSearcher rollouts(searcher, *params);
+        rollouts.set_leaf_net(&network, line_cap, from_level);
+        BasicAgent<RolloutSearcher> agent(rollouts, interval, reaction);
+        std::uint64_t final_score = 0;
+        return run_game(config, agent, line_cap, frame_cap, inputs, out, nullptr, final_score);
     } catch (const std::exception&) {
         return -1;
     }
