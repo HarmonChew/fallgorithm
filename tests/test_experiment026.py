@@ -291,6 +291,8 @@ def test_wiring_check_matches_the_stored_games_on_a_cheap_config(monkeypatch, tm
                               "result": {"score": plain["score"], "lines": plain["lines"]}}]}
     monkeypatch.setattr(register, "load_games", lambda stage, name: stored(plain["inputs"]))
     found = e26.wiring_check(1)
+    assert len(found["games"]) == 3 and {g.get("kind") for g in found["games"]} == {
+        None, "d1a_before_its_level", "d1b_before_its_level"}
     assert found["matched"] and found["frozen_sha256"] == {"v15": "0" * 64}
     assert json.loads(e26.WIRING.read_text())["matched"]
     monkeypatch.setattr(register, "load_games", lambda stage, name: stored(b"\0" + plain["inputs"]))
@@ -309,3 +311,20 @@ def test_band_residuals():
     assert found["29-38"]["mean_value"] == pytest.approx(45.0)
     assert found["39+"]["boards"] == 2 and found["39+"]["mean_residual"] == pytest.approx(10.0)
     assert found["all"]["boards"] == 7
+
+
+def test_develop_without_arms_needs_screen_d3_when_both_kinds_promoted(monkeypatch, tmp_path):
+    _cheap(monkeypatch, tmp_path)
+    ran = []
+    monkeypatch.setattr(e26, "run", lambda stage, arms, jobs: ran.append(arms))
+
+    def screening(promoted):
+        (tmp_path / "out" / "screening.json").write_text(json.dumps({"promoted": promoted}))
+    screening({"d1a": True, "d1b": False, "d2_k4": True, "d2_k8": False})
+    assert e26.main(["develop"]) == 1 and not ran
+    _store(e26.games_path("screening", "d3_d1a_k4"), [])
+    assert e26.main(["develop"]) == 0 and ran == [["d1a", "d2_k4"]]
+    ran.clear()
+    shutil.rmtree(e26.GAMES)
+    screening({"d1a": True, "d1b": True, "d2_k4": False, "d2_k8": False})
+    assert e26.main(["develop"]) == 0 and ran == [["d1a", "d1b"]]

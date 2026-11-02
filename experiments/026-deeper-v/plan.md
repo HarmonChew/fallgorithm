@@ -23,8 +23,8 @@ off by default (off = `v15` input for input):
 |---|---|---|
 | `d1a` | commit, level >= 39 | each placement's points + `backup` of its board (expectimax over the unknown next piece by the NES odds, its best placement's points + V) instead of + V |
 | `d1b` | commit, level >= 29 | the same |
-| `d2_k4` | adjust (preview known), level <= 28 | rank every (current, preview) pair by both points + V as now; the best 4 pairs are rescored with `backup` of the board both leave in place of V; the current placement of the best rescored pair is played |
-| `d2_k8` | adjust, level <= 28 | the same with the best 8 pairs |
+| `d2_k4` | adjust (preview known), level <= 28 | the best 4 current placements by their best pair (both points + V, as now), each with its best 4 preview placements rescored with `backup` of the board both leave in place of V; the kept current placement with the best rescored pair is played |
+| `d2_k8` | adjust, level <= 28 | the same with 8 current placements and 8 preview placements each |
 
 After screening, **D3** = the best promoted D1 arm with the best promoted D2 arm (one
 more screening arm, if both kinds promote). Nothing is trained or retuned.
@@ -63,4 +63,4 @@ on V's own boards from 20 screening games, by band, mean and spread of
 ## Cost
 
 `backup` is ~1.7 ms a board (~25 placements: ~40 ms a commit decision). `d1b` adds about
-20 s a game, `d1a` ~10 s, `d2_k8` ~10 s. Screening: ~400 games, ~10 min on 28 workers.
+20 s a game, `d1a` ~10 s, `d2_k8` ~10 s (the adjust does k x k backups a decision: 16 for k=4, 64 for k=8, about 30 ms and 110 ms). Screening: ~400 games, ~10 min on 28 workers.

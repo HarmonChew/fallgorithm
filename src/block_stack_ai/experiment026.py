@@ -55,6 +55,8 @@ RULE = ("Primary metric: mean final score, paired by seed against v15's register
 _load, _write = e13._load, e13._write
 WIRING = OUT / "wiring_check.json"
 WIRING_GAMES = 3
+# arm: a line cap that ends the game before the arm's commit level (29 / 39 from level 18)
+EARLY_CAPS = {"d1a": 320, "d1b": 220}
 RESIDUAL = OUT / "residual.json"
 RESIDUAL_GAMES = 20
 BANDS = (("18", 0, 18), ("19-28", 19, 28), ("29-38", 29, 38), ("39+", 39, 10_000))
@@ -92,15 +94,34 @@ def _wiring_job(job: tuple[dict[str, Any], bytes, dict[str, Any]]) -> dict[str, 
             "got": None if got == want else got[1:], "want": None if got == want else want[1:]}
 
 
+def _early_job(job: tuple[dict[str, Any], bytes, int, str]) -> dict[str, Any]:
+    """``arm`` with the line cap cut below its commit level: equal to net_game's game."""
+    frozen, net, seed, arm = job
+    cap = EARLY_CAPS[arm]
+    args = dict(line_cap=cap, frame_cap=frozen["frame_cap"], limits=e13._limits(frozen))
+    played = native.deep_net_game(net, frozen["game"], seed, commit_level=ARMS[arm][0],
+                                  adjust_k=0, adjust_max_level=ADJUST_MAX_LEVEL, **args)
+    plain = native.net_game(net, frozen["game"], seed, **args)[0]
+    same = [played[k] for k in ("inputs", "score", "lines")] == \
+        [plain[k] for k in ("inputs", "score", "lines")]
+    return {"kind": f"{arm}_before_its_level", "seed": seed, "match": same,
+            "got": None if same else [played["score"], played["lines"]],
+            "want": None if same else [plain["score"], plain["lines"]]}
+
+
 def wiring_check(jobs: int) -> dict[str, Any]:
     """The deep entry point with both changes off against v15's first registered screening
-    games: inputs, score and lines."""
+    games (inputs, score and lines), and d1a / d1b with the line cap below their level
+    against net_game's games under the same caps."""
     frozen, net = register.load_frozen("v15")
     episodes = register.load_games("screening", "v15")["episodes"][:WIRING_GAMES]
     with Pool(jobs) as pool:
         found = pool.map(_wiring_job, [(frozen, net, e) for e in episodes], chunksize=1)
+        found += pool.map(_early_job, [(frozen, net, e["seed"], arm) for arm in EARLY_CAPS
+                                       for e in episodes], chunksize=1)
     result = {"experiment": "026-deeper-v", "games": found,
-              "matched": len(found) == WIRING_GAMES and all(g["match"] for g in found),
+              "matched": len(found) == WIRING_GAMES * (1 + len(EARLY_CAPS))
+              and all(g["match"] for g in found),
               "frozen_sha256": {"v15": _sha("v15")}, "abi_version": native.ABI_VERSION,
               "versions": runner._record_versions()}
     _write(WIRING, result)
@@ -376,6 +397,11 @@ def main(argv: list[str] | None = None) -> int:
                 arms = [a for a, ok in _load(path)["promoted"].items() if ok]
                 if not arms:
                     raise ValueError("screening promoted no arm")
+                if any(a in arms for a in D1) and any(a in arms for a in D2) and \
+                        not any(a.startswith("d3_") and games_path("screening", a).exists()
+                                for a in ALL_ARMS):
+                    raise ValueError("a D1 and a D2 arm were promoted but no combination was "
+                                     "screened: run screen-d3 first")
             run("development", arms, args.jobs)
     except (native.NativeError, OSError, KeyError, ValueError, json.JSONDecodeError) as error:
         print(f"{args.command} failed: {error}", file=sys.stderr)

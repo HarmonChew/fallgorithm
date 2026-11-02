@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "board.hpp"
@@ -111,8 +112,10 @@ public:
 
     // Experiment 026's search changes (search only, not the prefiltered path). From
     // ``commit_level`` on the commit decision values a board by ``backup``; at levels up to
-    // ``adjust_max_level`` the adjust decision rescores its best ``adjust_k`` pairs by
-    // ``backup``. ``adjust_k`` 0 and a huge ``commit_level`` are off: the search is then 020's.
+    // ``adjust_max_level`` the adjust decision rescores by
+    // ``backup`` (the best ``adjust_k`` current placements, each through its best ``adjust_k``
+    // preview placements). ``adjust_k`` 0 and a huge ``commit_level`` are off:
+    // the search is then 020's.
     void set_deep(int commit_level, int adjust_k, int adjust_max_level) {
         commit_level_ = commit_level;
         adjust_k_ = adjust_k;
@@ -203,15 +206,17 @@ private:
     // One (current, preview) pair left on the board ``columns``.
     struct Pair {
         int order = 0;
-        double points = 0.0;  // both clears' points
-        double total = 0.0;   // points plus V
+        double first = 0.0, second = 0.0;  // the clears' points
+        double total = 0.0;                // first + (second + V), as best_preview
         Columns columns{};
         int lines = 0, drought = 0;
     };
 
-    // The adjust with the best ``adjust_k_`` pairs rescored by backup. Every pair is valued
-    // as best_preview does (its boards are copied out first: backup reuses ply_). Returns
-    // false if no pair exists, leaving the ordinary search to decide.
+    // The adjust with the best ``adjust_k_`` current placements (by their best pair's
+    // points + V) each rescored through its best ``adjust_k_`` preview placements by
+    // backup; the current placement of the highest rescored value is played. Every pair is
+    // valued as best_preview does (its boards are copied out first: backup reuses ply_).
+    // Returns false if no pair exists, leaving the ordinary search to decide.
     bool deep_adjust(const Position& position, int& pick) {
         const int start = position.start_level;
         pairs_.clear();
@@ -233,9 +238,10 @@ private:
                 const int after = lines + both.cleared;
                 Pair pair;
                 pair.order = order;
-                pair.points = first + clear_reward(both.cleared, after, start);
-                pair.total = pair.points +
-                             value(both.columns, after, drought, position.next_piece, start);
+                pair.first = first;
+                pair.second = clear_reward(both.cleared, after, start);
+                pair.total = first + (pair.second +
+                             value(both.columns, after, drought, position.next_piece, start));
                 pair.columns = both.columns;
                 pair.lines = after;
                 pair.drought = drought;
@@ -245,26 +251,40 @@ private:
         if (pairs_.empty()) {
             return false;
         }
-        // The best adjust_k_ pairs by total, ties in enumeration order.
-        std::vector<int> index(pairs_.size());
-        for (std::size_t i = 0; i < index.size(); ++i) {
-            index[i] = static_cast<int>(i);
+        // Pairs of one current placement are contiguous. Sort them by total (ties in
+        // enumeration order), then rank the placements by their best pair (ties: first).
+        std::vector<std::pair<std::size_t, std::size_t>> ranges;  // [begin, end) per placement
+        for (std::size_t i = 0; i < pairs_.size();) {
+            std::size_t end = i;
+            while (end < pairs_.size() && pairs_[end].order == pairs_[i].order) {
+                ++end;
+            }
+            std::stable_sort(pairs_.begin() + i, pairs_.begin() + end,
+                             [](const Pair& a, const Pair& b) { return a.total > b.total; });
+            ranges.emplace_back(i, end);
+            i = end;
         }
-        const std::size_t keep = std::min(index.size(), static_cast<std::size_t>(adjust_k_));
-        std::stable_sort(index.begin(), index.end(), [this](int a, int b) {
-            return pairs_[a].total > pairs_[b].total;
+        std::stable_sort(ranges.begin(), ranges.end(), [this](const auto& a, const auto& b) {
+            return pairs_[a.first].total > pairs_[b.first].total;
         });
-        double best_total = minus_infinity;
-        pick = pairs_[index[0]].order;
-        for (std::size_t i = 0; i < keep; ++i) {
-            const Pair& pair = pairs_[index[i]];
-            const double total = pair.points +
-                                 backup(pair.columns, pair.lines, pair.drought,
-                                        position.next_piece, start, position.double_killscreen,
-                                        position.interval);
-            if (total > best_total) {
-                best_total = total;
-                pick = pair.order;
+        const std::size_t kept = std::min(ranges.size(), static_cast<std::size_t>(adjust_k_));
+        double best_value = minus_infinity;
+        pick = pairs_[ranges[0].first].order;
+        for (std::size_t r = 0; r < kept; ++r) {
+            const std::size_t end = std::min(ranges[r].second,
+                                             ranges[r].first + static_cast<std::size_t>(adjust_k_));
+            double value_of = minus_infinity;
+            for (std::size_t i = ranges[r].first; i < end; ++i) {
+                const Pair& pair = pairs_[i];
+                value_of = std::max(value_of,
+                                    pair.first + (pair.second +
+                                    backup(pair.columns, pair.lines, pair.drought,
+                                           position.next_piece, start, position.double_killscreen,
+                                           position.interval)));
+            }
+            if (value_of > best_value) {
+                best_value = value_of;
+                pick = pairs_[ranges[r].first].order;
             }
         }
         return true;
