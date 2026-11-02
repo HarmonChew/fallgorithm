@@ -1,0 +1,158 @@
+{
+ "experiment": "025-hybrids",
+ "stage": "heldout",
+ "games": 1000,
+ "seeds": "Experiment 012's 1,000 held-out seeds (the established record benchmark)",
+ "arms": [
+  "v_h29"
+ ],
+ "switches": {
+  "v_h29": {
+   "v_first": true,
+   "switch_level": 29
+  },
+  "v_h39": {
+   "v_first": true,
+   "switch_level": 39
+  },
+  "h_v39": {
+   "v_first": false,
+   "switch_level": 39
+  }
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "eba881dd37ef70a93cec3195f137123bdba049fe",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "abi_version": 23,
+ "frozen_sha256": {
+  "017": "42e66f89cc716ffd9104a7e63adf68d2b180e871453cedab1e9cbfcce43d4b4c",
+  "v15": "cf6fc0bc71daf608bdcce82cd2aaaccc74ba1b7ef43e07950d96e0fdc37a04fe"
+ },
+ "rule": "Primary metric: mean final score, paired by seed against 017's registered games (hybrid minus 017), 95% bootstrap interval of experiment012.paired. Screening: an arm is promoted if its paired mean is +40k or more. Development: an arm is kept if its paired mean is at least +40k and its interval's lower end is above 0; of the kept arms the one with the higher mean is chosen. Confirmation: the chosen arm passes if its interval's lower end is above 0. Held-out (after predeclared.md): the same, on 012's seeds, paired against 017's stored record games, after 28 of those games replay input for input on the build.",
+ "min_effect": 40000,
+ "summary": {
+  "017": {
+   "games": 1000,
+   "mean_score": 1799692.38,
+   "mean_lines": 393.044,
+   "median_lines": 415.0,
+   "share_lines_below_230": 0.005,
+   "share_lines_below_330": 0.062,
+   "line_cap_share": 0.459,
+   "tetris_rate": 0.48174759060054345,
+   "p_reach_29": 0.995,
+   "p_reach_39": 0.938,
+   "score_39_plus_all": 260264.28,
+   "score_39_plus_reached": 277467.24946695095,
+   "entry_29": {
+    "games": 995,
+    "max_height": 5.131658291457287,
+    "aggregate_height": 35.039195979899496,
+    "holes": 0.9165829145728643
+   },
+   "entry_39": {
+    "games": 938,
+    "max_height": 5.076759061833688,
+    "aggregate_height": 29.001066098081022,
+    "holes": 0.5149253731343284
+   },
+   "seconds_per_game": 493.438851
+  },
+  "v_h29": {
+   "games": 1000,
+   "mean_score": 1835513.26,
+   "mean_lines": 386.442,
+   "median_lines": 407.0,
+   "share_lines_below_230": 0.034,
+   "share_lines_below_330": 0.08,
+   "line_cap_share": 0.409,
+   "tetris_rate": 0.5205748857525838,
+   "p_reach_29": 0.966,
+   "p_reach_39": 0.92,
+   "score_39_plus_all": 248125.54,
+   "score_39_plus_reached": 269701.67391304346,
+   "entry_29": {
+    "games": 966,
+    "max_height": 7.057971014492754,
+    "aggregate_height": 43.11076604554865,
+    "holes": 0.6076604554865425
+   },
+   "entry_39": {
+    "games": 920,
+    "max_height": 4.958695652173913,
+    "aggregate_height": 28.28804347826087,
+    "holes": 0.5402173913043479
+   },
+   "seconds_per_game": 171.122774
+  }
+ },
+ "paired_vs_017": {
+  "v_h29": {
+   "total": {
+    "score": {
+     "mean": 35820.88,
+     "ci95_low": 8918.08,
+     "ci95_high": 63221.62,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -6.602,
+     "ci95_low": -11.458,
+     "ci95_high": -1.693,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 565,
+     "lower": 435,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 29442.38,
+     "ci95_low": 23643.5,
+     "ci95_high": 34981.06,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 30436.14,
+     "ci95_low": 22534.76,
+     "ci95_high": 38551.32,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": -11918.9,
+     "ci95_low": -23623.56,
+     "ci95_high": -14.76,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -12138.74,
+     "ci95_low": -26427.08,
+     "ci95_high": 2505.38,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": -0.03943238735231542
+  }
+ },
+ "passed": {
+  "v_h29": true
+ },
+ "baseline": "017's stored held-out record games (experiments/017-commit-rollouts/records/run.json.gz), 28 of them replayed on this build: heldout_replay_check.json"
+}
