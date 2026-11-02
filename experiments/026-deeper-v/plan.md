@@ -63,4 +63,6 @@ on V's own boards from 20 screening games, by band, mean and spread of
 ## Cost
 
 `backup` is ~1.7 ms a board (~25 placements: ~40 ms a commit decision). `d1b` adds about
-20 s a game, `d1a` ~10 s, `d2_k8` ~10 s (the adjust does k x k backups a decision: 16 for k=4, 64 for k=8, about 30 ms and 110 ms). Screening: ~400 games, ~10 min on 28 workers.
+20 s a game, `d1a` ~10 s. The adjust does k x k backups a decision (16 for k=4, 64 for
+k=8: ~30 ms and ~110 ms, ~600 adjust decisions a game): `d2_k4` ~20 s, `d2_k8` ~65 s.
+Screening: ~400 games, ~15-25 min on 28 workers.
