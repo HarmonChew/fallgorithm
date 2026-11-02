@@ -1,0 +1,82 @@
+{
+ "experiment": "026-deeper-v",
+ "games": [
+  {
+   "seed": 13770,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "seed": 45356,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "seed": 19813,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "d1a_before_its_level",
+   "seed": 13770,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "d1a_before_its_level",
+   "seed": 45356,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "d1a_before_its_level",
+   "seed": 19813,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "d1b_before_its_level",
+   "seed": 13770,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "d1b_before_its_level",
+   "seed": 45356,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "d1b_before_its_level",
+   "seed": 19813,
+   "match": true,
+   "got": null,
+   "want": null
+  }
+ ],
+ "matched": true,
+ "frozen_sha256": {
+  "v15": "cf6fc0bc71daf608bdcce82cd2aaaccc74ba1b7ef43e07950d96e0fdc37a04fe"
+ },
+ "abi_version": 24,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "60e97ae7473bd85136e9000390c95191f06e7167",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
