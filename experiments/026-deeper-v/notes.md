@@ -86,8 +86,28 @@ errors, not from a bias in V.
 * Direction Phase 1's gate ("about +40k, confirmed by the staged procedure") is passed
   on screening and development; there is no fresh confirmation set (025 used it).
 
-## Not done (needs the owner)
+## Held-out (012's 1,000 seeds, `heldout.json`) - a new record
 
-Confirmation (no unused seeds left) and a record attempt: `predeclared.md` and one
-1,000-game held-out run of `d3_d1b_k8` on 012's seeds, paired against 025's v_h29 record
-games (stored in `../025-hybrids/games/heldout-v_h29.json.gz`) and 017's.
+Owner's go-ahead 2026-11-02 for a record attempt without a confirmation stage (no unused
+seeds left). `predeclared.md` was committed before any game. Before any d3 game, 28 of
+017's and 28 of 025's v_h29 stored record games replayed input for input on this build
+(56/56, `heldout_replay_check.json`).
+
+| | mean score | mean / median lines | line cap | P(29) | P(39) | 39+ given 39 | Tetris rate | s/game |
+|---|---|---|---|---|---|---|---|---|
+| 017 | 1,799,692 | 393.0 / 415 | 46% | 99.5% | 93.8% | 277k | 48.2% | 493* |
+| v_h29 (record before) | 1,835,513 | 386.4 / 407 | 41% | 96.6% | 92.0% | 270k | 52.1% | 171* |
+| **d3_d1b_k8** | **2,071,704** | 414.6 / 429 | 48% | 99.1% | 96.2% | 231k | 56.8% | 113 |
+
+\* from their own runs.
+
+Paired against v_h29 (the rule): **+236.2k (95% CI +211.9k, +259.9k)**, 799/1,000 wins.
+**The predeclared rule is met: d3_d1b_k8 is the new record, 2,071,704.** Against 017:
++272.0k (+251.7k, +292.9k), 843/1,000 wins.
+
+By band against v_h29: +84k (18), +58k (19-28), +120k (29-38), -26k (39+); against 017:
++114k, +88k, +108k, -38k. The held-out gain matches development (+217k against v_h29,
++272k against 017): no shrinkage this time. Early top-outs (before 29) fall from 34 to 9.
+
+The one band where d3 is behind is 39+: 231k given reaching 39 against 017's 277k. That
+is the clearest next target (BetaTetris ~380k at 39+).
