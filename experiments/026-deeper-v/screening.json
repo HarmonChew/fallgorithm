@@ -7,7 +7,8 @@
   "d1a",
   "d1b",
   "d2_k4",
-  "d2_k8"
+  "d2_k8",
+  "d3_d1b_k8"
  ],
  "search": {
   "d1a": {
@@ -58,7 +59,7 @@
    "kind": "committed"
   },
   "fallgorithm": {
-   "commit": "e54512409d0cd327a8089dc923796776050f9bed",
+   "commit": "e1268813eab0c57f2ac95e1bf568a5d72b7cdbab",
    "dirty": false,
    "kind": "committed"
   }
@@ -232,6 +233,33 @@
     "holes": 1.1204819277108433
    },
    "seconds_per_game": 93.94058999999999
+  },
+  "d3_d1b_k8": {
+   "games": 100,
+   "mean_score": 2061697.6,
+   "mean_lines": 413.48,
+   "median_lines": 429.0,
+   "share_lines_below_230": 0.01,
+   "share_lines_below_330": 0.03,
+   "line_cap_share": 0.43,
+   "tetris_rate": 0.5667988778175486,
+   "p_reach_29": 0.99,
+   "p_reach_39": 0.97,
+   "score_39_plus_all": 211939.6,
+   "score_39_plus_reached": 218494.43298969071,
+   "entry_29": {
+    "games": 99,
+    "max_height": 7.262626262626263,
+    "aggregate_height": 44.94949494949495,
+    "holes": 0.4444444444444444
+   },
+   "entry_39": {
+    "games": 97,
+    "max_height": 5.628865979381444,
+    "aggregate_height": 29.11340206185567,
+    "holes": 0.3917525773195876
+   },
+   "seconds_per_game": 118.00787
   }
  },
  "paired_vs_v15": {
@@ -450,6 +478,60 @@
     }
    },
    "score_correlation": 0.02460357091989543
+  },
+  "d3_d1b_k8": {
+   "total": {
+    "score": {
+     "mean": 385480.6,
+     "ci95_low": 313710.4,
+     "ci95_high": 453060.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 45.44,
+     "ci95_low": 31.65,
+     "ci95_high": 58.88,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 91,
+     "lower": 9,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 71249.8,
+     "ci95_low": 57182.2,
+     "ci95_high": 85343.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 56001.6,
+     "ci95_low": 35182.4,
+     "ci95_high": 77561.8,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 161826.4,
+     "ci95_low": 119654.0,
+     "ci95_high": 201367.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 96402.8,
+     "ci95_low": 68147.6,
+     "ci95_high": 123918.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": -0.0703300557782444
   }
  },
  "paired_vs_017": {
@@ -722,12 +804,67 @@
     }
    },
    "score_correlation": -0.03490727714479599
+  },
+  "d3_d1b_k8": {
+   "total": {
+    "score": {
+     "mean": 283608.8,
+     "ci95_low": 219265.6,
+     "ci95_high": 345373.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 26.17,
+     "ci95_low": 14.02,
+     "ci95_high": 37.72,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 84,
+     "lower": 16,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 103064.0,
+     "ci95_low": 88961.4,
+     "ci95_high": 117404.8,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 85233.2,
+     "ci95_low": 66715.2,
+     "ci95_high": 103913.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 117778.2,
+     "ci95_low": 82304.4,
+     "ci95_high": 150642.2,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -22466.6,
+     "ci95_low": -61859.0,
+     "ci95_high": 16699.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": 0.022426332804893936
   }
  },
  "promoted": {
   "d1a": true,
   "d1b": true,
   "d2_k4": true,
-  "d2_k8": true
+  "d2_k8": true,
+  "d3_d1b_k8": true
  }
 }
