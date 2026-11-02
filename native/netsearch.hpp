@@ -106,8 +106,72 @@ public:
                 best = order;
                 best_total = total;
             }
+            if (deep_commit && deep2_k_ > 0 && level >= deep2_level_) {
+                roots_.emplace_back(total, order);
+            }
+        }
+        if (!roots_.empty()) {
+            best = deep2_commit(position);
+            roots_.clear();
         }
         return finish(best, choice);
+    }
+
+    // Experiment 027's search change: from level ``deep2_level`` on (only where the 026
+    // commit change is on too), the commit decision's best ``deep2_k`` placements by
+    // points + backup are rescored by points + ``backup2``, two unknown pieces deep. A
+    // ``deep2_k`` of 0 is off: the search is then 026's.
+    void set_deep2(int deep2_level, int deep2_k) {
+        deep2_level_ = deep2_level;
+        deep2_k_ = deep2_k;
+    }
+
+    // Two unknown pieces deep: the average, over the next piece by the NES odds after
+    // ``last`` (as backup), of the best of its ``deep2_k_`` placements of the highest
+    // points + V, each valued by its points + ``backup`` of the board it leaves; a piece
+    // with nowhere to go adds 0. 0 once the lines reach the cap. Uses ply2_ (backup uses
+    // ply_).
+    double backup2(const Columns& columns, int lines, int drought, int last, int start_level,
+                   bool double_killscreen, int interval) {
+        if (lines >= line_cap_) {
+            return 0.0;
+        }
+        const int level = level_for_lines(lines, start_level);
+        double total = 0.0;
+        for (int piece = 0; piece < piece_types; ++piece) {
+            const double odds = last < 0 ? 1.0 / piece_types : nes_odds(last, piece);
+            ply2_.run(columns, piece, Flight{}, gravity_period(level),
+                      gravity_rows(level, double_killscreen), interval, false);
+            const int after_drought = next_drought(drought, piece);
+            children_.clear();
+            for (const Reach& placement : ply2_.placements) {
+                const Settled settled = settle(columns, piece, placement.orientation,
+                                               placement.x, placement.y);
+                const int after = lines + settled.cleared;
+                const double points = clear_reward(settled.cleared, after, start_level);
+                children_.push_back({points + value(settled.columns, after, after_drought,
+                                                    piece, start_level),
+                                     points, settled.columns, after});
+            }
+            if (children_.empty()) {
+                continue;
+            }
+            std::stable_sort(children_.begin(), children_.end(),
+                             [](const Deep2Child& a, const Deep2Child& b) {
+                                 return a.first > b.first;
+                             });
+            const std::size_t kept = std::min(children_.size(),
+                                              static_cast<std::size_t>(deep2_k_));
+            double best = minus_infinity;
+            for (std::size_t i = 0; i < kept; ++i) {
+                const Deep2Child& child = children_[i];
+                best = std::max(best, child.points +
+                                backup(child.columns, child.lines, after_drought, piece,
+                                       start_level, double_killscreen, interval));
+            }
+            total += odds * best;
+        }
+        return total;
     }
 
     // Experiment 026's search changes (search only, not the prefiltered path). From
@@ -194,6 +258,33 @@ public:
     }
 
 private:
+    // The commit decision's best ``deep2_k_`` root placements (roots_: points + backup and
+    // the order, in enumeration order) rescored by points + backup2; the first of equal
+    // rescored values wins.
+    int deep2_commit(const Position& position) {
+        const int start = position.start_level;
+        std::stable_sort(roots_.begin(), roots_.end(),
+                         [](const auto& a, const auto& b) { return a.first > b.first; });
+        const std::size_t kept = std::min(roots_.size(), static_cast<std::size_t>(deep2_k_));
+        int best = roots_[0].second;
+        double best_value = minus_infinity;
+        for (std::size_t r = 0; r < kept; ++r) {
+            const Reach& placement = root_.placements[roots_[r].second];
+            const Settled settled = settle(position.columns, position.piece,
+                                           placement.orientation, placement.x, placement.y);
+            const int lines = position.lines + settled.cleared;
+            const double value_of = clear_reward(settled.cleared, lines, start) +
+                                    backup2(settled.columns, lines, position.drought,
+                                            position.piece, start, position.double_killscreen,
+                                            position.interval);
+            if (value_of > best_value) {
+                best_value = value_of;
+                best = roots_[r].second;
+            }
+        }
+        return best;
+    }
+
     bool finish(int order, Choice& choice) {
         const Reach& chosen = root_.placements[order];
         choice.found = true;
@@ -350,9 +441,19 @@ private:
     Searcher hand_{};
     int prefilter_ = 0;
     std::vector<Searcher::Candidate> candidates_;
-    ReachSearch root_, ply_;
+    ReachSearch root_, ply_, ply2_;
     int commit_level_ = 1 << 30, adjust_k_ = 0, adjust_max_level_ = 28;
     std::vector<Pair> pairs_;
+    // Experiment 027
+    struct Deep2Child {
+        double first = 0.0;   // points + V, the ranking
+        double points = 0.0;  // the clear's points
+        Columns columns{};
+        int lines = 0;
+    };
+    int deep2_level_ = 1 << 30, deep2_k_ = 0;
+    std::vector<std::pair<double, int>> roots_;
+    std::vector<Deep2Child> children_;
 };
 
 }  // namespace fallgorithm
