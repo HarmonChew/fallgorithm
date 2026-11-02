@@ -19,8 +19,8 @@ never been used, so confirmation has 200 seeds, not the roadmap's 500.
 |---|---|---|---|
 | `screening` | 100 | 017 (1,778k), V agent sweep 15 (1,676k), Experiment 025's three hybrids (v_h29, v_h39, h_v39) | yes: chose v_h29 for development (025, 2026-11-02) |
 | `development` | 500 | 017 (1,797k), V agent (1,719k), Experiment 025's v_h29 (1,852k) | yes: kept v_h29 (025, 2026-11-02) |
-| `confirmation` | 200 | none | no |
-| 012's 1,000 held-out seeds (`../012-native-cem/seeds.json`) | 1,000 | the established record benchmark: one predeclared config per record attempt (012 to 017; 017's 1,800k is the record) | - |
+| `confirmation` | 200 | 017 (1,763k), Experiment 025's v_h29 (1,845k, passed) | yes: v_h29 went on to the held-out run (025, 2026-11-02); spent, no fresh confirmation set is left |
+| 012's 1,000 held-out seeds (`../012-native-cem/seeds.json`) | 1,000 | the established record benchmark: one predeclared config per record attempt (012 to 017, then 025's v_h29: 1,836k, the record since 2026-11-02) | - |
 
 Games are stored replayable in `games/` (`<set>-<agent>.json.gz`; the 025 hybrids in
 `../025-hybrids/games/`).
