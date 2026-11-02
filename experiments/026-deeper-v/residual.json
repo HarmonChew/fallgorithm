@@ -1,0 +1,72 @@
+{
+ "experiment": "026-deeper-v",
+ "agent": "v15",
+ "seeds": [
+  13770,
+  45356,
+  19813,
+  5809,
+  33491,
+  17922,
+  45249,
+  61674,
+  42319,
+  64313,
+  35488,
+  22493,
+  36839,
+  7056,
+  45855,
+  63960,
+  28695,
+  10815,
+  60891,
+  11480
+ ],
+ "units": "points (backup_values and net_values, both in points)",
+ "bands": {
+  "18": {
+   "boards": 6776,
+   "mean_residual": 338.7662352782152,
+   "sd_residual": 3409.8169520111337,
+   "mean_value": 1077418.2764546508
+  },
+  "19-28": {
+   "boards": 5023,
+   "mean_residual": 326.64295315766225,
+   "sd_residual": 3547.697598913676,
+   "mean_value": 702571.6114621368
+  },
+  "29-38": {
+   "boards": 4864,
+   "mean_residual": 756.4029604979288,
+   "sd_residual": 3831.70287446287,
+   "mean_value": 328453.2845349284
+  },
+  "39+": {
+   "boards": 2409,
+   "mean_residual": -472.0482994568557,
+   "sd_residual": 5360.837324301819,
+   "mean_value": 171469.1662939444
+  },
+  "all": {
+   "boards": 19072,
+   "mean_residual": 339.67005088226114,
+   "sd_residual": 3865.856969620182,
+   "mean_value": 673252.3827186992
+  }
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "11ea8d78ccc59fb92f63e4a616b6142c7e286023",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "abi_version": 24
+}
