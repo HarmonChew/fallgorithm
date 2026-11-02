@@ -1,0 +1,44 @@
+{
+ "experiment": "026-deeper-v",
+ "stage": "heldout",
+ "part_a_017": {
+  "name": "017",
+  "compares": "inputs",
+  "games": 28,
+  "matched": 28,
+  "mismatches": [],
+  "abi_version": 24,
+  "versions": {
+   "engine": {
+    "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+    "dirty": false,
+    "kind": "committed"
+   },
+   "fallgorithm": {
+    "commit": "ff41fca95ccfc2a96ab0fa1a77a196af67b86439",
+    "dirty": false,
+    "kind": "committed"
+   }
+  }
+ },
+ "part_b_v_h29": {
+  "games": 28,
+  "matched": 28,
+  "mismatched_seeds": []
+ },
+ "games": 56,
+ "matched": 56,
+ "abi_version": 24,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "ff41fca95ccfc2a96ab0fa1a77a196af67b86439",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
