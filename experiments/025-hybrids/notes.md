@@ -93,8 +93,36 @@ scores what 017 scores.
   39+ even from 017's boards. The 39+ gap to BetaTetris (380k against 017's ~256k) is
   untouched by this experiment.
 
-## Not done (needs the owner's go-ahead)
+## Confirmation (200 confirmation seeds, `confirmation.json`)
 
-Confirmation (v_h29 on the 200 confirmation seeds, passes if its paired CI is above 0),
-then `predeclared.md` and one 1,000-game held-out run on 012's seeds paired against 017's
-stored record games.
+Owner's go-ahead 2026-11-02. 017 on these seeds: 1,763k. v_h29: 1,845k, paired **+82k
+(95% CI +27k, +134k)**, 116/200 wins: **passed** (rule: CI above 0). By band +29k, +46k,
++12k, -5k. `predeclared.md` was written and committed before any of these games.
+
+## Held-out (012's 1,000 seeds, `heldout.json`) - a new record
+
+Before any hybrid game, 017's frozen agent replayed 28/28 of its stored held-out record
+games input for input on this build (`heldout_replay_check.json`).
+
+| | mean score | mean / median lines | line cap | P(29) | P(39) | 39+ given 39 | Tetris rate | s/game |
+|---|---|---|---|---|---|---|---|---|
+| 017 (record) | 1,799,692 | 393.0 / 415 | 46% | 99.5% | 93.8% | 277k | 48.2% | 493* |
+| **v_h29** | **1,835,513** | 386.4 / 407 | 41% | 96.6% | 92.0% | 270k | 52.1% | 171 |
+
+\* 017's time is from its own run (another build and load).
+
+Paired: **+35.8k (95% CI +8.9k, +63.2k)**, 565/1,000 wins; lines -6.6 (-11.5, -1.7). The
+predeclared rule (CI above 0) is met: **v_h29 is the new record, 1,836k.** By band:
++29k (18), +30k (19-28), -12k (29-38, CI to 0), -12k (39+, n.s.).
+
+The held-out gain is smaller than development's (+55k) and confirmation's (+82k). Why
+(found after the result, so a lead, not a tested claim): V tops out before level 29 in
+34 of the 1,000 games (017: 5); those games average 588k against 017's 1,807k on the same
+seeds and cost -41k of the paired mean. **In the other 966 games the hybrid is +80k.** V's
+rare early top-outs are the hybrid's main weakness.
+
+## Next
+
+Direction Phase 1 (Experiment 026: deeper search with the frozen V) is approved. Its
+adjust-search arm (levels 18-28) is where an early top-out fix would show; worth
+counting V's deaths before 29 in every arm.
