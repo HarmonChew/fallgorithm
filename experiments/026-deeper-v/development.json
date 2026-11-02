@@ -1,0 +1,871 @@
+{
+ "experiment": "026-deeper-v",
+ "stage": "development",
+ "games": 500,
+ "seeds": "the register's development set",
+ "arms": [
+  "d1a",
+  "d1b",
+  "d2_k4",
+  "d2_k8",
+  "d3_d1b_k8"
+ ],
+ "search": {
+  "d1a": {
+   "commit_level": 39,
+   "adjust_k": 0,
+   "adjust_max_level": 28
+  },
+  "d1b": {
+   "commit_level": 29,
+   "adjust_k": 0,
+   "adjust_max_level": 28
+  },
+  "d2_k4": {
+   "commit_level": 1000,
+   "adjust_k": 4,
+   "adjust_max_level": 28
+  },
+  "d2_k8": {
+   "commit_level": 1000,
+   "adjust_k": 8,
+   "adjust_max_level": 28
+  },
+  "d3_d1a_k4": {
+   "commit_level": 39,
+   "adjust_k": 4,
+   "adjust_max_level": 28
+  },
+  "d3_d1a_k8": {
+   "commit_level": 39,
+   "adjust_k": 8,
+   "adjust_max_level": 28
+  },
+  "d3_d1b_k4": {
+   "commit_level": 29,
+   "adjust_k": 4,
+   "adjust_max_level": 28
+  },
+  "d3_d1b_k8": {
+   "commit_level": 29,
+   "adjust_k": 8,
+   "adjust_max_level": 28
+  }
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "360be2430e188631e728a51b9ae3215ae49a003a",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "abi_version": 24,
+ "frozen_sha256": {
+  "v15": "cf6fc0bc71daf608bdcce82cd2aaaccc74ba1b7ef43e07950d96e0fdc37a04fe",
+  "017": "42e66f89cc716ffd9104a7e63adf68d2b180e871453cedab1e9cbfcce43d4b4c"
+ },
+ "rule": "Primary metric: mean final score, paired by seed against v15's registered games (arm minus v15), 95% bootstrap interval of experiment012.paired. Screening: an arm is promoted if its paired mean is +40k or more. Development: an arm is kept if its paired mean is at least +40k and its interval's lower end is above 0; of the kept arms the one with the higher mean is chosen. 017's registered games are paired too (paired_vs_017) but are not part of the rule.",
+ "min_effect": 40000,
+ "summary": {
+  "v15": {
+   "games": 500,
+   "mean_score": 1719184.64,
+   "mean_lines": 375.312,
+   "median_lines": 383.0,
+   "share_lines_below_230": 0.02,
+   "share_lines_below_330": 0.156,
+   "line_cap_share": 0.17,
+   "tetris_rate": 0.5197595600460417,
+   "p_reach_29": 0.98,
+   "p_reach_39": 0.844,
+   "score_39_plus_all": 122057.32,
+   "score_39_plus_reached": 144617.6777251185,
+   "entry_29": {
+    "games": 490,
+    "max_height": 7.183673469387755,
+    "aggregate_height": 44.563265306122446,
+    "holes": 0.7387755102040816
+   },
+   "entry_39": {
+    "games": 422,
+    "max_height": 6.23696682464455,
+    "aggregate_height": 34.73696682464455,
+    "holes": 1.1872037914691944
+   },
+   "seconds_per_game": 3.854902
+  },
+  "017": {
+   "games": 500,
+   "mean_score": 1797286.48,
+   "mean_lines": 391.792,
+   "median_lines": 411.5,
+   "share_lines_below_230": 0.008,
+   "share_lines_below_330": 0.066,
+   "line_cap_share": 0.416,
+   "tetris_rate": 0.4847265896189815,
+   "p_reach_29": 0.992,
+   "p_reach_39": 0.934,
+   "score_39_plus_all": 256426.56,
+   "score_39_plus_reached": 274546.6381156317,
+   "entry_29": {
+    "games": 496,
+    "max_height": 4.963709677419355,
+    "aggregate_height": 33.693548387096776,
+    "holes": 0.9314516129032258
+   },
+   "entry_39": {
+    "games": 467,
+    "max_height": 4.937901498929336,
+    "aggregate_height": 28.160599571734476,
+    "holes": 0.47751605995717344
+   },
+   "seconds_per_game": 422.418402
+  },
+  "d1a": {
+   "games": 500,
+   "mean_score": 1768823.44,
+   "mean_lines": 391.546,
+   "median_lines": 429.0,
+   "share_lines_below_230": 0.02,
+   "share_lines_below_330": 0.156,
+   "line_cap_share": 0.358,
+   "tetris_rate": 0.5013561624943174,
+   "p_reach_29": 0.98,
+   "p_reach_39": 0.844,
+   "score_39_plus_all": 171696.12,
+   "score_39_plus_reached": 203431.42180094786,
+   "entry_29": {
+    "games": 490,
+    "max_height": 7.183673469387755,
+    "aggregate_height": 44.563265306122446,
+    "holes": 0.7387755102040816
+   },
+   "entry_39": {
+    "games": 422,
+    "max_height": 6.23696682464455,
+    "aggregate_height": 34.73696682464455,
+    "holes": 1.1872037914691944
+   },
+   "seconds_per_game": 13.2901
+  },
+  "d1b": {
+   "games": 500,
+   "mean_score": 1920847.76,
+   "mean_lines": 411.022,
+   "median_lines": 429.0,
+   "share_lines_below_230": 0.02,
+   "share_lines_below_330": 0.038,
+   "line_cap_share": 0.476,
+   "tetris_rate": 0.5082744962556749,
+   "p_reach_29": 0.98,
+   "p_reach_39": 0.962,
+   "score_39_plus_all": 212903.52,
+   "score_39_plus_reached": 221313.43035343036,
+   "entry_29": {
+    "games": 490,
+    "max_height": 7.183673469387755,
+    "aggregate_height": 44.563265306122446,
+    "holes": 0.7387755102040816
+   },
+   "entry_39": {
+    "games": 481,
+    "max_height": 5.4365904365904365,
+    "aggregate_height": 27.166320166320165,
+    "holes": 0.4802494802494803
+   },
+   "seconds_per_game": 29.644168
+  },
+  "d2_k4": {
+   "games": 500,
+   "mean_score": 1855755.44,
+   "mean_lines": 377.014,
+   "median_lines": 383.0,
+   "share_lines_below_230": 0.014,
+   "share_lines_below_330": 0.17,
+   "line_cap_share": 0.196,
+   "tetris_rate": 0.5833417326677524,
+   "p_reach_29": 0.986,
+   "p_reach_39": 0.83,
+   "score_39_plus_all": 129374.56,
+   "score_39_plus_reached": 155872.9638554217,
+   "entry_29": {
+    "games": 493,
+    "max_height": 6.811359026369169,
+    "aggregate_height": 40.70182555780933,
+    "holes": 0.42190669371196754
+   },
+   "entry_39": {
+    "games": 415,
+    "max_height": 6.125301204819277,
+    "aggregate_height": 32.82168674698795,
+    "holes": 0.9566265060240964
+   },
+   "seconds_per_game": 26.956468
+  },
+  "d2_k8": {
+   "games": 500,
+   "mean_score": 1862104.4,
+   "mean_lines": 377.476,
+   "median_lines": 383.5,
+   "share_lines_below_230": 0.01,
+   "share_lines_below_330": 0.146,
+   "line_cap_share": 0.19,
+   "tetris_rate": 0.5847894965507741,
+   "p_reach_29": 0.99,
+   "p_reach_39": 0.854,
+   "score_39_plus_all": 128326.08,
+   "score_39_plus_reached": 150264.7306791569,
+   "entry_29": {
+    "games": 495,
+    "max_height": 6.852525252525252,
+    "aggregate_height": 41.406060606060606,
+    "holes": 0.48484848484848486
+   },
+   "entry_39": {
+    "games": 427,
+    "max_height": 6.140515222482436,
+    "aggregate_height": 33.70257611241218,
+    "holes": 1.0515222482435598
+   },
+   "seconds_per_game": 92.78334600000001
+  },
+  "d3_d1b_k8": {
+   "games": 500,
+   "mean_score": 2068794.28,
+   "mean_lines": 413.266,
+   "median_lines": 429.0,
+   "share_lines_below_230": 0.01,
+   "share_lines_below_330": 0.046,
+   "line_cap_share": 0.462,
+   "tetris_rate": 0.5699960800065818,
+   "p_reach_29": 0.99,
+   "p_reach_39": 0.954,
+   "score_39_plus_all": 215120.36,
+   "score_39_plus_reached": 225493.0398322851,
+   "entry_29": {
+    "games": 495,
+    "max_height": 6.852525252525252,
+    "aggregate_height": 41.406060606060606,
+    "holes": 0.48484848484848486
+   },
+   "entry_39": {
+    "games": 477,
+    "max_height": 5.368972746331237,
+    "aggregate_height": 25.92662473794549,
+    "holes": 0.44654088050314467
+   },
+   "seconds_per_game": 118.52958
+  }
+ },
+ "paired_vs_v15": {
+  "d1a": {
+   "total": {
+    "score": {
+     "mean": 49638.8,
+     "ci95_low": 40198.12,
+     "ci95_high": 59259.44,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 16.234,
+     "ci95_low": 12.848,
+     "ci95_high": 19.734,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 293,
+     "lower": 112,
+     "equal": 95
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 49638.8,
+     "ci95_low": 40198.12,
+     "ci95_high": 59259.44,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": 0.9066923850779436
+  },
+  "d1b": {
+   "total": {
+    "score": {
+     "mean": 201663.12,
+     "ci95_low": 182053.92,
+     "ci95_high": 220070.28,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 35.71,
+     "ci95_low": 30.48,
+     "ci95_high": 40.618,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 418,
+     "lower": 72,
+     "equal": 10
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 110816.92,
+     "ci95_low": 97966.96,
+     "ci95_high": 123691.68,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 90846.2,
+     "ci95_low": 78340.72,
+     "ci95_high": 102585.48,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": 0.6137134109034298
+  },
+  "d2_k4": {
+   "total": {
+    "score": {
+     "mean": 136570.8,
+     "ci95_low": 105475.84,
+     "ci95_high": 167048.28,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 1.702,
+     "ci95_low": -4.844,
+     "ci95_high": 8.114,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 352,
+     "lower": 148,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 76479.04,
+     "ci95_low": 69761.76,
+     "ci95_high": 82978.72,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 52069.08,
+     "ci95_low": 42075.76,
+     "ci95_high": 62001.04,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 705.44,
+     "ci95_low": -17279.72,
+     "ci95_high": 18630.68,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 7317.24,
+     "ci95_low": -5666.32,
+     "ci95_high": 19678.16,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": -0.03646567866906162
+  },
+  "d2_k8": {
+   "total": {
+    "score": {
+     "mean": 142919.76,
+     "ci95_low": 113024.56,
+     "ci95_high": 173195.68,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 2.164,
+     "ci95_low": -5.014,
+     "ci95_high": 9.004,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 349,
+     "lower": 151,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 79235.76,
+     "ci95_low": 72587.0,
+     "ci95_high": 85725.36,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 53106.76,
+     "ci95_low": 43881.96,
+     "ci95_high": 62337.88,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 4308.48,
+     "ci95_low": -13319.92,
+     "ci95_high": 22046.64,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 6268.76,
+     "ci95_low": -7843.2,
+     "ci95_high": 19925.88,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": -0.03743121749112954
+  },
+  "d3_d1b_k8": {
+   "total": {
+    "score": {
+     "mean": 349609.64,
+     "ci95_low": 320565.84,
+     "ci95_high": 377934.72,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 37.954,
+     "ci95_low": 31.73,
+     "ci95_high": 43.86,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 459,
+     "lower": 41,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 79235.76,
+     "ci95_low": 72587.0,
+     "ci95_high": 85725.36,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 53106.76,
+     "ci95_low": 43881.96,
+     "ci95_high": 62337.88,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 124204.08,
+     "ci95_low": 108300.16,
+     "ci95_high": 140485.36,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 93063.04,
+     "ci95_low": 80840.56,
+     "ci95_high": 104807.48,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": -0.07469370909796784
+  }
+ },
+ "paired_vs_017": {
+  "v15": {
+   "total": {
+    "score": {
+     "mean": -78101.84,
+     "ci95_low": -109558.6,
+     "ci95_high": -45803.76,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -16.48,
+     "ci95_low": -22.844,
+     "ci95_high": -9.88,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 195,
+     "lower": 305,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 28926.32,
+     "ci95_low": 21965.24,
+     "ci95_high": 36098.64,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 41345.68,
+     "ci95_low": 31475.6,
+     "ci95_high": 51457.52,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": -14004.6,
+     "ci95_low": -30317.44,
+     "ci95_high": 2430.48,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -134369.24,
+     "ci95_low": -151803.2,
+     "ci95_high": -116643.64,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": -0.016794335226495795
+  },
+  "d1a": {
+   "total": {
+    "score": {
+     "mean": -28463.04,
+     "ci95_low": -60481.72,
+     "ci95_high": 3960.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -0.246,
+     "ci95_low": -6.754,
+     "ci95_high": 6.388,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 224,
+     "lower": 276,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 28926.32,
+     "ci95_low": 21965.24,
+     "ci95_high": 36098.64,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 41345.68,
+     "ci95_low": 31475.6,
+     "ci95_high": 51457.52,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": -14004.6,
+     "ci95_low": -30317.44,
+     "ci95_high": 2430.48,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -84730.44,
+     "ci95_low": -102107.32,
+     "ci95_high": -67015.92,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": -0.0047735322601296214
+  },
+  "d1b": {
+   "total": {
+    "score": {
+     "mean": 123561.28,
+     "ci95_low": 93881.44,
+     "ci95_high": 153597.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 19.23,
+     "ci95_low": 13.764,
+     "ci95_high": 24.82,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 342,
+     "lower": 158,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 28926.32,
+     "ci95_low": 21965.24,
+     "ci95_high": 36098.64,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 41345.68,
+     "ci95_low": 31475.6,
+     "ci95_high": 51457.52,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 96812.32,
+     "ci95_low": 81920.2,
+     "ci95_high": 111976.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -43523.04,
+     "ci95_low": -59613.16,
+     "ci95_high": -27461.28,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": 0.1197168542588897
+  },
+  "d2_k4": {
+   "total": {
+    "score": {
+     "mean": 58468.96,
+     "ci95_low": 27404.0,
+     "ci95_high": 89170.76,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -14.778,
+     "ci95_low": -20.916,
+     "ci95_high": -8.628,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 300,
+     "lower": 200,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 105405.36,
+     "ci95_low": 98949.2,
+     "ci95_high": 111786.36,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 93414.76,
+     "ci95_low": 84589.32,
+     "ci95_high": 102161.44,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": -13299.16,
+     "ci95_low": -29267.68,
+     "ci95_high": 2815.32,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -127052.0,
+     "ci95_low": -144501.28,
+     "ci95_high": -109423.36,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": 0.04798613456913411
+  },
+  "d2_k8": {
+   "total": {
+    "score": {
+     "mean": 64817.92,
+     "ci95_low": 34152.68,
+     "ci95_high": 95346.16,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": -14.316,
+     "ci95_low": -20.392,
+     "ci95_high": -8.206,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 293,
+     "lower": 207,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 108162.08,
+     "ci95_low": 101800.56,
+     "ci95_high": 114525.56,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 94452.44,
+     "ci95_low": 85674.64,
+     "ci95_high": 103104.08,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": -9696.12,
+     "ci95_low": -26140.04,
+     "ci95_high": 6377.16,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -128100.48,
+     "ci95_low": -144787.76,
+     "ci95_high": -111054.68,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": 0.04152614029734279
+  },
+  "d3_d1b_k8": {
+   "total": {
+    "score": {
+     "mean": 271507.8,
+     "ci95_low": 242897.28,
+     "ci95_high": 300253.16,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 21.474,
+     "ci95_low": 15.836,
+     "ci95_high": 26.954,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 427,
+     "lower": 73,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 108162.08,
+     "ci95_low": 101800.56,
+     "ci95_high": 114525.56,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 94452.44,
+     "ci95_low": 85674.64,
+     "ci95_high": 103104.08,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 110199.48,
+     "ci95_low": 96127.64,
+     "ci95_high": 124695.8,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -41306.2,
+     "ci95_low": -57931.68,
+     "ci95_high": -24749.84,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": 0.022871725397441964
+  }
+ },
+ "kept": {
+  "d1a": true,
+  "d1b": true,
+  "d2_k4": true,
+  "d2_k8": true,
+  "d3_d1b_k8": true
+ },
+ "chosen": "d3_d1b_k8"
+}
