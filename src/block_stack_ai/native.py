@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 23
+ABI_VERSION = 24
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -276,6 +276,11 @@ def load() -> Any:
                                    C.c_int, C.c_int, C.c_int, C.POINTER(C.c_uint8), C.c_int,
                                    C.POINTER(C.c_int64)]
     lib.fn_hybrid_game.restype = C.c_int
+    lib.fn_deep_net_game.argtypes = [C.c_char_p, C.c_int, C.c_int, C.c_int, C.c_int, C.c_char_p,
+                                     C.c_char_p, C.c_int, C.c_int, C.c_int, C.c_int, C.c_int,
+                                     C.c_int, C.c_int, C.POINTER(C.c_uint8), C.c_int,
+                                     C.POINTER(C.c_int64)]
+    lib.fn_deep_net_game.restype = C.c_int
     lib.fn_playout_game.argtypes = [C.c_char_p, C.c_int, C.c_char_p, C.c_int, C.c_char_p, C.c_int,
                                     C.c_int, C.c_int, C.POINTER(Params),
                                     C.c_char_p, C.c_char_p, C.c_int, C.c_int, C.c_int, C.c_int,
@@ -709,6 +714,24 @@ def hybrid_game(net: bytes, game: dict[str, Any], seed: int, *, v_first: bool,
         limits.tap_interval, limits.reaction_frames, inputs, max(1, frame_cap), out)
     if status:
         raise NativeError(f"fn_hybrid_game failed with {status}")
+    return _played(inputs, out)
+
+
+def deep_net_game(net: bytes, game: dict[str, Any], seed: int, *, commit_level: int,
+                  adjust_k: int, adjust_max_level: int, line_cap: int, frame_cap: int,
+                  limits: Limits) -> dict[str, Any]:
+    """Experiment 026: :func:`net_game`'s agent (no prefilter) with the deeper search of
+    NetSearcher::set_deep: the commit decision from level ``commit_level`` on values boards
+    by the backup, and the adjust decision up to ``adjust_max_level`` rescores its best
+    ``adjust_k`` pairs by the backup. A huge ``commit_level`` and ``adjust_k`` 0 are off."""
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    status = load().fn_deep_net_game(
+        net, len(net), commit_level, adjust_k, adjust_max_level, game["ruleset"].encode(),
+        game["mode"].encode(), game["start_level"], game["height"], seed, line_cap, frame_cap,
+        limits.tap_interval, limits.reaction_frames, inputs, max(1, frame_cap), out)
+    if status:
+        raise NativeError(f"fn_deep_net_game failed with {status}")
     return _played(inputs, out)
 
 

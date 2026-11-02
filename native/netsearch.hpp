@@ -18,6 +18,7 @@
 // choice (made within its beam of 2) but a prefilter of 1 is not 015's agent.
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <vector>
 
@@ -72,6 +73,13 @@ public:
             return true;
         }
         const int start = position.start_level;
+        if (position.next_piece >= 0 && adjust_k_ > 0 && level <= adjust_max_level_) {
+            int pick = 0;
+            if (deep_adjust(position, pick)) {
+                return finish(pick, choice);
+            }
+        }
+        const bool deep_commit = position.next_piece < 0 && level >= commit_level_;
         int best = 0;
         double best_total = minus_infinity;
         for (int order = 0; order < static_cast<int>(root_.placements.size()); ++order) {
@@ -80,7 +88,14 @@ public:
                                            placement.orientation, placement.x, placement.y);
             const int lines = position.lines + settled.cleared;
             double total = clear_reward(settled.cleared, lines, start);
-            if (position.next_piece < 0) {
+            if (deep_commit) {
+                // Experiment 026: the backup (expectimax over the next piece) instead of V.
+                // Same drought and last as the value call below: backup's drought counts
+                // ``last``, and the agent's drought already counts the current piece. backup
+                // runs ply_, not root_, so root_.placements stays intact.
+                total += backup(settled.columns, lines, position.drought, position.piece, start,
+                                position.double_killscreen, position.interval);
+            } else if (position.next_piece < 0) {
                 // The agent's drought already counts the current piece.
                 total += value(settled.columns, lines, position.drought, position.piece, start);
             } else {
@@ -91,12 +106,17 @@ public:
                 best_total = total;
             }
         }
-        const Reach& chosen = root_.placements[best];
-        choice.found = true;
-        choice.orientation = chosen.orientation;
-        choice.x = chosen.x;
-        choice.y = chosen.y;
-        return root_.masks(chosen, choice.masks);
+        return finish(best, choice);
+    }
+
+    // Experiment 026's search changes (search only, not the prefiltered path). From
+    // ``commit_level`` on the commit decision values a board by ``backup``; at levels up to
+    // ``adjust_max_level`` the adjust decision rescores its best ``adjust_k`` pairs by
+    // ``backup``. ``adjust_k`` 0 and a huge ``commit_level`` are off: the search is then 020's.
+    void set_deep(int commit_level, int adjust_k, int adjust_max_level) {
+        commit_level_ = commit_level;
+        adjust_k_ = adjust_k;
+        adjust_max_level_ = adjust_max_level;
     }
 
     // Experiment 013's exploration (agent.hpp): a random root placement instead.
@@ -171,6 +191,85 @@ public:
     }
 
 private:
+    bool finish(int order, Choice& choice) {
+        const Reach& chosen = root_.placements[order];
+        choice.found = true;
+        choice.orientation = chosen.orientation;
+        choice.x = chosen.x;
+        choice.y = chosen.y;
+        return root_.masks(chosen, choice.masks);
+    }
+
+    // One (current, preview) pair left on the board ``columns``.
+    struct Pair {
+        int order = 0;
+        double points = 0.0;  // both clears' points
+        double total = 0.0;   // points plus V
+        Columns columns{};
+        int lines = 0, drought = 0;
+    };
+
+    // The adjust with the best ``adjust_k_`` pairs rescored by backup. Every pair is valued
+    // as best_preview does (its boards are copied out first: backup reuses ply_). Returns
+    // false if no pair exists, leaving the ordinary search to decide.
+    bool deep_adjust(const Position& position, int& pick) {
+        const int start = position.start_level;
+        pairs_.clear();
+        for (int order = 0; order < static_cast<int>(root_.placements.size()); ++order) {
+            const Reach& placement = root_.placements[order];
+            const Settled settled = settle(position.columns, position.piece,
+                                           placement.orientation, placement.x, placement.y);
+            const int lines = position.lines + settled.cleared;
+            const double first = clear_reward(settled.cleared, lines, start);
+            const int level = level_for_lines(lines, start);
+            ply_.run(settled.columns, position.next_piece, Flight{}, gravity_period(level),
+                     gravity_rows(level, position.double_killscreen), position.interval, false);
+            // The drought after both pieces, as in best_preview.
+            const int drought = position.next_piece == I ? 0
+                                : position.drought == 0 ? 1 : position.drought + 1;
+            for (const Reach& second : ply_.placements) {
+                const Settled both = settle(settled.columns, position.next_piece,
+                                            second.orientation, second.x, second.y);
+                const int after = lines + both.cleared;
+                Pair pair;
+                pair.order = order;
+                pair.points = first + clear_reward(both.cleared, after, start);
+                pair.total = pair.points +
+                             value(both.columns, after, drought, position.next_piece, start);
+                pair.columns = both.columns;
+                pair.lines = after;
+                pair.drought = drought;
+                pairs_.push_back(pair);
+            }
+        }
+        if (pairs_.empty()) {
+            return false;
+        }
+        // The best adjust_k_ pairs by total, ties in enumeration order.
+        std::vector<int> index(pairs_.size());
+        for (std::size_t i = 0; i < index.size(); ++i) {
+            index[i] = static_cast<int>(i);
+        }
+        const std::size_t keep = std::min(index.size(), static_cast<std::size_t>(adjust_k_));
+        std::stable_sort(index.begin(), index.end(), [this](int a, int b) {
+            return pairs_[a].total > pairs_[b].total;
+        });
+        double best_total = minus_infinity;
+        pick = pairs_[index[0]].order;
+        for (std::size_t i = 0; i < keep; ++i) {
+            const Pair& pair = pairs_[index[i]];
+            const double total = pair.points +
+                                 backup(pair.columns, pair.lines, pair.drought,
+                                        position.next_piece, start, position.double_killscreen,
+                                        position.interval);
+            if (total > best_total) {
+                best_total = total;
+                pick = pair.order;
+            }
+        }
+        return true;
+    }
+
     // The search over the hand search's best ``prefilter_`` placements, in its order.
     bool search_prefiltered(const Position& position, Choice& choice) {
         if (!hand_.search(position, choice)) {
@@ -232,6 +331,8 @@ private:
     int prefilter_ = 0;
     std::vector<Searcher::Candidate> candidates_;
     ReachSearch root_, ply_;
+    int commit_level_ = 1 << 30, adjust_k_ = 0, adjust_max_level_ = 28;
+    std::vector<Pair> pairs_;
 };
 
 }  // namespace fallgorithm
