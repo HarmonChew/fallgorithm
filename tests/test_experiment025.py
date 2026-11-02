@@ -13,7 +13,7 @@ import numpy as np
 import pytest
 
 from block_stack_ai import experiment013 as e13, experiment019 as e19, native, register
-from block_stack_ai import experiment025 as e25, runner
+from block_stack_ai import experiment025 as e25, runner, step0a
 from test_experiment020 import _random_net
 
 pytestmark = pytest.mark.native
@@ -205,7 +205,7 @@ def test_run_resumes_and_refuses_a_mismatched_header(monkeypatch, tmp_path):
     frozen = _cheap(monkeypatch, tmp_path)
     seeds = [3, 4]
     monkeypatch.setattr(register, "set_seeds", lambda name: seeds)
-    monkeypatch.setattr(e25, "summarize", lambda stage: {})
+    monkeypatch.setattr(e25, "summarize", lambda stage, **kw: {})
     header = e25._header("v_h29", seeds, runner._record_versions())
     e25.PARTIAL.mkdir(parents=True)
     partial = e25.PARTIAL / "screening-v_h29.partial.jsonl"
@@ -280,3 +280,68 @@ def test_wiring_check_matches_the_references_on_a_cheap_config(monkeypatch, tmp_
         {"seed": 3, "inputs": "AAAA"} if name == "017" else
         {"seed": 3, "score": v_ref["score"], "lines": v_ref["lines"]}])
     assert not e25.wiring_check(1)["matched"]
+
+
+def _json(name, data):
+    (e25.OUT / name).write_text(json.dumps(data))
+
+
+def test_confirmation_plays_only_the_chosen_arm(monkeypatch, tmp_path):
+    _cheap(monkeypatch, tmp_path)
+    monkeypatch.setattr(register, "set_seeds", lambda name: [3])
+    with pytest.raises(ValueError, match="chosen"):  # no development.json
+        e25.run("confirmation", ["v_h29"], 1)
+    _json("development.json", {"chosen": None})
+    with pytest.raises(ValueError, match="chosen"):
+        e25.run("confirmation", ["v_h29"], 1)
+    _json("development.json", {"chosen": "v_h29"})
+    with pytest.raises(ValueError, match="chosen"):
+        e25.run("confirmation", ["v_h29", "v_h39"], 1)
+    with pytest.raises(ValueError, match="chosen"):
+        e25.run("confirmation", ["h_v39"], 1)
+
+
+def test_heldout_needs_confirmation_predeclaration_and_a_matching_replay(monkeypatch, tmp_path):
+    _cheap(monkeypatch, tmp_path)
+    monkeypatch.setattr(e25, "_seeds", lambda stage: [3])
+    with pytest.raises(ValueError, match="missing"):
+        e25.run("heldout", ["v_h29"], 1)
+    _json("confirmation.json", {"passed": {"v_h29": True, "v_h39": False}})
+    with pytest.raises(ValueError, match="did not pass"):
+        e25.run("heldout", ["v_h39"], 1)
+    with pytest.raises(ValueError, match="predeclared.md"):
+        e25.run("heldout", ["v_h29"], 1)
+    (e25.OUT / "predeclared.md").write_text("x")
+    replay = {"games": 28, "matched": 27, "mismatches": []}
+    monkeypatch.setattr(register, "check_frozen", lambda name, games, jobs: replay)
+    with pytest.raises(ValueError, match="27 of 28"):
+        e25.run("heldout", ["v_h29"], 1)
+    assert json.loads((e25.PARTIAL / e25.REPLAY_CHECK).read_text())["matched"] == 27
+    assert not (e25.OUT / e25.REPLAY_CHECK).exists()
+    assert not e25.games_path("heldout", "v_h29").exists()
+
+
+def test_summarize_confirmation_and_heldout_write_passed(monkeypatch, tmp_path):
+    base = _fake(monkeypatch, tmp_path, "confirmation", {"v_h29": [10_000, 20_000, 30_000]})
+    assert e25.summarize("confirmation")["passed"] == {"v_h29": True}
+    shutil.rmtree(e25.GAMES)
+    _fake(monkeypatch, tmp_path, "confirmation", {"v_h29": [-10_000, 0, 5_000]})
+    assert e25.summarize("confirmation")["passed"] == {"v_h29": False}
+    # heldout: the baseline is 017's stored record, not a register file
+    monkeypatch.setattr(e25, "_seeds", lambda stage: [0, 1, 2])
+    monkeypatch.setattr(step0a, "heldout_017", lambda jobs: base)
+    _store(e25.games_path("heldout", "v_h29"), [
+        _episode(s, 1000 * (s + 1) + 9_000, 100, 0, (1, 2, 3, 4)) for s in range(3)])
+    result = e25.summarize("heldout")
+    assert result["passed"] == {"v_h29": True} and "v15" not in result["summary"]
+    assert "012" in result["seeds"] and "records/run.json.gz" in result["baseline"]
+    monkeypatch.setattr(e25, "_seeds", lambda stage: [2, 1, 0])
+    with pytest.raises(ValueError, match="in order"):
+        e25.summarize("heldout")
+
+
+def test_summarize_uses_the_versions_it_is_given(monkeypatch, tmp_path):
+    _fake(monkeypatch, tmp_path, "screening", {"v_h29": [1, 2, 3]})
+    monkeypatch.setattr(runner, "_record_versions", lambda: {"now": True})
+    assert e25.summarize("screening", versions={"then": True})["versions"] == {"then": True}
+    assert e25.summarize("screening")["versions"] == {"now": True}
