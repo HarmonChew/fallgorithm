@@ -4,13 +4,16 @@
     python -m block_stack_ai.experiment026 screen [--jobs N]
     python -m block_stack_ai.experiment026 screen-d3 [--jobs N]
     python -m block_stack_ai.experiment026 develop [--arms ARM ...] [--jobs N]
+    python -m block_stack_ai.experiment026 heldout [--arms ARM] [--jobs N]
     python -m block_stack_ai.experiment026 summarize STAGE
     python -m block_stack_ai.experiment026 residual [--jobs N]
 
 Each arm plays the register's screening (100) or development (500) seeds with 023's value
 agent (frozen ``v15``) and one deeper-search change (native/netsearch.hpp ``set_deep``,
 see plan.md); ``summarize`` pairs every arm with v15's registered games on the same seeds
-(the rule) and with 017's (reported only). ``residual`` is the Bellman-residual diagnostic.
+(the rule) and with 017's (reported only). ``heldout`` plays development's chosen arm on
+Experiment 012's held-out seeds against 025's record games of v_h29 (the rule) and 017's
+stored record games (reported). ``residual`` is the Bellman-residual diagnostic.
 """
 
 from __future__ import annotations
@@ -29,14 +32,16 @@ from typing import Any
 
 import numpy as np
 
-from . import experiment013 as e13, native, register, runner
+from . import experiment013 as e13, experiment025 as e25, native, register, runner
 from .experiment025 import _entry, _mean, _paired, _resume, _summary  # noqa: F401
 
 OUT = runner.PROJECT_ROOT / "experiments" / "026-deeper-v"
 GAMES = OUT / "games"
 PARTIAL = runner.PROJECT_ROOT / "runs" / "026"
 SCHEMA = "fallgorithm.register.games/1"
-STAGES = ("screening", "development")
+STAGES = ("screening", "development", "heldout")
+REPLAY_CHECK = "heldout_replay_check.json"
+REPLAY_GAMES = 28
 OFF = 1000  # a commit level no game reaches: the commit change is off
 ADJUST_MAX_LEVEL = 28
 # arm: (commit level, adjust k); the combination arms d3_<d1 arm>_<d2 arm without "d2_">
@@ -50,7 +55,11 @@ RULE = ("Primary metric: mean final score, paired by seed against v15's register
         "is promoted if its paired mean is +40k or more. Development: an arm is kept if its "
         "paired mean is at least +40k and its interval's lower end is above 0; of the kept "
         "arms the one with the higher mean is chosen. 017's registered games are paired too "
-        "(paired_vs_017) but are not part of the rule.")
+        "(paired_vs_017) but are not part of the rule. Held-out (after predeclared.md): the chosen "
+        "arm passes if its interval's lower end against 025's record games of v_h29 on 012's "
+        "held-out seeds (paired_vs_v_h29) is above 0, after 28 of 017's stored games and 28 of "
+        "v_h29's replay input for input on the build; 017's stored games are reported "
+        "(paired_vs_017).")
 
 _load, _write = e13._load, e13._write
 WIRING = OUT / "wiring_check.json"
@@ -138,6 +147,10 @@ def _require_ready(stage: str, seeds: list[int]) -> None:
             wiring.get("frozen_sha256") != {"v15": _sha("v15")}:
         raise ValueError(f"{WIRING} is missing, not all matched, or from another build or "
                          "frozen agent: run check first")
+    if stage == "heldout":  # stored records: no frozen-sha check
+        e25._baseline(stage)
+        _heldout_v_h29(seeds)
+        return
     for name in ("v15", "017"):
         path = register.games_path(stage, name)
         if not path.exists():
@@ -147,6 +160,43 @@ def _require_ready(stage: str, seeds: list[int]) -> None:
             raise ValueError(f"{path} does not cover exactly the {stage} seeds in order")
         if base["frozen_sha256"] != _sha(name):
             raise ValueError(f"{path} was played with another frozen {name} than the current one")
+
+
+def _heldout_v_h29(seeds: list[int]) -> list[dict[str, Any]]:
+    """025's record games of v_h29, checked to be the held-out seeds in order."""
+    path = e25.games_path("heldout", "v_h29")
+    if not path.exists():
+        raise ValueError(f"{path} is missing: 025 has not played v_h29 on the held-out seeds")
+    episodes = e25._load_arm("heldout", "v_h29")["episodes"]
+    if [e["seed"] for e in episodes] != seeds:
+        raise ValueError(f"{path} does not cover exactly the held-out seeds in order")
+    return episodes
+
+
+def _chosen() -> str | None:
+    path = OUT / "development.json"
+    return _load(path).get("chosen") if path.exists() else None
+
+
+def heldout_replay(jobs: int) -> dict[str, Any]:
+    """(a) 28 of 017's stored held-out games replayed on this build (register.check_frozen);
+    (b) the first 28 of 025's v_h29 record games replayed, inputs compared."""
+    first = register.check_frozen("017", REPLAY_GAMES, jobs)
+    frozen017, _, net = e25.frozen_configs()
+    stored = _heldout_v_h29(e25._seeds("heldout"))[:REPLAY_GAMES]
+    work = [("v_h29", frozen017, net, e["seed"]) for e in stored]
+    if jobs > 1:
+        with Pool(jobs) as pool:
+            played = pool.map(e25.play_arm_game, work, chunksize=1)
+    else:
+        played = [e25.play_arm_game(job) for job in work]
+    bad = [e["seed"] for e, got in zip(stored, played) if got["inputs"] != e["inputs"]]
+    return {"experiment": "026-deeper-v", "stage": "heldout",
+            "part_a_017": first, "part_b_v_h29": {
+                "games": len(stored), "matched": len(stored) - len(bad), "mismatched_seeds": bad},
+            "games": first["games"] + len(stored),
+            "matched": first["matched"] + len(stored) - len(bad),
+            "abi_version": native.ABI_VERSION}
 
 
 def _header(arm: str, seeds: list[int], versions: dict[str, Any]) -> dict[str, Any]:
@@ -202,14 +252,30 @@ def run(stage: str, arms: list[str], jobs: int) -> dict[str, Any]:
         raise ValueError(f"arms must be some of {tuple(ALL_ARMS)}, not {arms}")
     if stage == "development":
         _promoted(arms)
+    elif stage == "heldout":
+        chosen = _chosen()
+        if chosen is None or arms != [chosen]:
+            raise ValueError(f"the held-out stage plays only development's chosen arm "
+                             f"({chosen}), not {arms}")
+        if not (OUT / "predeclared.md").exists():
+            raise ValueError(f"{OUT / 'predeclared.md'} is missing: predeclare first")
     for arm in arms:
         if games_path(stage, arm).exists():
             raise ValueError(f"{games_path(stage, arm)} exists already")
-    seeds = register.set_seeds(stage)
+    seeds = e25._seeds(stage)
     _require_ready(stage, seeds)
     versions = runner._record_versions()
-    frozen, net = register.load_frozen("v15")
     PARTIAL.mkdir(parents=True, exist_ok=True)
+    if stage == "heldout":  # every call, also a resume; kept out of the tree until the end
+        replay = heldout_replay(jobs) | {"versions": versions}
+        _write(PARTIAL / REPLAY_CHECK, replay)
+        if replay["matched"] != replay["games"]:
+            a, b = replay["part_a_017"], replay["part_b_v_h29"]
+            raise ValueError(
+                f"held-out replay failed: {a['matched']} of {a['games']} stored games of 017 "
+                f"and {b['matched']} of {b['games']} of 025's v_h29 replay input for input "
+                f"on this build (mismatched v_h29 seeds {b['mismatched_seeds']})")
+    frozen, net = register.load_frozen("v15")
     headers = {arm: _header(arm, seeds, versions) for arm in arms}
     partials = {arm: PARTIAL / f"{stage}-{arm}.partial.jsonl" for arm in arms}
     done = {arm: _resume(partials[arm], headers[arm]) for arm in arms}
@@ -243,6 +309,8 @@ def run(stage: str, arms: list[str], jobs: int) -> dict[str, Any]:
         with gzip.open(games_path(stage, arm), "wt", encoding="utf-8") as out:
             json.dump(record, out, separators=(",", ":"))
         partials[arm].unlink()
+    if stage == "heldout":
+        (PARTIAL / REPLAY_CHECK).replace(OUT / REPLAY_CHECK)
     return summarize(stage, versions=versions)
 
 
@@ -264,6 +332,8 @@ def summarize(stage: str, versions: dict[str, Any] | None = None) -> dict[str, A
     """Write OUT/<stage>.json: the summaries, the paired results and the rule's verdicts."""
     if stage not in STAGES:
         raise ValueError(f"stage must be one of {STAGES}")
+    if stage == "heldout":
+        return _summarize_heldout(versions)
     seeds = register.set_seeds(stage)
     base = _episodes(stage, "v15", seeds)
     episodes = {"v15": base, "017": _episodes(stage, "017", seeds)}
@@ -296,6 +366,42 @@ def summarize(stage: str, versions: dict[str, Any] | None = None) -> dict[str, A
         result["kept"] = kept
         result["chosen"] = max((a for a in present if kept[a]), key=mean.get, default=None)
     _write(OUT / f"{stage}.json", result)
+    return result
+
+
+def _summarize_heldout(versions: dict[str, Any] | None) -> dict[str, Any]:
+    """OUT/heldout.json: the chosen arm paired with 025's v_h29 record games (the rule) and
+    017's stored record games (reported)."""
+    seeds = e25._seeds("heldout")
+    base = _heldout_v_h29(seeds)
+    record = e25._baseline("heldout")
+    present = [arm for arm in ALL_ARMS if games_path("heldout", arm).exists()]
+    if not present:
+        raise ValueError("no arm has played the heldout set")
+    episodes = {"v_h29": base, "017": record}
+    for arm in present:
+        episodes[arm] = _load_arm("heldout", arm)["episodes"]
+        if [e["seed"] for e in episodes[arm]] != seeds:
+            raise ValueError(f"{arm}'s heldout games are not the stage's seeds in order")
+    paired_h29 = {arm: _paired(episodes[arm], base) for arm in present}
+    result: dict[str, Any] = {
+        "experiment": "026-deeper-v", "stage": "heldout", "games": len(base),
+        "arms": present,
+        "search": {arm: dict(zip(("commit_level", "adjust_k"), ALL_ARMS[arm]))
+                   | {"adjust_max_level": ADJUST_MAX_LEVEL} for arm in ALL_ARMS},
+        "versions": versions or runner._record_versions(), "abi_version": native.ABI_VERSION,
+        "frozen_sha256": {"v15": _sha("v15"), "017": _sha("017")},
+        "rule": RULE, "min_effect": MIN_EFFECT,
+        "summary": {name: _summary(eps) for name, eps in episodes.items()},
+        "paired_vs_v_h29": paired_h29,
+        "paired_vs_017": {name: _paired(episodes[name], record) for name in (*present, "v_h29")},
+        "passed": {arm: paired_h29[arm]["total"]["score"]["ci95_low"] > 0 for arm in present},
+        "seeds": ("Experiment 012's 1,000 held-out seeds (the established record benchmark)"),
+        "baseline": ("025's record games of v_h29 "
+                     "(experiments/025-hybrids/games/heldout-v_h29.json.gz, played on ABI 23); "
+                     "017's stored record games reported; 28 of each replayed on this build: "
+                     f"{REPLAY_CHECK}")}
+    _write(OUT / "heldout.json", result)
     return result
 
 
@@ -368,6 +474,8 @@ def main(argv: list[str] | None = None) -> int:
     develop.add_argument("--arms", nargs="+", choices=tuple(ALL_ARMS))
     commands.add_parser("summarize", help="summarize a stage").add_argument("stage",
                                                                            choices=STAGES)
+    heldout = commands.add_parser("heldout", help="development's chosen arm on 012's seeds")
+    heldout.add_argument("--arms", nargs="+", choices=tuple(ALL_ARMS))
     commands.add_parser("residual", help="the Bellman residual on v15's own boards")
     for name, sub in commands.choices.items():
         if name != "summarize":
@@ -384,6 +492,11 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "residual":
             residual(args.jobs)
             print(f"Wrote {RESIDUAL}")
+        elif args.command == "heldout":
+            arms = args.arms or [_chosen()]
+            if arms == [None]:
+                raise ValueError("development chose no arm")
+            run("heldout", arms, args.jobs)
         elif args.command == "screen":
             run("screening", list(ARMS), args.jobs)
         elif args.command == "screen-d3":

@@ -328,3 +328,101 @@ def test_develop_without_arms_needs_screen_d3_when_both_kinds_promoted(monkeypat
     shutil.rmtree(e26.GAMES)
     screening({"d1a": True, "d1b": True, "d2_k4": False, "d2_k8": False})
     assert e26.main(["develop"]) == 0 and ran == [["d1a", "d1b"]]
+
+
+# ---------------------------------------------------------------- the held-out stage
+
+def _heldout_setup(monkeypatch, tmp_path, seeds=(3, 4), chosen="d3_d1b_k8"):
+    """Cheap held-out wiring: 025's v_h29 record games and 017's replay are fakes."""
+    _cheap(monkeypatch, tmp_path)
+    monkeypatch.setattr(e25, "_seeds", lambda stage: list(seeds))
+    monkeypatch.setattr(e25, "GAMES", tmp_path / "games25")
+    monkeypatch.setattr(e25, "frozen_configs", lambda: ({"name": "017"}, {"name": "v15"}, NET))
+    monkeypatch.setattr(e25, "play_arm_game", lambda job: {"inputs": f"in{job[3]}"})
+    _store(e25.games_path("heldout", "v_h29"),
+           [dict(_episode(s, 5000), inputs=f"in{s}") for s in seeds])
+    (tmp_path / "out" / "development.json").write_text(json.dumps({"chosen": chosen}))
+    (tmp_path / "out" / "predeclared.md").write_text("x")
+    ok = {"games": 28, "matched": 28, "mismatches": []}
+    monkeypatch.setattr(register, "check_frozen", lambda name, games, jobs: dict(ok))
+    return ok
+
+
+def test_heldout_plays_only_the_chosen_arm_after_predeclaration(monkeypatch, tmp_path):
+    _heldout_setup(monkeypatch, tmp_path)
+    for arms in (["d3_d1a_k4"], ["d3_d1b_k8", "d1a"]):
+        with pytest.raises(ValueError, match="only development's chosen"):
+            e26.run("heldout", arms, 1)
+    (tmp_path / "out" / "development.json").write_text(json.dumps({"chosen": None}))
+    with pytest.raises(ValueError, match="only development's chosen"):
+        e26.run("heldout", ["d3_d1b_k8"], 1)
+    assert e26.main(["heldout"]) == 1
+    (tmp_path / "out" / "development.json").write_text(json.dumps({"chosen": "d3_d1b_k8"}))
+    (tmp_path / "out" / "predeclared.md").unlink()
+    with pytest.raises(ValueError, match="predeclared.md"):
+        e26.run("heldout", ["d3_d1b_k8"], 1)
+    (tmp_path / "out" / "predeclared.md").write_text("x")
+    _store(e26.games_path("heldout", "d3_d1b_k8"), [])
+    with pytest.raises(ValueError, match="exists already"):
+        e26.run("heldout", ["d3_d1b_k8"], 1)
+
+
+def test_heldout_replay_mismatch_in_either_part_stops_before_any_game(monkeypatch, tmp_path):
+    ok = _heldout_setup(monkeypatch, tmp_path)
+    played = []
+    monkeypatch.setattr(e26, "play_arm_game", lambda job: played.append(job))
+    monkeypatch.setattr(register, "check_frozen",
+                        lambda name, games, jobs: ok | {"matched": 27})
+    with pytest.raises(ValueError, match="27 of 28 stored games of 017"):
+        e26.run("heldout", ["d3_d1b_k8"], 1)
+    check = json.loads((e26.PARTIAL / e26.REPLAY_CHECK).read_text())
+    assert check["part_a_017"]["matched"] == 27 and check["matched"] == 27 + 2
+    monkeypatch.setattr(register, "check_frozen", lambda name, games, jobs: dict(ok))
+    monkeypatch.setattr(e25, "play_arm_game",
+                        lambda job: {"inputs": "wrong" if job[3] == 4 else f"in{job[3]}"})
+    with pytest.raises(ValueError, match="1 of 2 of 025's v_h29.*\\[4\\]"):
+        e26.run("heldout", ["d3_d1b_k8"], 1)
+    check = json.loads((e26.PARTIAL / e26.REPLAY_CHECK).read_text())
+    assert check["part_b_v_h29"] == {"games": 2, "matched": 1, "mismatched_seeds": [4]}
+    assert not (e26.OUT / e26.REPLAY_CHECK).exists() and not played
+    assert not e26.games_path("heldout", "d3_d1b_k8").exists()
+
+
+def test_heldout_replay_file_moves_into_out_after_the_games(monkeypatch, tmp_path):
+    _heldout_setup(monkeypatch, tmp_path)
+    monkeypatch.setattr(e26, "summarize", lambda stage, **kw: {"stage": stage})
+    monkeypatch.setattr(runner, "_record_versions", lambda: {"now": True})
+    assert e26.run("heldout", ["d3_d1b_k8"], 1) == {"stage": "heldout"}
+    assert e26.games_path("heldout", "d3_d1b_k8").exists()
+    moved = json.loads((e26.OUT / e26.REPLAY_CHECK).read_text())
+    assert moved["versions"] == {"now": True} and moved["matched"] == moved["games"] == 30
+    assert not (e26.PARTIAL / e26.REPLAY_CHECK).exists()
+
+
+def test_heldout_baseline_must_be_the_heldout_seeds(monkeypatch, tmp_path):
+    _heldout_setup(monkeypatch, tmp_path)
+    monkeypatch.setattr(e25, "_seeds", lambda stage: [4, 3])
+    with pytest.raises(ValueError, match="held-out seeds in order"):
+        e26.heldout_replay(1)
+
+
+def test_summarize_heldout_passes_against_v_h29(monkeypatch, tmp_path):
+    _heldout_setup(monkeypatch, tmp_path, seeds=(0, 1, 2))
+    record = [_episode(s, 1000 * (s + 1)) for s in range(3)]
+    monkeypatch.setattr(e25, "_baseline", lambda stage, jobs=4: record)
+    _store(e26.games_path("heldout", "d3_d1b_k8"),
+           [_episode(s, 5000 + gain) for s, gain in enumerate((10_000, 20_000, 30_000))])
+    result = e26.summarize("heldout")
+    assert result == json.loads((tmp_path / "out" / "heldout.json").read_text())
+    assert result["passed"] == {"d3_d1b_k8": True} and result["arms"] == ["d3_d1b_k8"]
+    assert result["paired_vs_v_h29"]["d3_d1b_k8"]["total"]["score"]["mean"] == \
+        pytest.approx(20_000)
+    assert result["paired_vs_017"]["v_h29"]["total"]["score"]["mean"] == pytest.approx(3000)
+    assert set(result["summary"]) == {"d3_d1b_k8", "v_h29", "017"}
+    assert "012" in result["seeds"] and "heldout-v_h29" in result["baseline"]
+    _store(e26.games_path("heldout", "d3_d1b_k8"),
+           [_episode(s, 5000 + gain) for s, gain in enumerate((-10_000, 0, 5_000))])
+    assert e26.summarize("heldout")["passed"] == {"d3_d1b_k8": False}
+    monkeypatch.setattr(e25, "_seeds", lambda stage: [2, 1, 0])
+    with pytest.raises(ValueError, match="in order"):
+        e26.summarize("heldout")
