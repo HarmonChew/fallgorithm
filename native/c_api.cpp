@@ -28,7 +28,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 25;
+constexpr int abi_version = 26;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -1015,6 +1015,47 @@ FN_API int fn_deep_net_game(const unsigned char* net, int net_size, int commit_l
         searcher.set_deep(commit_level, adjust_k, adjust_max_level);
         searcher.set_deep2(deep2_level, deep2_k);
         BasicAgent<NetSearcher> agent(searcher, interval, reaction);
+        std::uint64_t final_score = 0;
+        return run_game(config, agent, line_cap, frame_cap, inputs, out, nullptr, final_score);
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 028: one game by hybrid.hpp's agent, fn_deep_net_game's searcher (the network
+// ``net`` with set_deep and set_deep2 as there) below ``switch_level`` and 017's agent
+// (``params``, as fn_hybrid_game) from it on. Returns as fn_play_game (-1 also for a
+// ``net`` that is not a value network).
+FN_API int fn_deep_hybrid_game(const unsigned char* net, int net_size, const Params* params,
+                               int commit_level, int adjust_k, int adjust_max_level,
+                               int deep2_level, int deep2_k, int switch_level,
+                               const char* ruleset, const char* mode, int start_level,
+                               int height, int seed, int line_cap, int frame_cap, int interval,
+                               int reaction, std::uint8_t* inputs, int capacity,
+                               std::int64_t* out) {
+    if (!net || !params || !ruleset || !mode || seed < 0 || seed > 0xffff || line_cap < 0 ||
+        frame_cap < 0 || capacity < frame_cap || interval < 1 || reaction < 0 ||
+        start_level < 0 || start_level >= 20 || net_size < 0 || commit_level < 0 ||
+        adjust_k < 0 || adjust_max_level < 0 || deep2_level < 0 || deep2_k < 0 ||
+        switch_level < 0) {
+        return -1;
+    }
+    try {
+        blocks::Config config;
+        ValueNetwork network;
+        if (!make_config(ruleset, mode, start_level, height, seed, config) ||
+            !network.load(net, static_cast<std::size_t>(net_size))) {
+            return -1;
+        }
+        Searcher searcher(*params);
+        searcher.set_extra_ply(true);
+        searcher.set_nes_odds(true);
+        const RolloutSearcher rollouts(searcher, *params);
+        NetSearcher deep(&network, line_cap);
+        deep.set_deep(commit_level, adjust_k, adjust_max_level);
+        deep.set_deep2(deep2_level, deep2_k);
+        BasicAgent<HybridSearcher> agent(HybridSearcher(rollouts, deep, true, switch_level),
+                                         interval, reaction);
         std::uint64_t final_score = 0;
         return run_game(config, agent, line_cap, frame_cap, inputs, out, nullptr, final_score);
     } catch (const std::exception&) {

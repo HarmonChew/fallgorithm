@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 25
+ABI_VERSION = 26
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -282,6 +282,12 @@ def load() -> Any:
                                      C.c_int, C.c_int, C.POINTER(C.c_uint8), C.c_int,
                                      C.POINTER(C.c_int64)]
     lib.fn_deep_net_game.restype = C.c_int
+    lib.fn_deep_hybrid_game.argtypes = [C.c_char_p, C.c_int, C.POINTER(Params), C.c_int,
+                                        C.c_int, C.c_int, C.c_int, C.c_int, C.c_int,
+                                        C.c_char_p, C.c_char_p, C.c_int, C.c_int, C.c_int,
+                                        C.c_int, C.c_int, C.c_int, C.c_int,
+                                        C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int64)]
+    lib.fn_deep_hybrid_game.restype = C.c_int
     lib.fn_playout_game.argtypes = [C.c_char_p, C.c_int, C.c_char_p, C.c_int, C.c_char_p, C.c_int,
                                     C.c_int, C.c_int, C.POINTER(Params),
                                     C.c_char_p, C.c_char_p, C.c_int, C.c_int, C.c_int, C.c_int,
@@ -737,6 +743,25 @@ def deep_net_game(net: bytes, game: dict[str, Any], seed: int, *, commit_level: 
         limits.tap_interval, limits.reaction_frames, inputs, max(1, frame_cap), out)
     if status:
         raise NativeError(f"fn_deep_net_game failed with {status}")
+    return _played(inputs, out)
+
+
+def deep_hybrid_game(net: bytes, game: dict[str, Any], seed: int, *, commit_level: int,
+                     adjust_k: int, adjust_max_level: int, deep2_level: int, deep2_k: int,
+                     switch_level: int, line_cap: int, frame_cap: int, limits: Limits,
+                     params: Params) -> dict[str, Any]:
+    """Experiment 028: :func:`deep_net_game`'s agent (the same search settings) below
+    ``switch_level`` and 017's agent (``params``) from it on, by the level at each decision
+    (native/hybrid.hpp)."""
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    status = load().fn_deep_hybrid_game(
+        net, len(net), C.byref(params), commit_level, adjust_k, adjust_max_level, deep2_level,
+        deep2_k, switch_level, game["ruleset"].encode(), game["mode"].encode(),
+        game["start_level"], game["height"], seed, line_cap, frame_cap, limits.tap_interval,
+        limits.reaction_frames, inputs, max(1, frame_cap), out)
+    if status:
+        raise NativeError(f"fn_deep_hybrid_game failed with {status}")
     return _played(inputs, out)
 
 
