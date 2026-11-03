@@ -1,0 +1,111 @@
+{
+ "arm": "t2",
+ "sweep": 6,
+ "created_at": "2026-11-03T16:13:40.592407+00:00",
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "ce667b8d3c3436121ee4463efff34875b48d045b",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "torch": "2.14.0+cu130",
+ "from": {
+  "path": "experiments/029-v39-search-taught/t2/value_sweep5.bin",
+  "sha256": "e40bd8ded07f650026ee5a8261faa0b54d391dda28f1ab0a99adb6ed6a889bdf"
+ },
+ "weights": {
+  "path": "experiments/029-v39-search-taught/t2/value_sweep6.bin",
+  "sha256": "78051e7d7e5a21ba862db94a450ef63d385a9b7209050a269bf67aa81a9f8cf3"
+ },
+ "depth": 4,
+ "lambda": 0.95,
+ "boards": {
+  "parts": [
+   123814,
+   45296,
+   45489,
+   42940
+  ],
+  "children": 599016,
+  "check": 12925
+ },
+ "settings": {
+  "batch": 4096,
+  "epochs": 3,
+  "lr": 0.0003,
+  "lr_note": "Adam, one-cycle schedule peaking at lr; warm-started from the last sweep's V",
+  "torch_seed": 23
+ },
+ "target_seconds": 1997.4,
+ "training_log": [
+  {
+   "step": 125,
+   "loss": 0.5626,
+   "seconds": 1.2
+  },
+  {
+   "step": 250,
+   "loss": 0.4574,
+   "seconds": 2.4
+  },
+  {
+   "step": 375,
+   "loss": 0.5022,
+   "seconds": 3.6
+  },
+  {
+   "step": 500,
+   "loss": 0.4919,
+   "seconds": 4.8
+  },
+  {
+   "step": 625,
+   "loss": 0.4663,
+   "seconds": 6.0
+  }
+ ],
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "check": {
+  "old_value_minus_target_rms": 0.2965,
+  "new_value_minus_target_rms": 0.3173,
+  "target_minus_old_value": 0.1293,
+  "by_20_lines_old_target_new": {
+   "320-339": [
+    10.275,
+    10.448,
+    10.552
+   ],
+   "340-359": [
+    9.731,
+    9.878,
+    9.945
+   ],
+   "360-379": [
+    9.742,
+    9.873,
+    9.909
+   ],
+   "380-399": [
+    8.71,
+    8.825,
+    8.766
+   ],
+   "400-419": [
+    6.683,
+    6.807,
+    6.513
+   ],
+   "420-439": [
+    3.68,
+    3.744,
+    3.379
+   ]
+  }
+ }
+}

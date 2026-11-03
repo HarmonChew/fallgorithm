@@ -1,0 +1,44 @@
+{
+ "arm": "t2",
+ "round": 6,
+ "weights": "experiments/029-v39-search-taught/t2/value_sweep6.bin",
+ "explore": 0.01,
+ "explore_from_lines": 300,
+ "seconds": 1616.4,
+ "calibration_value_actual_by_20_lines": {
+  "320-339": [
+   10.929,
+   13.13
+  ],
+  "340-359": [
+   9.675,
+   10.693
+  ],
+  "360-379": [
+   9.346,
+   8.629
+  ],
+  "380-399": [
+   8.136,
+   5.93
+  ],
+  "400-419": [
+   6.174,
+   3.281
+  ],
+  "420-439": [
+   3.234,
+   1.126
+  ]
+ },
+ "games": 200,
+ "boards": 40728,
+ "mean_score": 2177742.2,
+ "line_cap_share": 0.215,
+ "by_source": {
+  "0": {
+   "games": 200,
+   "mean_score": 2177742.2
+  }
+ }
+}
