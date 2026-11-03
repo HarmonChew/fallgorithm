@@ -114,6 +114,10 @@ def run(stage: str, jobs: int) -> dict[str, Any]:
     if games_path(stage).exists():
         raise ValueError(f"{games_path(stage)} exists already")
     pick = chosen()
+    previous = {"development": "screening", "heldout": "development"}.get(stage)
+    if previous and _stage_result(previous)["chosen"] != {k: v for k, v in pick.items()
+                                                          if k != "path"}:
+        raise ValueError(f"chosen.json names another V39 than {previous} evaluated")
     seeds = e25._seeds(stage)
     _require_ready(stage, seeds)
     versions = runner._record_versions()
