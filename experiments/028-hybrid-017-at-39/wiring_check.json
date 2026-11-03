@@ -1,0 +1,86 @@
+{
+ "experiment": "028-hybrid-017-at-39",
+ "games": [
+  {
+   "kind": "never_switch_is_e29_k4",
+   "seed": 13770,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "never_switch_is_e29_k4",
+   "seed": 45356,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "never_switch_is_e29_k4",
+   "seed": 19813,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "switch_at_start_is_017",
+   "seed": 61737,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "switch_at_start_is_017",
+   "seed": 24534,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "switch_at_start_is_017",
+   "seed": 27806,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "h39_before_39_is_e29_k4",
+   "seed": 13770,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "h39_before_39_is_e29_k4",
+   "seed": 45356,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "h39_before_39_is_e29_k4",
+   "seed": 19813,
+   "match": true,
+   "got": null,
+   "want": null
+  }
+ ],
+ "matched": true,
+ "frozen_sha256": {
+  "017": "42e66f89cc716ffd9104a7e63adf68d2b180e871453cedab1e9cbfcce43d4b4c",
+  "v15": "cf6fc0bc71daf608bdcce82cd2aaaccc74ba1b7ef43e07950d96e0fdc37a04fe"
+ },
+ "abi_version": 26,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "2448e2d9ffd35e6edbc8b38e92ddc90264310e61",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
