@@ -52,6 +52,10 @@ public:
         explore_state_ = seed;
     }
 
+    // Experiment 029: the per-piece exploration only once the game has ``lines`` lines
+    // (0, the default, is from the start).
+    void set_explore_from_lines(int lines) { explore_from_lines_ = lines; }
+
     // BenchAgent.act. Returns false only if a walk back lost its path.
     bool act(const blocks::Game& game, std::uint8_t& mask) {
         const blocks::State& state = game.state();
@@ -118,7 +122,7 @@ private:
             return false;
         }
         if (!have_target_ && (pieces <= explore_start_ ||
-                              (explore_rate_ > 0.0 &&
+                              (explore_rate_ > 0.0 && state.lines >= explore_from_lines_ &&
                                static_cast<double>(next_random() >> 11) * 0x1.0p-53 <
                                    explore_rate_))) {
             exploring_ = true;
@@ -150,6 +154,7 @@ private:
     Choice choice_;
     double explore_rate_ = 0.0;
     int explore_start_ = 0;
+    int explore_from_lines_ = 0;
     std::uint64_t explore_state_ = 0;
     bool exploring_ = false;
     int interval_, reaction_;

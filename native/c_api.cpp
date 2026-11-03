@@ -28,7 +28,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 26;
+constexpr int abi_version = 27;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -1058,6 +1058,104 @@ FN_API int fn_deep_hybrid_game(const unsigned char* net, int net_size, const Par
                                          interval, reaction);
         std::uint64_t final_score = 0;
         return run_game(config, agent, line_cap, frame_cap, inputs, out, nullptr, final_score);
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 029: fn_deep_hybrid_game's game (017's agent ``params`` from ``switch_level``
+// on; a level no game reaches is the deep agent alone), with an optional second network
+// ``late`` (null is off) for every decision at ``late_from_lines`` lines or more
+// (NetSearcher::set_late_net), and per-piece exploration at rate ``explore`` once the game
+// has ``explore_from_lines`` lines (BasicAgent::set_explore_from_lines; 0 is off).
+// ``rows`` may be null; given, it receives the game's boards as fn_dump_game's. Returns as
+// fn_net_game.
+FN_API int fn_late_hybrid_game(const unsigned char* net, int net_size,
+                               const unsigned char* late, int late_size, int late_from_lines,
+                               const Params* params, int commit_level, int adjust_k,
+                               int adjust_max_level, int deep2_level, int deep2_k,
+                               int switch_level, const char* ruleset, const char* mode,
+                               int start_level, int height, int seed, int line_cap,
+                               int frame_cap, int interval, int reaction, double explore,
+                               int explore_from_lines, std::uint64_t explore_seed,
+                               std::uint8_t* inputs, int capacity, std::int64_t* out,
+                               std::int32_t* rows, int row_capacity, int* row_count) {
+    if (!net || !params || !ruleset || !mode || seed < 0 || seed > 0xffff || line_cap < 0 ||
+        frame_cap < 0 || capacity < frame_cap || interval < 1 || reaction < 0 ||
+        start_level < 0 || start_level >= 20 || net_size < 0 || commit_level < 0 ||
+        adjust_k < 0 || adjust_max_level < 0 || deep2_level < 0 || deep2_k < 0 ||
+        switch_level < 0 || (late && late_size < 0) || late_from_lines < 0 ||
+        (rows && !row_count) || row_capacity < 0 || !(explore >= 0.0 && explore <= 1.0) ||
+        explore_from_lines < 0) {
+        return -1;
+    }
+    try {
+        blocks::Config config;
+        ValueNetwork network, late_network;
+        if (!make_config(ruleset, mode, start_level, height, seed, config) ||
+            !network.load(net, static_cast<std::size_t>(net_size)) ||
+            (late && !late_network.load(late, static_cast<std::size_t>(late_size)))) {
+            return -1;
+        }
+        Searcher searcher(*params);
+        searcher.set_extra_ply(true);
+        searcher.set_nes_odds(true);
+        const RolloutSearcher rollouts(searcher, *params);
+        NetSearcher deep(&network, line_cap);
+        deep.set_deep(commit_level, adjust_k, adjust_max_level);
+        deep.set_deep2(deep2_level, deep2_k);
+        if (late) {
+            deep.set_late_net(&late_network, late_from_lines);
+        }
+        BasicAgent<HybridSearcher> agent(HybridSearcher(rollouts, deep, true, switch_level),
+                                         interval, reaction);
+        agent.set_explore(explore, 0, explore_seed);
+        agent.set_explore_from_lines(explore_from_lines);
+        std::vector<BoardSample> samples;
+        std::uint64_t final_score = 0;
+        const int status = run_game(config, agent, line_cap, frame_cap, inputs, out,
+                                    rows ? &samples : nullptr, final_score);
+        if (status || !rows) {
+            return status;
+        }
+        return write_rows(samples, rows, row_capacity, row_count);
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 029: NetSearcher::backup2 (two unknown pieces deep, the best ``k`` of each
+// next piece's placements, Experiment 027) of ``count`` boards in fn_dump_game's row
+// layout, in points, into ``out``. Returns 0, or -1 for bad arguments.
+FN_API int fn_backup2_values(const unsigned char* net, int net_size, int k,
+                             const std::int32_t* rows, int count, int line_cap,
+                             int start_level, int double_killscreen, int interval,
+                             double* out) {
+    if (!net || net_size < 0 || k < 1 || !rows || count < 0 || !out || start_level < 0 ||
+        start_level >= 20 || line_cap < 0 || interval < 1) {
+        return -1;
+    }
+    try {
+        ValueNetwork network;
+        if (!network.load(net, static_cast<std::size_t>(net_size))) {
+            return -1;
+        }
+        NetSearcher searcher(&network, line_cap);
+        searcher.set_deep2(0, k);
+        for (int index = 0; index < count; ++index) {
+            const std::int32_t* row = rows + static_cast<std::size_t>(index) * dump_stride;
+            Columns columns{};
+            for (int column = 0; column < width; ++column) {
+                columns[column] = static_cast<std::uint32_t>(row[column]) << hidden_rows;
+            }
+            if (row[width] < 0 || row[width + 2] < 0 || row[width + 3] < -1 ||
+                row[width + 3] >= piece_types) {
+                return -1;
+            }
+            out[index] = searcher.backup2(columns, row[width], row[width + 2], row[width + 3],
+                                          start_level, double_killscreen != 0, interval);
+        }
+        return 0;
     } catch (const std::exception&) {
         return -1;
     }

@@ -57,12 +57,23 @@ public:
         hand_.set_nes_odds(true);
     }
 
-    // The network's value, in points (0 once the lines reach the cap).
+    // The network's value, in points (0 once the lines reach the cap). Experiment 029:
+    // the late network while the decision being searched is late (see set_late_net).
     double value(const Columns& columns, int lines, int drought, int last, int start_level) const {
-        return net_value(*net_, line_cap_, columns, lines, drought, last, start_level);
+        return net_value(use_late_ ? *late_net_ : *net_, line_cap_, columns, lines, drought,
+                         last, start_level);
+    }
+
+    // Experiment 029: every value within the search of a decision whose position has at
+    // least ``from_lines`` lines comes from ``late`` (which must outlive the searcher), so
+    // one network judges all the boards a decision compares; null is off.
+    void set_late_net(const ValueNetwork* late, int from_lines) {
+        late_net_ = late;
+        late_from_lines_ = from_lines;
     }
 
     bool search(const Position& position, Choice& choice) {
+        use_late_ = late_net_ != nullptr && position.lines >= late_from_lines_;
         if (prefilter_ > 0) {
             return search_prefiltered(position, choice);
         }
@@ -438,6 +449,9 @@ private:
 
     const ValueNetwork* net_;
     int line_cap_;
+    const ValueNetwork* late_net_ = nullptr;  // Experiment 029
+    int late_from_lines_ = 1 << 30;
+    bool use_late_ = false;
     Searcher hand_{};
     int prefilter_ = 0;
     std::vector<Searcher::Candidate> candidates_;

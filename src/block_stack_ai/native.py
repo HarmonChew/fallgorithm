@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 26
+ABI_VERSION = 27
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -288,6 +288,19 @@ def load() -> Any:
                                         C.c_int, C.c_int, C.c_int, C.c_int,
                                         C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int64)]
     lib.fn_deep_hybrid_game.restype = C.c_int
+    lib.fn_late_hybrid_game.argtypes = [C.c_char_p, C.c_int, C.c_char_p, C.c_int, C.c_int,
+                                        C.POINTER(Params), C.c_int, C.c_int, C.c_int,
+                                        C.c_int, C.c_int, C.c_int, C.c_char_p, C.c_char_p,
+                                        C.c_int, C.c_int, C.c_int, C.c_int, C.c_int, C.c_int,
+                                        C.c_int, C.c_double, C.c_int, C.c_uint64,
+                                        C.POINTER(C.c_uint8), C.c_int,
+                                        C.POINTER(C.c_int64), C.POINTER(C.c_int32), C.c_int,
+                                        C.POINTER(C.c_int)]
+    lib.fn_late_hybrid_game.restype = C.c_int
+    lib.fn_backup2_values.argtypes = [C.c_char_p, C.c_int, C.c_int, C.POINTER(C.c_int32),
+                                      C.c_int, C.c_int, C.c_int, C.c_int, C.c_int,
+                                      C.POINTER(C.c_double)]
+    lib.fn_backup2_values.restype = C.c_int
     lib.fn_playout_game.argtypes = [C.c_char_p, C.c_int, C.c_char_p, C.c_int, C.c_char_p, C.c_int,
                                     C.c_int, C.c_int, C.POINTER(Params),
                                     C.c_char_p, C.c_char_p, C.c_int, C.c_int, C.c_int, C.c_int,
@@ -620,6 +633,21 @@ def backup_values(net: bytes, rows: bytes, *, line_cap: int, start_level: int,
                                if children else None)
 
 
+def backup2_values(net: bytes, rows: bytes, *, k: int, line_cap: int, start_level: int,
+                   double_killscreen: bool, tap_interval: int) -> list[float]:
+    """Experiment 029: each board's backup2 (NetSearcher::backup2: two unknown pieces deep,
+    the best ``k`` placements of each next piece), in points, for boards in
+    :func:`dump_game`'s row layout."""
+    count = len(rows) // (4 * DUMP_STRIDE)
+    buffer = (C.c_int32 * max(1, count * DUMP_STRIDE)).from_buffer_copy(
+        rows.ljust(4 * max(1, count * DUMP_STRIDE), b"\0"))
+    out = (C.c_double * max(1, count))()
+    if load().fn_backup2_values(net, len(net), k, buffer, count, line_cap, start_level,
+                                int(double_killscreen), tap_interval, out):
+        raise NativeError("fn_backup2_values failed (not a network for these inputs?)")
+    return list(out[:count])
+
+
 def net_game(net: bytes, game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: int,
              limits: Limits, params: Params | None = None, prefilter: int = 0,
              explore: float = 0.0, explore_start: int = 0, explore_seed: int = 0,
@@ -763,6 +791,33 @@ def deep_hybrid_game(net: bytes, game: dict[str, Any], seed: int, *, commit_leve
     if status:
         raise NativeError(f"fn_deep_hybrid_game failed with {status}")
     return _played(inputs, out)
+
+
+def late_hybrid_game(net: bytes, game: dict[str, Any], seed: int, *, late: bytes | None,
+                     late_from_lines: int, commit_level: int, adjust_k: int,
+                     adjust_max_level: int, deep2_level: int, deep2_k: int, switch_level: int,
+                     line_cap: int, frame_cap: int, limits: Limits, params: Params,
+                     explore: float = 0.0, explore_from_lines: int = 0, explore_seed: int = 0,
+                     dump: bool = False) -> tuple[dict[str, Any], bytes | None]:
+    """Experiment 029: :func:`deep_hybrid_game`'s game with an optional second network
+    ``late`` for every decision at ``late_from_lines`` lines or more, a random placement
+    with chance ``explore`` per piece once the game has ``explore_from_lines`` lines, and
+    with ``dump`` its boards as :func:`dump_game`'s."""
+    inputs = (C.c_uint8 * max(1, frame_cap))()
+    out = (C.c_int64 * 11)()
+    rows = (C.c_int32 * DUMP_CAPACITY)() if dump else None
+    count = C.c_int(0)
+    status = load().fn_late_hybrid_game(
+        net, len(net), late, len(late) if late is not None else 0, late_from_lines,
+        C.byref(params), commit_level, adjust_k, adjust_max_level, deep2_level, deep2_k,
+        switch_level, game["ruleset"].encode(), game["mode"].encode(), game["start_level"],
+        game["height"], seed, line_cap, frame_cap, limits.tap_interval,
+        limits.reaction_frames, explore, explore_from_lines, explore_seed, inputs,
+        max(1, frame_cap), out, rows, DUMP_CAPACITY if dump else 0, C.byref(count))
+    if status:
+        raise NativeError(f"fn_late_hybrid_game failed with {status}")
+    return _played(inputs, out), (C.string_at(rows, count.value * DUMP_STRIDE * 4)
+                                  if dump else None)
 
 
 def playout_game(net: bytes | None, game: dict[str, Any], seed: int, *, from_level: int,
