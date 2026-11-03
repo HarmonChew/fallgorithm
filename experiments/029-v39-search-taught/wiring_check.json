@@ -1,0 +1,61 @@
+{
+ "experiment": "029-v39-search-taught",
+ "games": [
+  {
+   "kind": "late_off_is_e29_k4",
+   "seed": 13770,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "late_off_is_e29_k4",
+   "seed": 45356,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "late_off_is_e29_k4",
+   "seed": 19813,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "late_v15_is_e29_k4",
+   "seed": 13770,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "late_v15_is_e29_k4",
+   "seed": 45356,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "late_v15_is_e29_k4",
+   "seed": 19813,
+   "match": true,
+   "got": null,
+   "want": null
+  }
+ ],
+ "matched": true,
+ "abi_version": 27,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "a206bbbc710eaa422f187d1d93312e1c101c56fb",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
