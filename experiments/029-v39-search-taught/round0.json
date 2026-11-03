@@ -1,0 +1,38 @@
+{
+ "experiment": "029-v39-search-taught",
+ "round": 0,
+ "seeds": 300,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "d11f4582b50f4905da868abb86f41a2673bcb04f",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "abi_version": 27,
+ "sources": {
+  "0": "e29_k4 (027's record agent)",
+  "1": "h39 (e29_k4 to 38, 017 from 39; 028)"
+ },
+ "late_from_lines": 320,
+ "seconds": 5367.6,
+ "games": 600,
+ "boards": 143248,
+ "mean_score": 2154666.2,
+ "line_cap_share": 0.543,
+ "by_source": {
+  "0": {
+   "games": 300,
+   "mean_score": 2138055.9
+  },
+  "1": {
+   "games": 300,
+   "mean_score": 2171276.5
+  }
+ }
+}
