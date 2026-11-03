@@ -87,3 +87,17 @@ def test_chosen_needs_a_choice(monkeypatch, tmp_path):
     with pytest.raises(ValueError, match="no eligible"):
         ev.chosen()
     assert e29.OUT.name == "029-v39-search-taught"
+
+
+def test_a_later_stage_needs_the_same_v39(monkeypatch, tmp_path):
+    monkeypatch.setattr(ev, "OUT", tmp_path)
+    weights = tmp_path / "w.bin"
+    weights.write_bytes(b"abc")
+    monkeypatch.setattr(ev.runner, "PROJECT_ROOT", tmp_path)
+    (tmp_path / "chosen.json").write_text(json.dumps(
+        {"chosen": {"arm": "t1", "sweep": 2, "weights": "w.bin"}}))
+    (tmp_path / "screening.json").write_text(json.dumps(
+        {"promoted": True, "chosen": {"arm": "t1", "sweep": 1, "weights": "w.bin",
+                                      "sha256": "x"}}))
+    with pytest.raises(ValueError, match="another V39"):
+        ev.run("development", 1)
