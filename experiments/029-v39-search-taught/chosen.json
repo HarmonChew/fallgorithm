@@ -1,0 +1,124 @@
+{
+ "v15_odd_loss_39": 23.9701,
+ "sweeps": [
+  {
+   "arm": "t1",
+   "sweep": 1,
+   "weights": "experiments/029-v39-search-taught/t1/value_sweep1.bin",
+   "probe_mean": 11628.6,
+   "odd_loss_39": 22.9399
+  },
+  {
+   "arm": "t1",
+   "sweep": 2,
+   "weights": "experiments/029-v39-search-taught/t1/value_sweep2.bin",
+   "probe_mean": 19263.0,
+   "odd_loss_39": 22.5226
+  },
+  {
+   "arm": "t1",
+   "sweep": 3,
+   "weights": "experiments/029-v39-search-taught/t1/value_sweep3.bin",
+   "probe_mean": 48288.6,
+   "odd_loss_39": 23.0632
+  },
+  {
+   "arm": "t1",
+   "sweep": 4,
+   "weights": "experiments/029-v39-search-taught/t1/value_sweep4.bin",
+   "probe_mean": 65293.6,
+   "odd_loss_39": 22.9367
+  },
+  {
+   "arm": "t1",
+   "sweep": 5,
+   "weights": "experiments/029-v39-search-taught/t1/value_sweep5.bin",
+   "probe_mean": 62945.0,
+   "odd_loss_39": 22.4866
+  },
+  {
+   "arm": "t1",
+   "sweep": 6,
+   "weights": "experiments/029-v39-search-taught/t1/value_sweep6.bin",
+   "probe_mean": 74976.0,
+   "odd_loss_39": 22.2691
+  },
+  {
+   "arm": "t1",
+   "sweep": 7,
+   "weights": "experiments/029-v39-search-taught/t1/value_sweep7.bin",
+   "probe_mean": 107347.8,
+   "odd_loss_39": 22.6579
+  },
+  {
+   "arm": "t1",
+   "sweep": 8,
+   "weights": "experiments/029-v39-search-taught/t1/value_sweep8.bin",
+   "probe_mean": 133484.4,
+   "odd_loss_39": 22.0132
+  },
+  {
+   "arm": "t2",
+   "sweep": 1,
+   "weights": "experiments/029-v39-search-taught/t2/value_sweep1.bin",
+   "probe_mean": -5181.2,
+   "odd_loss_39": 23.1411
+  },
+  {
+   "arm": "t2",
+   "sweep": 2,
+   "weights": "experiments/029-v39-search-taught/t2/value_sweep2.bin",
+   "probe_mean": 39564.8,
+   "odd_loss_39": 22.7743
+  },
+  {
+   "arm": "t2",
+   "sweep": 3,
+   "weights": "experiments/029-v39-search-taught/t2/value_sweep3.bin",
+   "probe_mean": 65314.4,
+   "odd_loss_39": 22.7224
+  },
+  {
+   "arm": "t2",
+   "sweep": 4,
+   "weights": "experiments/029-v39-search-taught/t2/value_sweep4.bin",
+   "probe_mean": 81561.8,
+   "odd_loss_39": 21.9542
+  },
+  {
+   "arm": "t2",
+   "sweep": 5,
+   "weights": "experiments/029-v39-search-taught/t2/value_sweep5.bin",
+   "probe_mean": 108170.6,
+   "odd_loss_39": 21.3662
+  },
+  {
+   "arm": "t2",
+   "sweep": 6,
+   "weights": "experiments/029-v39-search-taught/t2/value_sweep6.bin",
+   "probe_mean": 164730.2,
+   "odd_loss_39": 21.4558
+  },
+  {
+   "arm": "t2",
+   "sweep": 7,
+   "weights": "experiments/029-v39-search-taught/t2/value_sweep7.bin",
+   "probe_mean": 174460.4,
+   "odd_loss_39": 20.9906
+  },
+  {
+   "arm": "t2",
+   "sweep": 8,
+   "weights": "experiments/029-v39-search-taught/t2/value_sweep8.bin",
+   "probe_mean": 178580.0,
+   "odd_loss_39": 21.2861
+  }
+ ],
+ "chosen": {
+  "arm": "t2",
+  "sweep": 8,
+  "weights": "experiments/029-v39-search-taught/t2/value_sweep8.bin",
+  "probe_mean": 178580.0,
+  "odd_loss_39": 21.2861
+ }
+}
