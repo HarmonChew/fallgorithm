@@ -58,10 +58,11 @@ public:
     }
 
     // The network's value, in points (0 once the lines reach the cap). Experiment 029:
-    // the late network while the decision being searched is late (see set_late_net).
+    // the late network while the decision being searched is late (see set_late_net);
+    // Experiment 030: the middle network while it is in the middle band (set_mid_net).
     double value(const Columns& columns, int lines, int drought, int last, int start_level) const {
-        return net_value(use_late_ ? *late_net_ : *net_, line_cap_, columns, lines, drought,
-                         last, start_level);
+        return net_value(use_late_ ? *late_net_ : use_mid_ ? *mid_net_ : *net_, line_cap_,
+                         columns, lines, drought, last, start_level);
     }
 
     // Experiment 029: every value within the search of a decision whose position has at
@@ -72,8 +73,16 @@ public:
         late_from_lines_ = from_lines;
     }
 
+    // Experiment 030: as set_late_net for the decisions with ``from_lines`` lines or more
+    // that are not late (the late network wins from its own line count on); null is off.
+    void set_mid_net(const ValueNetwork* mid, int from_lines) {
+        mid_net_ = mid;
+        mid_from_lines_ = from_lines;
+    }
+
     bool search(const Position& position, Choice& choice) {
         use_late_ = late_net_ != nullptr && position.lines >= late_from_lines_;
+        use_mid_ = !use_late_ && mid_net_ != nullptr && position.lines >= mid_from_lines_;
         if (prefilter_ > 0) {
             return search_prefiltered(position, choice);
         }
@@ -452,6 +461,9 @@ private:
     const ValueNetwork* late_net_ = nullptr;  // Experiment 029
     int late_from_lines_ = 1 << 30;
     bool use_late_ = false;
+    const ValueNetwork* mid_net_ = nullptr;  // Experiment 030
+    int mid_from_lines_ = 1 << 30;
+    bool use_mid_ = false;
     Searcher hand_{};
     int prefilter_ = 0;
     std::vector<Searcher::Candidate> candidates_;

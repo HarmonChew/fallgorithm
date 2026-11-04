@@ -141,12 +141,13 @@ def _data_job(job: tuple[int, int, str | None, int, float]) -> dict[str, Any]:
             "lines": played["lines"], "rows": _late_rows(rows).tobytes()}
 
 
-def _play_data(path: Path, jobs_list: list[tuple], jobs: int) -> dict[str, Any]:
+def _play_data(path: Path, jobs_list: list[tuple], jobs: int,
+               job: Any = None) -> dict[str, Any]:
     """Play the data games, store their late boards as ``path`` (npz, whole games in job
     order: the rows' fields, ``score`` before the board, ``final``, ``game``, ``source``,
-    ``seed``) and return a summary."""
+    ``seed``) and return a summary. ``job`` replaces ``_data_job`` (Experiment 030)."""
     with Pool(jobs) as pool:
-        found = pool.map(_data_job, jobs_list, chunksize=1)
+        found = pool.map(job or _data_job, jobs_list, chunksize=1)
     parts, meta = [], []
     for index, game in enumerate(found):
         r = np.frombuffer(game["rows"], np.int32).reshape(-1, native.DUMP_STRIDE)

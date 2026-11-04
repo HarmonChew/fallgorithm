@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 27
+ABI_VERSION = 28
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -289,10 +289,11 @@ def load() -> Any:
                                         C.POINTER(C.c_uint8), C.c_int, C.POINTER(C.c_int64)]
     lib.fn_deep_hybrid_game.restype = C.c_int
     lib.fn_late_hybrid_game.argtypes = [C.c_char_p, C.c_int, C.c_char_p, C.c_int, C.c_int,
+                                        C.c_char_p, C.c_int, C.c_int,
                                         C.POINTER(Params), C.c_int, C.c_int, C.c_int,
                                         C.c_int, C.c_int, C.c_int, C.c_char_p, C.c_char_p,
                                         C.c_int, C.c_int, C.c_int, C.c_int, C.c_int, C.c_int,
-                                        C.c_int, C.c_double, C.c_int, C.c_uint64,
+                                        C.c_int, C.c_double, C.c_int, C.c_int, C.c_uint64,
                                         C.POINTER(C.c_uint8), C.c_int,
                                         C.POINTER(C.c_int64), C.POINTER(C.c_int32), C.c_int,
                                         C.POINTER(C.c_int)]
@@ -798,21 +799,26 @@ def late_hybrid_game(net: bytes, game: dict[str, Any], seed: int, *, late: bytes
                      adjust_max_level: int, deep2_level: int, deep2_k: int, switch_level: int,
                      line_cap: int, frame_cap: int, limits: Limits, params: Params,
                      explore: float = 0.0, explore_from_lines: int = 0, explore_seed: int = 0,
-                     dump: bool = False) -> tuple[dict[str, Any], bytes | None]:
+                     dump: bool = False, mid: bytes | None = None, mid_from_lines: int = 0,
+                     explore_to_lines: int = 0) -> tuple[dict[str, Any], bytes | None]:
     """Experiment 029: :func:`deep_hybrid_game`'s game with an optional second network
     ``late`` for every decision at ``late_from_lines`` lines or more, a random placement
     with chance ``explore`` per piece once the game has ``explore_from_lines`` lines, and
-    with ``dump`` its boards as :func:`dump_game`'s."""
+    with ``dump`` its boards as :func:`dump_game`'s. Experiment 030: an optional third
+    network ``mid`` for the decisions at ``mid_from_lines`` lines or more that are not late,
+    and exploration only below ``explore_to_lines`` lines (0 is to the end)."""
     inputs = (C.c_uint8 * max(1, frame_cap))()
     out = (C.c_int64 * 11)()
     rows = (C.c_int32 * DUMP_CAPACITY)() if dump else None
     count = C.c_int(0)
     status = load().fn_late_hybrid_game(
         net, len(net), late, len(late) if late is not None else 0, late_from_lines,
-        C.byref(params), commit_level, adjust_k, adjust_max_level, deep2_level, deep2_k,
+        mid, len(mid) if mid is not None else 0, mid_from_lines, C.byref(params),
+        commit_level, adjust_k, adjust_max_level, deep2_level, deep2_k,
         switch_level, game["ruleset"].encode(), game["mode"].encode(), game["start_level"],
         game["height"], seed, line_cap, frame_cap, limits.tap_interval,
-        limits.reaction_frames, explore, explore_from_lines, explore_seed, inputs,
+        limits.reaction_frames, explore, explore_from_lines, explore_to_lines, explore_seed,
+        inputs,
         max(1, frame_cap), out, rows, DUMP_CAPACITY if dump else 0, C.byref(count))
     if status:
         raise NativeError(f"fn_late_hybrid_game failed with {status}")

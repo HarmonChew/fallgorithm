@@ -28,7 +28,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 27;
+constexpr int abi_version = 28;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -1068,16 +1068,21 @@ FN_API int fn_deep_hybrid_game(const unsigned char* net, int net_size, const Par
 // ``late`` (null is off) for every decision at ``late_from_lines`` lines or more
 // (NetSearcher::set_late_net), and per-piece exploration at rate ``explore`` once the game
 // has ``explore_from_lines`` lines (BasicAgent::set_explore_from_lines; 0 is off).
+// Experiment 030: an optional third network ``mid`` (null is off) for the decisions at
+// ``mid_from_lines`` lines or more that are not late (NetSearcher::set_mid_net), and
+// exploration only below ``explore_to_lines`` lines (0 is to the end).
 // ``rows`` may be null; given, it receives the game's boards as fn_dump_game's. Returns as
 // fn_net_game.
 FN_API int fn_late_hybrid_game(const unsigned char* net, int net_size,
                                const unsigned char* late, int late_size, int late_from_lines,
+                               const unsigned char* mid, int mid_size, int mid_from_lines,
                                const Params* params, int commit_level, int adjust_k,
                                int adjust_max_level, int deep2_level, int deep2_k,
                                int switch_level, const char* ruleset, const char* mode,
                                int start_level, int height, int seed, int line_cap,
                                int frame_cap, int interval, int reaction, double explore,
-                               int explore_from_lines, std::uint64_t explore_seed,
+                               int explore_from_lines, int explore_to_lines,
+                               std::uint64_t explore_seed,
                                std::uint8_t* inputs, int capacity, std::int64_t* out,
                                std::int32_t* rows, int row_capacity, int* row_count) {
     if (!net || !params || !ruleset || !mode || seed < 0 || seed > 0xffff || line_cap < 0 ||
@@ -1085,16 +1090,18 @@ FN_API int fn_late_hybrid_game(const unsigned char* net, int net_size,
         start_level < 0 || start_level >= 20 || net_size < 0 || commit_level < 0 ||
         adjust_k < 0 || adjust_max_level < 0 || deep2_level < 0 || deep2_k < 0 ||
         switch_level < 0 || (late && late_size < 0) || late_from_lines < 0 ||
+        (mid && mid_size < 0) || mid_from_lines < 0 ||
         (rows && !row_count) || row_capacity < 0 || !(explore >= 0.0 && explore <= 1.0) ||
-        explore_from_lines < 0) {
+        explore_from_lines < 0 || explore_to_lines < 0) {
         return -1;
     }
     try {
         blocks::Config config;
-        ValueNetwork network, late_network;
+        ValueNetwork network, late_network, mid_network;
         if (!make_config(ruleset, mode, start_level, height, seed, config) ||
             !network.load(net, static_cast<std::size_t>(net_size)) ||
-            (late && !late_network.load(late, static_cast<std::size_t>(late_size)))) {
+            (late && !late_network.load(late, static_cast<std::size_t>(late_size))) ||
+            (mid && !mid_network.load(mid, static_cast<std::size_t>(mid_size)))) {
             return -1;
         }
         Searcher searcher(*params);
@@ -1107,10 +1114,14 @@ FN_API int fn_late_hybrid_game(const unsigned char* net, int net_size,
         if (late) {
             deep.set_late_net(&late_network, late_from_lines);
         }
+        if (mid) {
+            deep.set_mid_net(&mid_network, mid_from_lines);
+        }
         BasicAgent<HybridSearcher> agent(HybridSearcher(rollouts, deep, true, switch_level),
                                          interval, reaction);
         agent.set_explore(explore, 0, explore_seed);
         agent.set_explore_from_lines(explore_from_lines);
+        agent.set_explore_to_lines(explore_to_lines);
         std::vector<BoardSample> samples;
         std::uint64_t final_score = 0;
         const int status = run_game(config, agent, line_cap, frame_cap, inputs, out,
