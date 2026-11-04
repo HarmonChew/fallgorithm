@@ -1,0 +1,33 @@
+{
+ "experiment": "030-v29-search-taught",
+ "round": 0,
+ "seeds": 400,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "ed274beca64f8a623627c8fc9e13792fa2983676",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "abi_version": 28,
+ "agent": "v39 (029's record agent)",
+ "mid_from_lines": 230,
+ "late_from_lines": 320,
+ "seconds": 3539.8,
+ "backup2_seconds_per_board_x_jobs": 0.0905,
+ "games": 400,
+ "boards": 88478,
+ "mean_score": 2328827.3,
+ "line_cap_share": 0.357,
+ "by_source": {
+  "0": {
+   "games": 400,
+   "mean_score": 2328827.3
+  }
+ }
+}
