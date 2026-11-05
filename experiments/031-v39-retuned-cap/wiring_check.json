@@ -1,0 +1,55 @@
+{
+ "experiment": "031-v39-retuned-cap",
+ "games": [
+  {
+   "kind": "late_v39_is_v29",
+   "seed": 13770,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "late_v39_is_v29",
+   "seed": 45356,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "late_v39_is_v29",
+   "seed": 19813,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "late_v29_differs",
+   "seed": 13770,
+   "match": true
+  },
+  {
+   "kind": "late_v29_differs",
+   "seed": 45356,
+   "match": true
+  },
+  {
+   "kind": "late_v29_differs",
+   "seed": 19813,
+   "match": true
+  }
+ ],
+ "matched": true,
+ "abi_version": 28,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "4866a2648d40eaba8755f814fee372560f6fe80e",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
