@@ -1,0 +1,76 @@
+{
+ "experiment": "031-v39-retuned-cap",
+ "round": 0,
+ "seeds": 400,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "6dd2065d8fa4827afa3e4c0e24c1d7419525e430",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "abi_version": 28,
+ "agent": "v29 (030's record agent)",
+ "mid_from_lines": 230,
+ "late_from_lines": 320,
+ "seconds": 3989.3,
+ "board_stats": {
+  "320-329": {
+   "boards": 9384,
+   "ready_well_share": 0.4454,
+   "tetris_line_share": 0.6486,
+   "tetrises_per_game": 1.682
+  },
+  "330-379": {
+   "boards": 43501,
+   "ready_well_share": 0.1616,
+   "tetris_line_share": 0.2619,
+   "tetrises_per_game": 2.958
+  },
+  "380-409": {
+   "boards": 23189,
+   "ready_well_share": 0.1584,
+   "tetris_line_share": 0.2535,
+   "tetrises_per_game": 1.739
+  },
+  "410-419": {
+   "boards": 6525,
+   "ready_well_share": 0.1082,
+   "tetris_line_share": 0.1837,
+   "tetrises_per_game": 0.431
+  },
+  "420-427": {
+   "boards": 4921,
+   "ready_well_share": 0.0784,
+   "tetris_line_share": 0.1246,
+   "tetrises_per_game": 0.237
+  },
+  "428-428": {
+   "boards": 803,
+   "ready_well_share": 0.0635,
+   "tetris_line_share": 0.1333,
+   "tetrises_per_game": 0.036
+  },
+  "429-429": {
+   "boards": 3923,
+   "ready_well_share": 0.1468,
+   "tetris_line_share": 0.8376,
+   "tetrises_per_game": 0.418
+  }
+ },
+ "games": 400,
+ "boards": 92246,
+ "mean_score": 2351604.2,
+ "line_cap_share": 0.328,
+ "by_source": {
+  "0": {
+   "games": 400,
+   "mean_score": 2351604.2
+  }
+ }
+}
