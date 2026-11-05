@@ -1,0 +1,27 @@
+{
+ "weights": "experiments/023-self-taught-value/value_sweep15.bin",
+ "commit 29-38": {
+  "decisions": 71213,
+  "search_agrees": 0.7508,
+  "search_loss": 8.312,
+  "search_odd_loss": 10.7513,
+  "network_agrees": 0.688,
+  "network_loss": 12.4094,
+  "network_odd_loss": 14.8117,
+  "even_rollouts_agrees": 0.846,
+  "even_rollouts_loss": 2.4241,
+  "even_rollouts_odd_loss": 9.8223
+ },
+ "commit 29-38 below 320": {
+  "decisions": 65882,
+  "search_agrees": 0.7486,
+  "search_loss": 8.6208,
+  "search_odd_loss": 11.1135,
+  "network_agrees": 0.6916,
+  "network_loss": 12.5457,
+  "network_odd_loss": 15.0024,
+  "even_rollouts_agrees": 0.8448,
+  "even_rollouts_loss": 2.5055,
+  "even_rollouts_odd_loss": 10.133
+ }
+}

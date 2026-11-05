@@ -1,0 +1,112 @@
+{
+ "sweep": 5,
+ "created_at": "2026-11-04T15:33:49.058351+00:00",
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "54fba7585978209244a854dd9a18121302831adc",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "torch": "2.14.0+cu130",
+ "from": {
+  "path": "experiments/030-v29-search-taught/value_sweep4.bin",
+  "sha256": "bd39c4a1e3bf02b1a509c463898c1b37be9977c9b97d991f6dfcec1abfb64fd1"
+ },
+ "late": {
+  "path": "experiments/029-v39-search-taught/t2/value_sweep8.bin",
+  "sha256": "4278e48fc65487f4523300ae9d4865ffe169a0b88dfb61c9bc1f48a1d9680aaa"
+ },
+ "weights": {
+  "path": "experiments/030-v29-search-taught/value_sweep5.bin",
+  "sha256": "f2669c1663b4a3585df61c87d4d33d4396fe80997235cf691a1258d10093c16e"
+ },
+ "depth": 4,
+ "lambda": 0.95,
+ "boards": {
+  "parts": [
+   79396,
+   42530,
+   43026,
+   42192
+  ],
+  "children_below_late_and_late": [
+   482223,
+   2114
+  ],
+  "check": 8688
+ },
+ "settings": {
+  "batch": 4096,
+  "epochs": 3,
+  "lr": 0.0003,
+  "lr_note": "Adam, one-cycle schedule peaking at lr; warm-started from the last sweep's V",
+  "torch_seed": 23
+ },
+ "target_seconds": 1765.7,
+ "training_log": [
+  {
+   "step": 101,
+   "loss": 0.7681,
+   "seconds": 1.0
+  },
+  {
+   "step": 202,
+   "loss": 0.7408,
+   "seconds": 2.0
+  },
+  {
+   "step": 303,
+   "loss": 0.9178,
+   "seconds": 3.0
+  },
+  {
+   "step": 404,
+   "loss": 0.7567,
+   "seconds": 3.9
+  },
+  {
+   "step": 505,
+   "loss": 0.8806,
+   "seconds": 4.9
+  }
+ ],
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "check": {
+  "old_value_minus_target_rms": 0.2498,
+  "new_value_minus_target_rms": 0.4445,
+  "target_minus_old_value": 0.1962,
+  "by_20_lines_old_target_new": {
+   "230-249": [
+    22.896,
+    23.049,
+    23.394
+   ],
+   "250-269": [
+    20.418,
+    20.587,
+    20.995
+   ],
+   "270-289": [
+    17.793,
+    17.988,
+    18.448
+   ],
+   "290-309": [
+    15.313,
+    15.529,
+    16.014
+   ],
+   "310-329": [
+    13.779,
+    14.089,
+    14.38
+   ]
+  }
+ }
+}

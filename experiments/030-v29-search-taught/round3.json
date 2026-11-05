@@ -1,0 +1,47 @@
+{
+ "round": 3,
+ "weights": "experiments/030-v29-search-taught/value_sweep3.bin",
+ "explore": 0.01,
+ "explore_lines": [
+  210,
+  320
+ ],
+ "seconds": 1662.4,
+ "calibration_value_actual_defined_by_20_lines": {
+  "230-249": [
+   21.955,
+   45.434,
+   37.896
+  ],
+  "250-269": [
+   19.542,
+   39.949,
+   32.559
+  ],
+  "270-289": [
+   16.873,
+   33.629,
+   26.205
+  ],
+  "290-309": [
+   14.229,
+   27.488,
+   20.004
+  ],
+  "310-329": [
+   12.767,
+   22.722,
+   15.382
+  ]
+ },
+ "games": 200,
+ "boards": 43214,
+ "mean_score": 2242522.6,
+ "line_cap_share": 0.28,
+ "by_source": {
+  "0": {
+   "games": 200,
+   "mean_score": 2242522.6
+  }
+ }
+}
