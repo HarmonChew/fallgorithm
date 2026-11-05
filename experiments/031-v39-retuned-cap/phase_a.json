@@ -1,0 +1,270 @@
+{
+ "data": "runs/031-data/round0.npz",
+ "late": "experiments/029-v39-search-taught/t2/value_sweep8.bin",
+ "from_lines": 330,
+ "unit": "Tetrises at level 18",
+ "by_10_lines": {
+  "330-339": {
+   "decisions": 7618,
+   "agrees": 1.0,
+   "with_a_well_placement": 0.2067,
+   "picks_a_well_placement": 0.8622,
+   "declined": 217,
+   "searched": 1575,
+   "mean_gap": 0.9943,
+   "mean_gap_reward": 0.2134,
+   "mean_gap_future": 0.7808,
+   "future_decides_share": 0.3134,
+   "cut_at_k_share": 0.341,
+   "ready_boards": 1186,
+   "i_reaches_share": 0.9823
+  },
+  "340-349": {
+   "decisions": 9513,
+   "agrees": 1.0,
+   "with_a_well_placement": 0.1832,
+   "picks_a_well_placement": 0.9007,
+   "declined": 173,
+   "searched": 1743,
+   "mean_gap": 0.9326,
+   "mean_gap_reward": 0.2027,
+   "mean_gap_future": 0.7299,
+   "future_decides_share": 0.3931,
+   "cut_at_k_share": 0.3237,
+   "ready_boards": 1344,
+   "i_reaches_share": 1.0
+  },
+  "350-359": {
+   "decisions": 9024,
+   "agrees": 1.0,
+   "with_a_well_placement": 0.2081,
+   "picks_a_well_placement": 0.9089,
+   "declined": 171,
+   "searched": 1878,
+   "mean_gap": 0.8588,
+   "mean_gap_reward": 0.1698,
+   "mean_gap_future": 0.689,
+   "future_decides_share": 0.4503,
+   "cut_at_k_share": 0.3099,
+   "ready_boards": 1471,
+   "i_reaches_share": 0.9925
+  },
+  "360-369": {
+   "decisions": 8705,
+   "agrees": 1.0,
+   "with_a_well_placement": 0.2096,
+   "picks_a_well_placement": 0.9074,
+   "declined": 169,
+   "searched": 1825,
+   "mean_gap": 0.9351,
+   "mean_gap_reward": 0.1815,
+   "mean_gap_future": 0.7536,
+   "future_decides_share": 0.4497,
+   "cut_at_k_share": 0.3609,
+   "ready_boards": 1419,
+   "i_reaches_share": 0.9993
+  },
+  "370-379": {
+   "decisions": 8582,
+   "agrees": 1.0,
+   "with_a_well_placement": 0.2385,
+   "picks_a_well_placement": 0.9018,
+   "declined": 201,
+   "searched": 2047,
+   "mean_gap": 0.8207,
+   "mean_gap_reward": 0.1489,
+   "mean_gap_future": 0.6718,
+   "future_decides_share": 0.5025,
+   "cut_at_k_share": 0.3184,
+   "ready_boards": 1605,
+   "i_reaches_share": 0.9944
+  },
+  "380-389": {
+   "decisions": 8143,
+   "agrees": 1.0,
+   "with_a_well_placement": 0.2177,
+   "picks_a_well_placement": 0.9188,
+   "declined": 144,
+   "searched": 1773,
+   "mean_gap": 0.9796,
+   "mean_gap_reward": 0.2346,
+   "mean_gap_future": 0.7449,
+   "future_decides_share": 0.3403,
+   "cut_at_k_share": 0.3194,
+   "ready_boards": 1423,
+   "i_reaches_share": 0.9937
+  },
+  "390-399": {
+   "decisions": 7905,
+   "agrees": 1.0,
+   "with_a_well_placement": 0.1957,
+   "picks_a_well_placement": 0.9276,
+   "declined": 112,
+   "searched": 1547,
+   "mean_gap": 0.8274,
+   "mean_gap_reward": 0.2212,
+   "mean_gap_future": 0.6062,
+   "future_decides_share": 0.4107,
+   "cut_at_k_share": 0.3304,
+   "ready_boards": 1246,
+   "i_reaches_share": 0.9888
+  },
+  "400-409": {
+   "decisions": 7088,
+   "agrees": 1.0,
+   "with_a_well_placement": 0.1761,
+   "picks_a_well_placement": 0.9263,
+   "declined": 92,
+   "searched": 1248,
+   "mean_gap": 0.7143,
+   "mean_gap_reward": 0.2319,
+   "mean_gap_future": 0.4824,
+   "future_decides_share": 0.3696,
+   "cut_at_k_share": 0.3478,
+   "ready_boards": 998,
+   "i_reaches_share": 0.993
+  },
+  "410-419": {
+   "decisions": 6505,
+   "agrees": 1.0,
+   "with_a_well_placement": 0.136,
+   "picks_a_well_placement": 0.9243,
+   "declined": 67,
+   "searched": 885,
+   "mean_gap": 0.6914,
+   "mean_gap_reward": 0.2398,
+   "mean_gap_future": 0.4516,
+   "future_decides_share": 0.403,
+   "cut_at_k_share": 0.4328,
+   "ready_boards": 704,
+   "i_reaches_share": 0.9673
+  },
+  "420-429": {
+   "decisions": 9398,
+   "agrees": 1.0,
+   "with_a_well_placement": 0.1216,
+   "picks_a_well_placement": 0.9186,
+   "declined": 93,
+   "searched": 1143,
+   "mean_gap": 0.7902,
+   "mean_gap_reward": 0.1003,
+   "mean_gap_future": 0.6899,
+   "future_decides_share": 0.7097,
+   "cut_at_k_share": 0.5484,
+   "ready_boards": 902,
+   "i_reaches_share": 0.9756
+  }
+ },
+ "gate_a_400_427": {
+  "decisions_with_a_well_placement": 2604,
+  "picks_a_well_placement": 2401,
+  "declined": 203,
+  "future_decides": 80,
+  "cut_at_k": 78,
+  "reward_lower": 4,
+  "reward_equal": 77,
+  "reward_higher": 122,
+  "future_decides_share": 0.3941
+ },
+ "calibration_value_actual_boards": {
+  "320-329": [
+   12.695,
+   20.211,
+   9384
+  ],
+  "330-339": [
+   10.932,
+   17.77,
+   7630
+  ],
+  "340-349": [
+   10.787,
+   16.287,
+   9526
+  ],
+  "350-359": [
+   10.672,
+   14.844,
+   9032
+  ],
+  "360-369": [
+   10.306,
+   12.99,
+   8716
+  ],
+  "370-379": [
+   9.817,
+   11.076,
+   8597
+  ],
+  "380-389": [
+   9.136,
+   8.952,
+   8155
+  ],
+  "390-399": [
+   7.96,
+   7.109,
+   7926
+  ],
+  "400-409": [
+   6.574,
+   5.399,
+   7108
+  ],
+  "410-419": [
+   5.057,
+   3.552,
+   6525
+  ],
+  "420-429": [
+   2.808,
+   1.46,
+   9647
+  ]
+ },
+ "board_stats": {
+  "320-329": {
+   "boards": 9384,
+   "ready_well_share": 0.4454,
+   "tetris_line_share": 0.6486,
+   "tetrises_per_game": 1.682
+  },
+  "330-379": {
+   "boards": 43501,
+   "ready_well_share": 0.1616,
+   "tetris_line_share": 0.2619,
+   "tetrises_per_game": 2.958
+  },
+  "380-409": {
+   "boards": 23189,
+   "ready_well_share": 0.1584,
+   "tetris_line_share": 0.2535,
+   "tetrises_per_game": 1.739
+  },
+  "410-419": {
+   "boards": 6525,
+   "ready_well_share": 0.1082,
+   "tetris_line_share": 0.1837,
+   "tetrises_per_game": 0.431
+  },
+  "420-427": {
+   "boards": 4921,
+   "ready_well_share": 0.0784,
+   "tetris_line_share": 0.1246,
+   "tetrises_per_game": 0.237
+  },
+  "428-428": {
+   "boards": 803,
+   "ready_well_share": 0.0635,
+   "tetris_line_share": 0.1333,
+   "tetrises_per_game": 0.036
+  },
+  "429-429": {
+   "boards": 3923,
+   "ready_well_share": 0.1468,
+   "tetris_line_share": 0.8376,
+   "tetrises_per_game": 0.418
+  }
+ }
+}
