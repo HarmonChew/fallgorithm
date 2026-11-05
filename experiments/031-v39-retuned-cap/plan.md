@@ -26,6 +26,9 @@ Clears counted including the game-ending one (Codex caught that a first count mi
 | V39 value / what the game went on to score (r7, Tetrises at 18) | ~right | 8.4/6.4 to 6.3/3.8 | 4.9 / 2.5 | 3.5 / 1.4 | 1.6 / 0.8 |
 
 \* four 9-of-10 rows in a block with the gap in one column and that column open above.
+(These first counts read the dumped bitmasks two rows off and did not require the well to
+end under the fourth row; the Opus code review measured the difference at ~0.1 points of
+share. `experiment031.ready_wells` is the corrected definition.)
 
 Reading:
 * **Cashing looks flat**: given a ready well, a Tetris follows in 6 pieces about 55% of the
@@ -48,19 +51,21 @@ Rough size (a scenario, not a forecast): round 7 has 5,084 cleared lines at 380-
 -16.4k at 39+ is uncertain (its CI includes 0) and may overlap. Scenario: +15-45k, below the
 ~85k to BetaTetris.
 
-## Phase A: offline audit (no games; ~3-4 h incl. a small diagnostic trace)
+## Phase A: offline audit (no games; ~3-4 h)
 
-On 029's t2 rounds and on 030's stored v29 held-out games replayed to boards (inputs replayed
-with `experiment020`'s replay, boards dumped as `experiment029` does, from 320 lines):
-1. The table above for v29's own play (the hand-over stacks), terminal clears included.
-2. Well-building decisions. Needs a native diagnostic trace (new, off by default, no effect
-   on play) around `NetSearcher::search` / `deep2_commit` / `deep_adjust` that returns, for one
-   decision, every candidate's clear points, late-net future term and total. On boards with a
-   ready well or one placement from one: the chosen placement against the best one that keeps
-   or creates the well, the score gap, and how much of it is the future term, by 10 lines.
-   Also, at ready boards, whether an arriving I can reach the well (`reach.py` /
-   `pathaware.py` candidates), to check reachability directly rather than by cashing rates.
-3. V39 calibration on v29's games by 10 lines from 320 (no exploration in these games).
+On 031's round 0 (v29's own games from 320 lines, no exploration: the hand-over stacks) and
+029's t2 rounds:
+1. The table above for v29's own play (`experiment031.board_stats`, terminal clears included).
+2. Well-building decisions, re-searched in Python with the exposed native parts: each
+   decision's reachable placements from the spawn (`native.reachable`, the level's gravity and
+   tap model), settled (`native.settle`), scored as the commit search does (clear points +
+   backup, the best 4 rescored by clear points + backup2 under the late network). On boards
+   with a ready well or one placement from one: the chosen placement against the best one
+   that keeps or creates the well, the score gap, and how much of it is the future term, by
+   10 lines. (From the spawn, not the agent's in-flight state after its reaction delay: the
+   re-searched pick is checked against the placement the game actually made.) Also, at ready
+   boards, whether an I can reach the well (`native.reachable`).
+3. V39 calibration on v29's games by 10 lines from 320.
 
 A is the evidence for Phase D's gate; it does not change C.
 
@@ -85,9 +90,10 @@ Stop rule: 5-8 sweeps; from 5 on, stop after 3 without a new best probe.
 Run only if both hold (decided now): (a) Phase A finds that at 400-427 the future term
 decides most well-building choices against the well (the chosen placement beats the best
 well placement by less than its future-term difference in at least half of those
-decisions), and (b) C's chosen V39' still leaves a near-cap deficit: ready-well share at
-410-427 under half of its 330-379 level on the probe, or value above actual by more than 1.0
-Tetris at 400-427 on its last round.
+decisions), and (b) C's chosen V39' still leaves a near-cap deficit on the own round played
+with it (the loop plays one for every probed sweep, the last one for diagnostics only): its
+ready-well share at 410-427 is under half of its 330-379 share, or V39' is above what the
+games went on to score by more than 1.0 Tetris at 400-427 (probe games keep no boards).
 
 As `re`, but on own-play boards lambda ramps from 0.95 at 400 lines to 0.99 at 427 (more of
 the real outcome near the cap, never pure Monte Carlo), exploration off from 400 so those
@@ -130,3 +136,9 @@ with a native diagnostic trace (and a direct reachability check) and re-timed; P
 additive per-line value offset) dropped, since it cancels between non-clearing candidates at
 the same line count and so cannot gate D; D gated on A's action evidence and C's remaining
 near-cap deficit instead; the size labelled a scenario. Order A -> C -> staged agreed.
+
+Opus code review of Phase C (before any game): the 44+ stats read a level-entry key the
+episodes do not store (fixed: games by final lines >= 380); `ready_wells` fixed (bitmask
+orientation, well depth); gate (b) reworded to the own round of the chosen sweep (the loop
+now plays one for its last sweep too). Phase A needs no native change (reach, settle and
+the batch backups are exposed), so it runs as Python on saved boards.
