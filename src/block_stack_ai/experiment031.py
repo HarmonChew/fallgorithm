@@ -582,17 +582,35 @@ def loop(jobs: int, device: str) -> int:
         index += 1
 
 
-def choose(device: str = "cuda:0") -> dict[str, Any]:
-    """Among the probed sweeps whose 39+ ranking loss (odd rollouts) is no worse than 029's
-    V39's, the one with the highest paired probe mean (plan.md)."""
-    key = "commit 39+"
-    bar = v39_ranking(device)[key]["network_odd_loss"]
+def _probe_rows() -> list[dict[str, Any]]:
     rows = []
     for path in sorted(OUT.glob("probe[0-9]*.json")):
         r = _load(path)
         rows.append({"sweep": r["sweep"], "weights": r["weights"],
                      "probe_mean": r["paired_vs_v29"]["total"]["score"]["mean"],
-                     "odd_loss_39": r["ranking"][key]["network_odd_loss"]})
+                     "odd_loss_39": r["ranking"]["commit 39+"]["network_odd_loss"]})
+    return rows
+
+
+CHOICE_B = OUT / "chosen_031b.json"
+
+
+def choose_b() -> dict[str, Any]:
+    """031b (predeclared_031b.md): the probed sweep with the highest paired probe mean,
+    without 031's ranking eligibility check (no sweep passed it)."""
+    rows = _probe_rows()
+    result = {"rule": "highest paired probe mean among all probed sweeps (predeclared_031b.md)",
+              "sweeps": rows, "chosen": max(rows, key=lambda r: r["probe_mean"], default=None)}
+    _write(CHOICE_B, result)
+    return result
+
+
+def choose(device: str = "cuda:0") -> dict[str, Any]:
+    """Among the probed sweeps whose 39+ ranking loss (odd rollouts) is no worse than 029's
+    V39's, the one with the highest paired probe mean (plan.md)."""
+    key = "commit 39+"
+    bar = v39_ranking(device)[key]["network_odd_loss"]
+    rows = _probe_rows()
     eligible = [r for r in rows if r["odd_loss_39"] <= bar]
     chosen = max(eligible, key=lambda r: r["probe_mean"], default=None)
     result = {"v39_odd_loss_39": bar, "sweeps": rows, "chosen": chosen}
@@ -609,10 +627,11 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser("round0", help="v29 data games on round 0's seeds")
     looper = commands.add_parser("loop", help="sweep, probe, play until the stop rule")
     looper.add_argument("--device", default="cuda:0")
+    commands.add_parser("choose-b", help="031b: the highest probe, no ranking check")
     chooser = commands.add_parser("choose", help="pick the V39' for the staged evaluation")
     chooser.add_argument("--device", default="cuda:0")  # as the loop's ranking bar
     for name, sub in commands.choices.items():
-        if name != "choose":
+        if name not in ("choose", "choose-b"):
             sub.add_argument("--jobs", type=int, default=6 if name == "check" else 28)
     args = parser.parse_args(argv)
     try:
@@ -624,6 +643,8 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(round0(args.jobs))[:400])
         elif args.command == "loop":
             print(f"stopped after sweep {loop(args.jobs, args.device)}")
+        elif args.command == "choose-b":
+            print(json.dumps(choose_b()["chosen"]))
         else:
             print(json.dumps(choose(args.device)["chosen"]))
     except (native.NativeError, OSError, KeyError, ValueError, json.JSONDecodeError) as error:

@@ -1,4 +1,4 @@
-"""Run Experiment 031's staged evaluation of the chosen V39' (predeclared.md).
+"""Run Experiment 031b's staged evaluation of the chosen V39' (predeclared_031b.md).
 
     python -m block_stack_ai.experiment031eval screen [--jobs N]
     python -m block_stack_ai.experiment031eval develop [--jobs N]
@@ -6,8 +6,8 @@
     python -m block_stack_ai.experiment031eval summarize STAGE
 
 The agent (``v39r``) is 030's record agent ``v29`` with the V39' that ``experiment031
-choose`` picked (``chosen.json``) as the late network for every decision at 320 lines or
-more (experiment031._game, no exploration). Every stage pairs it by seed with 030's stored
+choose-b`` picked (``chosen_031b.json``; 031's ``choose`` found none eligible) as the
+late network for every decision at 320 lines or more (experiment031._game, no exploration). Every stage pairs it by seed with 030's stored
 ``v29`` games (the rule), 029's ``v39``, 027's ``e29_k4`` and 017's (reported only);
 held-out first replays 28 each of 017's, e29_k4's, v39's and v29's stored record games.
 """
@@ -46,7 +46,7 @@ RULE = ("Primary metric: mean final score, paired by seed against 030's stored g
         "Screening: promoted if the paired mean is +15k or more. Development: kept if the "
         "paired mean is at least +15k and the interval's lower end is above 0. 029's v39, "
         "027's e29_k4 and 017's games are paired too but are not part of the rule. "
-        "Held-out (predeclared.md): passes if the interval's lower end against 030's record "
+        "Held-out (predeclared_031b.md): passes if the interval's lower end against 030's record "
         "games of v29 on 012's held-out seeds is above 0, after 28 each of 017's, e29_k4's, "
         "v39's and v29's stored games replay input for input on the build.")
 
@@ -54,13 +54,13 @@ _load, _write = e13._load, e13._write
 
 
 def chosen() -> dict[str, Any]:
-    """The chosen V39' (chosen.json), its weights' path and sha256."""
-    path = OUT / "chosen.json"
+    """031b's chosen V39' (chosen_031b.json), its weights' path and sha256."""
+    path = e31.CHOICE_B
     if not path.exists():
-        raise ValueError(f"{path} is missing: run experiment031 choose first")
+        raise ValueError(f"{path} is missing: run experiment031 choose-b first")
     pick = _load(path)["chosen"]
     if pick is None:
-        raise ValueError("experiment031 choose found no eligible V39'")
+        raise ValueError("experiment031 choose-b found no probed sweep")
     weights = runner.PROJECT_ROOT / pick["weights"]
     return pick | {"path": weights,
                    "sha256": hashlib.sha256(weights.read_bytes()).hexdigest()}
@@ -112,15 +112,15 @@ def run(stage: str, jobs: int) -> dict[str, Any]:
     if stage == "heldout":
         if not _stage_result("development")["kept"]:
             raise ValueError("development did not keep v39r")
-        if not (OUT / "predeclared.md").exists():
-            raise ValueError(f"{OUT / 'predeclared.md'} is missing: predeclare first")
+        if not (OUT / "predeclared_031b.md").exists():
+            raise ValueError(f"{OUT / 'predeclared_031b.md'} is missing: predeclare first")
     if games_path(stage).exists():
         raise ValueError(f"{games_path(stage)} exists already")
     pick = chosen()
     previous = {"development": "screening", "heldout": "development"}.get(stage)
     if previous and _stage_result(previous)["chosen"] != {k: v for k, v in pick.items()
                                                           if k != "path"}:
-        raise ValueError(f"chosen.json names another V39' than {previous} evaluated")
+        raise ValueError(f"chosen_031b.json names another V39' than {previous} evaluated")
     seeds = e25._seeds(stage)
     _require_ready(stage, seeds)
     versions = runner._record_versions()

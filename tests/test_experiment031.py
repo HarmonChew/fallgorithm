@@ -111,3 +111,21 @@ def test_choose_skips_worse_ranking(monkeypatch, tmp_path):
              "ranking": {key: {"network_odd_loss": loss}}}))
     (tmp_path / "probe_base.json").write_text("{}")
     assert e31.choose()["chosen"]["sweep"] == 3
+
+
+def test_choose_b_takes_the_highest_probe(monkeypatch, tmp_path):
+    monkeypatch.setattr(e31, "OUT", tmp_path)
+    monkeypatch.setattr(e31, "CHOICE_B", tmp_path / "chosen_031b.json")
+    key = "commit 39+"
+    for sweep, mean, loss in ((1, 5.0, 9.0), (2, 9.0, 11.0), (3, 7.0, 10.0)):
+        (tmp_path / f"probe{sweep}.json").write_text(json.dumps(
+            {"sweep": sweep, "weights": f"w{sweep}",
+             "paired_vs_v29": {"total": {"score": {"mean": mean}}},
+             "ranking": {key: {"network_odd_loss": loss}}}))
+    (tmp_path / "probe_base.json").write_text("{}")
+    assert e31.choose_b()["chosen"]["sweep"] == 2
+    assert json.loads((tmp_path / "chosen_031b.json").read_text())["chosen"]["sweep"] == 2
+
+
+def test_no_round_seeds_after_the_last_sweep():
+    assert e31.round_seeds(e31.MAX_SWEEPS) == []
