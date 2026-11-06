@@ -574,8 +574,9 @@ def loop(jobs: int, device: str) -> int:
         if not weights_path(index).exists():
             sweep(index, jobs, device)
         print(_line(_probe_result(index, jobs, device)), flush=True)
-        if not (OUT / f"round{index}.json").exists():  # the last one: diagnostics only
-            play_round(index, jobs)
+        # The seeds cover rounds 1 to MAX_SWEEPS - 1 only, so sweep MAX_SWEEPS gets no round.
+        if round_seeds(index) and not (OUT / f"round{index}.json").exists():
+            play_round(index, jobs)  # the last one: diagnostics only
         if should_stop(index):
             return index
         index += 1
