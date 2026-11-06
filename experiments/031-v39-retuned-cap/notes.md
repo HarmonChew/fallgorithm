@@ -1,4 +1,4 @@
-# Experiment 031 - notes: V39 re-taught on v29's own games (stopped at `choose`)
+# Experiment 031 - notes: V39 re-taught on v29's own games (031 stopped at `choose`; 031b a new record)
 
 Plan: [plan.md](plan.md) (version 3, after two Codex reviews); held-out protocol:
 [predeclared.md](predeclared.md) (committed with the plan, before any game). Owner's
@@ -17,7 +17,9 @@ recipe, warm start from 029's V39, V29 frozen) give more Tetrises at 39+ and a h
 
 ## Outcome in one line
 
-**No candidate was evaluated.** By the predeclared choice rule a sweep is eligible only if
+**031b (below) evaluated sweep 5 under an amended choice rule: a new record, 2,409,955 on
+012's held-out seeds, +63.6k over `v29` (95% CI +46.1k, +81.6k).** 031 itself: **no
+candidate was evaluated.** By the predeclared choice rule a sweep is eligible only if
 its "commit 39+" ranking loss (odd rollouts) is no worse than 029's V39's (21.29). All 8
 sweeps were worse (22.39 to 24.16), so `choose` picked none and the staged evaluation did
 not start. On the probe, though, the re-taught networks played as hoped: more Tetrises at
@@ -134,3 +136,85 @@ choice, and gate (a) had already failed.
 * V19 for 19-28 (plan.md's "after 031").
 * Cap-aware lambda ramp (Phase D) only with new evidence: Phase A says the future term is not
   what drives the declines.
+
+## 031b: sweep 5 through the staged evaluation (`predeclared_031b.md`) - a new record
+
+Owner's go-ahead 2026-11-06. `choose-b` (0f22fb7, `chosen_031b.json`) took the highest probe
+with no ranking check: **sweep 5** (`value_sweep5.bin`, probe +38.4k, CI +7k to +70k). Arm
+`v39r` = 030's record `v29` with sweep 5's V39' from 320 lines. Chain `runs/031b-eval-chain.sh`
+(log `runs/031b-eval-chain.log`): screening 4e992a4, development 940d0a4, held-out a0ebea4.
+Rule throughout: paired by seed against 030's stored `v29` games.
+
+### Screening (100 screening seeds, `screening.json`)
+
+| | mean score | mean / median lines | line cap | P(29) | P(39) | 39+ given 39 | Tetris rate | s/game |
+|---|---|---|---|---|---|---|---|---|
+| e29_k4 | 2,140,027 | 419.0 / 432 | 55% | 99.0% | 97.0% | 248k | 57.6% | 239 |
+| 017 | 1,778,089 | 387.3 / 393 | 38% | 100.0% | 92.0% | 255k | 49.0% | 414 |
+| v39 | 2,322,643 | 405.2 / 429 | 29% | 99.0% | 96.0% | 411k | 64.0% | 225 |
+| v29 | 2,375,740 | 407.3 / 429 | 31% | 99.0% | 97.0% | 419k | 65.1% | 224 |
+| **v39r** | **2,441,804** | 409.7 / 429 | 42% | 99.0% | 97.0% | 484k | 66.0% | 241 |
+
+Paired against `v29`: **+66.1k (+8.3k, +122.9k)**, 55 / 42 / 3; by band 0, 0, +3.5k (29-38),
++62.6k (39+). **Promoted** (bar +15k). Against `v39` +119.2k, `e29_k4` +301.8k, 017 +663.7k.
+
+### Development (500 development seeds, `development.json`)
+
+| | mean score | mean / median lines | line cap | P(29) | P(39) | 39+ given 39 | Tetris rate | s/game |
+|---|---|---|---|---|---|---|---|---|
+| e29_k4 | 2,139,763 | 421.1 / 432 | 57% | 99.0% | 98.0% | 253k | 57.3% | 243 |
+| 017 | 1,797,286 | 391.8 / 412 | 42% | 99.2% | 93.4% | 275k | 48.5% | 422 |
+| v39 | 2,306,109 | 404.1 / 429 | 27% | 99.0% | 97.6% | 394k | 64.1% | 231 |
+| v29 | 2,351,233 | 404.0 / 429 | 33% | 99.0% | 97.2% | 389k | 65.4% | 241 |
+| **v39r** | **2,418,981** | 407.1 / 428 | 37% | 99.0% | 97.2% | 461k | 66.2% | 247 |
+
+Paired against `v29`: **+67.7k (+43.7k, +92.4k)**, 303 / 185 / 12; by band 0, 0, -1.5k
+(-4.2k, +1.1k) (29-38), **+69.3k (+45.3k, +94.2k) (39+)**. **Kept** (>= +15k and CI above
+0). Against `v39` +112.9k, `e29_k4` +279.2k, 017 +621.7k.
+
+### Held-out (012's 1,000 seeds, `heldout.json`) - a new record
+
+Before any `v39r` game, 28 each of 017's, `e29_k4`'s, `v39`'s and `v29`'s stored record
+games replayed input for input on this build (112/112, `heldout_replay_check.json`).
+
+| | mean score | mean / median lines | line cap | P(29) | P(39) | 39+ given 39 | Tetris rate | s/game |
+|---|---|---|---|---|---|---|---|---|
+| 017 | 1,799,692 | 393.0 / 415 | 46% | 99.5% | 93.8% | 277k | 48.2% | 493* |
+| e29_k4 | 2,132,514 | 420.0 / 432 | 59% | 99.1% | 97.5% | 247k | 57.3% | 241* |
+| v39 | 2,315,238 | 406.2 / 429 | 32% | 99.1% | 97.4% | 404k | 63.8% | 230* |
+| v29 (record before) | 2,346,354 | 403.1 / 429 | 32% | 99.1% | 96.8% | 390k | 65.5% | 239* |
+| **v39r** | **2,409,955** | 406.0 / 427 | 34% | 99.1% | 96.7% | 458k | 66.3% | 238 |
+
+\* from their own runs.
+
+Paired against `v29` (the rule): **+63.6k (95% CI +46.1k, +81.6k)**, 601 wins / 371 losses /
+28 ties; lines +2.9 (+0.2, +5.6). **The predeclared rule is met: `v39r` (v29 with 031's
+sweep 5 V39' from 320 lines) is the new record, 2,409,955.** Against `v39`: +94.7k (+73.5k,
++115.7k); against `e29_k4`: +277.4k (+259.6k, +295.0k); against 017: +610.3k (+585.7k,
++635.6k), 943/1,000 wins.
+
+By band against `v29`: 0 (18), 0 (19-28), -1.4k (-3.2k, +0.4k) (29-38), **+65.0k (+47.7k,
++82.6k) (39+)**.
+
+Style (per game reaching the band):
+
+| | 29-38: lines | Tetrises | singles | Tetris share | 39+: games | lines | Tetrises | singles | Tetris share | 44+: games | Tetrises | Tetris share |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| e29_k4 | 98.6 | 15.42 | 18.9 | 62.5% | 975 | 93.9 | 1.04 | 53.6 | 4.5% | 908 | 0.66 | 5.3% |
+| 017 | 96.7 | 10.98 | 25.1 | 45.4% | 938 | 70.8 | 2.69 | 32.0 | 15.2% | 655 | 1.64 | 15.7% |
+| v39 | 99.4 | 16.18 | 18.3 | 65.1% | 974 | 79.1 | 4.98 | 31.2 | 25.2% | 778 | 2.61 | 23.8% |
+| v29 | 99.3 | 17.60 | 15.8 | 70.9% | 968 | 76.4 | 4.79 | 29.9 | 25.1% | 739 | 2.59 | 23.5% |
+| **v39r** | 99.2 | 17.57 | 15.8 | 70.8% | 967 | 79.5 | **6.17** | 29.6 | **31.0%** | 802 | **3.65** | **34.8%** |
+
+### What 031b learned
+
+* **The probe was right and the ranking check was the wrong guard here.** +38k on the probe
+  became +64-68k on every fresh stage (screening, development, held-out), all of it at 39+.
+  The check ranked boards from earlier agents' games; on v29's own play the re-taught V39'
+  is better. A future eligibility check should use the evaluated agent's own late boards.
+* **It is the cap-aware play 031 aimed at.** At 39+ the record now makes 6.2 Tetrises a game
+  (v29 4.8), Tetris share 31% (25%), near the cap (44+) 3.65 Tetrises and 35% share (2.6,
+  23.5%), and survives as long (79.5 lines at 39+ against 76.4; P(39) unchanged, 29-38 play
+  identical). 39+ given 39 rose 390k -> 458k (017 277k, BetaTetris ~380k).
+* Same cost (238 s a game). Gap to the BetaTetris hybrid (~2.43M): ~20k, down from ~85k.
+
