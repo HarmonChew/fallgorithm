@@ -27,7 +27,9 @@ Games are stored replayable in `games/` (`<set>-<agent>.json.gz`; the 025 hybrid
 
 029's training seeds (`../029-v39-search-taught/seeds.json`): 029 used indices 0-1,699; 030 used
 1,700-4,099 (1,700-1,899 as extra probe seeds, 1,900-2,299 round 0, 2,300-4,099 rounds 1-9;
-`../030-v29-search-taught/seeds.json`). A later run takes indices from 4,100 on.
+`../030-v29-search-taught/seeds.json`); 031 used 4,100-6,099 (4,100-4,299 as extra probe
+seeds, 4,300-4,699 round 0, 4,700-6,099 rounds 1-7; `../031-v39-retuned-cap/seeds.json`). A
+later run takes indices from 6,100 on.
 
 Earlier seed sets (probe seeds, dev 0-99 and 100-199 and others) have been used to make
 choices many times; treat them as screening or development only, never as confirmation.
