@@ -1,0 +1,67 @@
+{
+ "stage": "heldout",
+ "part_abc_030": {
+  "stage": "heldout",
+  "part_ab_028": {
+   "experiment": "028-hybrid-017-at-39",
+   "stage": "heldout",
+   "part_a_017": {
+    "name": "017",
+    "compares": "inputs",
+    "games": 28,
+    "matched": 28,
+    "mismatches": [],
+    "abi_version": 28,
+    "versions": {
+     "engine": {
+      "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+      "dirty": false,
+      "kind": "committed"
+     },
+     "fallgorithm": {
+      "commit": "940d0a4a8b77be0beea78d8fb6e85fa590ed7d0a",
+      "dirty": false,
+      "kind": "committed"
+     }
+    }
+   },
+   "part_b_e29_k4": {
+    "games": 28,
+    "matched": 28,
+    "mismatched_seeds": []
+   },
+   "games": 56,
+   "matched": 56,
+   "abi_version": 28
+  },
+  "part_c_v39": {
+   "games": 28,
+   "matched": 28,
+   "mismatched_seeds": []
+  },
+  "games": 84,
+  "matched": 84,
+  "abi_version": 28
+ },
+ "part_d_v29": {
+  "games": 28,
+  "matched": 28,
+  "mismatched_seeds": []
+ },
+ "games": 112,
+ "matched": 112,
+ "abi_version": 28,
+ "experiment": "031-v39-retuned-cap",
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "940d0a4a8b77be0beea78d8fb6e85fa590ed7d0a",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
