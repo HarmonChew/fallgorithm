@@ -1,0 +1,635 @@
+{
+ "experiment": "031-v39-retuned-cap",
+ "stage": "development",
+ "games": 500,
+ "seeds": "the register's development set",
+ "arm": "v39r",
+ "chosen": {
+  "sweep": 5,
+  "weights": "experiments/031-v39-retuned-cap/value_sweep5.bin",
+  "probe_mean": 38402.53333333333,
+  "odd_loss_39": 24.0753,
+  "sha256": "7c18dacf375b7e9d0541cf03b2d043c7e0d6112b19c20dbcada82271661599f5"
+ },
+ "base": "v29",
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "4e992a4a73c34f555534bc588f61c584919cd9b2",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "abi_version": 28,
+ "rule": "Primary metric: mean final score, paired by seed against 030's stored games of v29 (v39r minus v29), 95% bootstrap interval of experiment012.paired. Screening: promoted if the paired mean is +15k or more. Development: kept if the paired mean is at least +15k and the interval's lower end is above 0. 029's v39, 027's e29_k4 and 017's games are paired too but are not part of the rule. Held-out (predeclared_031b.md): passes if the interval's lower end against 030's record games of v29 on 012's held-out seeds is above 0, after 28 each of 017's, e29_k4's, v39's and v29's stored games replay input for input on the build.",
+ "min_effect": 15000,
+ "summary": {
+  "e29_k4": {
+   "games": 500,
+   "mean_score": 2139763.0,
+   "mean_lines": 421.112,
+   "median_lines": 432.0,
+   "share_lines_below_230": 0.01,
+   "share_lines_below_330": 0.02,
+   "line_cap_share": 0.57,
+   "tetris_rate": 0.572845228822736,
+   "p_reach_29": 0.99,
+   "p_reach_39": 0.98,
+   "score_39_plus_all": 248318.4,
+   "score_39_plus_reached": 253386.1224489796,
+   "entry_29": {
+    "games": 495,
+    "max_height": 6.852525252525252,
+    "aggregate_height": 41.406060606060606,
+    "holes": 0.48484848484848486
+   },
+   "entry_39": {
+    "games": 490,
+    "max_height": 5.553061224489796,
+    "aggregate_height": 25.989795918367346,
+    "holes": 0.21836734693877552
+   },
+   "seconds_per_game": 243.322422
+  },
+  "v39": {
+   "games": 500,
+   "mean_score": 2306109.12,
+   "mean_lines": 404.09,
+   "median_lines": 429.0,
+   "share_lines_below_230": 0.01,
+   "share_lines_below_330": 0.024,
+   "line_cap_share": 0.274,
+   "tetris_rate": 0.6407483481402658,
+   "p_reach_29": 0.99,
+   "p_reach_39": 0.976,
+   "score_39_plus_all": 384282.92,
+   "score_39_plus_reached": 393732.5,
+   "entry_29": {
+    "games": 495,
+    "max_height": 6.852525252525252,
+    "aggregate_height": 41.406060606060606,
+    "holes": 0.48484848484848486
+   },
+   "entry_39": {
+    "games": 488,
+    "max_height": 7.012295081967213,
+    "aggregate_height": 40.80327868852459,
+    "holes": 0.6352459016393442
+   },
+   "seconds_per_game": 230.824156
+  },
+  "v29": {
+   "games": 500,
+   "mean_score": 2351232.92,
+   "mean_lines": 404.034,
+   "median_lines": 429.0,
+   "share_lines_below_230": 0.01,
+   "share_lines_below_330": 0.028,
+   "line_cap_share": 0.328,
+   "tetris_rate": 0.653707361261676,
+   "p_reach_29": 0.99,
+   "p_reach_39": 0.972,
+   "score_39_plus_all": 378472.88,
+   "score_39_plus_reached": 389375.39094650204,
+   "entry_29": {
+    "games": 495,
+    "max_height": 6.852525252525252,
+    "aggregate_height": 41.406060606060606,
+    "holes": 0.48484848484848486
+   },
+   "entry_39": {
+    "games": 486,
+    "max_height": 6.693415637860082,
+    "aggregate_height": 39.33127572016461,
+    "holes": 0.6316872427983539
+   },
+   "seconds_per_game": 240.774098
+  },
+  "017": {
+   "games": 500,
+   "mean_score": 1797286.48,
+   "mean_lines": 391.792,
+   "median_lines": 411.5,
+   "share_lines_below_230": 0.008,
+   "share_lines_below_330": 0.066,
+   "line_cap_share": 0.416,
+   "tetris_rate": 0.4847265896189815,
+   "p_reach_29": 0.992,
+   "p_reach_39": 0.934,
+   "score_39_plus_all": 256426.56,
+   "score_39_plus_reached": 274546.6381156317,
+   "entry_29": {
+    "games": 496,
+    "max_height": 4.963709677419355,
+    "aggregate_height": 33.693548387096776,
+    "holes": 0.9314516129032258
+   },
+   "entry_39": {
+    "games": 467,
+    "max_height": 4.937901498929336,
+    "aggregate_height": 28.160599571734476,
+    "holes": 0.47751605995717344
+   },
+   "seconds_per_game": 422.418402
+  },
+  "v39r": {
+   "games": 500,
+   "mean_score": 2418981.04,
+   "mean_lines": 407.05,
+   "median_lines": 428.0,
+   "share_lines_below_230": 0.01,
+   "share_lines_below_330": 0.028,
+   "line_cap_share": 0.368,
+   "tetris_rate": 0.6622675347008967,
+   "p_reach_29": 0.99,
+   "p_reach_39": 0.972,
+   "score_39_plus_all": 447739.16,
+   "score_39_plus_reached": 460636.99588477367,
+   "entry_29": {
+    "games": 495,
+    "max_height": 6.852525252525252,
+    "aggregate_height": 41.406060606060606,
+    "holes": 0.48484848484848486
+   },
+   "entry_39": {
+    "games": 486,
+    "max_height": 6.845679012345679,
+    "aggregate_height": 39.934156378600825,
+    "holes": 0.5267489711934157
+   },
+   "seconds_per_game": 246.760162
+  }
+ },
+ "style": {
+  "e29_k4": {
+   "band_29_38": {
+    "games": 495,
+    "lines": 99.13,
+    "tetrises": 15.368,
+    "singles": 19.48,
+    "tetris_line_share": 0.6201
+   },
+   "late_39": {
+    "games": 490,
+    "lines": 94.15,
+    "tetrises": 1.157,
+    "singles": 53.14,
+    "tetris_line_share": 0.0492
+   },
+   "near_cap_44": {
+    "games": 453,
+    "lines": 50.08,
+    "tetrises": 0.698,
+    "singles": 28.84,
+    "tetris_line_share": 0.0557
+   },
+   "p_reach_39": 0.98,
+   "line_cap_share": 0.57,
+   "share_lines_below_330": 0.02,
+   "score_39_plus_reached": 253386.1224489796
+  },
+  "v39": {
+   "band_29_38": {
+    "games": 495,
+    "lines": 99.89,
+    "tetrises": 16.129,
+    "singles": 18.8,
+    "tetris_line_share": 0.6459
+   },
+   "late_39": {
+    "games": 488,
+    "lines": 76.32,
+    "tetrises": 4.92,
+    "singles": 30.1,
+    "tetris_line_share": 0.2579
+   },
+   "near_cap_44": {
+    "games": 379,
+    "lines": 42.82,
+    "tetrises": 2.639,
+    "singles": 17.63,
+    "tetris_line_share": 0.2465
+   },
+   "p_reach_39": 0.976,
+   "line_cap_share": 0.274,
+   "share_lines_below_330": 0.024,
+   "score_39_plus_reached": 393732.5
+  },
+  "v29": {
+   "band_29_38": {
+    "games": 495,
+    "lines": 99.46,
+    "tetrises": 17.655,
+    "singles": 15.64,
+    "tetris_line_share": 0.71
+   },
+   "late_39": {
+    "games": 486,
+    "lines": 77.02,
+    "tetrises": 4.724,
+    "singles": 30.31,
+    "tetris_line_share": 0.2454
+   },
+   "near_cap_44": {
+    "games": 380,
+    "lines": 43.05,
+    "tetrises": 2.576,
+    "singles": 17.44,
+    "tetris_line_share": 0.2394
+   },
+   "p_reach_39": 0.972,
+   "line_cap_share": 0.328,
+   "share_lines_below_330": 0.028,
+   "score_39_plus_reached": 389375.39094650204
+  },
+  "017": {
+   "band_29_38": {
+    "games": 496,
+    "lines": 96.86,
+    "tetrises": 11.042,
+    "singles": 25.27,
+    "tetris_line_share": 0.456
+   },
+   "late_39": {
+    "games": 467,
+    "lines": 69.78,
+    "tetrises": 2.662,
+    "singles": 31.53,
+    "tetris_line_share": 0.1526
+   },
+   "near_cap_44": {
+    "games": 315,
+    "lines": 41.53,
+    "tetrises": 1.676,
+    "singles": 18.99,
+    "tetris_line_share": 0.1615
+   },
+   "p_reach_39": 0.934,
+   "line_cap_share": 0.416,
+   "share_lines_below_330": 0.066,
+   "score_39_plus_reached": 274546.6381156317
+  },
+  "v39r": {
+   "band_29_38": {
+    "games": 495,
+    "lines": 99.29,
+    "tetrises": 17.628,
+    "singles": 15.73,
+    "tetris_line_share": 0.7101
+   },
+   "late_39": {
+    "games": 486,
+    "lines": 80.29,
+    "tetrises": 6.154,
+    "singles": 29.89,
+    "tetris_line_share": 0.3066
+   },
+   "near_cap_44": {
+    "games": 407,
+    "lines": 42.72,
+    "tetrises": 3.607,
+    "singles": 16.0,
+    "tetris_line_share": 0.3377
+   },
+   "p_reach_39": 0.972,
+   "line_cap_share": 0.368,
+   "share_lines_below_330": 0.028,
+   "score_39_plus_reached": 460636.99588477367
+  }
+ },
+ "paired_vs_v29": {
+  "v39r": {
+   "total": {
+    "score": {
+     "mean": 67748.12,
+     "ci95_low": 43700.2,
+     "ci95_high": 92410.72,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 3.016,
+     "ci95_low": -0.624,
+     "ci95_high": 6.668,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 303,
+     "lower": 185,
+     "equal": 12
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": -1518.16,
+     "ci95_low": -4192.72,
+     "ci95_high": 1148.96,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 69266.28,
+     "ci95_low": 45267.36,
+     "ci95_high": 94160.68,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": 0.581036370389745
+  }
+ },
+ "paired_vs_v39": {
+  "v39r": {
+   "total": {
+    "score": {
+     "mean": 112871.92,
+     "ci95_low": 82856.56,
+     "ci95_high": 142603.04,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 2.96,
+     "ci95_low": -1.282,
+     "ci95_high": 7.158,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 338,
+     "lower": 157,
+     "equal": 5
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 0.0,
+     "ci95_low": 0.0,
+     "ci95_high": 0.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 49415.68,
+     "ci95_low": 37249.52,
+     "ci95_high": 61328.92,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 63456.24,
+     "ci95_low": 37152.96,
+     "ci95_high": 89493.92,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": 0.2965326126553198
+  }
+ },
+ "paired_vs_017": {
+  "e29_k4": {
+   "total": {
+    "score": {
+     "mean": 342476.52,
+     "ci95_low": 313341.04,
+     "ci95_high": 371836.72,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 29.32,
+     "ci95_low": 24.162,
+     "ci95_high": 34.56,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 446,
+     "lower": 54,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 108162.08,
+     "ci95_low": 101800.56,
+     "ci95_high": 114525.56,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 94452.44,
+     "ci95_low": 85674.64,
+     "ci95_high": 103104.08,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 147970.16,
+     "ci95_low": 132804.0,
+     "ci95_high": 163086.76,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": -8108.16,
+     "ci95_low": -24007.36,
+     "ci95_high": 8223.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": -0.039626885896482916
+  },
+  "v39": {
+   "total": {
+    "score": {
+     "mean": 508822.64,
+     "ci95_low": 474901.44,
+     "ci95_high": 541942.28,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 12.298,
+     "ci95_low": 6.684,
+     "ci95_high": 17.832,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 468,
+     "lower": 32,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 108162.08,
+     "ci95_low": 101800.56,
+     "ci95_high": 114525.56,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 94452.44,
+     "ci95_low": 85674.64,
+     "ci95_high": 103104.08,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 178351.76,
+     "ci95_low": 162874.36,
+     "ci95_high": 193663.44,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 127856.36,
+     "ci95_low": 104414.84,
+     "ci95_high": 150733.24,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": -0.029994416285016794
+  },
+  "v29": {
+   "total": {
+    "score": {
+     "mean": 553946.44,
+     "ci95_low": 519591.24,
+     "ci95_high": 588087.0,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 12.242,
+     "ci95_low": 6.572,
+     "ci95_high": 17.91,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 472,
+     "lower": 28,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 108162.08,
+     "ci95_low": 101800.56,
+     "ci95_high": 114525.56,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 94452.44,
+     "ci95_low": 85674.64,
+     "ci95_high": 103104.08,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 229285.6,
+     "ci95_low": 213358.68,
+     "ci95_high": 245371.52,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 122046.32,
+     "ci95_low": 99470.52,
+     "ci95_high": 144619.12,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": 0.019632238707319925
+  },
+  "v39r": {
+   "total": {
+    "score": {
+     "mean": 621694.56,
+     "ci95_low": 587317.0,
+     "ci95_high": 656094.6,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "lines": {
+     "mean": 15.258,
+     "ci95_low": 9.874,
+     "ci95_high": 20.54,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "wins": {
+     "higher": 483,
+     "lower": 17,
+     "equal": 0
+    }
+   },
+   "by_band": {
+    "18": {
+     "mean": 108162.08,
+     "ci95_low": 101800.56,
+     "ci95_high": 114525.56,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "19-28": {
+     "mean": 94452.44,
+     "ci95_low": 85674.64,
+     "ci95_high": 103104.08,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "29-38": {
+     "mean": 227767.44,
+     "ci95_low": 211961.84,
+     "ci95_high": 243855.4,
+     "resamples": 10000,
+     "rng_seed": 12
+    },
+    "39+": {
+     "mean": 191312.6,
+     "ci95_low": 167176.6,
+     "ci95_high": 214987.52,
+     "resamples": 10000,
+     "rng_seed": 12
+    }
+   },
+   "score_correlation": 0.06867356542760034
+  }
+ },
+ "kept": true
+}
