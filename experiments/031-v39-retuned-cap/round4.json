@@ -1,0 +1,121 @@
+{
+ "round": 4,
+ "weights": "experiments/031-v39-retuned-cap/value_sweep4.bin",
+ "explore": 0.01,
+ "explore_lines": [
+  300,
+  0
+ ],
+ "seconds": 1668.9,
+ "calibration_value_v39_actual_by_10_lines": {
+  "320-329": [
+   14.185,
+   12.534,
+   16.686
+  ],
+  "330-339": [
+   12.026,
+   10.432,
+   13.56
+  ],
+  "340-349": [
+   11.817,
+   10.252,
+   12.664
+  ],
+  "350-359": [
+   11.069,
+   9.683,
+   11.48
+  ],
+  "360-369": [
+   10.499,
+   9.309,
+   11.075
+  ],
+  "370-379": [
+   10.135,
+   9.149,
+   10.874
+  ],
+  "380-389": [
+   9.553,
+   8.936,
+   9.669
+  ],
+  "390-399": [
+   8.135,
+   7.895,
+   7.852
+  ],
+  "400-409": [
+   6.198,
+   6.219,
+   5.893
+  ],
+  "410-419": [
+   4.123,
+   4.307,
+   3.836
+  ],
+  "420-429": [
+   2.035,
+   2.351,
+   1.854
+  ]
+ },
+ "board_stats": {
+  "320-329": {
+   "boards": 4789,
+   "ready_well_share": 0.4406,
+   "tetris_line_share": 0.6285,
+   "tetrises_per_game": 1.63
+  },
+  "330-379": {
+   "boards": 20146,
+   "ready_well_share": 0.1398,
+   "tetris_line_share": 0.2199,
+   "tetrises_per_game": 2.194
+  },
+  "380-409": {
+   "boards": 8409,
+   "ready_well_share": 0.1685,
+   "tetris_line_share": 0.3079,
+   "tetrises_per_game": 2.008
+  },
+  "410-419": {
+   "boards": 2370,
+   "ready_well_share": 0.1966,
+   "tetris_line_share": 0.314,
+   "tetrises_per_game": 0.699
+  },
+  "420-427": {
+   "boards": 1756,
+   "ready_well_share": 0.1321,
+   "tetris_line_share": 0.259,
+   "tetrises_per_game": 0.468
+  },
+  "428-428": {
+   "boards": 237,
+   "ready_well_share": 0.1688,
+   "tetris_line_share": 0.3846,
+   "tetrises_per_game": 0.128
+  },
+  "429-429": {
+   "boards": 544,
+   "ready_well_share": 0.1893,
+   "tetris_line_share": 0.6923,
+   "tetrises_per_game": 0.429
+  }
+ },
+ "games": 200,
+ "boards": 38251,
+ "mean_score": 2268936.2,
+ "line_cap_share": 0.23,
+ "by_source": {
+  "0": {
+   "games": 200,
+   "mean_score": 2268936.2
+  }
+ }
+}

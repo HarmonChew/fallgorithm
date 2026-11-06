@@ -1,0 +1,15 @@
+{
+ "weights": "experiments/029-v39-search-taught/t2/value_sweep8.bin",
+ "commit 39+": {
+  "decisions": 52870,
+  "search_agrees": 0.7582,
+  "search_loss": 9.5259,
+  "search_odd_loss": 11.5859,
+  "network_agrees": 0.63,
+  "network_loss": 19.4811,
+  "network_odd_loss": 21.2861,
+  "even_rollouts_agrees": 0.8497,
+  "even_rollouts_loss": 1.9679,
+  "even_rollouts_odd_loss": 8.1625
+ }
+}

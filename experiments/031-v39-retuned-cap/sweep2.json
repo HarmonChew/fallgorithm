@@ -1,0 +1,137 @@
+{
+ "sweep": 2,
+ "created_at": "2026-11-05T13:59:28.838570+00:00",
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "457438b3bf3208f5c4eba8af8e7911dbd8b8f468",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "torch": "2.14.0+cu130",
+ "from": {
+  "path": "experiments/031-v39-retuned-cap/value_sweep1.bin",
+  "sha256": "29c5ac88cecfdcdf6ce06a7321ad02ea65a8625fd025c822fbee58e8b226c7e2"
+ },
+ "mid": {
+  "path": "experiments/030-v29-search-taught/value_sweep8.bin",
+  "sha256": "6d6883a4f2e6db8bc65f98e6fab4ab84b4fb389425bedf3010b35f94eb523239"
+ },
+ "weights": {
+  "path": "experiments/031-v39-retuned-cap/value_sweep2.bin",
+  "sha256": "2f08dfa02db7c1adbbd4a748443960de9f5f7a8765abf323a4954968378afaf8"
+ },
+ "depth": 4,
+ "lambda": 0.95,
+ "boards": {
+  "parts": [
+   83094,
+   37898
+  ],
+  "children": 280289,
+  "check": 9152
+ },
+ "settings": {
+  "batch": 4096,
+  "epochs": 3,
+  "lr": 0.0003,
+  "lr_note": "Adam, one-cycle schedule peaking at lr; warm-started from the last sweep's V",
+  "torch_seed": 23
+ },
+ "target_seconds": 995.7,
+ "training_log": [
+  {
+   "step": 58,
+   "loss": 0.9777,
+   "seconds": 0.1
+  },
+  {
+   "step": 116,
+   "loss": 0.9999,
+   "seconds": 0.1
+  },
+  {
+   "step": 174,
+   "loss": 0.9971,
+   "seconds": 0.2
+  },
+  {
+   "step": 232,
+   "loss": 0.9432,
+   "seconds": 0.2
+  },
+  {
+   "step": 290,
+   "loss": 0.8908,
+   "seconds": 0.3
+  }
+ ],
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "check": {
+  "old_value_minus_target_rms": 0.2959,
+  "new_value_minus_target_rms": 0.3355,
+  "target_minus_old_value": 0.1158,
+  "by_10_lines_old_target_new": {
+   "320-329": [
+    13.153,
+    13.31,
+    13.521
+   ],
+   "330-339": [
+    10.884,
+    11.033,
+    11.273
+   ],
+   "340-349": [
+    10.991,
+    11.144,
+    11.356
+   ],
+   "350-359": [
+    11.54,
+    11.685,
+    11.923
+   ],
+   "360-369": [
+    11.182,
+    11.336,
+    11.516
+   ],
+   "370-379": [
+    9.818,
+    9.986,
+    10.052
+   ],
+   "380-389": [
+    9.255,
+    9.371,
+    9.393
+   ],
+   "390-399": [
+    8.483,
+    8.582,
+    8.499
+   ],
+   "400-409": [
+    6.779,
+    6.841,
+    6.705
+   ],
+   "410-419": [
+    5.017,
+    5.057,
+    4.869
+   ],
+   "420-429": [
+    2.577,
+    2.598,
+    2.376
+   ]
+  }
+ }
+}
