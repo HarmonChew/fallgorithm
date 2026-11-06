@@ -1,0 +1,59 @@
+{
+ "rule": "highest paired probe mean among all probed sweeps (predeclared_031b.md)",
+ "sweeps": [
+  {
+   "sweep": 1,
+   "weights": "experiments/031-v39-retuned-cap/value_sweep1.bin",
+   "probe_mean": 12018.533333333333,
+   "odd_loss_39": 22.3942
+  },
+  {
+   "sweep": 2,
+   "weights": "experiments/031-v39-retuned-cap/value_sweep2.bin",
+   "probe_mean": 10036.2,
+   "odd_loss_39": 23.4578
+  },
+  {
+   "sweep": 3,
+   "weights": "experiments/031-v39-retuned-cap/value_sweep3.bin",
+   "probe_mean": 18335.333333333332,
+   "odd_loss_39": 24.1564
+  },
+  {
+   "sweep": 4,
+   "weights": "experiments/031-v39-retuned-cap/value_sweep4.bin",
+   "probe_mean": 394.0,
+   "odd_loss_39": 24.0894
+  },
+  {
+   "sweep": 5,
+   "weights": "experiments/031-v39-retuned-cap/value_sweep5.bin",
+   "probe_mean": 38402.53333333333,
+   "odd_loss_39": 24.0753
+  },
+  {
+   "sweep": 6,
+   "weights": "experiments/031-v39-retuned-cap/value_sweep6.bin",
+   "probe_mean": 34762.53333333333,
+   "odd_loss_39": 24.0992
+  },
+  {
+   "sweep": 7,
+   "weights": "experiments/031-v39-retuned-cap/value_sweep7.bin",
+   "probe_mean": 19625.733333333334,
+   "odd_loss_39": 23.9908
+  },
+  {
+   "sweep": 8,
+   "weights": "experiments/031-v39-retuned-cap/value_sweep8.bin",
+   "probe_mean": 37773.6,
+   "odd_loss_39": 23.7847
+  }
+ ],
+ "chosen": {
+  "sweep": 5,
+  "weights": "experiments/031-v39-retuned-cap/value_sweep5.bin",
+  "probe_mean": 38402.53333333333,
+  "odd_loss_39": 24.0753
+ }
+}
