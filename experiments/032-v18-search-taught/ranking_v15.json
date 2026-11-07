@@ -1,0 +1,15 @@
+{
+ "weights": "experiments/023-self-taught-value/value_sweep15.bin",
+ "preview 18-28": {
+  "decisions": 172802,
+  "search_agrees": 0.8674,
+  "search_loss": 1.3633,
+  "search_odd_loss": 1.538,
+  "network_agrees": 0.6399,
+  "network_loss": 8.5566,
+  "network_odd_loss": 8.7163,
+  "even_rollouts_agrees": 0.9456,
+  "even_rollouts_loss": 0.1648,
+  "even_rollouts_odd_loss": 0.653
+ }
+}

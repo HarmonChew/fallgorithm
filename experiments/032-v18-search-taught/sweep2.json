@@ -1,0 +1,145 @@
+{
+ "sweep": 2,
+ "created_at": "2026-11-06T13:27:47.317810+00:00",
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "4d81de4620903a6a8d84179d5c563c3c2ee2ee1f",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "torch": "2.14.0+cu130",
+ "from": {
+  "path": "experiments/032-v18-search-taught/value_sweep1.bin",
+  "sha256": "ef2c3c118a0971ac0e8cdf0eda34c26a5fe62b69a38a057981c3436b502b0909"
+ },
+ "anchor_v29": {
+  "path": "experiments/030-v29-search-taught/value_sweep8.bin",
+  "sha256": "6d6883a4f2e6db8bc65f98e6fab4ab84b4fb389425bedf3010b35f94eb523239"
+ },
+ "weights": {
+  "path": "experiments/032-v18-search-taught/value_sweep2.bin",
+  "sha256": "e9a3c6c2d5b3cf29570dbafb6c14029d6b8e765dbd4104458c5a8cf2ee78096a"
+ },
+ "depth": 4,
+ "lambda": 0.95,
+ "boards": {
+  "parts": [
+   211202,
+   70933
+  ],
+  "children_below_and_from_230": [
+   653046,
+   2676
+  ],
+  "check": 23518
+ },
+ "settings": {
+  "batch": 4096,
+  "epochs": 3,
+  "lr": 0.0003,
+  "lr_note": "Adam, one-cycle schedule peaking at lr; warm-started from the last sweep's V",
+  "torch_seed": 23
+ },
+ "target_seconds": 2485.9,
+ "training_log": [
+  {
+   "step": 137,
+   "loss": 1.684,
+   "seconds": 0.1
+  },
+  {
+   "step": 274,
+   "loss": 1.6966,
+   "seconds": 0.2
+  },
+  {
+   "step": 411,
+   "loss": 1.0628,
+   "seconds": 0.3
+  },
+  {
+   "step": 548,
+   "loss": 1.4166,
+   "seconds": 0.4
+  },
+  {
+   "step": 685,
+   "loss": 1.5981,
+   "seconds": 0.5
+  }
+ ],
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "check": {
+  "old_value_minus_target_rms": 0.1982,
+  "new_value_minus_target_rms": 0.2663,
+  "target_minus_old_value": 0.0772,
+  "by_20_lines_old_target_new": {
+   "0-19": [
+    54.456,
+    54.522,
+    54.675
+   ],
+   "20-39": [
+    52.038,
+    52.097,
+    52.24
+   ],
+   "40-59": [
+    49.576,
+    49.638,
+    49.736
+   ],
+   "60-79": [
+    46.919,
+    46.972,
+    47.059
+   ],
+   "80-99": [
+    44.142,
+    44.188,
+    44.306
+   ],
+   "100-119": [
+    41.171,
+    41.222,
+    41.38
+   ],
+   "120-139": [
+    38.644,
+    38.703,
+    38.879
+   ],
+   "140-159": [
+    36.208,
+    36.276,
+    36.451
+   ],
+   "160-179": [
+    33.529,
+    33.595,
+    33.765
+   ],
+   "180-199": [
+    30.074,
+    30.138,
+    30.281
+   ],
+   "200-219": [
+    26.288,
+    26.374,
+    26.801
+   ],
+   "220-229": [
+    23.82,
+    24.243,
+    24.667
+   ]
+  }
+ }
+}
