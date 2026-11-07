@@ -1,0 +1,71 @@
+{
+ "rule": "highest paired probe mean among all probed sweeps, if above 0 (plan.md, predeclared.md)",
+ "sweeps": [
+  {
+   "sweep": 1,
+   "weights": "experiments/032-v18-search-taught/value_sweep1.bin",
+   "probe_mean": -1341857.64,
+   "odd_loss_18_28": 7.3243
+  },
+  {
+   "sweep": 10,
+   "weights": "experiments/032-v18-search-taught/value_sweep10.bin",
+   "probe_mean": 42353.72,
+   "odd_loss_18_28": 6.4696
+  },
+  {
+   "sweep": 2,
+   "weights": "experiments/032-v18-search-taught/value_sweep2.bin",
+   "probe_mean": -30742.68,
+   "odd_loss_18_28": 7.6197
+  },
+  {
+   "sweep": 3,
+   "weights": "experiments/032-v18-search-taught/value_sweep3.bin",
+   "probe_mean": 2499.68,
+   "odd_loss_18_28": 7.4619
+  },
+  {
+   "sweep": 4,
+   "weights": "experiments/032-v18-search-taught/value_sweep4.bin",
+   "probe_mean": -6199.2,
+   "odd_loss_18_28": 7.4865
+  },
+  {
+   "sweep": 5,
+   "weights": "experiments/032-v18-search-taught/value_sweep5.bin",
+   "probe_mean": 15366.4,
+   "odd_loss_18_28": 6.8382
+  },
+  {
+   "sweep": 6,
+   "weights": "experiments/032-v18-search-taught/value_sweep6.bin",
+   "probe_mean": 56119.68,
+   "odd_loss_18_28": 6.7522
+  },
+  {
+   "sweep": 7,
+   "weights": "experiments/032-v18-search-taught/value_sweep7.bin",
+   "probe_mean": -109422.88,
+   "odd_loss_18_28": 6.6261
+  },
+  {
+   "sweep": 8,
+   "weights": "experiments/032-v18-search-taught/value_sweep8.bin",
+   "probe_mean": 39846.4,
+   "odd_loss_18_28": 6.5628
+  },
+  {
+   "sweep": 9,
+   "weights": "experiments/032-v18-search-taught/value_sweep9.bin",
+   "probe_mean": 61529.44,
+   "odd_loss_18_28": 6.5829
+  }
+ ],
+ "chosen": {
+  "sweep": 9,
+  "weights": "experiments/032-v18-search-taught/value_sweep9.bin",
+  "probe_mean": 61529.44,
+  "odd_loss_18_28": 6.5829
+ }
+}
