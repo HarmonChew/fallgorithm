@@ -1,0 +1,67 @@
+{
+ "experiment": "033-v29-20hz",
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "d3c7add07e3a2fc8bdd759a045fae0cf8acf1c8b",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "abi_version": 28,
+ "late": {
+  "path": "experiments/031-v39-retuned-cap/value_sweep5.bin",
+  "sha256": "7c18dacf375b7e9d0541cf03b2d043c7e0d6112b19c20dbcada82271661599f5"
+ },
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "boards": 99,
+ "thirds_by_aggregate_height": {
+  "shortest": {
+   "boards": 33,
+   "height_range": [
+    10,
+    28
+   ],
+   "mean_backup": 15.498,
+   "mean_actual": 3.575,
+   "mean_gap": 11.923
+  },
+  "middle": {
+   "boards": 33,
+   "height_range": [
+    28,
+    41
+   ],
+   "mean_backup": 15.475,
+   "mean_actual": 3.984,
+   "mean_gap": 11.49
+  },
+  "tallest": {
+   "boards": 33,
+   "height_range": [
+    41,
+    96
+   ],
+   "mean_backup": 13.831,
+   "mean_actual": 3.294,
+   "mean_gap": 10.537
+  }
+ },
+ "tallest_minus_shortest_gap": -1.387,
+ "ci95": [
+  -2.279,
+  -0.55
+ ],
+ "resamples": 10000,
+ "rng_seed": 33,
+ "rule": "actual rest of game if the difference exceeds 2.0 Tetrises and its 95% bootstrap interval excludes 0 (plan.md)",
+ "use_actual_rest_of_game": false
+}
