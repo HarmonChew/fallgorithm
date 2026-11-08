@@ -1,0 +1,52 @@
+{
+ "experiment": "033-v29-20hz",
+ "round": 0,
+ "seeds": 400,
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "a66a713c69626f47c0936cb6234944fc67f3042a",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "abi_version": 28,
+ "agent": "v39r20 (031b's v39r at 20 Hz)",
+ "mid_from_lines": 230,
+ "late_from_lines": 320,
+ "seconds": 1910.2,
+ "backup2_seconds_per_board_x_jobs": 0.0665,
+ "games": 400,
+ "boards": 54899,
+ "mean_score": 1500120.6,
+ "mean_lines": 278.9,
+ "line_cap_share": 0.0,
+ "p_reach_230": 0.953,
+ "p_reach_320": 0.247,
+ "deaths_by_10_lines_230_329": {
+  "230-239": 35,
+  "240-249": 55,
+  "250-259": 32,
+  "260-269": 41,
+  "270-279": 32,
+  "280-289": 22,
+  "290-299": 16,
+  "300-309": 27,
+  "310-319": 22,
+  "320-329": 6
+ },
+ "handover_boards": {
+  "games": 99,
+  "mean_max_height": 6.19,
+  "mean_aggregate_height": 37.96,
+  "mean_holes": 0.82
+ }
+}
