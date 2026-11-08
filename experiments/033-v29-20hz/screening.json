@@ -1,0 +1,264 @@
+{
+ "experiment": "033-v29-20hz",
+ "stage": "screening",
+ "games": 100,
+ "seeds": "the register's screening set",
+ "arm": "v29r20",
+ "base": "v39r20",
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "chosen": {
+  "sweep": 6,
+  "weights": "experiments/033-v29-20hz/value_sweep6.bin",
+  "probe_mean": 215108.28,
+  "sha256": "a33883efa7b7c47c41711887563ed01f0bb8488fb0c36e66f9b58312d2d4f6fe"
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "aa4ff7acaba380149633245d33eff2b120b70212",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "abi_version": 28,
+ "rule": "Primary metric: mean final score, paired by seed against v39r20 played in this experiment on the same seeds (v29r20 minus v39r20), both at 20 Hz / 300 ms, 95% bootstrap interval of experiment012.paired. Screening: promoted if the paired mean is +15k or more. Development: kept if the paired mean is at least +15k and the interval's lower end is above 0. Held-out (predeclared.md): passes (the first 20 Hz / 300 ms record) if the interval lies above 0, after 28 each of 017's, e29_k4's, v39's, v29's and v39r's stored 30 Hz games replay input for input (140/140) and the first 28 development games of v39r20 and of v29r20 replay input for input at 20 Hz (56/56).",
+ "min_effect": 15000,
+ "summary": {
+  "v39r20": {
+   "games": 100,
+   "mean_score": 1531487.0,
+   "mean_lines": 282.23,
+   "median_lines": 271.5,
+   "share_lines_below_230": 0.04,
+   "share_lines_below_330": 0.75,
+   "line_cap_share": 0.0,
+   "tetris_rate": 0.7218226269354782,
+   "p_reach_29": 0.96,
+   "p_reach_39": 0.25,
+   "score_39_plus_all": 1432.0,
+   "score_39_plus_reached": 5728.0,
+   "entry_29": {
+    "games": 96,
+    "max_height": 7.135416666666667,
+    "aggregate_height": 43.020833333333336,
+    "holes": 0.5
+   },
+   "entry_39": {
+    "games": 25,
+    "max_height": 6.64,
+    "aggregate_height": 40.64,
+    "holes": 0.88
+   },
+   "seconds_per_game": 155.208
+  },
+  "v29r20": {
+   "games": 100,
+   "mean_score": 1731279.4,
+   "mean_lines": 324.83,
+   "median_lines": 334.0,
+   "share_lines_below_230": 0.04,
+   "share_lines_below_330": 0.11,
+   "line_cap_share": 0.0,
+   "tetris_rate": 0.6657020595388357,
+   "p_reach_29": 0.96,
+   "p_reach_39": 0.89,
+   "score_39_plus_all": 6781.2,
+   "score_39_plus_reached": 7619.3258426966295,
+   "entry_29": {
+    "games": 96,
+    "max_height": 7.135416666666667,
+    "aggregate_height": 43.020833333333336,
+    "holes": 0.5
+   },
+   "entry_39": {
+    "games": 89,
+    "max_height": 5.955056179775281,
+    "aggregate_height": 34.853932584269664,
+    "holes": 0.42696629213483145
+   },
+   "seconds_per_game": 168.92775
+  }
+ },
+ "style": {
+  "v39r20": {
+   "points_by_band": {
+    "18": 603134.0,
+    "19-28": 548981.8,
+    "29-38": 377939.2,
+    "39+": 1432.0
+   },
+   "p_reach_230": 0.96,
+   "p_reach_320": 0.3,
+   "deaths_by_10_lines_230_329": {
+    "230-239": 8,
+    "240-249": 7,
+    "250-259": 14,
+    "260-269": 16,
+    "270-279": 6,
+    "280-289": 3,
+    "290-299": 5,
+    "300-309": 2,
+    "310-319": 5,
+    "320-329": 5
+   },
+   "entry_29": {
+    "games": 96,
+    "max_height": 7.135416666666667,
+    "aggregate_height": 43.020833333333336,
+    "holes": 0.5
+   },
+   "entry_39": {
+    "games": 25,
+    "max_height": 6.64,
+    "aggregate_height": 40.64,
+    "holes": 0.88
+   },
+   "band_29_38": {
+    "games": 96,
+    "lines": 54.81,
+    "tetrises": 8.938,
+    "singles": 11.04,
+    "tetris_line_share": 0.6522
+   },
+   "late_39": {
+    "games": 25,
+    "lines": 2.32,
+    "tetrises": 0.04,
+    "singles": 1.28,
+    "tetris_line_share": 0.069
+   },
+   "near_cap_44": {
+    "games": 0,
+    "lines": 0.0,
+    "tetrises": 0.0,
+    "singles": 0.0,
+    "tetris_line_share": 0.0
+   },
+   "p_reach_39": 0.25,
+   "line_cap_share": 0.0,
+   "share_lines_below_330": 0.75,
+   "score_39_plus_reached": 5728.0
+  },
+  "v29r20": {
+   "points_by_band": {
+    "18": 603134.0,
+    "19-28": 548981.8,
+    "29-38": 572382.4,
+    "39+": 6781.2
+   },
+   "p_reach_230": 0.96,
+   "p_reach_320": 0.91,
+   "deaths_by_10_lines_230_329": {
+    "230-239": 1,
+    "240-249": 0,
+    "250-259": 0,
+    "260-269": 1,
+    "270-279": 1,
+    "280-289": 1,
+    "290-299": 1,
+    "300-309": 0,
+    "310-319": 0,
+    "320-329": 2
+   },
+   "entry_29": {
+    "games": 96,
+    "max_height": 7.135416666666667,
+    "aggregate_height": 43.020833333333336,
+    "holes": 0.5
+   },
+   "entry_39": {
+    "games": 89,
+    "max_height": 5.955056179775281,
+    "aggregate_height": 34.853932584269664,
+    "holes": 0.42696629213483145
+   },
+   "band_29_38": {
+    "games": 96,
+    "lines": 97.32,
+    "tetrises": 12.146,
+    "singles": 26.58,
+    "tetris_line_share": 0.4992
+   },
+   "late_39": {
+    "games": 89,
+    "lines": 2.66,
+    "tetrises": 0.067,
+    "singles": 1.55,
+    "tetris_line_share": 0.1013
+   },
+   "near_cap_44": {
+    "games": 0,
+    "lines": 0.0,
+    "tetrises": 0.0,
+    "singles": 0.0,
+    "tetris_line_share": 0.0
+   },
+   "p_reach_39": 0.89,
+   "line_cap_share": 0.0,
+   "share_lines_below_330": 0.11,
+   "score_39_plus_reached": 7619.3258426966295
+  }
+ },
+ "paired_vs_v39r20": {
+  "total": {
+   "score": {
+    "mean": 199792.4,
+    "ci95_low": 138556.8,
+    "ci95_high": 261712.0,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": 42.6,
+    "ci95_low": 35.17,
+    "ci95_high": 50.12,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 64,
+    "lower": 32,
+    "equal": 4
+   }
+  },
+  "by_band": {
+   "18": {
+    "mean": 0.0,
+    "ci95_low": 0.0,
+    "ci95_high": 0.0,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "19-28": {
+    "mean": 0.0,
+    "ci95_low": 0.0,
+    "ci95_high": 0.0,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "29-38": {
+    "mean": 194443.2,
+    "ci95_low": 133343.0,
+    "ci95_high": 256066.6,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "39+": {
+    "mean": 5349.2,
+    "ci95_low": 3229.2,
+    "ci95_high": 7807.6,
+    "resamples": 10000,
+    "rng_seed": 12
+   }
+  },
+  "score_correlation": 0.5004878763845857
+ },
+ "promoted": true
+}
