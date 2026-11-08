@@ -154,6 +154,12 @@ missing reaction model matters no more at 20 Hz in this band). Must-fixes taken:
 check tests that path; every 20 Hz game gets the tap-spacing check and every record the
 format. Should-fixes taken: the V39' hand-over bias is measured in round 0 with a
 predeclared fallback to the actual rest of game; pass odds stated; exploration 0.5%.
-Nice-to-haves taken: a 20 Hz replay gate before held-out; 300 ms stated as superseding
+Code review (Opus, b6b3abc): no must-fix. Taken: the side check runs right after screening
+(so a failed stage does not lose it); stage games are written outside the tree until both
+arms are done (crash-safe resume); stage summaries check the 20 Hz format. Two deviations
+recorded here before any game: (a) the per-round count of deaths within 10 pieces of an
+explored placement is not reported (the dumps carry no explored marker; no native change);
+(b) in the fallback mode the children at 320+ lines keep V39''s backup2 (children are not
+real game boards, so they have no actual rest of game). Nice-to-haves taken: a 20 Hz replay gate before held-out; 300 ms stated as superseding
 350 ms. The 11-06 scratch seeds are not recorded; that run is quoted only as background
 and is in no rule.

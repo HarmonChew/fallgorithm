@@ -102,8 +102,10 @@ def _load_record(stage: str, arm: str) -> dict[str, Any]:
 def play_arm(stage: str, arm: str, weights: str | None, sha: str, seeds: list[int],
              pick: dict[str, Any], versions: dict[str, Any], jobs: int) -> None:
     """Play ``arm`` on the stage's seeds (resuming from the partial file) and store its
-    games with the format in the header; nothing is played if the file exists."""
-    if games_path(stage, arm).exists():
+    games with the format in the header; nothing is played if the file exists. The file is
+    written outside the tree (``PARTIAL``) and moved in by ``run`` once both arms are done,
+    so a crash between the arms leaves the tree clean for the resume."""
+    if games_path(stage, arm).exists() or (PARTIAL / games_path(stage, arm).name).exists():
         return
     fmt = e33.format_of(e33._frozen()[0])
     header = {"header": {"arm": arm, "format": fmt, "weights": weights, "weights_sha256": sha,
@@ -127,8 +129,7 @@ def play_arm(stage: str, arm: str, weights: str | None, sha: str, seeds: list[in
               "weights": weights, "weights_sha256": sha, "set": stage, "seeds": seeds,
               "wall_seconds": round(time.perf_counter() - tick, 1),
               "episodes": [done[seed] for seed in seeds]}
-    GAMES.mkdir(parents=True, exist_ok=True)
-    with gzip.open(games_path(stage, arm), "wt", encoding="utf-8") as out:
+    with gzip.open(PARTIAL / games_path(stage, arm).name, "wt", encoding="utf-8") as out:
         json.dump(record, out, separators=(",", ":"))
     partial.unlink()
 
@@ -163,6 +164,10 @@ def run(stage: str, jobs: int) -> dict[str, Any]:
     base_sha = e33._sha(e33.v29_path())
     play_arm(stage, BASE, None, base_sha, seeds, shown, versions, jobs)
     play_arm(stage, ARM, weights, pick["sha256"], seeds, shown, versions, jobs)
+    GAMES.mkdir(parents=True, exist_ok=True)
+    for arm in (BASE, ARM):
+        if (PARTIAL / games_path(stage, arm).name).exists():
+            (PARTIAL / games_path(stage, arm).name).replace(games_path(stage, arm))
     if stage == "heldout" and (PARTIAL / REPLAY_CHECK).exists():
         (PARTIAL / REPLAY_CHECK).replace(OUT / REPLAY_CHECK)
     return summarize(stage, versions=versions)
@@ -199,6 +204,8 @@ def summarize(stage: str, versions: dict[str, Any] | None = None) -> dict[str, A
     for arm, r in ((BASE, base), (ARM, record)):
         if [e["seed"] for e in r["episodes"]] != seeds:
             raise ValueError(f"{arm}'s {stage} games are not the stage's seeds in order")
+        if r["format"] != e33.format_of(e33._frozen()[0]):
+            raise ValueError(f"{arm}'s {stage} games were not played in the 20 Hz format")
     base_eps, mine = base["episodes"], record["episodes"]
     paired = _paired(mine, base_eps)
     result: dict[str, Any] = {
