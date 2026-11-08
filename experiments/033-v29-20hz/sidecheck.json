@@ -1,0 +1,136 @@
+{
+ "experiment": "033-v29-20hz",
+ "side_check": "v29r20's networks at 30 Hz vs 031b's stored v39r screening games (reported only)",
+ "format": {
+  "tap_hz": 30,
+  "reaction_ms": 300
+ },
+ "chosen": {
+  "sweep": 6,
+  "weights": "experiments/033-v29-20hz/value_sweep6.bin",
+  "probe_mean": 215108.28,
+  "sha256": "a33883efa7b7c47c41711887563ed01f0bb8488fb0c36e66f9b58312d2d4f6fe"
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "d7fd9d2ebdc234c76782d534b1eaddfb127f35db",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "summary": {
+  "v29r20": {
+   "games": 100,
+   "mean_score": 2178750.2,
+   "mean_lines": 403.48,
+   "median_lines": 427.5,
+   "share_lines_below_230": 0.01,
+   "share_lines_below_330": 0.02,
+   "line_cap_share": 0.34,
+   "tetris_rate": 0.6022603350847625,
+   "p_reach_29": 0.99,
+   "p_reach_39": 0.98,
+   "score_39_plus_all": 424216.4,
+   "score_39_plus_reached": 432873.8775510204,
+   "entry_29": {
+    "games": 99,
+    "max_height": 7.262626262626263,
+    "aggregate_height": 44.94949494949495,
+    "holes": 0.4444444444444444
+   },
+   "entry_39": {
+    "games": 98,
+    "max_height": 7.255102040816326,
+    "aggregate_height": 42.326530612244895,
+    "holes": 0.5918367346938775
+   },
+   "seconds_per_game": 223.68377
+  },
+  "v39r": {
+   "games": 100,
+   "mean_score": 2441804.4,
+   "mean_lines": 409.71,
+   "median_lines": 429.0,
+   "share_lines_below_230": 0.01,
+   "share_lines_below_330": 0.03,
+   "line_cap_share": 0.42,
+   "tetris_rate": 0.6604671596983233,
+   "p_reach_29": 0.99,
+   "p_reach_39": 0.97,
+   "score_39_plus_all": 469109.8,
+   "score_39_plus_reached": 483618.3505154639,
+   "entry_29": {
+    "games": 99,
+    "max_height": 7.262626262626263,
+    "aggregate_height": 44.94949494949495,
+    "holes": 0.4444444444444444
+   },
+   "entry_39": {
+    "games": 97,
+    "max_height": 6.670103092783505,
+    "aggregate_height": 38.0,
+    "holes": 0.35051546391752575
+   },
+   "seconds_per_game": 240.87635999999998
+  }
+ },
+ "paired_vs_v39r_30hz": {
+  "total": {
+   "score": {
+    "mean": -263054.2,
+    "ci95_low": -336524.6,
+    "ci95_high": -187918.2,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": -6.23,
+    "ci95_low": -15.81,
+    "ci95_high": 3.46,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 16,
+    "lower": 83,
+    "equal": 1
+   }
+  },
+  "by_band": {
+   "18": {
+    "mean": 0.0,
+    "ci95_low": 0.0,
+    "ci95_high": 0.0,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "19-28": {
+    "mean": 0.0,
+    "ci95_low": 0.0,
+    "ci95_high": 0.0,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "29-38": {
+    "mean": -218160.8,
+    "ci95_low": -251800.4,
+    "ci95_high": -183918.4,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "39+": {
+    "mean": -44893.4,
+    "ci95_low": -103019.0,
+    "ci95_high": 12927.6,
+    "resamples": 10000,
+    "rng_seed": 12
+   }
+  },
+  "score_correlation": 0.23143383788441235
+ }
+}
