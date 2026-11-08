@@ -1,0 +1,75 @@
+{
+ "experiment": "033-v29-20hz",
+ "games": [
+  {
+   "kind": "hz30",
+   "seed": 13770,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "hz30",
+   "seed": 45356,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "hz30",
+   "seed": 19813,
+   "match": true,
+   "got": null,
+   "want": null
+  },
+  {
+   "kind": "hz20",
+   "seed": 13770,
+   "presses": 2633,
+   "differs_from_30hz": true,
+   "guard_catches_30hz": true,
+   "match": true
+  },
+  {
+   "kind": "hz20",
+   "seed": 45356,
+   "presses": 2739,
+   "differs_from_30hz": true,
+   "guard_catches_30hz": true,
+   "match": true
+  },
+  {
+   "kind": "hz20",
+   "seed": 19813,
+   "presses": 3075,
+   "differs_from_30hz": true,
+   "guard_catches_30hz": true,
+   "match": true
+  }
+ ],
+ "targets": {
+  "boards": 50,
+  "equals_interval_3": true,
+  "differs_from_interval_2": true,
+  "children_equal_interval_3": true,
+  "match": true
+ },
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "matched": true,
+ "abi_version": 28,
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "b030429a20847afe02c78c80ffff5c24f7e6125d",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
