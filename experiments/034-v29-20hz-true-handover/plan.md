@@ -236,3 +236,25 @@ targets, and sweep 6's own value at hand-over boards of 16.1-16.3 against 3.7-3.
 * **Not taken:** dumping all 320+ on-policy boards (needs a native change; see "Not done").
 * **Nice-to-haves taken:** the winner's curse stated, the seed reservation made before any
   game (round 10 not played), and per-sweep risk trade-off columns.
+
+## Code notes (before any game, after the Opus code review)
+
+The code (`experiment034.py`, `experiment034eval.py`) was reviewed by Opus before any game:
+no must-fixes; the should-fixes were taken (target assembly as a tested `build_targets`, the
+target cache keyed on lambda, c's sha, the previous network and the rounds' data, the seed
+reservation written by `calibrate` and every input file required committed before round 0,
+the wiring check's 320+ children taken from parents at 315-319). Two readings of this plan,
+fixed here:
+
+* **The stop rule's gate** is measured with each sweep's new V29@20 on the boards of the
+  latest round played (round s-1, which is also in sweep s's training data, so slightly
+  optimistic: it can stop the loop at most one sweep early). The previous network's
+  out-of-sample table on the same boards is stored next to it, reported only.
+* **The prefix check** compares inputs up to the frame at which the stored game first has
+  230 cleared lines (found by replaying it). The search picks its network from the lines at
+  the decision, so no earlier input can come from V29@20. The reviewer checked this on 033's
+  stored games of v39r20 and v29r20 (the same situation): 600 of 600 seeds pass, and in 24
+  of 500 the first differing input is at exactly that frame.
+* The mean lambda-return target is reported per sweep (on its training rows), not per round.
+* 033's records hold no native library sha, so the build is compared by ABI (28), the engine
+  commit and the re-run gates.
