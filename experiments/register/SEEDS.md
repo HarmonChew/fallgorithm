@@ -32,7 +32,9 @@ seeds, 4,300-4,699 round 0, 4,700-6,099 rounds 1-7; `../031-v39-retuned-cap/seed
 its probe seeds, 6,600-6,999 round 0, 7,000-8,799 rounds 1-9;
 `../032-v18-search-taught/seeds.json`); 033 reserved 8,800-11,499 (8,800-9,299 as its probe seeds,
 9,300-9,699 round 0, 9,700-11,299 rounds 1-8, 11,300-11,499 round 9 not played;
-`../033-v29-20hz/seeds.json`). A later run takes indices from 11,500 on.
+`../033-v29-20hz/seeds.json`); 034 reserves 11,500-14,199 (11,500-11,999 as its probe seeds,
+12,000-12,399 round 0, 12,400-14,199 rounds 1-9; `../034-v29-20hz-true-handover/plan.md`). A
+later run takes indices from 14,200 on.
 
 Earlier seed sets (probe seeds, dev 0-99 and 100-199 and others) have been used to make
 choices many times; treat them as screening or development only, never as confirmation.
