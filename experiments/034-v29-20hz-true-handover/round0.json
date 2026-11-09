@@ -1,0 +1,56 @@
+{
+ "experiment": "034-v29-20hz-true-handover",
+ "round": 0,
+ "seeds": 400,
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "6add3425d5cc4d98723d14be3c26af1f4f54b726",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "c35f70284cfd5c0d8b51cc4db64f3b4fb96a9e575e79445417176bdb6f311bbd",
+  "abi_version": 28,
+  "vs_033": "033's records hold no library sha, so it cannot be compared; the ABI equals 033's and the re-run gates check the play"
+ },
+ "agent": "v29r20 (033's record)",
+ "weights": "experiments/033-v29-20hz/value_sweep6.bin",
+ "weights_sha256": "a33883efa7b7c47c41711887563ed01f0bb8488fb0c36e66f9b58312d2d4f6fe",
+ "seconds": 2346.1,
+ "games": 400,
+ "boards": 81023,
+ "mean_score": 1706379.0,
+ "mean_lines": 319.7,
+ "line_cap_share": 0.0,
+ "p_reach_230": 0.94,
+ "p_reach_320": 0.875,
+ "deaths_by_10_lines_230_329": {
+  "230-239": 9,
+  "240-249": 2,
+  "250-259": 1,
+  "260-269": 4,
+  "270-279": 1,
+  "280-289": 3,
+  "290-299": 2,
+  "300-309": 3,
+  "310-319": 1,
+  "320-329": 24
+ },
+ "handover_boards": {
+  "games": 350,
+  "mean_max_height": 6.09,
+  "mean_aggregate_height": 36.19,
+  "mean_holes": 0.78
+ }
+}
