@@ -1,0 +1,84 @@
+{
+ "experiment": "034-v29-20hz-true-handover",
+ "created_at": "2026-11-09T10:53:28.494925+00:00",
+ "rule": "c = mean(actual rest of game) / mean(V39' backup2), through the origin; a 320+ child's target is max(0, c x V39' backup2); fitted once, never refit (plan.md)",
+ "data": [
+  {
+   "path": "runs/033-data/round6.npz",
+   "sha256": "492f930210d4062d3de057065d2540cb0a4babfe818af294db0af6c1b5459228"
+  },
+  {
+   "path": "runs/033-data/round7.npz",
+   "sha256": "719b15fc3773c7c50f8d4987233384a51946606c9b48b3c5ed3bbd4884c1bb87"
+  },
+  {
+   "path": "runs/033-data/round8.npz",
+   "sha256": "1318e912cab5fb5a95fb70fc69f68e52af1617e9364fc7e58cd30d7091295628"
+  }
+ ],
+ "boards": 533,
+ "late": {
+  "path": "experiments/031-v39-retuned-cap/value_sweep5.bin",
+  "sha256": "7c18dacf375b7e9d0541cf03b2d043c7e0d6112b19c20dbcada82271661599f5"
+ },
+ "target_job": {
+  "depth": 4,
+  "format": {
+   "tap_hz": 20,
+   "reaction_ms": 300
+  }
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "bc15b8fde0cc34074e6f7555b4b121cd313b2256",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "c35f70284cfd5c0d8b51cc4db64f3b4fb96a9e575e79445417176bdb6f311bbd",
+  "abi_version": 28,
+  "vs_033": "033's records hold no library sha, so it cannot be compared; the ABI equals 033's and the re-run gates check the play"
+ },
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "c": 0.24779340496521382,
+ "mean_backup": 15.360421393481719,
+ "mean_actual": 3.8062111187913494,
+ "sd_actual": 1.5566542799050747,
+ "correlation": 0.41945385480949166,
+ "backup_p5": 13.4554176445423,
+ "backup_percentiles_5_25_50_75_95": [
+  13.4554176445423,
+  15.214407895691693,
+  15.632106026634574,
+  15.989503538628158,
+  16.54016794675079
+ ],
+ "by_aggregate_height_third": {
+  "shortest": {
+   "boards": 178,
+   "mean_backup": 15.538,
+   "mean_actual": 3.888,
+   "mean_scaled": 3.85
+  },
+  "middle": {
+   "boards": 178,
+   "mean_backup": 15.476,
+   "mean_actual": 3.898,
+   "mean_scaled": 3.835
+  },
+  "tallest": {
+   "boards": 177,
+   "mean_backup": 15.066,
+   "mean_actual": 3.631,
+   "mean_scaled": 3.733
+  }
+ },
+ "sha256": "e706c0df02e5de6937cca913db8ad61859b332476081abc5f4d0bfacf688ad5a"
+}
