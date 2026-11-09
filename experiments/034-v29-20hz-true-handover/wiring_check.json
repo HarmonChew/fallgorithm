@@ -1,0 +1,66 @@
+{
+ "experiment": "034-v29-20hz-true-handover",
+ "rerun_screening_v29r20": {
+  "games": 3,
+  "matched": 3,
+  "mismatched_seeds": []
+ },
+ "prefix_check": [
+  {
+   "seed": 13770,
+   "frames_before_230": 31292,
+   "of": 40249,
+   "same_passes": true,
+   "changed_caught": true
+  },
+  {
+   "seed": 45356,
+   "frames_before_230": 31188,
+   "of": 36821,
+   "same_passes": true,
+   "changed_caught": true
+  },
+  {
+   "seed": 19813,
+   "frames_before_230": 31004,
+   "of": 39154,
+   "same_passes": true,
+   "changed_caught": true
+  }
+ ],
+ "targets_below_320": {
+  "boards": 50,
+  "match": true
+ },
+ "late_children": {
+  "boards": 20,
+  "c": 0.24779340496521382,
+  "parents_315_319": 40,
+  "match": true
+ },
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "calibration_sha256": "e706c0df02e5de6937cca913db8ad61859b332476081abc5f4d0bfacf688ad5a",
+ "matched": true,
+ "abi_version": 28,
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "c35f70284cfd5c0d8b51cc4db64f3b4fb96a9e575e79445417176bdb6f311bbd",
+  "abi_version": 28,
+  "vs_033": "033's records hold no library sha, so it cannot be compared; the ABI equals 033's and the re-run gates check the play"
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "fe871ec0fe4badf5609c7d6c4d22a1a4d9799839",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
