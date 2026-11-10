@@ -34,7 +34,9 @@ its probe seeds, 6,600-6,999 round 0, 7,000-8,799 rounds 1-9;
 9,300-9,699 round 0, 9,700-11,299 rounds 1-8, 11,300-11,499 round 9 not played;
 `../033-v29-20hz/seeds.json`); 034 used 11,500-14,199 (11,500-11,999 as its probe seeds,
 12,000-12,399 round 0, 12,400-14,199 rounds 1-9; `../034-v29-20hz-true-handover/seeds.json`; it
-played no register set: its `choose` picked no network). A later run takes indices from 14,200 on.
+played no register set: its `choose` picked no network); 035 reserves 14,200-15,199 (1,000 probe seeds for its search
+arms, `d3` on the first 500; `../035-20hz-search-probes/seeds.json`; 036 re-uses them as its
+probe set). A later run takes indices from 15,200 on.
 
 Earlier seed sets (probe seeds, dev 0-99 and 100-199 and others) have been used to make
 choices many times; treat them as screening or development only, never as confirmation.
