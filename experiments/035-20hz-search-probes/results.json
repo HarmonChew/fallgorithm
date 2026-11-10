@@ -273,6 +273,160 @@
      "kind": "committed"
     }
    }
+  },
+  "c18_d18": {
+   "search": {
+    "commit_level": 18,
+    "adjust_k": 8,
+    "adjust_max_level": 28,
+    "deep2_level": 18,
+    "deep2_k": 4,
+    "deep3": null
+   },
+   "changes": {
+    "commit_level": 18,
+    "deep2_level": 18
+   },
+   "style": {
+    "games": 1000,
+    "mean_score": 1826423.16,
+    "mean_lines": 330.52,
+    "median_lines": 333.0,
+    "points_by_band": {
+     "18": 622827.0,
+     "19-28": 598602.4,
+     "29-38": 599310.9,
+     "39+": 5682.7
+    },
+    "p_reach_130": 0.998,
+    "p_reach_230": 0.996,
+    "p_reach_320": 0.95,
+    "p_reach_39": 0.873,
+    "deaths_by_10_lines": {
+     "0-9": 1,
+     "120-129": 1,
+     "200-209": 1,
+     "220-229": 1,
+     "230-239": 6,
+     "240-249": 3,
+     "250-259": 2,
+     "260-269": 3,
+     "270-279": 3,
+     "280-289": 8,
+     "290-299": 4,
+     "300-309": 7,
+     "310-319": 10,
+     "320-329": 77,
+     "330-339": 853,
+     "340-349": 20
+    },
+    "band_18": {
+     "games": 1000,
+     "lines": 131.12,
+     "tetrises": 26.174,
+     "singles": 15.43,
+     "tetris_line_share": 0.7985
+    },
+    "band_19_28": {
+     "games": 998,
+     "lines": 100.01,
+     "tetrises": 19.076,
+     "singles": 13.38,
+     "tetris_line_share": 0.763
+    },
+    "band_29_38": {
+     "games": 996,
+     "lines": 97.72,
+     "tetrises": 12.311,
+     "singles": 26.76,
+     "tetris_line_share": 0.5039
+    },
+    "entry_29": {
+     "games": 996,
+     "max_height": 6.718875502008032,
+     "aggregate_height": 40.3433734939759,
+     "holes": 0.16666666666666666
+    },
+    "entry_39": {
+     "games": 873,
+     "max_height": 6.152348224513173,
+     "aggregate_height": 37.04925544100802,
+     "holes": 0.6506300114547537
+    },
+    "seconds_per_game": 397.953708
+   },
+   "paired_vs_base": {
+    "total": {
+     "score": {
+      "mean": 101495.64,
+      "ci95_low": 81693.68,
+      "ci95_high": 121904.2,
+      "resamples": 10000,
+      "rng_seed": 12
+     },
+     "lines": {
+      "mean": 7.812,
+      "ci95_low": 4.905,
+      "ci95_high": 10.784,
+      "resamples": 10000,
+      "rng_seed": 12
+     },
+     "wins": {
+      "higher": 637,
+      "lower": 363,
+      "equal": 0
+     }
+    },
+    "by_band": {
+     "18": {
+      "mean": 19787.42,
+      "ci95_low": 15058.3,
+      "ci95_high": 24548.28,
+      "resamples": 10000,
+      "rng_seed": 12
+     },
+     "19-28": {
+      "mean": 54296.84,
+      "ci95_low": 46735.2,
+      "ci95_high": 62163.6,
+      "resamples": 10000,
+      "rng_seed": 12
+     },
+     "29-38": {
+      "mean": 26662.08,
+      "ci95_low": 13702.34,
+      "ci95_high": 40058.54,
+      "resamples": 10000,
+      "rng_seed": 12
+     },
+     "39+": {
+      "mean": 749.3,
+      "ci95_low": -141.28,
+      "ci95_high": 1629.68,
+      "resamples": 10000,
+      "rng_seed": 12
+     }
+    },
+    "score_correlation": -0.003928424024675026
+   },
+   "gains": true,
+   "library": {
+    "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+    "sha256": "ab5a190c23ec2488f91bd4585000725c21fee3f5f9863b77e413a6da13fd64ab",
+    "abi_version": 29
+   },
+   "versions": {
+    "engine": {
+     "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+     "dirty": false,
+     "kind": "committed"
+    },
+    "fallgorithm": {
+     "commit": "237451216e2bb4145b089d4bd35530dfe791ae13",
+     "dirty": false,
+     "kind": "committed"
+    }
+   }
   }
  }
 }
