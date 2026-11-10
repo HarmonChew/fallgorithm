@@ -1,0 +1,62 @@
+{
+ "experiment": "035-20hz-search-probes",
+ "seeds": [
+  41904,
+  57415,
+  42011,
+  24811
+ ],
+ "search": {
+  "commit_level": 29,
+  "adjust_k": 8,
+  "adjust_max_level": 28,
+  "deep2_level": 29,
+  "deep2_k": 4,
+  "deep3": [
+   29,
+   1000,
+   2,
+   2,
+   2
+  ]
+ },
+ "seconds": [
+  298.225,
+  319.977,
+  323.949,
+  317.97
+ ],
+ "mean_seconds": 315.0,
+ "limit_seconds": 900.0,
+ "cut_to_levels_34_38": false,
+ "deep3": [
+  29,
+  1000,
+  2,
+  2,
+  2
+ ],
+ "scores": [
+  1498580,
+  1782780,
+  1780620,
+  1903940
+ ],
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "ab5a190c23ec2488f91bd4585000725c21fee3f5f9863b77e413a6da13fd64ab",
+  "abi_version": 29
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "c3c34d537873e712e5b16ab7fc3dd37fa2892785",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
