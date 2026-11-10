@@ -1,0 +1,1059 @@
+{
+ "experiment": "035-20hz-search-probes",
+ "source": "experiments/033-v29-20hz/games/heldout-v29r20.json.gz",
+ "games": 1000,
+ "ending_before_230_lines": 56,
+ "rule": "One game's class from its piece spawns (each: holes, max_height, drought, level, lines). The hole event is the last spawn at which the board has ``HOLES_KEPT`` holes or fewer: the piece placed there leaves holes that are never dug out again. ``i_drought`` if no I had come for ``DROUGHT_LONG`` pieces or more by then; else ``tall_stack`` if the stack was ``TALL`` rows or more; else ``low_hole``.",
+ "holes_kept": 3,
+ "drought_long": 13,
+ "tall": 12,
+ "last_pieces": 40,
+ "classes": {
+  "i_drought": {
+   "games": 32,
+   "share": 0.571,
+   "ended_at_level_18": 8,
+   "ended_at_levels_19_28": 24,
+   "median_pieces_from_event_to_end": 15.0,
+   "mean_drought_at_event": 27.5,
+   "mean_drought_when_it_ended": 34.3,
+   "mean_max_height_at_event": 15.4,
+   "games_with_a_clear_out_of_reach": 23,
+   "games_with_an_i_clear_out_of_reach": 6
+  },
+  "tall_stack": {
+   "games": 16,
+   "share": 0.286,
+   "ended_at_level_18": 6,
+   "ended_at_levels_19_28": 10,
+   "median_pieces_from_event_to_end": 18.0,
+   "mean_drought_at_event": 6.5,
+   "mean_drought_when_it_ended": 13.9,
+   "mean_max_height_at_event": 15.4,
+   "games_with_a_clear_out_of_reach": 11,
+   "games_with_an_i_clear_out_of_reach": 9
+  },
+  "low_hole": {
+   "games": 8,
+   "share": 0.143,
+   "ended_at_level_18": 2,
+   "ended_at_levels_19_28": 6,
+   "median_pieces_from_event_to_end": 40.0,
+   "mean_drought_at_event": 8,
+   "mean_drought_when_it_ended": 21,
+   "mean_max_height_at_event": 10.2,
+   "games_with_a_clear_out_of_reach": 5,
+   "games_with_an_i_clear_out_of_reach": 4
+  }
+ },
+ "by_game": [
+  {
+   "seed": 6909,
+   "lines": 12,
+   "level": 18,
+   "pieces": 68,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 17,
+   "event": {
+    "lines": 11,
+    "level": 18,
+    "drought": 2,
+    "max_height": 17,
+    "holes": 2
+   },
+   "drought_when_it_ended": 4,
+   "last_pieces_a_clear_out_of_20hz_reach": 11,
+   "of_which_i_pieces": 2
+  },
+  {
+   "seed": 23243,
+   "lines": 18,
+   "level": 18,
+   "pieces": 85,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 12,
+   "event": {
+    "lines": 17,
+    "level": 18,
+    "drought": 6,
+    "max_height": 17,
+    "holes": 0
+   },
+   "drought_when_it_ended": 17,
+   "last_pieces_a_clear_out_of_20hz_reach": 5,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 12981,
+   "lines": 21,
+   "level": 18,
+   "pieces": 92,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 27,
+   "event": {
+    "lines": 15,
+    "level": 18,
+    "drought": 22,
+    "max_height": 17,
+    "holes": 1
+   },
+   "drought_when_it_ended": 28,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 38383,
+   "lines": 42,
+   "level": 18,
+   "pieces": 143,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 8,
+   "event": {
+    "lines": 41,
+    "level": 18,
+    "drought": 34,
+    "max_height": 16,
+    "holes": 3
+   },
+   "drought_when_it_ended": 38,
+   "last_pieces_a_clear_out_of_20hz_reach": 1,
+   "of_which_i_pieces": 1
+  },
+  {
+   "seed": 42735,
+   "lines": 50,
+   "level": 18,
+   "pieces": 165,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 10,
+   "event": {
+    "lines": 50,
+    "level": 18,
+    "drought": 22,
+    "max_height": 17,
+    "holes": 0
+   },
+   "drought_when_it_ended": 23,
+   "last_pieces_a_clear_out_of_20hz_reach": 6,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 6881,
+   "lines": 54,
+   "level": 18,
+   "pieces": 176,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 62,
+   "event": {
+    "lines": 36,
+    "level": 18,
+    "drought": 8,
+    "max_height": 13,
+    "holes": 0
+   },
+   "drought_when_it_ended": 17,
+   "last_pieces_a_clear_out_of_20hz_reach": 4,
+   "of_which_i_pieces": 2
+  },
+  {
+   "seed": 60327,
+   "lines": 56,
+   "level": 18,
+   "pieces": 180,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 4,
+   "event": {
+    "lines": 56,
+    "level": 18,
+    "drought": 30,
+    "max_height": 19,
+    "holes": 3
+   },
+   "drought_when_it_ended": 32,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 13189,
+   "lines": 60,
+   "level": 18,
+   "pieces": 191,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 8,
+   "event": {
+    "lines": 60,
+    "level": 18,
+    "drought": 23,
+    "max_height": 16,
+    "holes": 3
+   },
+   "drought_when_it_ended": 30,
+   "last_pieces_a_clear_out_of_20hz_reach": 3,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 24867,
+   "lines": 73,
+   "level": 18,
+   "pieces": 219,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 1,
+   "event": {
+    "lines": 73,
+    "level": 18,
+    "drought": 1,
+    "max_height": 20,
+    "holes": 1
+   },
+   "drought_when_it_ended": 1,
+   "last_pieces_a_clear_out_of_20hz_reach": 2,
+   "of_which_i_pieces": 1
+  },
+  {
+   "seed": 24368,
+   "lines": 80,
+   "level": 18,
+   "pieces": 238,
+   "class": "low_hole",
+   "pieces_from_event_to_end": 37,
+   "event": {
+    "lines": 75,
+    "level": 18,
+    "drought": 11,
+    "max_height": 10,
+    "holes": 1
+   },
+   "drought_when_it_ended": 13,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 21724,
+   "lines": 81,
+   "level": 18,
+   "pieces": 242,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 39,
+   "event": {
+    "lines": 72,
+    "level": 18,
+    "drought": 19,
+    "max_height": 12,
+    "holes": 3
+   },
+   "drought_when_it_ended": 20,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 33630,
+   "lines": 85,
+   "level": 18,
+   "pieces": 249,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 6,
+   "event": {
+    "lines": 84,
+    "level": 18,
+    "drought": 24,
+    "max_height": 17,
+    "holes": 3
+   },
+   "drought_when_it_ended": 29,
+   "last_pieces_a_clear_out_of_20hz_reach": 1,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 29345,
+   "lines": 93,
+   "level": 18,
+   "pieces": 271,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 41,
+   "event": {
+    "lines": 82,
+    "level": 18,
+    "drought": 11,
+    "max_height": 14,
+    "holes": 3
+   },
+   "drought_when_it_ended": 27,
+   "last_pieces_a_clear_out_of_20hz_reach": 6,
+   "of_which_i_pieces": 2
+  },
+  {
+   "seed": 15525,
+   "lines": 94,
+   "level": 18,
+   "pieces": 275,
+   "class": "low_hole",
+   "pieces_from_event_to_end": 87,
+   "event": {
+    "lines": 69,
+    "level": 18,
+    "drought": 7,
+    "max_height": 9,
+    "holes": 0
+   },
+   "drought_when_it_ended": 38,
+   "last_pieces_a_clear_out_of_20hz_reach": 1,
+   "of_which_i_pieces": 1
+  },
+  {
+   "seed": 57192,
+   "lines": 105,
+   "level": 18,
+   "pieces": 300,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 29,
+   "event": {
+    "lines": 100,
+    "level": 18,
+    "drought": 8,
+    "max_height": 13,
+    "holes": 0
+   },
+   "drought_when_it_ended": 15,
+   "last_pieces_a_clear_out_of_20hz_reach": 4,
+   "of_which_i_pieces": 2
+  },
+  {
+   "seed": 25596,
+   "lines": 106,
+   "level": 18,
+   "pieces": 306,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 12,
+   "event": {
+    "lines": 104,
+    "level": 18,
+    "drought": 24,
+    "max_height": 17,
+    "holes": 3
+   },
+   "drought_when_it_ended": 28,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 24534,
+   "lines": 131,
+   "level": 19,
+   "pieces": 366,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 103,
+   "event": {
+    "lines": 92,
+    "level": 18,
+    "drought": 28,
+    "max_height": 17,
+    "holes": 3
+   },
+   "drought_when_it_ended": 44,
+   "last_pieces_a_clear_out_of_20hz_reach": 3,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 11628,
+   "lines": 133,
+   "level": 19,
+   "pieces": 369,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 21,
+   "event": {
+    "lines": 128,
+    "level": 18,
+    "drought": 9,
+    "max_height": 15,
+    "holes": 0
+   },
+   "drought_when_it_ended": 25,
+   "last_pieces_a_clear_out_of_20hz_reach": 4,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 61242,
+   "lines": 135,
+   "level": 19,
+   "pieces": 378,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 24,
+   "event": {
+    "lines": 134,
+    "level": 19,
+    "drought": 28,
+    "max_height": 11,
+    "holes": 0
+   },
+   "drought_when_it_ended": 51,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 36339,
+   "lines": 138,
+   "level": 19,
+   "pieces": 382,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 52,
+   "event": {
+    "lines": 121,
+    "level": 18,
+    "drought": 11,
+    "max_height": 13,
+    "holes": 3
+   },
+   "drought_when_it_ended": 13,
+   "last_pieces_a_clear_out_of_20hz_reach": 6,
+   "of_which_i_pieces": 2
+  },
+  {
+   "seed": 17026,
+   "lines": 139,
+   "level": 19,
+   "pieces": 388,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 73,
+   "event": {
+    "lines": 115,
+    "level": 18,
+    "drought": 17,
+    "max_height": 14,
+    "holes": 0
+   },
+   "drought_when_it_ended": 27,
+   "last_pieces_a_clear_out_of_20hz_reach": 2,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 32798,
+   "lines": 140,
+   "level": 20,
+   "pieces": 388,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 31,
+   "event": {
+    "lines": 135,
+    "level": 19,
+    "drought": 7,
+    "max_height": 13,
+    "holes": 0
+   },
+   "drought_when_it_ended": 9,
+   "last_pieces_a_clear_out_of_20hz_reach": 4,
+   "of_which_i_pieces": 1
+  },
+  {
+   "seed": 10738,
+   "lines": 145,
+   "level": 20,
+   "pieces": 396,
+   "class": "low_hole",
+   "pieces_from_event_to_end": 28,
+   "event": {
+    "lines": 140,
+    "level": 20,
+    "drought": 4,
+    "max_height": 10,
+    "holes": 0
+   },
+   "drought_when_it_ended": 25,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 57239,
+   "lines": 145,
+   "level": 20,
+   "pieces": 402,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 29,
+   "event": {
+    "lines": 138,
+    "level": 19,
+    "drought": 37,
+    "max_height": 14,
+    "holes": 2
+   },
+   "drought_when_it_ended": 38,
+   "last_pieces_a_clear_out_of_20hz_reach": 3,
+   "of_which_i_pieces": 1
+  },
+  {
+   "seed": 39766,
+   "lines": 149,
+   "level": 20,
+   "pieces": 411,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 17,
+   "event": {
+    "lines": 146,
+    "level": 20,
+    "drought": 6,
+    "max_height": 16,
+    "holes": 1
+   },
+   "drought_when_it_ended": 11,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 1260,
+   "lines": 149,
+   "level": 20,
+   "pieces": 409,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 3,
+   "event": {
+    "lines": 149,
+    "level": 20,
+    "drought": 28,
+    "max_height": 17,
+    "holes": 3
+   },
+   "drought_when_it_ended": 30,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 51874,
+   "lines": 150,
+   "level": 21,
+   "pieces": 413,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 17,
+   "event": {
+    "lines": 148,
+    "level": 20,
+    "drought": 15,
+    "max_height": 14,
+    "holes": 0
+   },
+   "drought_when_it_ended": 31,
+   "last_pieces_a_clear_out_of_20hz_reach": 7,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 38505,
+   "lines": 151,
+   "level": 21,
+   "pieces": 417,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 24,
+   "event": {
+    "lines": 148,
+    "level": 20,
+    "drought": 18,
+    "max_height": 14,
+    "holes": 0
+   },
+   "drought_when_it_ended": 24,
+   "last_pieces_a_clear_out_of_20hz_reach": 3,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 29541,
+   "lines": 152,
+   "level": 21,
+   "pieces": 418,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 3,
+   "event": {
+    "lines": 152,
+    "level": 21,
+    "drought": 9,
+    "max_height": 18,
+    "holes": 2
+   },
+   "drought_when_it_ended": 11,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 31971,
+   "lines": 162,
+   "level": 22,
+   "pieces": 444,
+   "class": "low_hole",
+   "pieces_from_event_to_end": 36,
+   "event": {
+    "lines": 156,
+    "level": 21,
+    "drought": 10,
+    "max_height": 11,
+    "holes": 0
+   },
+   "drought_when_it_ended": 10,
+   "last_pieces_a_clear_out_of_20hz_reach": 6,
+   "of_which_i_pieces": 2
+  },
+  {
+   "seed": 11537,
+   "lines": 163,
+   "level": 22,
+   "pieces": 445,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 19,
+   "event": {
+    "lines": 163,
+    "level": 22,
+    "drought": 12,
+    "max_height": 12,
+    "holes": 0
+   },
+   "drought_when_it_ended": 30,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 36118,
+   "lines": 167,
+   "level": 22,
+   "pieces": 456,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 29,
+   "event": {
+    "lines": 158,
+    "level": 21,
+    "drought": 33,
+    "max_height": 16,
+    "holes": 2
+   },
+   "drought_when_it_ended": 34,
+   "last_pieces_a_clear_out_of_20hz_reach": 2,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 21042,
+   "lines": 167,
+   "level": 22,
+   "pieces": 455,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 1,
+   "event": {
+    "lines": 167,
+    "level": 22,
+    "drought": 36,
+    "max_height": 20,
+    "holes": 3
+   },
+   "drought_when_it_ended": 36,
+   "last_pieces_a_clear_out_of_20hz_reach": 1,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 18260,
+   "lines": 176,
+   "level": 23,
+   "pieces": 475,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 1,
+   "event": {
+    "lines": 176,
+    "level": 23,
+    "drought": 1,
+    "max_height": 20,
+    "holes": 2
+   },
+   "drought_when_it_ended": 1,
+   "last_pieces_a_clear_out_of_20hz_reach": 2,
+   "of_which_i_pieces": 1
+  },
+  {
+   "seed": 29404,
+   "lines": 188,
+   "level": 24,
+   "pieces": 507,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 13,
+   "event": {
+    "lines": 187,
+    "level": 24,
+    "drought": 33,
+    "max_height": 14,
+    "holes": 3
+   },
+   "drought_when_it_ended": 45,
+   "last_pieces_a_clear_out_of_20hz_reach": 1,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 33988,
+   "lines": 195,
+   "level": 25,
+   "pieces": 527,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 17,
+   "event": {
+    "lines": 191,
+    "level": 25,
+    "drought": 33,
+    "max_height": 16,
+    "holes": 1
+   },
+   "drought_when_it_ended": 34,
+   "last_pieces_a_clear_out_of_20hz_reach": 6,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 4876,
+   "lines": 197,
+   "level": 25,
+   "pieces": 530,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 6,
+   "event": {
+    "lines": 197,
+    "level": 25,
+    "drought": 23,
+    "max_height": 17,
+    "holes": 3
+   },
+   "drought_when_it_ended": 25,
+   "last_pieces_a_clear_out_of_20hz_reach": 2,
+   "of_which_i_pieces": 1
+  },
+  {
+   "seed": 27089,
+   "lines": 199,
+   "level": 25,
+   "pieces": 534,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 17,
+   "event": {
+    "lines": 196,
+    "level": 25,
+    "drought": 22,
+    "max_height": 14,
+    "holes": 1
+   },
+   "drought_when_it_ended": 24,
+   "last_pieces_a_clear_out_of_20hz_reach": 1,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 13802,
+   "lines": 207,
+   "level": 26,
+   "pieces": 554,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 5,
+   "event": {
+    "lines": 207,
+    "level": 26,
+    "drought": 39,
+    "max_height": 16,
+    "holes": 3
+   },
+   "drought_when_it_ended": 43,
+   "last_pieces_a_clear_out_of_20hz_reach": 1,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 60109,
+   "lines": 208,
+   "level": 26,
+   "pieces": 560,
+   "class": "low_hole",
+   "pieces_from_event_to_end": 43,
+   "event": {
+    "lines": 199,
+    "level": 25,
+    "drought": 10,
+    "max_height": 10,
+    "holes": 1
+   },
+   "drought_when_it_ended": 18,
+   "last_pieces_a_clear_out_of_20hz_reach": 6,
+   "of_which_i_pieces": 1
+  },
+  {
+   "seed": 12320,
+   "lines": 208,
+   "level": 26,
+   "pieces": 556,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 1,
+   "event": {
+    "lines": 208,
+    "level": 26,
+    "drought": 52,
+    "max_height": 19,
+    "holes": 0
+   },
+   "drought_when_it_ended": 52,
+   "last_pieces_a_clear_out_of_20hz_reach": 6,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 23541,
+   "lines": 210,
+   "level": 27,
+   "pieces": 564,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 12,
+   "event": {
+    "lines": 209,
+    "level": 26,
+    "drought": 21,
+    "max_height": 16,
+    "holes": 3
+   },
+   "drought_when_it_ended": 27,
+   "last_pieces_a_clear_out_of_20hz_reach": 3,
+   "of_which_i_pieces": 1
+  },
+  {
+   "seed": 63206,
+   "lines": 212,
+   "level": 27,
+   "pieces": 568,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 26,
+   "event": {
+    "lines": 209,
+    "level": 26,
+    "drought": 11,
+    "max_height": 12,
+    "holes": 1
+   },
+   "drought_when_it_ended": 28,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 6317,
+   "lines": 213,
+   "level": 27,
+   "pieces": 570,
+   "class": "low_hole",
+   "pieces_from_event_to_end": 65,
+   "event": {
+    "lines": 195,
+    "level": 25,
+    "drought": 7,
+    "max_height": 11,
+    "holes": 0
+   },
+   "drought_when_it_ended": 11,
+   "last_pieces_a_clear_out_of_20hz_reach": 5,
+   "of_which_i_pieces": 1
+  },
+  {
+   "seed": 2723,
+   "lines": 214,
+   "level": 27,
+   "pieces": 571,
+   "class": "low_hole",
+   "pieces_from_event_to_end": 25,
+   "event": {
+    "lines": 211,
+    "level": 27,
+    "drought": 3,
+    "max_height": 11,
+    "holes": 0
+   },
+   "drought_when_it_ended": 24,
+   "last_pieces_a_clear_out_of_20hz_reach": 2,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 15709,
+   "lines": 214,
+   "level": 27,
+   "pieces": 571,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 18,
+   "event": {
+    "lines": 211,
+    "level": 27,
+    "drought": 17,
+    "max_height": 14,
+    "holes": 3
+   },
+   "drought_when_it_ended": 34,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 29675,
+   "lines": 215,
+   "level": 27,
+   "pieces": 574,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 17,
+   "event": {
+    "lines": 210,
+    "level": 27,
+    "drought": 40,
+    "max_height": 16,
+    "holes": 1
+   },
+   "drought_when_it_ended": 41,
+   "last_pieces_a_clear_out_of_20hz_reach": 1,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 61606,
+   "lines": 216,
+   "level": 27,
+   "pieces": 577,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 10,
+   "event": {
+    "lines": 216,
+    "level": 27,
+    "drought": 32,
+    "max_height": 15,
+    "holes": 1
+   },
+   "drought_when_it_ended": 36,
+   "last_pieces_a_clear_out_of_20hz_reach": 2,
+   "of_which_i_pieces": 2
+  },
+  {
+   "seed": 14361,
+   "lines": 220,
+   "level": 28,
+   "pieces": 585,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 12,
+   "event": {
+    "lines": 220,
+    "level": 28,
+    "drought": 1,
+    "max_height": 14,
+    "holes": 2
+   },
+   "drought_when_it_ended": 12,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 46762,
+   "lines": 222,
+   "level": 28,
+   "pieces": 594,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 13,
+   "event": {
+    "lines": 221,
+    "level": 28,
+    "drought": 16,
+    "max_height": 15,
+    "holes": 3
+   },
+   "drought_when_it_ended": 28,
+   "last_pieces_a_clear_out_of_20hz_reach": 5,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 53940,
+   "lines": 223,
+   "level": 28,
+   "pieces": 595,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 28,
+   "event": {
+    "lines": 220,
+    "level": 28,
+    "drought": 32,
+    "max_height": 9,
+    "holes": 0
+   },
+   "drought_when_it_ended": 50,
+   "last_pieces_a_clear_out_of_20hz_reach": 4,
+   "of_which_i_pieces": 1
+  },
+  {
+   "seed": 62616,
+   "lines": 225,
+   "level": 28,
+   "pieces": 599,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 70,
+   "event": {
+    "lines": 201,
+    "level": 26,
+    "drought": 18,
+    "max_height": 14,
+    "holes": 1
+   },
+   "drought_when_it_ended": 36,
+   "last_pieces_a_clear_out_of_20hz_reach": 4,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 57049,
+   "lines": 226,
+   "level": 28,
+   "pieces": 602,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 11,
+   "event": {
+    "lines": 224,
+    "level": 28,
+    "drought": 46,
+    "max_height": 16,
+    "holes": 2
+   },
+   "drought_when_it_ended": 56,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 55457,
+   "lines": 229,
+   "level": 28,
+   "pieces": 608,
+   "class": "low_hole",
+   "pieces_from_event_to_end": 118,
+   "event": {
+    "lines": 189,
+    "level": 24,
+    "drought": 12,
+    "max_height": 10,
+    "holes": 1
+   },
+   "drought_when_it_ended": 29,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  },
+  {
+   "seed": 11920,
+   "lines": 229,
+   "level": 28,
+   "pieces": 612,
+   "class": "tall_stack",
+   "pieces_from_event_to_end": 4,
+   "event": {
+    "lines": 229,
+    "level": 28,
+    "drought": 1,
+    "max_height": 20,
+    "holes": 1
+   },
+   "drought_when_it_ended": 2,
+   "last_pieces_a_clear_out_of_20hz_reach": 1,
+   "of_which_i_pieces": 1
+  },
+  {
+   "seed": 46927,
+   "lines": 229,
+   "level": 28,
+   "pieces": 609,
+   "class": "i_drought",
+   "pieces_from_event_to_end": 73,
+   "event": {
+    "lines": 204,
+    "level": 26,
+    "drought": 19,
+    "max_height": 15,
+    "holes": 3
+   },
+   "drought_when_it_ended": 25,
+   "last_pieces_a_clear_out_of_20hz_reach": 0,
+   "of_which_i_pieces": 0
+  }
+ ]
+}
