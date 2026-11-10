@@ -1,0 +1,122 @@
+{
+ "experiment": "035-20hz-search-probes",
+ "rule": "An arm gains if its mean final score minus base's, paired by seed (95% bootstrap interval of experiment012.paired, 10,000 resamples, RNG seed 12), is +15,000 or more with the interval's lower end above 0. Screening only: no record is claimed.",
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "weights": "experiments/033-v29-20hz/value_sweep6.bin",
+ "seeds": {
+  "all": 1000,
+  "d3": 500
+ },
+ "base": {
+  "search": {
+   "commit_level": 29,
+   "adjust_k": 8,
+   "adjust_max_level": 28,
+   "deep2_level": 29,
+   "deep2_k": 4,
+   "deep3": null
+  },
+  "style": {
+   "games": 1000,
+   "mean_score": 1724927.52,
+   "mean_lines": 322.708,
+   "median_lines": 333.0,
+   "points_by_band": {
+    "18": 603039.6,
+    "19-28": 544305.6,
+    "29-38": 572648.9,
+    "39+": 4933.4
+   },
+   "p_reach_130": 0.986,
+   "p_reach_230": 0.96,
+   "p_reach_320": 0.913,
+   "p_reach_39": 0.835,
+   "deaths_by_10_lines": {
+    "10-19": 2,
+    "30-39": 2,
+    "40-49": 1,
+    "50-59": 3,
+    "80-89": 1,
+    "90-99": 2,
+    "100-109": 2,
+    "110-119": 1,
+    "130-139": 4,
+    "140-149": 4,
+    "150-159": 1,
+    "160-169": 4,
+    "170-179": 3,
+    "180-189": 2,
+    "190-199": 3,
+    "200-209": 3,
+    "210-219": 2,
+    "230-239": 8,
+    "240-249": 5,
+    "250-259": 6,
+    "260-269": 3,
+    "270-279": 3,
+    "280-289": 5,
+    "290-299": 2,
+    "300-309": 9,
+    "310-319": 6,
+    "320-329": 78,
+    "330-339": 821,
+    "340-349": 14
+   },
+   "band_18": {
+    "games": 1000,
+    "lines": 130.31,
+    "tetrises": 25.188,
+    "singles": 17.23,
+    "tetris_line_share": 0.7732
+   },
+   "band_19_28": {
+    "games": 986,
+    "lines": 98.38,
+    "tetrises": 17.279,
+    "singles": 16.41,
+    "tetris_line_share": 0.7026
+   },
+   "band_29_38": {
+    "games": 960,
+    "lines": 97.29,
+    "tetrises": 12.172,
+    "singles": 26.72,
+    "tetris_line_share": 0.5004
+   },
+   "entry_29": {
+    "games": 960,
+    "max_height": 6.844791666666667,
+    "aggregate_height": 41.32395833333333,
+    "holes": 0.43020833333333336
+   },
+   "entry_39": {
+    "games": 835,
+    "max_height": 6.177245508982036,
+    "aggregate_height": 37.17365269461078,
+    "holes": 0.7269461077844311
+   },
+   "seconds_per_game": 173.380471
+  },
+  "library": {
+   "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+   "sha256": "ab5a190c23ec2488f91bd4585000725c21fee3f5f9863b77e413a6da13fd64ab",
+   "abi_version": 29
+  },
+  "versions": {
+   "engine": {
+    "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+    "dirty": false,
+    "kind": "committed"
+   },
+   "fallgorithm": {
+    "commit": "d5ce23cf73de3405b0024cedc8928111999fa13e",
+    "dirty": false,
+    "kind": "committed"
+   }
+  }
+ },
+ "arms": {}
+}
