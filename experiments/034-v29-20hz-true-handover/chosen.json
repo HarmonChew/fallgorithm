@@ -1,0 +1,60 @@
+{
+ "rule": "highest paired probe mean against v29r20 among all probed sweeps, if above 0 (plan.md, predeclared.md)",
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "sweeps": [
+  {
+   "sweep": 1,
+   "weights": "experiments/034-v29-20hz-true-handover/value_sweep1.bin",
+   "probe_mean": -57894.48
+  },
+  {
+   "sweep": 2,
+   "weights": "experiments/034-v29-20hz-true-handover/value_sweep2.bin",
+   "probe_mean": -115642.0
+  },
+  {
+   "sweep": 3,
+   "weights": "experiments/034-v29-20hz-true-handover/value_sweep3.bin",
+   "probe_mean": -134989.24
+  },
+  {
+   "sweep": 4,
+   "weights": "experiments/034-v29-20hz-true-handover/value_sweep4.bin",
+   "probe_mean": -170194.96
+  },
+  {
+   "sweep": 5,
+   "weights": "experiments/034-v29-20hz-true-handover/value_sweep5.bin",
+   "probe_mean": -181918.68
+  },
+  {
+   "sweep": 6,
+   "weights": "experiments/034-v29-20hz-true-handover/value_sweep6.bin",
+   "probe_mean": -190599.36
+  },
+  {
+   "sweep": 7,
+   "weights": "experiments/034-v29-20hz-true-handover/value_sweep7.bin",
+   "probe_mean": -163285.8
+  },
+  {
+   "sweep": 8,
+   "weights": "experiments/034-v29-20hz-true-handover/value_sweep8.bin",
+   "probe_mean": -88697.12
+  },
+  {
+   "sweep": 9,
+   "weights": "experiments/034-v29-20hz-true-handover/value_sweep9.bin",
+   "probe_mean": -27899.04
+  },
+  {
+   "sweep": 10,
+   "weights": "experiments/034-v29-20hz-true-handover/value_sweep10.bin",
+   "probe_mean": -6432.52
+  }
+ ],
+ "chosen": null
+}
