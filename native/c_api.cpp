@@ -28,7 +28,7 @@ using namespace fallgorithm;
 
 namespace {
 
-constexpr int abi_version = 28;
+constexpr int abi_version = 29;
 
 Columns load_columns(const std::uint32_t* columns) {
     Columns out{};
@@ -1073,7 +1073,10 @@ FN_API int fn_deep_hybrid_game(const unsigned char* net, int net_size, const Par
 // exploration only below ``explore_to_lines`` lines (0 is to the end).
 // ``rows`` may be null; given, it receives the game's boards as fn_dump_game's. Returns as
 // fn_net_game.
-FN_API int fn_late_hybrid_game(const unsigned char* net, int net_size,
+// Experiment 035: ``deep3`` is NetSearcher::set_deep3's (from_level, to_level, roots, k,
+// k2); roots 0 is off. fn_late_hybrid_game passes it off, fn_deep3_game passes its own.
+namespace {
+int late_hybrid_game(const unsigned char* net, int net_size,
                                const unsigned char* late, int late_size, int late_from_lines,
                                const unsigned char* mid, int mid_size, int mid_from_lines,
                                const Params* params, int commit_level, int adjust_k,
@@ -1084,7 +1087,8 @@ FN_API int fn_late_hybrid_game(const unsigned char* net, int net_size,
                                int explore_from_lines, int explore_to_lines,
                                std::uint64_t explore_seed,
                                std::uint8_t* inputs, int capacity, std::int64_t* out,
-                               std::int32_t* rows, int row_capacity, int* row_count) {
+                               std::int32_t* rows, int row_capacity, int* row_count,
+                               const int* deep3) {
     if (!net || !params || !ruleset || !mode || seed < 0 || seed > 0xffff || line_cap < 0 ||
         frame_cap < 0 || capacity < frame_cap || interval < 1 || reaction < 0 ||
         start_level < 0 || start_level >= 20 || net_size < 0 || commit_level < 0 ||
@@ -1092,7 +1096,9 @@ FN_API int fn_late_hybrid_game(const unsigned char* net, int net_size,
         switch_level < 0 || (late && late_size < 0) || late_from_lines < 0 ||
         (mid && mid_size < 0) || mid_from_lines < 0 ||
         (rows && !row_count) || row_capacity < 0 || !(explore >= 0.0 && explore <= 1.0) ||
-        explore_from_lines < 0 || explore_to_lines < 0) {
+        explore_from_lines < 0 || explore_to_lines < 0 || deep3[0] < 0 || deep3[1] < 0 ||
+        deep3[2] < 0 || deep3[3] < 0 || deep3[4] < 0 ||
+        (deep3[2] > 0 && (deep3[3] < 1 || deep3[4] < 1))) {
         return -1;
     }
     try {
@@ -1111,6 +1117,7 @@ FN_API int fn_late_hybrid_game(const unsigned char* net, int net_size,
         NetSearcher deep(&network, line_cap);
         deep.set_deep(commit_level, adjust_k, adjust_max_level);
         deep.set_deep2(deep2_level, deep2_k);
+        deep.set_deep3(deep3[0], deep3[1], deep3[2], deep3[3], deep3[4]);
         if (late) {
             deep.set_late_net(&late_network, late_from_lines);
         }
@@ -1133,6 +1140,54 @@ FN_API int fn_late_hybrid_game(const unsigned char* net, int net_size,
     } catch (const std::exception&) {
         return -1;
     }
+}
+}  // namespace
+
+FN_API int fn_late_hybrid_game(const unsigned char* net, int net_size,
+                               const unsigned char* late, int late_size, int late_from_lines,
+                               const unsigned char* mid, int mid_size, int mid_from_lines,
+                               const Params* params, int commit_level, int adjust_k,
+                               int adjust_max_level, int deep2_level, int deep2_k,
+                               int switch_level, const char* ruleset, const char* mode,
+                               int start_level, int height, int seed, int line_cap,
+                               int frame_cap, int interval, int reaction, double explore,
+                               int explore_from_lines, int explore_to_lines,
+                               std::uint64_t explore_seed,
+                               std::uint8_t* inputs, int capacity, std::int64_t* out,
+                               std::int32_t* rows, int row_capacity, int* row_count) {
+    const int deep3_off[5] = {0, 0, 0, 0, 0};
+    return late_hybrid_game(net, net_size, late, late_size, late_from_lines, mid, mid_size,
+                            mid_from_lines, params, commit_level, adjust_k, adjust_max_level,
+                            deep2_level, deep2_k, switch_level, ruleset, mode, start_level,
+                            height, seed, line_cap, frame_cap, interval, reaction, explore,
+                            explore_from_lines, explore_to_lines, explore_seed, inputs,
+                            capacity, out, rows, row_capacity, row_count, deep3_off);
+}
+
+// Experiment 035: fn_late_hybrid_game's game with NetSearcher::set_deep3(``deep3``: 5
+// numbers, from_level, to_level, roots, k, k2; roots 0 is fn_late_hybrid_game's game).
+FN_API int fn_deep3_game(const unsigned char* net, int net_size,
+                         const unsigned char* late, int late_size, int late_from_lines,
+                         const unsigned char* mid, int mid_size, int mid_from_lines,
+                         const Params* params, int commit_level, int adjust_k,
+                         int adjust_max_level, int deep2_level, int deep2_k,
+                         int switch_level, const char* ruleset, const char* mode,
+                         int start_level, int height, int seed, int line_cap,
+                         int frame_cap, int interval, int reaction, double explore,
+                         int explore_from_lines, int explore_to_lines,
+                         std::uint64_t explore_seed,
+                         std::uint8_t* inputs, int capacity, std::int64_t* out,
+                         std::int32_t* rows, int row_capacity, int* row_count,
+                         const int* deep3) {
+    if (!deep3) {
+        return -1;
+    }
+    return late_hybrid_game(net, net_size, late, late_size, late_from_lines, mid, mid_size,
+                            mid_from_lines, params, commit_level, adjust_k, adjust_max_level,
+                            deep2_level, deep2_k, switch_level, ruleset, mode, start_level,
+                            height, seed, line_cap, frame_cap, interval, reaction, explore,
+                            explore_from_lines, explore_to_lines, explore_seed, inputs,
+                            capacity, out, rows, row_capacity, row_count, deep3);
 }
 
 // Experiment 029: NetSearcher::backup2 (two unknown pieces deep, the best ``k`` of each
@@ -1167,6 +1222,92 @@ FN_API int fn_backup2_values(const unsigned char* net, int net_size, int k,
                                           start_level, double_killscreen != 0, interval);
         }
         return 0;
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 035: NetSearcher::backup3 (three unknown pieces deep: the best ``k`` of each
+// next piece's placements, each valued by backup2 with ``k2``) of ``count`` boards in
+// fn_dump_game's row layout, in points, into ``out``. Returns 0, or -1 for bad arguments.
+FN_API int fn_backup3_values(const unsigned char* net, int net_size, int k, int k2,
+                             const std::int32_t* rows, int count, int line_cap,
+                             int start_level, int double_killscreen, int interval,
+                             double* out) {
+    if (!net || net_size < 0 || k < 1 || k2 < 1 || !rows || count < 0 || !out ||
+        start_level < 0 || start_level >= 20 || line_cap < 0 || interval < 1) {
+        return -1;
+    }
+    try {
+        ValueNetwork network;
+        if (!network.load(net, static_cast<std::size_t>(net_size))) {
+            return -1;
+        }
+        NetSearcher searcher(&network, line_cap);
+        for (int index = 0; index < count; ++index) {
+            const std::int32_t* row = rows + static_cast<std::size_t>(index) * dump_stride;
+            Columns columns{};
+            for (int column = 0; column < width; ++column) {
+                columns[column] = static_cast<std::uint32_t>(row[column]) << hidden_rows;
+            }
+            if (row[width] < 0 || row[width + 2] < 0 || row[width + 3] < -1 ||
+                row[width + 3] >= piece_types) {
+                return -1;
+            }
+            out[index] = searcher.backup3(columns, row[width], row[width + 2], row[width + 3],
+                                          start_level, double_killscreen != 0, interval, k, k2);
+        }
+        return 0;
+    } catch (const std::exception&) {
+        return -1;
+    }
+}
+
+// Experiment 035 (for the tests): NetSearcher's commit decision (the next piece not
+// known) for ``piece`` at the spawn on one board in fn_dump_game's row layout (its
+// columns and lines are read), with the agent's ``drought`` (it counts ``piece``), the
+// level of the board's lines, set_deep(commit_level, 0, 0), set_deep2 and set_deep3
+// (``deep3`` as fn_deep3_game's). Writes the chosen (orientation, x, y) into ``out``.
+// Returns 1, 0 when no placement is reachable, -1 for bad arguments, -3 if the search
+// failed.
+FN_API int fn_net_commit(const unsigned char* net, int net_size, const std::int32_t* row,
+                         int piece, int drought, int line_cap, int start_level,
+                         int double_killscreen, int interval, int commit_level,
+                         int deep2_level, int deep2_k, const int* deep3, int* out) {
+    if (!net || net_size < 0 || !row || piece < 0 || piece >= piece_types || drought < 0 ||
+        line_cap < 0 || start_level < 0 || start_level >= 20 || interval < 1 ||
+        commit_level < 0 || deep2_level < 0 || deep2_k < 0 || !deep3 || deep3[0] < 0 ||
+        deep3[1] < 0 || deep3[2] < 0 || deep3[3] < 0 || deep3[4] < 0 ||
+        (deep3[2] > 0 && (deep3[3] < 1 || deep3[4] < 1)) || !out || row[width] < 0) {
+        return -1;
+    }
+    try {
+        ValueNetwork network;
+        if (!network.load(net, static_cast<std::size_t>(net_size))) {
+            return -1;
+        }
+        Columns columns{};
+        for (int column = 0; column < width; ++column) {
+            columns[column] = static_cast<std::uint32_t>(row[column]) << hidden_rows;
+        }
+        NetSearcher searcher(&network, line_cap);
+        searcher.set_deep(commit_level, 0, 0);
+        searcher.set_deep2(deep2_level, deep2_k);
+        searcher.set_deep3(deep3[0], deep3[1], deep3[2], deep3[3], deep3[4]);
+        const Position at{columns, piece, -1, Flight{}, drought,
+                          level_for_lines(row[width], start_level), row[width], start_level,
+                          double_killscreen != 0, interval};
+        Choice choice;
+        if (!searcher.search(at, choice)) {
+            return -3;
+        }
+        if (!choice.found) {
+            return 0;
+        }
+        out[0] = choice.orientation;
+        out[1] = choice.x;
+        out[2] = choice.y;
+        return 1;
     } catch (const std::exception&) {
         return -1;
     }

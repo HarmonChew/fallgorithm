@@ -25,7 +25,7 @@ from .pieces import PIECES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BUILD_DIR = PROJECT_ROOT / ".build" / "native"
-ABI_VERSION = 28
+ABI_VERSION = 29
 STOP_REASONS = ("game_over", "challenge_complete", "line_cap", "frame_limit")
 PLACEMENT_CAPACITY = 1024
 MASK_CAPACITY = PLACEMENT_CAPACITY * 600
@@ -298,6 +298,16 @@ def load() -> Any:
                                         C.POINTER(C.c_int64), C.POINTER(C.c_int32), C.c_int,
                                         C.POINTER(C.c_int)]
     lib.fn_late_hybrid_game.restype = C.c_int
+    lib.fn_deep3_game.argtypes = lib.fn_late_hybrid_game.argtypes + [C.POINTER(C.c_int)]
+    lib.fn_deep3_game.restype = C.c_int
+    lib.fn_backup3_values.argtypes = [C.c_char_p, C.c_int, C.c_int, C.c_int,
+                                      C.POINTER(C.c_int32), C.c_int, C.c_int, C.c_int,
+                                      C.c_int, C.c_int, C.POINTER(C.c_double)]
+    lib.fn_backup3_values.restype = C.c_int
+    lib.fn_net_commit.argtypes = [C.c_char_p, C.c_int, C.POINTER(C.c_int32), C.c_int, C.c_int,
+                                  C.c_int, C.c_int, C.c_int, C.c_int, C.c_int, C.c_int,
+                                  C.c_int, C.POINTER(C.c_int), C.POINTER(C.c_int)]
+    lib.fn_net_commit.restype = C.c_int
     lib.fn_backup2_values.argtypes = [C.c_char_p, C.c_int, C.c_int, C.POINTER(C.c_int32),
                                       C.c_int, C.c_int, C.c_int, C.c_int, C.c_int,
                                       C.POINTER(C.c_double)]
@@ -649,6 +659,40 @@ def backup2_values(net: bytes, rows: bytes, *, k: int, line_cap: int, start_leve
     return list(out[:count])
 
 
+def backup3_values(net: bytes, rows: bytes, *, k: int, k2: int, line_cap: int,
+                   start_level: int, double_killscreen: bool, tap_interval: int) -> list[float]:
+    """Experiment 035: each board's backup3 (NetSearcher::backup3: three unknown pieces
+    deep, the best ``k`` placements of each next piece, each valued by backup2 with
+    ``k2``), in points, for boards in :func:`dump_game`'s row layout."""
+    count = len(rows) // (4 * DUMP_STRIDE)
+    buffer = (C.c_int32 * max(1, count * DUMP_STRIDE)).from_buffer_copy(
+        rows.ljust(4 * max(1, count * DUMP_STRIDE), b"\0"))
+    out = (C.c_double * max(1, count))()
+    if load().fn_backup3_values(net, len(net), k, k2, buffer, count, line_cap, start_level,
+                                int(double_killscreen), tap_interval, out):
+        raise NativeError("fn_backup3_values failed (not a network for these inputs?)")
+    return list(out[:count])
+
+
+def net_commit(net: bytes, row: bytes, piece: str, drought: int, *, line_cap: int,
+               start_level: int, double_killscreen: bool, tap_interval: int,
+               commit_level: int, deep2_level: int, deep2_k: int,
+               deep3: tuple[int, int, int, int, int] = (0, 0, 0, 0, 0)
+               ) -> tuple[int, int, int] | None:
+    """Experiment 035 (for the tests): the net search's commit decision (next piece not
+    known) for ``piece`` at the spawn on one board in :func:`dump_game`'s row layout, with
+    the agent's ``drought`` and the given search settings: the chosen (orientation, x, y),
+    or None when no placement is reachable."""
+    buffer = (C.c_int32 * DUMP_STRIDE).from_buffer_copy(row[:4 * DUMP_STRIDE])
+    out = (C.c_int * 3)()
+    found = load().fn_net_commit(net, len(net), buffer, PIECES.index(piece), drought, line_cap,
+                                 start_level, int(double_killscreen), tap_interval,
+                                 commit_level, deep2_level, deep2_k, (C.c_int * 5)(*deep3), out)
+    if found < 0:
+        raise NativeError(f"fn_net_commit failed with {found}")
+    return (out[0], out[1], out[2]) if found else None
+
+
 def net_game(net: bytes, game: dict[str, Any], seed: int, *, line_cap: int, frame_cap: int,
              limits: Limits, params: Params | None = None, prefilter: int = 0,
              explore: float = 0.0, explore_start: int = 0, explore_seed: int = 0,
@@ -800,18 +844,22 @@ def late_hybrid_game(net: bytes, game: dict[str, Any], seed: int, *, late: bytes
                      line_cap: int, frame_cap: int, limits: Limits, params: Params,
                      explore: float = 0.0, explore_from_lines: int = 0, explore_seed: int = 0,
                      dump: bool = False, mid: bytes | None = None, mid_from_lines: int = 0,
-                     explore_to_lines: int = 0) -> tuple[dict[str, Any], bytes | None]:
+                     explore_to_lines: int = 0,
+                     deep3: tuple[int, int, int, int, int] | None = None
+                     ) -> tuple[dict[str, Any], bytes | None]:
     """Experiment 029: :func:`deep_hybrid_game`'s game with an optional second network
     ``late`` for every decision at ``late_from_lines`` lines or more, a random placement
     with chance ``explore`` per piece once the game has ``explore_from_lines`` lines, and
     with ``dump`` its boards as :func:`dump_game`'s. Experiment 030: an optional third
     network ``mid`` for the decisions at ``mid_from_lines`` lines or more that are not late,
-    and exploration only below ``explore_to_lines`` lines (0 is to the end)."""
+    and exploration only below ``explore_to_lines`` lines (0 is to the end). Experiment 035:
+    ``deep3`` is the third unknown piece at the commit, (from_level, to_level, roots, k, k2)
+    of NetSearcher::set_deep3 (fn_deep3_game); None is the game without it."""
     inputs = (C.c_uint8 * max(1, frame_cap))()
     out = (C.c_int64 * 11)()
     rows = (C.c_int32 * DUMP_CAPACITY)() if dump else None
     count = C.c_int(0)
-    status = load().fn_late_hybrid_game(
+    arguments = [
         net, len(net), late, len(late) if late is not None else 0, late_from_lines,
         mid, len(mid) if mid is not None else 0, mid_from_lines, C.byref(params),
         commit_level, adjust_k, adjust_max_level, deep2_level, deep2_k,
@@ -819,9 +867,14 @@ def late_hybrid_game(net: bytes, game: dict[str, Any], seed: int, *, late: bytes
         game["height"], seed, line_cap, frame_cap, limits.tap_interval,
         limits.reaction_frames, explore, explore_from_lines, explore_to_lines, explore_seed,
         inputs,
-        max(1, frame_cap), out, rows, DUMP_CAPACITY if dump else 0, C.byref(count))
+        max(1, frame_cap), out, rows, DUMP_CAPACITY if dump else 0, C.byref(count)]
+    if deep3 is None:
+        status = load().fn_late_hybrid_game(*arguments)
+    else:
+        status = load().fn_deep3_game(*arguments, (C.c_int * 5)(*deep3))
     if status:
-        raise NativeError(f"fn_late_hybrid_game failed with {status}")
+        raise NativeError(f"fn_{'late_hybrid' if deep3 is None else 'deep3'}_game failed "
+                          f"with {status}")
     return _played(inputs, out), (C.string_at(rows, count.value * DUMP_STRIDE * 4)
                                   if dump else None)
 
