@@ -1,0 +1,104 @@
+{
+ "round": 5,
+ "weights": "experiments/034-v29-20hz-true-handover/value_sweep5.bin",
+ "explore": 0.005,
+ "explore_lines": [
+  210,
+  320
+ ],
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "seconds": 1154.3,
+ "calibration_value_actual_by_10_lines": {
+  "230-239": [
+   27.752,
+   15.856
+  ],
+  "240-249": [
+   25.963,
+   13.975
+  ],
+  "250-259": [
+   24.014,
+   11.983
+  ],
+  "260-269": [
+   21.54,
+   9.947
+  ],
+  "270-279": [
+   18.699,
+   8.011
+  ],
+  "280-289": [
+   15.358,
+   6.262
+  ],
+  "290-299": [
+   12.037,
+   4.654
+  ],
+  "300-309": [
+   8.413,
+   3.144
+  ],
+  "310-319": [
+   5.394,
+   2.015
+  ],
+  "320-329": [
+   3.975,
+   1.622
+  ]
+ },
+ "scale_drift": {
+  "boards": 129,
+  "mean_actual": 1.622,
+  "mean_scaled": 2.573,
+  "mean_raw_backup2": 10.383,
+  "by_aggregate_height_third": {
+   "shortest": {
+    "boards": 43,
+    "mean_actual": 2.336,
+    "mean_scaled": 3.239
+   },
+   "middle": {
+    "boards": 43,
+    "mean_actual": 1.478,
+    "mean_scaled": 2.604
+   },
+   "tallest": {
+    "boards": 43,
+    "mean_actual": 1.051,
+    "mean_scaled": 1.875
+   }
+  }
+ },
+ "games": 200,
+ "boards": 41516,
+ "mean_score": 1516751.1,
+ "mean_lines": 314.9,
+ "line_cap_share": 0.0,
+ "p_reach_230": 0.97,
+ "p_reach_320": 0.645,
+ "deaths_by_10_lines_230_329": {
+  "230-239": 1,
+  "240-249": 4,
+  "250-259": 2,
+  "260-269": 2,
+  "270-279": 4,
+  "280-289": 5,
+  "290-299": 5,
+  "300-309": 13,
+  "310-319": 29,
+  "320-329": 43
+ },
+ "handover_boards": {
+  "games": 129,
+  "mean_max_height": 8.99,
+  "mean_aggregate_height": 56.44,
+  "mean_holes": 6.8
+ }
+}

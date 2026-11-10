@@ -1,0 +1,267 @@
+{
+ "sweep": 10,
+ "created_at": "2026-11-10T02:48:48.823183+00:00",
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "0b19c32b9623ac0e9676dff03dd96848b9ff1e10",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ },
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "c35f70284cfd5c0d8b51cc4db64f3b4fb96a9e575e79445417176bdb6f311bbd",
+  "abi_version": 28,
+  "vs_033": "033's records hold no library sha, so it cannot be compared; the ABI equals 033's and the re-run gates check the play"
+ },
+ "torch": "2.14.0+cu130",
+ "from": {
+  "path": "experiments/034-v29-20hz-true-handover/value_sweep9.bin",
+  "sha256": "b68dd5f052cde2cf537086c172c18a9394a0b4508aa13ce506ffcfc69f423f5d"
+ },
+ "late": {
+  "path": "experiments/031-v39-retuned-cap/value_sweep5.bin",
+  "sha256": "7c18dacf375b7e9d0541cf03b2d043c7e0d6112b19c20dbcada82271661599f5"
+ },
+ "handover_value": "actual rest of game",
+ "calibration": {
+  "sha256": "e706c0df02e5de6937cca913db8ad61859b332476081abc5f4d0bfacf688ad5a",
+  "c": 0.24779340496521382
+ },
+ "weights": {
+  "path": "experiments/034-v29-20hz-true-handover/value_sweep10.bin",
+  "sha256": "13d965477386c8ead97624b8598bdbcf7f1ce86cda567bff11b4e32785ecba1e"
+ },
+ "depth": 4,
+ "lambda": 0.99,
+ "boards": {
+  "lambda_return_rows_by_part": [
+   72748,
+   40307,
+   39247,
+   40035
+  ],
+  "handover_rows_by_part": [
+   318,
+   122,
+   146,
+   159
+  ],
+  "children_below_320": 446573,
+  "children_320_plus": 1211,
+  "check": 7925
+ },
+ "late_children": {
+  "mean_raw_backup2": 14.173,
+  "mean_target": 3.512,
+  "share_raw_below_fit_p5": 0.2494
+ },
+ "mean_target_and_actual_by_10_lines": {
+  "230-239": [
+   23.717,
+   21.693
+  ],
+  "240-249": [
+   21.692,
+   20.056
+  ],
+  "250-259": [
+   19.374,
+   18.06
+  ],
+  "260-269": [
+   16.998,
+   15.955
+  ],
+  "270-279": [
+   14.64,
+   13.923
+  ],
+  "280-289": [
+   12.268,
+   11.71
+  ],
+  "290-299": [
+   9.817,
+   9.453
+  ],
+  "300-309": [
+   7.272,
+   7.035
+  ],
+  "310-319": [
+   4.757,
+   4.665
+  ],
+  "320-329": [
+   3.367,
+   3.367
+  ]
+ },
+ "settings": {
+  "batch": 4096,
+  "epochs": 3,
+  "lr": 0.0003,
+  "lr_note": "Adam, one-cycle schedule peaking at lr; warm-started from the last sweep's V",
+  "torch_seed": 23
+ },
+ "target_seconds": 1717.0,
+ "training_log": [
+  {
+   "step": 93,
+   "loss": 3.2164,
+   "seconds": 0.9
+  },
+  {
+   "step": 186,
+   "loss": 2.8646,
+   "seconds": 1.8
+  },
+  {
+   "step": 279,
+   "loss": 2.3794,
+   "seconds": 2.7
+  },
+  {
+   "step": 372,
+   "loss": 2.2695,
+   "seconds": 3.7
+  },
+  {
+   "step": 465,
+   "loss": 2.7443,
+   "seconds": 4.6
+  }
+ ],
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "gate": {
+  "round": 9,
+  "value_actual_by_10_lines": {
+   "230-239": [
+    24.854,
+    22.628
+   ],
+   "240-249": [
+    22.55,
+    21.04
+   ],
+   "250-259": [
+    20.207,
+    19.252
+   ],
+   "260-269": [
+    17.791,
+    17.092
+   ],
+   "270-279": [
+    15.39,
+    15.067
+   ],
+   "280-289": [
+    12.907,
+    12.797
+   ],
+   "290-299": [
+    10.317,
+    10.379
+   ],
+   "300-309": [
+    7.97,
+    7.955
+   ],
+   "310-319": [
+    5.604,
+    5.26
+   ],
+   "320-329": [
+    4.209,
+    3.754
+   ]
+  },
+  "within": true,
+  "rule": "|value - actual| <= 2.0 at every 10-line step of 270-319, this sweep's V29@20 on the latest round's boards (in sample: that round is in its training data; plan.md)",
+  "reported_only_previous_net_out_of_sample": {
+   "230-239": [
+    25.372,
+    22.628
+   ],
+   "240-249": [
+    23.038,
+    21.04
+   ],
+   "250-259": [
+    20.613,
+    19.252
+   ],
+   "260-269": [
+    18.097,
+    17.092
+   ],
+   "270-279": [
+    15.597,
+    15.067
+   ],
+   "280-289": [
+    13.047,
+    12.797
+   ],
+   "290-299": [
+    10.436,
+    10.379
+   ],
+   "300-309": [
+    8.071,
+    7.955
+   ],
+   "310-319": [
+    5.666,
+    5.26
+   ],
+   "320-329": [
+    4.229,
+    3.754
+   ]
+  }
+ },
+ "check_diagnostic_only": {
+  "note": "check targets are backup2 under the previous V29@20 (old bias)",
+  "old_value_minus_target_rms": 0.42,
+  "new_value_minus_target_rms": 0.5535,
+  "by_20_lines_old_target_new": {
+   "230-249": [
+    24.449,
+    24.632,
+    23.937
+   ],
+   "250-269": [
+    19.72,
+    19.9,
+    19.4
+   ],
+   "270-289": [
+    14.619,
+    14.798,
+    14.489
+   ],
+   "290-309": [
+    9.533,
+    9.74,
+    9.477
+   ],
+   "310-329": [
+    6.246,
+    6.504,
+    6.24
+   ]
+  }
+ }
+}
