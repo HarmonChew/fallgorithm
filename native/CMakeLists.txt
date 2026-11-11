@@ -15,7 +15,7 @@ set(BLOCK_STACK_BUILD_PYTHON OFF)
 set(BLOCK_STACK_BUILD_TESTS OFF)
 add_subdirectory("${BLOCK_STACK_ROOT}" block-stack EXCLUDE_FROM_ALL)
 
-add_library(fallgorithm_native SHARED c_api.cpp net.cpp)
+add_library(fallgorithm_native SHARED c_api.cpp net.cpp net_layer2.cpp)
 target_link_libraries(fallgorithm_native PRIVATE blocks_core)
 set_target_properties(fallgorithm_native PROPERTIES CXX_VISIBILITY_PRESET hidden
                       VISIBILITY_INLINES_HIDDEN ON)
@@ -30,7 +30,10 @@ endif()
 
 # Experiment 020's value network has no Python twin, so the rule above does not bind it:
 # float32 with fused multiply-adds and the host's vector instructions. These options come
-# after the target's, so they win for net.cpp alone.
+# after the target's, so they win for these files alone.
 if(NOT MSVC)
     set_source_files_properties(net.cpp PROPERTIES COMPILE_OPTIONS "-O3;-march=native;-ffp-contract=fast")
+    # net_layer2.cpp: the second layer adds rounded products (no fused multiply-adds), the
+    # arithmetic net.cpp's original loop compiled to, so the values do not change.
+    set_source_files_properties(net_layer2.cpp PROPERTIES COMPILE_OPTIONS "-O3;-march=native;-ffp-contract=off")
 endif()
