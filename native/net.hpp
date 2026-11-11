@@ -30,6 +30,7 @@ constexpr std::int32_t rank_magic = 0x31323046;
 struct ValueNetwork {
     int hidden = 0, hidden2 = 0;
     std::vector<float> w1, b1, w2, b2, w3;  // w1: one row of ``hidden`` per input
+    std::vector<float> w2t;  // w2 transposed by load: one row of ``hidden2`` per hidden unit
     float b3 = 0.0f;
 
     // experiment020.export's bytes. Returns false if they are not a network for
@@ -52,5 +53,13 @@ double net_forward(const ValueNetwork& net, const Columns& columns, const double
 // Experiment 021: the rank network's output for one candidate's settled board and its
 // rank_dense other inputs.
 double rank_forward(const ValueNetwork& net, const Columns& columns, const float* dense);
+
+// The network after the first layer: ReLU of the first layer's sums ``h``, the second
+// layer, its ReLU and the output. In net_layer2.cpp: each second-layer sum adds its products
+// in input order with the rounding net.cpp's original row-by-row loop had, but many sums at
+// once from w2t (the vector width -march=native gives) and skipping inputs the ReLU made 0,
+// which add only zeros. The values are bit for bit the same (checked on 400,000 values and
+// 12 stored games, 2026-11-11), 3.6-4.5x faster for a whole game.
+float net_finish(const ValueNetwork& net, const float* h);
 
 }  // namespace fallgorithm

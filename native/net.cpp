@@ -40,6 +40,12 @@ bool ValueNetwork::load(const unsigned char* data, std::size_t size, std::int32_
         at += sizes[index] * sizeof(float);
     }
     std::memcpy(&b3, at, sizeof(float));
+    w2t.resize(w2.size());
+    for (int j = 0; j < hidden2; ++j) {
+        for (int k = 0; k < hidden; ++k) {
+            w2t[static_cast<std::size_t>(k) * hidden2 + j] = w2[static_cast<std::size_t>(j) * hidden + k];
+        }
+    }
     return true;
 }
 
@@ -66,24 +72,6 @@ void start(const ValueNetwork& net, const Columns& columns, std::vector<float>& 
     }
 }
 
-// The rest of the network from the first layer's sums ``h`` (made ReLU here).
-float finish(const ValueNetwork& net, float* h) {
-    const int n = net.hidden;
-    for (int k = 0; k < n; ++k) {
-        h[k] = std::max(h[k], 0.0f);
-    }
-    float out = net.b3;
-    for (int j = 0; j < net.hidden2; ++j) {
-        const float* row = &net.w2[static_cast<std::size_t>(j) * n];
-        float total = net.b2[j];
-        for (int k = 0; k < n; ++k) {
-            total += row[k] * h[k];
-        }
-        out += net.w3[j] * std::max(total, 0.0f);
-    }
-    return out;
-}
-
 }  // namespace
 
 double net_forward(const ValueNetwork& net, const Columns& columns, const double* features,
@@ -107,7 +95,7 @@ double net_forward(const ValueNetwork& net, const Columns& columns, const double
     if (last >= 0) {
         add_row(h.data(), &net.w1[static_cast<std::size_t>(at + 2 + last) * n], 1.0f, n);
     }
-    return finish(net, h.data());
+    return net_finish(net, h.data());
 }
 
 double rank_forward(const ValueNetwork& net, const Columns& columns, const float* dense) {
@@ -119,7 +107,7 @@ double rank_forward(const ValueNetwork& net, const Columns& columns, const float
                     dense[k], net.hidden);
         }
     }
-    return finish(net, h.data());
+    return net_finish(net, h.data());
 }
 
 }  // namespace fallgorithm
