@@ -1,0 +1,247 @@
+{
+ "experiment": "035b",
+ "stage": "development",
+ "games": 500,
+ "seeds": "the register's development set",
+ "arm": "v29r20d",
+ "base": "v29r20 (033's stored games)",
+ "search": {
+  "commit_level": 18,
+  "adjust_k": 8,
+  "adjust_max_level": 28,
+  "deep2_level": 18,
+  "deep2_k": 4,
+  "deep3": [
+   29,
+   1000,
+   2,
+   2,
+   2
+  ]
+ },
+ "base_search": {
+  "commit_level": 29,
+  "adjust_k": 8,
+  "adjust_max_level": 28,
+  "deep2_level": 29,
+  "deep2_k": 4,
+  "deep3": null
+ },
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "rule": "Mean final score of v29r20d (v29r20's networks with 035's combined search) minus 033's stored v29r20 games on the same seeds, paired by seed, 95% bootstrap interval of experiment012.paired (10,000 resamples, RNG seed 12), both at 20 Hz / 300 ms. Development (the register's 500): kept if the paired mean is +15,000 or more and the interval's lower end is above 0. Held-out (012's 1,000): a new 20 Hz / 300 ms record if the interval's lower end is above 0, after the gate matched on this library (140/140 stored 30 Hz record games, 56/56 stored v29r20 games).",
+ "style": {
+  "v29r20": {
+   "games": 500,
+   "mean_score": 1719534.96,
+   "mean_lines": 322.636,
+   "median_lines": 333.0,
+   "points_by_band": {
+    "18": 603785.1,
+    "19-28": 545765.0,
+    "29-38": 565242.7,
+    "39+": 4742.2
+   },
+   "p_reach_130": 0.994,
+   "p_reach_230": 0.952,
+   "p_reach_320": 0.9,
+   "p_reach_39": 0.838,
+   "deaths_by_10_lines": {
+    "30-39": 2,
+    "60-69": 1,
+    "130-139": 3,
+    "160-169": 2,
+    "170-179": 1,
+    "180-189": 2,
+    "200-209": 6,
+    "210-219": 3,
+    "220-229": 4,
+    "230-239": 3,
+    "240-249": 3,
+    "250-259": 2,
+    "260-269": 6,
+    "270-279": 3,
+    "280-289": 3,
+    "290-299": 3,
+    "300-309": 1,
+    "310-319": 2,
+    "320-329": 31,
+    "330-339": 412,
+    "340-349": 7
+   },
+   "band_18": {
+    "games": 500,
+    "lines": 130.78,
+    "tetrises": 25.218,
+    "singles": 17.61,
+    "tetris_line_share": 0.7713
+   },
+   "band_19_28": {
+    "games": 497,
+    "lines": 98.22,
+    "tetrises": 17.197,
+    "singles": 16.47,
+    "tetris_line_share": 0.7003
+   },
+   "band_29_38": {
+    "games": 476,
+    "lines": 96.83,
+    "tetrises": 12.107,
+    "singles": 26.73,
+    "tetris_line_share": 0.5001
+   },
+   "entry_29": {
+    "games": 476,
+    "max_height": 6.991596638655462,
+    "aggregate_height": 41.82983193277311,
+    "holes": 0.4222689075630252
+   },
+   "entry_39": {
+    "games": 419,
+    "max_height": 6.16945107398568,
+    "aggregate_height": 37.014319809069214,
+    "holes": 0.7016706443914081
+   },
+   "seconds_per_game": 169.873474
+  },
+  "v29r20d": {
+   "games": 500,
+   "mean_score": 1858185.84,
+   "mean_lines": 330.898,
+   "median_lines": 334.0,
+   "points_by_band": {
+    "18": 624875.4,
+    "19-28": 600990.2,
+    "29-38": 626793.3,
+    "39+": 5526.9
+   },
+   "p_reach_130": 0.996,
+   "p_reach_230": 0.994,
+   "p_reach_320": 0.964,
+   "p_reach_39": 0.9,
+   "deaths_by_10_lines": {
+    "0-9": 1,
+    "100-109": 1,
+    "220-229": 1,
+    "230-239": 3,
+    "250-259": 2,
+    "260-269": 1,
+    "270-279": 2,
+    "280-289": 4,
+    "290-299": 1,
+    "300-309": 2,
+    "320-329": 32,
+    "330-339": 438,
+    "340-349": 12
+   },
+   "band_18": {
+    "games": 500,
+    "lines": 130.91,
+    "tetrises": 26.298,
+    "singles": 15.15,
+    "tetris_line_share": 0.8035
+   },
+   "band_19_28": {
+    "games": 498,
+    "lines": 100.02,
+    "tetrises": 19.213,
+    "singles": 13.21,
+    "tetris_line_share": 0.7684
+   },
+   "band_29_38": {
+    "games": 497,
+    "lines": 98.42,
+    "tetrises": 13.08,
+    "singles": 24.93,
+    "tetris_line_share": 0.5316
+   },
+   "entry_29": {
+    "games": 497,
+    "max_height": 6.806841046277666,
+    "aggregate_height": 40.647887323943664,
+    "holes": 0.16498993963782696
+   },
+   "entry_39": {
+    "games": 450,
+    "max_height": 6.068888888888889,
+    "aggregate_height": 36.00222222222222,
+    "holes": 0.64
+   },
+   "seconds_per_game": 622.718708
+  }
+ },
+ "paired_vs_v29r20": {
+  "total": {
+   "score": {
+    "mean": 138650.88,
+    "ci95_low": 110554.28,
+    "ci95_high": 167329.52,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "lines": {
+    "mean": 8.262,
+    "ci95_low": 4.358,
+    "ci95_high": 12.306,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "wins": {
+    "higher": 353,
+    "lower": 147,
+    "equal": 0
+   }
+  },
+  "by_band": {
+   "18": {
+    "mean": 21090.28,
+    "ci95_low": 14523.0,
+    "ci95_high": 27452.32,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "19-28": {
+    "mean": 55225.28,
+    "ci95_low": 45262.08,
+    "ci95_high": 65468.12,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "29-38": {
+    "mean": 61550.6,
+    "ci95_low": 41869.6,
+    "ci95_high": 81787.92,
+    "resamples": 10000,
+    "rng_seed": 12
+   },
+   "39+": {
+    "mean": 784.72,
+    "ci95_low": -280.2,
+    "ci95_high": 1878.52,
+    "resamples": 10000,
+    "rng_seed": 12
+   }
+  },
+  "score_correlation": -0.006117799928902342
+ },
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "ab5a190c23ec2488f91bd4585000725c21fee3f5f9863b77e413a6da13fd64ab",
+  "abi_version": 29
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "82b3887bfd46ae05bef34f956df0664b5bb701ea",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "kept": true
+}
