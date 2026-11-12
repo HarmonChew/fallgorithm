@@ -1,0 +1,160 @@
+{
+ "experiment": "036-20hz-full-reteach",
+ "stage": 1,
+ "round": 0,
+ "seeds": 400,
+ "agents": [
+  [
+   0,
+   "experiments/023-self-taught-value/value_sweep15.bin",
+   "experiments/034-v29-20hz-true-handover/value_sweep10.bin"
+  ],
+  [
+   1,
+   "experiments/032-v18-search-taught/value_sweep9.bin",
+   "experiments/034-v29-20hz-true-handover/value_sweep10.bin"
+  ]
+ ],
+ "explore": 0.0,
+ "explore_lines": [
+  210,
+  320
+ ],
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "search": {
+  "commit_level": 18,
+  "adjust_k": 8,
+  "adjust_max_level": 28,
+  "deep2_level": 18,
+  "deep2_k": 4,
+  "deep3": [
+   29,
+   1000,
+   2,
+   2,
+   2
+  ]
+ },
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "83c9b1258726dc8e66f2bc9459f39834d2c0ad101ed1180deafd48b5f12f7564",
+  "abi_version": 29
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "4183f50b4a8d10817d15c3cc372067d114d190c8",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "seconds": 2709.1,
+ "calibration_value_actual_by_10_lines": {
+  "230-239": [
+   25.003,
+   26.16
+  ],
+  "240-249": [
+   23.114,
+   24.219
+  ],
+  "250-259": [
+   20.564,
+   21.823
+  ],
+  "260-269": [
+   18.087,
+   19.457
+  ],
+  "270-279": [
+   15.728,
+   17.031
+  ],
+  "280-289": [
+   13.303,
+   14.498
+  ],
+  "290-299": [
+   10.764,
+   11.828
+  ],
+  "300-309": [
+   8.391,
+   9.079
+  ],
+  "310-319": [
+   5.953,
+   5.995
+  ],
+  "320-329": [
+   4.381,
+   4.033
+  ]
+ },
+ "games": 400,
+ "boards": 84358,
+ "mean_score": 1856015.5,
+ "mean_lines": 327.1,
+ "p_reach_230": 0.993,
+ "p_reach_320": 0.89,
+ "line_cap_share": 0.0,
+ "deaths_by_10_lines_in_band": {
+  "230-239": 6,
+  "240-249": 1,
+  "250-259": 4,
+  "260-269": 6,
+  "270-279": 4,
+  "280-289": 5,
+  "290-299": 7,
+  "300-309": 3,
+  "310-319": 5,
+  "320-329": 29
+ },
+ "by_source": {
+  "0": {
+   "games": 200,
+   "mean_score": 1844583.4
+  },
+  "1": {
+   "games": 200,
+   "mean_score": 1867447.6
+  }
+ },
+ "handover_boards": {
+  "games": 356,
+  "at_lines": 320,
+  "mean_max_height": 6.08,
+  "mean_aggregate_height": 36.42,
+  "mean_holes": 0.83
+ },
+ "scale_drift": {
+  "boards": 356,
+  "mean_actual": 4.033,
+  "mean_scaled": 3.799,
+  "mean_raw_backup2": 15.329,
+  "by_aggregate_height_third": {
+   "shortest": {
+    "boards": 119,
+    "mean_actual": 4.091,
+    "mean_scaled": 3.852
+   },
+   "middle": {
+    "boards": 119,
+    "mean_actual": 4.068,
+    "mean_scaled": 3.861
+   },
+   "tallest": {
+    "boards": 118,
+    "mean_actual": 3.937,
+    "mean_scaled": 3.682
+   }
+  }
+ }
+}
