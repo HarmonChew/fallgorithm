@@ -1,0 +1,200 @@
+{
+ "experiment": "036-20hz-full-reteach",
+ "stage": 1,
+ "sweep": 5,
+ "created_at": "2026-11-12T14:34:49.418342+00:00",
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "83c9b1258726dc8e66f2bc9459f39834d2c0ad101ed1180deafd48b5f12f7564",
+  "abi_version": 29
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "85382b0d5e439189c062ee8ca3064d2852ac3628",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "torch": "2.14.0+cu130",
+ "from": {
+  "path": "experiments/036-20hz-full-reteach/stage1/value_sweep4.bin",
+  "sha256": "bb6214acd4b9a2a6ba3f1e89aa647d63d3639fd57774b6359f0112d6576484a4"
+ },
+ "handover": {
+  "calibration": "e706c0df02e5de6937cca913db8ad61859b332476081abc5f4d0bfacf688ad5a",
+  "late": "7c18dacf375b7e9d0541cf03b2d043c7e0d6112b19c20dbcada82271661599f5"
+ },
+ "depth": 4,
+ "lambda": 0.95,
+ "boards": {
+  "played": 204146,
+  "children_in_band": 474486,
+  "children_past_band": 1802,
+  "handover_boards": 839,
+  "check": 8673
+ },
+ "mean_target_and_actual_by_10_lines": {
+  "230-239": [
+   25.116,
+   26.358
+  ],
+  "240-249": [
+   22.933,
+   24.13
+  ],
+  "250-259": [
+   20.792,
+   21.992
+  ],
+  "260-269": [
+   18.531,
+   19.438
+  ],
+  "270-279": [
+   16.285,
+   16.983
+  ],
+  "280-289": [
+   13.982,
+   14.423
+  ],
+  "290-299": [
+   11.429,
+   11.609
+  ],
+  "300-309": [
+   8.848,
+   8.731
+  ],
+  "310-319": [
+   5.945,
+   5.743
+  ]
+ },
+ "handover_value_and_actual": {
+  "mean_value": 3.727,
+  "mean_actual": 3.827
+ },
+ "target_seconds": 545.8,
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "checks": {
+  "unit": "Tetrises at level 18 (22,800 points)",
+  "gap_by_10_lines_played_children_gap": {
+   "230-239": [
+    25.116,
+    25.149,
+    0.033
+   ],
+   "240-249": [
+    22.933,
+    22.854,
+    -0.08
+   ],
+   "250-259": [
+    20.792,
+    20.614,
+    -0.179
+   ],
+   "260-269": [
+    18.531,
+    18.287,
+    -0.244
+   ],
+   "270-279": [
+    16.285,
+    16.049,
+    -0.237
+   ],
+   "280-289": [
+    13.982,
+    13.75,
+    -0.233
+   ],
+   "290-299": [
+    11.429,
+    11.197,
+    -0.233
+   ],
+   "300-309": [
+    8.848,
+    8.652,
+    -0.196
+   ],
+   "310-319": [
+    5.945,
+    6.125,
+    0.18
+   ]
+  },
+  "worst_gap": 0.18,
+  "most_negative_gap": -0.244,
+  "steps_from_plus_1": [],
+  "gap_ok": true,
+  "cliff": {
+   "from_step": "310-319",
+   "to_step": "320-329",
+   "children_drop": 2.414,
+   "played_drop": 2.217,
+   "mean_handover_value": 3.727,
+   "handover_boards": 839,
+   "excess": 0.196,
+   "two_sided": true
+  },
+  "cliff_ok": true,
+  "passed": true,
+  "limit": 2.0
+ },
+ "fitted": true,
+ "weights": {
+  "path": "experiments/036-20hz-full-reteach/stage1/value_sweep5.bin",
+  "sha256": "0e75419fc4266e91441112335b3af2bb7d0ef490b665a439adfc7962113812c1"
+ },
+ "settings": {
+  "batch": 4096,
+  "epochs": 3,
+  "lr": 0.0003,
+  "lr_note": "Adam, one-cycle schedule peaking at lr; warm-started from the last sweep's V",
+  "torch_seed": 23
+ },
+ "torch_seed": 128,
+ "training_log": [
+  {
+   "step": 99,
+   "loss": 0.4652,
+   "seconds": 1.0
+  },
+  {
+   "step": 198,
+   "loss": 0.6091,
+   "seconds": 1.9
+  },
+  {
+   "step": 297,
+   "loss": 0.5814,
+   "seconds": 2.9
+  },
+  {
+   "step": 396,
+   "loss": 0.4756,
+   "seconds": 3.7
+  },
+  {
+   "step": 495,
+   "loss": 0.5555,
+   "seconds": 4.7
+  }
+ ],
+ "check_boards_diagnostic": {
+  "old_value_minus_target_rms": 0.2442,
+  "new_value_minus_target_rms": 0.2253
+ }
+}
