@@ -1,0 +1,63 @@
+{
+ "rule": {
+  "go": true
+ },
+ "sweeps": [
+  {
+   "sweep": 1,
+   "weights": "experiments/036-20hz-full-reteach/stage1/value_sweep1.bin",
+   "measure": 12005.447999999975
+  },
+  {
+   "sweep": 2,
+   "weights": "experiments/036-20hz-full-reteach/stage1/value_sweep2.bin",
+   "measure": 10522.76800000004
+  },
+  {
+   "sweep": 3,
+   "weights": "experiments/036-20hz-full-reteach/stage1/value_sweep3.bin",
+   "measure": 17589.56799999997
+  },
+  {
+   "sweep": 4,
+   "weights": "experiments/036-20hz-full-reteach/stage1/value_sweep4.bin",
+   "measure": 21062.32799999998
+  },
+  {
+   "sweep": 5,
+   "weights": "experiments/036-20hz-full-reteach/stage1/value_sweep5.bin",
+   "measure": 25744.967999999993
+  },
+  {
+   "sweep": 6,
+   "weights": "experiments/036-20hz-full-reteach/stage1/value_sweep6.bin",
+   "measure": 29382.08799999999
+  },
+  {
+   "sweep": 7,
+   "weights": "experiments/036-20hz-full-reteach/stage1/value_sweep7.bin",
+   "measure": 32819.52800000005
+  },
+  {
+   "sweep": 8,
+   "weights": "experiments/036-20hz-full-reteach/stage1/value_sweep8.bin",
+   "measure": 26201.447999999975
+  }
+ ],
+ "chosen": {
+  "sweep": 7,
+  "weights": "experiments/036-20hz-full-reteach/stage1/value_sweep7.bin",
+  "measure": 32819.52800000005
+ },
+ "probe_b": {
+  "kind": "points_29_up",
+  "base_games": 2500,
+  "base_mean": 632433.512,
+  "mine_mean": 670630.08,
+  "mean": 38196.56799999997,
+  "ci95_low": 25776.351999999955,
+  "ci95_high": 50486.31999999995,
+  "resamples": 10000,
+  "rng_seed": 12
+ }
+}
