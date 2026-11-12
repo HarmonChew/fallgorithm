@@ -1,0 +1,94 @@
+{
+ "experiment": "036-20hz-full-reteach",
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "search": {
+  "commit_level": 18,
+  "adjust_k": 8,
+  "adjust_max_level": 28,
+  "deep2_level": 18,
+  "deep2_k": 4,
+  "deep3": [
+   29,
+   1000,
+   2,
+   2,
+   2
+  ]
+ },
+ "games": {
+  "seeds": [
+   41904,
+   57415,
+   42011
+  ],
+  "game_matches": [
+   true,
+   true,
+   true
+  ],
+  "dump_game_matches": [
+   true,
+   true,
+   true
+  ],
+  "score_lines_match": [
+   true,
+   true,
+   true
+  ],
+  "explore_dump_deterministic": true,
+  "explore_changes_the_game": true,
+  "explore_band_rows": 188,
+  "explore_rate": 0.05,
+  "v18_below_230_changes_the_game": true,
+  "match": true
+ },
+ "stage1_targets": {
+  "returns_vs_033_sweep7": {
+   "stored": "runs/033-data/targets7.npz",
+   "games": 3,
+   "boards": 336,
+   "max_abs_difference": 0.0,
+   "match": true
+  },
+  "backup2_equals_033_target_job": true,
+  "children_equal_033_target_job": true,
+  "late_boards": 50,
+  "c": 0.24779340496521382,
+  "late_value_equals_scaled_033_v39_backup2": true,
+  "match": true
+ },
+ "stage2_targets": {
+  "returns_vs_032_sweep10": {
+   "stored": "runs/032-data/targets10.npz",
+   "games": 3,
+   "boards": 1749,
+   "max_abs_difference": 0.0,
+   "match": true
+  },
+  "backup2_equals_032_target_job": true,
+  "match": true
+ },
+ "matched": true,
+ "calibration_sha256": "e706c0df02e5de6937cca913db8ad61859b332476081abc5f4d0bfacf688ad5a",
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "83c9b1258726dc8e66f2bc9459f39834d2c0ad101ed1180deafd48b5f12f7564",
+  "abi_version": 29
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "1dfa5e983a26eb77304e9e3bda3660a4b482300d",
+   "dirty": true,
+   "kind": "working-tree"
+  }
+ }
+}
