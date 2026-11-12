@@ -1,0 +1,17 @@
+{
+ "rule": "the higher mean score on probe A of the two in the stage 2 agent, v15 on a tie (predeclared.md)",
+ "candidates": {
+  "experiments/023-self-taught-value/value_sweep15.bin": {
+   "mean_score": 1882914.76,
+   "probe": "experiments/036-20hz-full-reteach/stage1/probeA_sweep7.json",
+   "measure_total_score": 27457.976000000024
+  },
+  "experiments/032-v18-search-taught/value_sweep9.bin": {
+   "mean_score": 1930724.08,
+   "probe": "experiments/036-20hz-full-reteach/stage2/probeA_sweep0_v18_032.json",
+   "measure_total_score": 75267.29600000009
+  }
+ },
+ "v18_minus_v15_paired_mean": 47809.320000000065,
+ "chosen": "experiments/032-v18-search-taught/value_sweep9.bin"
+}
