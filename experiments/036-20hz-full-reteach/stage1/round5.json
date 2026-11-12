@@ -1,0 +1,151 @@
+{
+ "experiment": "036-20hz-full-reteach",
+ "stage": 1,
+ "round": 5,
+ "seeds": 200,
+ "agents": [
+  [
+   0,
+   "experiments/023-self-taught-value/value_sweep15.bin",
+   "experiments/036-20hz-full-reteach/stage1/value_sweep5.bin"
+  ]
+ ],
+ "explore": 0.005,
+ "explore_lines": [
+  210,
+  320
+ ],
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "search": {
+  "commit_level": 18,
+  "adjust_k": 8,
+  "adjust_max_level": 28,
+  "deep2_level": 18,
+  "deep2_k": 4,
+  "deep3": [
+   29,
+   1000,
+   2,
+   2,
+   2
+  ]
+ },
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "83c9b1258726dc8e66f2bc9459f39834d2c0ad101ed1180deafd48b5f12f7564",
+  "abi_version": 29
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "669e800662c96c278fb30a73c0e4313c4e2a3120",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "seconds": 1621.9,
+ "calibration_value_actual_by_10_lines": {
+  "230-239": [
+   25.168,
+   26.855
+  ],
+  "240-249": [
+   22.861,
+   24.362
+  ],
+  "250-259": [
+   20.651,
+   22.276
+  ],
+  "260-269": [
+   18.42,
+   19.605
+  ],
+  "270-279": [
+   16.093,
+   16.931
+  ],
+  "280-289": [
+   13.753,
+   14.07
+  ],
+  "290-299": [
+   11.121,
+   11.216
+  ],
+  "300-309": [
+   8.575,
+   8.734
+  ],
+  "310-319": [
+   5.962,
+   5.859
+  ],
+  "320-329": [
+   4.202,
+   3.759
+  ]
+ },
+ "games": 200,
+ "boards": 43347,
+ "mean_score": 1851776.1,
+ "mean_lines": 327.1,
+ "p_reach_230": 0.995,
+ "p_reach_320": 0.855,
+ "line_cap_share": 0.0,
+ "deaths_by_10_lines_in_band": {
+  "230-239": 2,
+  "240-249": 2,
+  "250-259": 0,
+  "260-269": 0,
+  "270-279": 2,
+  "280-289": 3,
+  "290-299": 8,
+  "300-309": 4,
+  "310-319": 7,
+  "320-329": 17
+ },
+ "by_source": {
+  "0": {
+   "games": 200,
+   "mean_score": 1851776.1
+  }
+ },
+ "handover_boards": {
+  "games": 171,
+  "at_lines": 320,
+  "mean_max_height": 6.53,
+  "mean_aggregate_height": 38.51,
+  "mean_holes": 1.09
+ },
+ "scale_drift": {
+  "boards": 171,
+  "mean_actual": 3.759,
+  "mean_scaled": 3.645,
+  "mean_raw_backup2": 14.712,
+  "by_aggregate_height_third": {
+   "shortest": {
+    "boards": 57,
+    "mean_actual": 4.19,
+    "mean_scaled": 3.824
+   },
+   "middle": {
+    "boards": 57,
+    "mean_actual": 3.941,
+    "mean_scaled": 3.833
+   },
+   "tallest": {
+    "boards": 57,
+    "mean_actual": 3.144,
+    "mean_scaled": 3.279
+   }
+  }
+ }
+}
