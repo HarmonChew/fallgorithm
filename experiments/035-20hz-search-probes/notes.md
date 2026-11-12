@@ -1,4 +1,4 @@
-# Experiment 035 - notes: search probes at 20 Hz before the full re-teach (deeper search gains +130k; it becomes 036's search)
+# Experiment 035 - notes: search probes at 20 Hz before the full re-teach (deeper search gains +130k; it becomes 036's search; 035b makes it the 20 Hz record, 1,854,852)
 
 Plan: [plan.md](plan.md) (version 2, independently reviewed); protocol:
 [predeclared.md](predeclared.md) (committed with the plan, before any game). Owner's
@@ -34,6 +34,10 @@ cost is time: the combined search takes 609 s a game against `base`'s 173 s, so 
 float32 speed-up of the network is built before 036 (the predeclared rule: over ~300 s).
 These are training seeds, so this is screening only and **no record is claimed**; the 20 Hz
 record stays `v29r20`, 1,710,180.
+
+**035b** (section "035b" below) then played that setting as `v29r20d` on the record
+benchmark: **1,854,852 on 012's 1,000 held-out seeds, +144.7k (95% CI +124.7k, +165.1k)
+over `v29r20`, the new 20 Hz / 300 ms record** (2026-11-11).
 
 ## Free look: how `v29r20`'s early games end (`early_deaths.json`, no games played)
 
@@ -138,6 +142,61 @@ before 036**.
   game). 036 plays its own rounds with it for days, so the float32 network comes first.
 * Headroom (against the plan's all-Tetris ceiling): the combined setting makes 623k at 18
   (ceiling 741k), 599k at 19-28 (735k), 627k at 29-38 (1,035k). 29-38 still holds most of the room.
+
+## 035b: record attempt for the combined search (`predeclared-record.md`)
+
+Protocol [predeclared-record.md](predeclared-record.md), written 2026-11-11 before any 035b
+game (owner: "just go with your recommendations"; bank the search gain before 036 so 036
+measures teaching alone). Code e5d5666 (`experiment035eval.py`, `tests/test_experiment035eval.py`;
+independently reviewed, must-fix and should-fixes taken). Chain `runs/035b-chain.sh`, log
+`runs/035b-chain.log`, ran unattended 2026-11-11 ~12:00 -> 21:57 (+08): gate 82b3887,
+development a6ad446, held-out dc5c2ce. Every game ran on native library sha256
+`ab5a190c...` (ABI 29) and engine 4d46782, and passed the engine replay check with its
+counters and the 20 Hz tap spacing.
+
+Arm `v29r20d`: `v29r20`'s networks unchanged with 035's combined search. Base: 033's stored
+`v29r20` games on the same seeds. Paired by seed, 95% bootstrap interval (10,000
+resamples, RNG seed 12).
+
+**Gate (`record_gate.json`): 196/196 matched**: 140 stored 30 Hz record games (28 each of
+017, e29_k4, v39, v29, v39r) and 56 stored `v29r20` games (28 development, 28 held-out),
+input for input.
+
+| stage | seeds | `v29r20` | `v29r20d` | paired (95% CI) | wins / losses | lines | rule | s/game |
+|---|---|---|---|---|---|---|---|---|
+| development | register's 500 | 1,719,535 | 1,858,186 | **+138.7k (+110.6k, +167.3k)** | 353 / 147 | +8.3 | kept (+15k, CI > 0) | 623 |
+| held-out | 012's 1,000 | 1,710,180 | **1,854,852** | **+144.7k (+124.7k, +165.1k)** | 701 / 299 | +11.9 | **new record** (CI > 0) | 635 |
+
+Paired by band (95% CI):
+
+| stage | 18 | 19-28 | 29-38 | 39+ |
+|---|---|---|---|---|
+| development | +21.1k (+14.5k, +27.5k) | +55.2k (+45.3k, +65.5k) | +61.6k (+41.9k, +81.8k) | +0.8k (-0.3k, +1.9k) |
+| held-out | +22.9k (+18.1k, +27.8k) | +60.1k (+52.6k, +68.0k) | +59.8k (+46.6k, +73.1k) | +1.9k (+1.0k, +2.7k) |
+
+Survival and style on the held-out seeds (per game reaching the band):
+
+| | P(130) | P(230) | P(320) | P(39) | deaths < 230 / 230-319 / 320-329 | 18: Tetrises / singles / share | 19-28 | 29-38 | 29 entry: agg. height / holes | 39 entry |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `v29r20` | 98.4% | 94.4% | 89.9% | 82.5% | 56 / 45 / 74 | 25.0 / 17.5 / 77.0% | 17.2 / 16.3 / 70.1% | 12.2 / 26.6 / 50.3% | 42.1 / 0.44 | 35.3 / 0.62 |
+| `v29r20d` | 100.0% | 99.7% | 96.9% | 89.8% | 3 / 28 / 71 | 26.2 / 15.6 / 79.8% | 19.1 / 13.5 / 76.5% | 13.0 / 25.7 / 52.5% | 40.0 / 0.24 | 36.2 / 0.64 |
+
+Development tells the same story: deaths before 230 lines 24 -> 3 of 500, P(320) 90.0% ->
+96.4%, Tetris share at 29-38 50.0% -> 53.2%.
+
+What 035b adds:
+
+* **035's screening gain held on the record benchmark**, slightly larger (+144.7k against
+  +129.8k), with the same shape: about +83k below 230 lines, mostly survival (held-out
+  deaths before 230 lines 56 -> 3 of 1,000), and +60k at 29-38 from the third unknown piece
+  and the cleaner entry boards.
+* **The 20 Hz record is now `v29r20d`, 1,854,852** (previous: `v29r20`, 1,710,180). 036's
+  base is `v29r20d`, so 036's gain is teaching alone, as intended.
+* The early-death problem 036's plan counted on (5.6% of held-out games before 230 lines,
+  ~+39k of its hoped gain) is now 0.3%: that part of 036's room is gone, and its odds
+  section needs redoing.
+* Cost: 623-635 s a game, 9.9 h for gate, development and held-out; the network speed-up
+  (`speed/simd-net`) is needed before 036's training rounds.
 
 ## Seeds
 
