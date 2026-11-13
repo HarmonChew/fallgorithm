@@ -1,0 +1,100 @@
+{
+ "experiment": "036",
+ "part_30hz": {
+  "stage": "heldout",
+  "part_abcd_031b": {
+   "stage": "heldout",
+   "part_abc_030": {
+    "stage": "heldout",
+    "part_ab_028": {
+     "experiment": "028-hybrid-017-at-39",
+     "stage": "heldout",
+     "part_a_017": {
+      "name": "017",
+      "compares": "inputs",
+      "games": 28,
+      "matched": 28,
+      "mismatches": [],
+      "abi_version": 29,
+      "versions": {
+       "engine": {
+        "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+        "dirty": false,
+        "kind": "committed"
+       },
+       "fallgorithm": {
+        "commit": "2177002f409720cb2b2d092bb82e3d079dd48ff4",
+        "dirty": false,
+        "kind": "committed"
+       }
+      }
+     },
+     "part_b_e29_k4": {
+      "games": 28,
+      "matched": 28,
+      "mismatched_seeds": []
+     },
+     "games": 56,
+     "matched": 56,
+     "abi_version": 29
+    },
+    "part_c_v39": {
+     "games": 28,
+     "matched": 28,
+     "mismatched_seeds": []
+    },
+    "games": 84,
+    "matched": 84,
+    "abi_version": 29
+   },
+   "part_d_v29": {
+    "games": 28,
+    "matched": 28,
+    "mismatched_seeds": []
+   },
+   "games": 112,
+   "matched": 112,
+   "abi_version": 29
+  },
+  "part_e_v39r": {
+   "games": 28,
+   "matched": 28,
+   "mismatched_seeds": []
+  },
+  "games": 140,
+  "matched": 140,
+  "abi_version": 29
+ },
+ "part_20hz_v29r20d": {
+  "development": {
+   "games": 28,
+   "matched": 28,
+   "mismatched_seeds": []
+  },
+  "heldout": {
+   "games": 28,
+   "matched": 28,
+   "mismatched_seeds": []
+  }
+ },
+ "games": 196,
+ "matched_games": 196,
+ "matched": true,
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "83c9b1258726dc8e66f2bc9459f39834d2c0ad101ed1180deafd48b5f12f7564",
+  "abi_version": 29
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "2177002f409720cb2b2d092bb82e3d079dd48ff4",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
