@@ -1,0 +1,33 @@
+{
+ "v36": 3,
+ "final_evaluation": true,
+ "candidates": [
+  {
+   "stage": 1,
+   "measure": 38196.56799999997
+  },
+  {
+   "stage": 2,
+   "measure": 67171.77600000007
+  },
+  {
+   "stage": 3,
+   "measure": 81726.25600000005
+  }
+ ],
+ "probe_b_measure_selected": 81726.25600000005,
+ "agent": {
+  "stage": 3,
+  "sweep": 1,
+  "early": "experiments/036-20hz-full-reteach/stage2/value_sweep2.bin",
+  "mid": "experiments/036-20hz-full-reteach/stage3/value_sweep1.bin",
+  "late": "experiments/031-v39-retuned-cap/value_sweep5.bin",
+  "shas": [
+   "ee9162c2de132cf7574e4181270ae7f49c9e00ea1bfa01eaa4402b27d409d580",
+   "43dc7d40328e760b43a3e4e0d648d3f498672bd9809c7e6a797d87ea83e4d166",
+   "7c18dacf375b7e9d0541cf03b2d043c7e0d6112b19c20dbcada82271661599f5"
+  ],
+  "v15_below_230": false
+ },
+ "rule": "v36 is the stage choice with the highest probe B measure; no final evaluation unless it is above 0; its probe B figure is selected (the best of up to three) (predeclared.md). Stage 1's measure is in points at levels 29 and up, the others' in total score: stage 1's agent plays v29r20d's own game below 230 lines (prefix guard), so its total score differs from v29r20d's only there, and the 29+ form leaves out the probe half's luck below 230. The one-scale rule covers the training rows' values; inside backup2 a board's leaves are valued by the network the target is computed under (033's recipe)."
+}
