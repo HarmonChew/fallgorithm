@@ -1,0 +1,325 @@
+{
+ "experiment": "036-20hz-full-reteach",
+ "stage": 2,
+ "sweep": 3,
+ "created_at": "2026-11-13T01:59:54.682703+00:00",
+ "format": {
+  "tap_hz": 20,
+  "reaction_ms": 300
+ },
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "83c9b1258726dc8e66f2bc9459f39834d2c0ad101ed1180deafd48b5f12f7564",
+  "abi_version": 29
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "c2dcad93efb3f511f4d1e055d6d7efbd22b6a016",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "torch": "2.14.0+cu130",
+ "from": {
+  "path": "experiments/036-20hz-full-reteach/stage2/value_sweep2.bin",
+  "sha256": "ee9162c2de132cf7574e4181270ae7f49c9e00ea1bfa01eaa4402b27d409d580"
+ },
+ "handover": {
+  "mid_backup2": "c2bf907cfbc41e89d9cbe99a57bfa6d85d5f7b5addae473f27a4a314bf5753af"
+ },
+ "depth": 4,
+ "lambda": 0.95,
+ "boards": {
+  "played": 448387,
+  "children_in_band": 1044300,
+  "children_past_band": 1465,
+  "handover_boards": 748,
+  "check": 23799
+ },
+ "mean_target_and_actual_by_10_lines": {
+  "0-9": [
+   58.16,
+   81.703
+  ],
+  "10-19": [
+   56.785,
+   79.361
+  ],
+  "20-29": [
+   55.514,
+   76.96
+  ],
+  "30-39": [
+   54.119,
+   74.897
+  ],
+  "40-49": [
+   52.832,
+   72.801
+  ],
+  "50-59": [
+   51.54,
+   70.688
+  ],
+  "60-69": [
+   50.182,
+   68.878
+  ],
+  "70-79": [
+   48.801,
+   66.406
+  ],
+  "80-89": [
+   47.4,
+   64.519
+  ],
+  "90-99": [
+   46.156,
+   62.364
+  ],
+  "100-109": [
+   45.016,
+   60.58
+  ],
+  "110-119": [
+   43.836,
+   58.448
+  ],
+  "120-129": [
+   42.69,
+   56.466
+  ],
+  "130-139": [
+   41.535,
+   54.192
+  ],
+  "140-149": [
+   40.403,
+   52.087
+  ],
+  "150-159": [
+   39.149,
+   49.663
+  ],
+  "160-169": [
+   37.885,
+   47.292
+  ],
+  "170-179": [
+   36.6,
+   44.698
+  ],
+  "180-189": [
+   35.269,
+   41.938
+  ],
+  "190-199": [
+   33.918,
+   39.277
+  ],
+  "200-209": [
+   32.362,
+   36.321
+  ],
+  "210-219": [
+   30.43,
+   33.506
+  ],
+  "220-229": [
+   27.415,
+   29.725
+  ]
+ },
+ "handover_value_and_actual": {
+  "mean_value": 25.331,
+  "mean_actual": 28.227
+ },
+ "target_seconds": 1096.6,
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "checks": {
+  "unit": "Tetrises at level 18 (22,800 points)",
+  "gap_by_10_lines_played_children_gap": {
+   "0-9": [
+    58.16,
+    57.455,
+    -0.705
+   ],
+   "10-19": [
+    56.785,
+    56.09,
+    -0.695
+   ],
+   "20-29": [
+    55.514,
+    54.865,
+    -0.649
+   ],
+   "30-39": [
+    54.119,
+    53.532,
+    -0.588
+   ],
+   "40-49": [
+    52.832,
+    52.248,
+    -0.584
+   ],
+   "50-59": [
+    51.54,
+    50.913,
+    -0.627
+   ],
+   "60-69": [
+    50.182,
+    49.547,
+    -0.635
+   ],
+   "70-79": [
+    48.801,
+    48.206,
+    -0.595
+   ],
+   "80-89": [
+    47.4,
+    46.862,
+    -0.538
+   ],
+   "90-99": [
+    46.156,
+    45.588,
+    -0.568
+   ],
+   "100-109": [
+    45.016,
+    44.289,
+    -0.727
+   ],
+   "110-119": [
+    43.836,
+    43.111,
+    -0.725
+   ],
+   "120-129": [
+    42.69,
+    41.884,
+    -0.805
+   ],
+   "130-139": [
+    41.535,
+    40.719,
+    -0.816
+   ],
+   "140-149": [
+    40.403,
+    39.553,
+    -0.849
+   ],
+   "150-159": [
+    39.149,
+    38.284,
+    -0.865
+   ],
+   "160-169": [
+    37.885,
+    36.926,
+    -0.958
+   ],
+   "170-179": [
+    36.6,
+    35.564,
+    -1.036
+   ],
+   "180-189": [
+    35.269,
+    34.199,
+    -1.07
+   ],
+   "190-199": [
+    33.918,
+    32.807,
+    -1.111
+   ],
+   "200-209": [
+    32.362,
+    31.419,
+    -0.943
+   ],
+   "210-219": [
+    30.43,
+    29.753,
+    -0.678
+   ],
+   "220-229": [
+    27.415,
+    27.574,
+    0.158
+   ]
+  },
+  "worst_gap": 0.158,
+  "most_negative_gap": -1.111,
+  "steps_from_plus_1": [],
+  "gap_ok": true,
+  "cliff": {
+   "from_step": "220-229",
+   "to_step": "230-239",
+   "children_drop": 2.083,
+   "played_drop": 2.085,
+   "mean_handover_value": 25.331,
+   "handover_boards": 748,
+   "excess": -0.002,
+   "two_sided": false
+  },
+  "cliff_ok": true,
+  "passed": true,
+  "limit": 2.0
+ },
+ "fitted": true,
+ "weights": {
+  "path": "experiments/036-20hz-full-reteach/stage2/value_sweep3.bin",
+  "sha256": "942cde29ca9fe281c2b6e6a6d133971807dfad61c987b33aefe969757006fc2b"
+ },
+ "settings": {
+  "batch": 4096,
+  "epochs": 3,
+  "lr": 0.0003,
+  "lr_note": "Adam, one-cycle schedule peaking at lr; warm-started from the last sweep's V",
+  "torch_seed": 23
+ },
+ "torch_seed": 226,
+ "training_log": [
+  {
+   "step": 218,
+   "loss": 0.3066,
+   "seconds": 2.1
+  },
+  {
+   "step": 436,
+   "loss": 0.2871,
+   "seconds": 4.3
+  },
+  {
+   "step": 654,
+   "loss": 0.4694,
+   "seconds": 6.4
+  },
+  {
+   "step": 872,
+   "loss": 0.4096,
+   "seconds": 8.5
+  },
+  {
+   "step": 1090,
+   "loss": 0.2201,
+   "seconds": 10.7
+  }
+ ],
+ "check_boards_diagnostic": {
+  "old_value_minus_target_rms": 0.1471,
+  "new_value_minus_target_rms": 0.2483
+ }
+}
