@@ -1,0 +1,192 @@
+level 18 30 Hz well None h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 30 Hz well None h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 30 Hz well None h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 30 Hz well None h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 30 Hz well None h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 30 Hz well None h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 30 Hz well None h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 30 Hz well None h 14: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 30 Hz well 9 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 9 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 9 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 9 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 9 h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 9 h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 9 h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 9 h 14: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 0 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 0 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 0 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 0 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 0 h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 0 h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 0 h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 30 Hz well 0 h 14: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well None h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 20 Hz well None h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 20 Hz well None h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 20 Hz well None h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 20 Hz well None h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 20 Hz well None h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 20 Hz well None h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 20 Hz well None h 14: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 18 20 Hz well 9 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 9 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 9 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 9 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 9 h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 9 h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 9 h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 9 h 14: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 0 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 0 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 0 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 0 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 0 h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 0 h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 0 h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 18 20 Hz well 0 h 14: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well None h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 30 Hz well None h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 30 Hz well None h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 30 Hz well None h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 30 Hz well None h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 30 Hz well None h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 30 Hz well None h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 30 Hz well None h 14: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 30 Hz well 9 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 9 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 9 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 9 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 9 h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 9 h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 9 h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 9 h 14: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 0 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 0 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 0 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 0 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 0 h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 0 h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 0 h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 30 Hz well 0 h 14: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well None h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 20 Hz well None h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 20 Hz well None h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 20 Hz well None h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 20 Hz well None h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 20 Hz well None h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 20 Hz well None h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 20 Hz well None h 14: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 19 20 Hz well 9 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 9 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 9 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 9 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 9 h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 9 h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 9 h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 9 h 14: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 0 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 0 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 0 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 0 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 0 h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 0 h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 0 h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 19 20 Hz well 0 h 14: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: False
+level 29 30 Hz well None h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 29 30 Hz well None h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 29 30 Hz well None h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 29 30 Hz well None h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 29 30 Hz well None h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 29 30 Hz well None h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 29 30 Hz well None h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 29 30 Hz well None h 14: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0
+level 29 30 Hz well 9 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 9 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 9 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 9 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 9 h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 9 h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 9 h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 9 h 14: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 29 30 Hz well 0 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 0 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 0 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 0 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 0 h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 0 h 10: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 30 Hz well 0 h 12: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: False
+level 29 30 Hz well 0 h 14: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 29 20 Hz well None h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 29 20 Hz well None h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 29 20 Hz well None h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 29 20 Hz well None h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 29 20 Hz well None h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 29 20 Hz well None h 10: columns out of reach I:- O:09 T:- S:0 Z:0 J:- L:-
+level 29 20 Hz well None h 12: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0
+level 29 20 Hz well None h 14: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019
+level 29 20 Hz well 9 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 20 Hz well 9 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 20 Hz well 9 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 20 Hz well 9 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 20 Hz well 9 h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 20 Hz well 9 h 10: columns out of reach I:- O:09 T:- S:0 Z:0 J:- L:-  I into well: False
+level 29 20 Hz well 9 h 12: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 29 20 Hz well 9 h 14: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019  I into well: False
+level 29 20 Hz well 0 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 20 Hz well 0 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 20 Hz well 0 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 20 Hz well 0 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 29 20 Hz well 0 h  8: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: False
+level 29 20 Hz well 0 h 10: columns out of reach I:- O:09 T:- S:0 Z:0 J:- L:-  I into well: False
+level 29 20 Hz well 0 h 12: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 29 20 Hz well 0 h 14: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019  I into well: False
+level 39 30 Hz well None h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 39 30 Hz well None h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 39 30 Hz well None h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 39 30 Hz well None h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 39 30 Hz well None h  8: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0
+level 39 30 Hz well None h 10: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0
+level 39 30 Hz well None h 12: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019
+level 39 30 Hz well None h 14: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019
+level 39 30 Hz well 9 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 39 30 Hz well 9 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 39 30 Hz well 9 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 39 30 Hz well 9 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 39 30 Hz well 9 h  8: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 39 30 Hz well 9 h 10: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 39 30 Hz well 9 h 12: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019  I into well: False
+level 39 30 Hz well 9 h 14: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019  I into well: False
+level 39 30 Hz well 0 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 39 30 Hz well 0 h  2: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 39 30 Hz well 0 h  4: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: False
+level 39 30 Hz well 0 h  6: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: False
+level 39 30 Hz well 0 h  8: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 39 30 Hz well 0 h 10: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 39 30 Hz well 0 h 12: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019  I into well: False
+level 39 30 Hz well 0 h 14: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019  I into well: False
+level 39 20 Hz well None h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-
+level 39 20 Hz well None h  2: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0
+level 39 20 Hz well None h  4: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0
+level 39 20 Hz well None h  6: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0
+level 39 20 Hz well None h  8: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019
+level 39 20 Hz well None h 10: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019
+level 39 20 Hz well None h 12: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019
+level 39 20 Hz well None h 14: columns out of reach I:0189 O:012789 T:01289 S:01289 Z:01289 J:01289 L:01289
+level 39 20 Hz well 9 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: True
+level 39 20 Hz well 9 h  2: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 39 20 Hz well 9 h  4: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 39 20 Hz well 9 h  6: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 39 20 Hz well 9 h  8: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019  I into well: False
+level 39 20 Hz well 9 h 10: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019  I into well: False
+level 39 20 Hz well 9 h 12: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019  I into well: False
+level 39 20 Hz well 9 h 14: columns out of reach I:0189 O:012789 T:01289 S:01289 Z:01289 J:01289 L:01289  I into well: False
+level 39 20 Hz well 0 h  0: columns out of reach I:- O:- T:- S:- Z:- J:- L:-  I into well: False
+level 39 20 Hz well 0 h  2: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 39 20 Hz well 0 h  4: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 39 20 Hz well 0 h  6: columns out of reach I:- O:09 T:0 S:0 Z:0 J:0 L:0  I into well: False
+level 39 20 Hz well 0 h  8: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019  I into well: False
+level 39 20 Hz well 0 h 10: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019  I into well: False
+level 39 20 Hz well 0 h 12: columns out of reach I:09 O:0189 T:019 S:019 Z:019 J:019 L:019  I into well: False
+level 39 20 Hz well 0 h 14: columns out of reach I:0189 O:012789 T:01289 S:01289 Z:01289 J:01289 L:01289  I into well: False
