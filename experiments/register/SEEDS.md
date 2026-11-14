@@ -37,7 +37,9 @@ its probe seeds, 6,600-6,999 round 0, 7,000-8,799 rounds 1-9;
 played no register set: its `choose` picked no network); 035 used 14,200-15,199 (1,000 probe seeds: base, c18, c18_d18, adj12 and the
 combined setting on all 1,000, `d3` on the first 500 and its timing on the first 4;
 `../035-20hz-search-probes/seeds.json`; no register set played; 036 re-uses them as its
-probe set: 14,200-14,699 probe A, 14,700-15,199 probe B); 036 reserved 15,200-20,999 (stage 1
+probe set: 14,200-14,699 probe A, 14,700-15,199 probe B; 038's step 0 re-used probe A for
+its four column-0 bonus arms, 500 games each, `../038-level39-20hz/games/`, and drew no
+training seeds); 036 reserved 15,200-20,999 (stage 1
 15,200-15,599 round 0, 15,600-16,999 rounds 1-7; stage 2 17,000-17,399 round 0,
 17,400-19,199 rounds 1-9; stage 3 19,200-19,599 round 0, 19,600-20,999 rounds 1-7;
 `../036-20hz-full-reteach/seeds.json`) and played stage 1's round 0 and rounds 1-7, stage 2's
