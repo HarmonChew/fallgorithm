@@ -1,7 +1,11 @@
-# Experiment 037 - plan (DRAFT, version 1): longer-horizon targets for the 20 Hz networks
+# Experiment 037 - plan (version 2): longer-horizon targets for the 20 Hz networks
 
-Status: draft for the owner, 2026-11-14. Not reviewed, no code, no seeds reserved, nothing
-run. Evidence: [freelook.md](freelook.md).
+Status: version 2, 2026-11-14. Version 1 was the draft shown to the owner; the owner said to
+go on and hand long runs over without waiting, so its open choices are taken on the
+recommendations: both stages, a new training seed list, the margins in
+[predeclared.md](predeclared.md) (the protocol). Step 0's rule was fixed before it ran
+(0298344). Code `experiment037.py`, `experiment037eval.py`, independently reviewed before
+round 0. Evidence: [freelook.md](freelook.md).
 
 ## Question
 
@@ -70,14 +74,12 @@ choice with the best probe B measure if above 0 (measured against `v36`'s stored
 games), then the gate, development (+15k and interval above 0 to keep), held-out (record if
 the interval's lower end is above 0). Base: `v36`'s stored development and held-out games.
 
-## Seeds (open)
+## Seeds
 
-029's training list has 76 seeds left after index 21,000. 037 needs ~2,400-3,200 training
-seeds. A new list must be drawn (the register's hash method, a new label, excluding the
-register sets' and 012's held-out start states). Probe seeds: 036's (035's 14,200-15,199),
-seen, screening only; `v36` played probe B there (stored games), but probe A only as
-scores, so probe A's measure would be against the 2,500-game pool as in 036 or `v36` is
-replayed on probe A (~50 min).
+029's training list has 76 seeds left after index 21,000, so 037 draws a new list
+(predeclared.md "Seeds"): 2,400 seeds. Probe seeds: 036's (035's 14,200-15,199), seen,
+screening only. `v36`'s probe A and B games are stored (probe A in `runs/036/games`, copied
+into `base_games/`), so the measure is against `v36`'s 2,500 stored games as in 036.
 
 ## Honest odds
 
@@ -99,8 +101,11 @@ Step 0 ~3 h. Stage A ~6-9 h, Stage B ~6-8 h, final evaluation ~3 h. About 1 day 
 * Changing c or the hand-over: it is accurate (036's scale_drift).
 * Bigger network.
 
-## Open for the owner
+## Decided in version 2
 
-1. 037 as above (both stages), or Stage A only (cheaper, the better-understood loss)?
-2. The step 0 rule, the death guard's margin and the wrecked-game margin, before code.
-3. The new training seed list.
+1. Both stages (each only if step 0 gives its network a lambda).
+2. Death guard: deaths at 230-319 at most `v36`'s + 10 on the half (~1.5 sd); wrecked
+   games (40+ singles at 18) at most `v36`'s + 3; garbage gap no weaker than `v36`'s V18.
+3. New training seeds: labelled seeds on the 7,944 start states no earlier list or
+   register set uses.
+4. Stage A plays probe B only if its choice's probe A measure is above 0 (same for B).

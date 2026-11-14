@@ -1,0 +1,322 @@
+{
+ "experiment": "037-longer-horizon-targets",
+ "step": 0,
+ "created_at": "2026-11-14T04:00:32.242233+00:00",
+ "rule": "The smallest lambda above 0.95 whose risk bias is at most a third of 0.95's in size and whose rms is at most 5% above 0.95's; None if there is none.",
+ "lambdas": [
+  0.95,
+  0.98,
+  0.99,
+  1.0
+ ],
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "83c9b1258726dc8e66f2bc9459f39834d2c0ad101ed1180deafd48b5f12f7564",
+  "abi_version": 29
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "0298344fcffb8063aef2d4f72dfe6ceb5246ff7c",
+   "dirty": false,
+   "kind": "committed"
+  }
+ },
+ "unit": "Tetrises at level 18 (22,800 points)",
+ "networks": {
+  "V29": {
+   "setting": {
+    "stage": 3,
+    "previous": "experiments/036-20hz-full-reteach/stage3/value_sweep1.bin",
+    "train": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "test": 4,
+    "band": [
+     230,
+     320
+    ],
+    "test_below": 320,
+    "risky": "I drought 16+ or max height 12+",
+    "safe": "I drought under 10, max height under 10, no holes"
+   },
+   "played_rows": 195843,
+   "child_rows": 457097,
+   "previous_on_test": {
+    "boards": 40623,
+    "risky_boards": 3913,
+    "safe_boards": 21493,
+    "mean_error_risky": 0.078,
+    "mean_error_safe": -0.212,
+    "risk_bias": 0.29,
+    "rms": 4.751,
+    "mean_error": -0.234,
+    "mean_error_by_10_lines": {
+     "230-239": -0.584,
+     "240-249": -0.661,
+     "250-259": -0.797,
+     "260-269": -0.77,
+     "270-279": -0.04,
+     "280-289": 0.205,
+     "290-299": -0.025,
+     "300-309": 0.11,
+     "310-319": 0.45
+    }
+   },
+   "by_lambda": {
+    "0.95": {
+     "boards": 40623,
+     "risky_boards": 3913,
+     "safe_boards": 21493,
+     "mean_error_risky": 0.117,
+     "mean_error_safe": -0.134,
+     "risk_bias": 0.251,
+     "rms": 4.748,
+     "mean_error": -0.153,
+     "mean_error_by_10_lines": {
+      "230-239": -0.533,
+      "240-249": -0.574,
+      "250-259": -0.685,
+      "260-269": -0.649,
+      "270-279": 0.083,
+      "280-289": 0.29,
+      "290-299": 0.043,
+      "300-309": 0.16,
+      "310-319": 0.474
+     },
+     "final_loss": 0.492
+    },
+    "0.98": {
+     "boards": 40623,
+     "risky_boards": 3913,
+     "safe_boards": 21493,
+     "mean_error_risky": 0.131,
+     "mean_error_safe": -0.084,
+     "risk_bias": 0.215,
+     "rms": 4.744,
+     "mean_error": -0.108,
+     "mean_error_by_10_lines": {
+      "230-239": -0.447,
+      "240-249": -0.477,
+      "250-259": -0.593,
+      "260-269": -0.567,
+      "270-279": 0.139,
+      "280-289": 0.314,
+      "290-299": 0.047,
+      "300-309": 0.148,
+      "310-319": 0.444
+     },
+     "final_loss": 1.1353
+    },
+    "0.99": {
+     "boards": 40623,
+     "risky_boards": 3913,
+     "safe_boards": 21493,
+     "mean_error_risky": 0.148,
+     "mean_error_safe": -0.047,
+     "risk_bias": 0.194,
+     "rms": 4.742,
+     "mean_error": -0.075,
+     "mean_error_by_10_lines": {
+      "230-239": -0.342,
+      "240-249": -0.384,
+      "250-259": -0.515,
+      "260-269": -0.509,
+      "270-279": 0.164,
+      "280-289": 0.315,
+      "290-299": 0.036,
+      "300-309": 0.13,
+      "310-319": 0.424
+     },
+     "final_loss": 1.9767
+    },
+    "1.0": {
+     "boards": 40623,
+     "risky_boards": 3913,
+     "safe_boards": 21493,
+     "mean_error_risky": 0.174,
+     "mean_error_safe": 0.008,
+     "risk_bias": 0.165,
+     "rms": 4.737,
+     "mean_error": -0.024,
+     "mean_error_by_10_lines": {
+      "230-239": -0.108,
+      "240-249": -0.219,
+      "250-259": -0.405,
+      "260-269": -0.444,
+      "270-279": 0.181,
+      "280-289": 0.296,
+      "290-299": 0.006,
+      "300-309": 0.099,
+      "310-319": 0.396
+     },
+     "final_loss": 5.6033
+    }
+   },
+   "lambda": null,
+   "seconds": 450.9
+  },
+  "V18": {
+   "setting": {
+    "stage": 2,
+    "previous": "experiments/036-20hz-full-reteach/stage2/value_sweep2.bin",
+    "train": [
+     0,
+     1,
+     2
+    ],
+    "test": 3,
+    "band": [
+     0,
+     230
+    ],
+    "test_below": 130,
+    "risky": "10+ holes",
+    "safe": "no holes"
+   },
+   "played_rows": 448387,
+   "child_rows": 1046445,
+   "previous_on_test": {
+    "boards": 67117,
+    "risky_boards": 1584,
+    "safe_boards": 54601,
+    "mean_error_risky": 22.801,
+    "mean_error_safe": -19.197,
+    "risk_bias": 41.998,
+    "rms": 22.277,
+    "mean_error": -18.065,
+    "mean_error_by_10_lines": {
+     "0-9": -21.779,
+     "10-19": -20.898,
+     "20-29": -19.976,
+     "30-39": -19.654,
+     "40-49": -19.645,
+     "50-59": -18.474,
+     "60-69": -18.402,
+     "70-79": -17.433,
+     "80-89": -16.745,
+     "90-99": -16.037,
+     "100-109": -15.168,
+     "110-119": -14.66,
+     "120-129": -13.447
+    }
+   },
+   "by_lambda": {
+    "0.95": {
+     "boards": 67117,
+     "risky_boards": 1584,
+     "safe_boards": 54601,
+     "mean_error_risky": 22.25,
+     "mean_error_safe": -18.939,
+     "risk_bias": 41.189,
+     "rms": 22.034,
+     "mean_error": -17.825,
+     "mean_error_by_10_lines": {
+      "0-9": -21.504,
+      "10-19": -20.657,
+      "20-29": -19.763,
+      "30-39": -19.445,
+      "40-49": -19.466,
+      "50-59": -18.235,
+      "60-69": -18.182,
+      "70-79": -17.209,
+      "80-89": -16.512,
+      "90-99": -15.789,
+      "100-109": -14.914,
+      "110-119": -14.379,
+      "120-129": -13.159
+     },
+     "final_loss": 0.2112
+    },
+    "0.98": {
+     "boards": 67117,
+     "risky_boards": 1584,
+     "safe_boards": 54601,
+     "mean_error_risky": 20.543,
+     "mean_error_safe": -18.611,
+     "risk_bias": 39.154,
+     "rms": 21.687,
+     "mean_error": -17.548,
+     "mean_error_by_10_lines": {
+      "0-9": -21.202,
+      "10-19": -20.4,
+      "20-29": -19.515,
+      "30-39": -19.214,
+      "40-49": -19.229,
+      "50-59": -17.986,
+      "60-69": -17.933,
+      "70-79": -16.942,
+      "80-89": -16.225,
+      "90-99": -15.52,
+      "100-109": -14.587,
+      "110-119": -14.04,
+      "120-129": -12.823
+     },
+     "final_loss": 1.0367
+    },
+    "0.99": {
+     "boards": 67117,
+     "risky_boards": 1584,
+     "safe_boards": 54601,
+     "mean_error_risky": 18.83,
+     "mean_error_safe": -18.052,
+     "risk_bias": 36.882,
+     "rms": 21.146,
+     "mean_error": -17.048,
+     "mean_error_by_10_lines": {
+      "0-9": -20.717,
+      "10-19": -19.964,
+      "20-29": -19.075,
+      "30-39": -18.78,
+      "40-49": -18.764,
+      "50-59": -17.504,
+      "60-69": -17.445,
+      "70-79": -16.431,
+      "80-89": -15.697,
+      "90-99": -15.008,
+      "100-109": -14.017,
+      "110-119": -13.464,
+      "120-129": -12.249
+     },
+     "final_loss": 3.3476
+    },
+    "1.0": {
+     "boards": 67117,
+     "risky_boards": 1584,
+     "safe_boards": 54601,
+     "mean_error_risky": 14.992,
+     "mean_error_safe": -13.977,
+     "risk_bias": 28.969,
+     "rms": 17.604,
+     "mean_error": -13.216,
+     "mean_error_by_10_lines": {
+      "0-9": -15.182,
+      "10-19": -15.052,
+      "20-29": -14.394,
+      "30-39": -14.337,
+      "40-49": -14.501,
+      "50-59": -13.507,
+      "60-69": -13.697,
+      "70-79": -12.931,
+      "80-89": -12.408,
+      "90-99": -12.066,
+      "100-109": -11.256,
+      "110-119": -11.005,
+      "120-129": -10.108
+     },
+     "final_loss": 50.055
+    }
+   },
+   "lambda": null,
+   "seconds": 1236.5
+  }
+ },
+ "go": false
+}

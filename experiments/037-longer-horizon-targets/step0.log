@@ -1,0 +1,52 @@
+{'step': 95, 'loss': 0.7083, 'seconds': 1.1}
+{'step': 190, 'loss': 0.6144, 'seconds': 2.1}
+{'step': 285, 'loss': 0.7192, 'seconds': 3.0}
+{'step': 380, 'loss': 0.608, 'seconds': 3.9}
+{'step': 475, 'loss': 0.492, 'seconds': 4.9}
+V29 0.95 0.251 4.748
+{'step': 95, 'loss': 1.6407, 'seconds': 0.9}
+{'step': 190, 'loss': 1.4133, 'seconds': 1.9}
+{'step': 285, 'loss': 1.5303, 'seconds': 2.8}
+{'step': 380, 'loss': 1.3075, 'seconds': 3.7}
+{'step': 475, 'loss': 1.1353, 'seconds': 4.7}
+V29 0.98 0.215 4.744
+{'step': 95, 'loss': 2.7896, 'seconds': 0.9}
+{'step': 190, 'loss': 2.3913, 'seconds': 1.9}
+{'step': 285, 'loss': 2.5632, 'seconds': 2.8}
+{'step': 380, 'loss': 2.2011, 'seconds': 3.8}
+{'step': 475, 'loss': 1.9767, 'seconds': 4.7}
+V29 0.99 0.194 4.742
+{'step': 95, 'loss': 6.9824, 'seconds': 0.9}
+{'step': 190, 'loss': 6.2911, 'seconds': 1.9}
+{'step': 285, 'loss': 6.5153, 'seconds': 2.8}
+{'step': 380, 'loss': 5.9038, 'seconds': 3.8}
+{'step': 475, 'loss': 5.6033, 'seconds': 4.7}
+V29 1.0 0.165 4.737
+V29 lambda None
+{'step': 218, 'loss': 0.3443, 'seconds': 2.2}
+{'step': 436, 'loss': 0.3613, 'seconds': 4.3}
+{'step': 654, 'loss': 0.481, 'seconds': 6.5}
+{'step': 872, 'loss': 0.226, 'seconds': 9.0}
+{'step': 1090, 'loss': 0.2112, 'seconds': 11.9}
+V18 0.95 41.189 22.034
+{'step': 218, 'loss': 1.5444, 'seconds': 2.3}
+{'step': 436, 'loss': 1.4263, 'seconds': 4.4}
+{'step': 654, 'loss': 1.6853, 'seconds': 6.6}
+{'step': 872, 'loss': 1.0384, 'seconds': 8.7}
+{'step': 1090, 'loss': 1.0367, 'seconds': 10.9}
+V18 0.98 39.154 21.687
+{'step': 218, 'loss': 4.0935, 'seconds': 2.1}
+{'step': 436, 'loss': 4.0772, 'seconds': 4.3}
+{'step': 654, 'loss': 4.301, 'seconds': 6.5}
+{'step': 872, 'loss': 3.3371, 'seconds': 8.6}
+{'step': 1090, 'loss': 3.3476, 'seconds': 10.8}
+V18 0.99 36.882 21.146
+{'step': 218, 'loss': 50.7159, 'seconds': 2.1}
+{'step': 436, 'loss': 49.9861, 'seconds': 4.4}
+{'step': 654, 'loss': 51.9442, 'seconds': 6.9}
+{'step': 872, 'loss': 51.1902, 'seconds': 9.2}
+{'step': 1090, 'loss': 50.055, 'seconds': 11.6}
+V18 1.0 28.969 17.604
+V18 lambda None
+V29 lambda None {'0.95': (0.251, 4.748), '0.98': (0.215, 4.744), '0.99': (0.194, 4.742), '1.0': (0.165, 4.737)}
+V18 lambda None {'0.95': (41.189, 22.034), '0.98': (39.154, 21.687), '0.99': (36.882, 21.146), '1.0': (28.969, 17.604)}
