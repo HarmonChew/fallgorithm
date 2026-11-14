@@ -2,6 +2,7 @@
 //
 // Bad arguments return -1 instead of reaching undefined behaviour, because the
 // tests call these with generated input.
+#include <cmath>
 #include <cstdint>
 #include <exception>
 #include <string>
@@ -1088,7 +1089,11 @@ int late_hybrid_game(const unsigned char* net, int net_size,
                                std::uint64_t explore_seed,
                                std::uint8_t* inputs, int capacity, std::int64_t* out,
                                std::int32_t* rows, int row_capacity, int* row_count,
-                               const int* deep3) {
+                               const int* deep3, int lead_from_lines = 0,
+                               int lead_to_lines = 0, double lead_beta = 0.0) {
+    if (lead_from_lines < 0 || lead_to_lines < lead_from_lines || !std::isfinite(lead_beta)) {
+        return -1;
+    }
     if (!net || !params || !ruleset || !mode || seed < 0 || seed > 0xffff || line_cap < 0 ||
         frame_cap < 0 || capacity < frame_cap || interval < 1 || reaction < 0 ||
         start_level < 0 || start_level >= 20 || net_size < 0 || commit_level < 0 ||
@@ -1118,6 +1123,7 @@ int late_hybrid_game(const unsigned char* net, int net_size,
         deep.set_deep(commit_level, adjust_k, adjust_max_level);
         deep.set_deep2(deep2_level, deep2_k);
         deep.set_deep3(deep3[0], deep3[1], deep3[2], deep3[3], deep3[4]);
+        deep.set_lead_bonus(lead_from_lines, lead_to_lines, lead_beta);
         if (late) {
             deep.set_late_net(&late_network, late_from_lines);
         }
@@ -1188,6 +1194,34 @@ FN_API int fn_deep3_game(const unsigned char* net, int net_size,
                             height, seed, line_cap, frame_cap, interval, reaction, explore,
                             explore_from_lines, explore_to_lines, explore_seed, inputs,
                             capacity, out, rows, row_capacity, row_count, deep3);
+}
+
+// Experiment 038: fn_deep3_game's game with NetSearcher::set_lead_bonus(``lead_from_lines``,
+// ``lead_to_lines``, ``lead_beta``); a beta of 0 is fn_deep3_game's game.
+FN_API int fn_lead_game(const unsigned char* net, int net_size,
+                        const unsigned char* late, int late_size, int late_from_lines,
+                        const unsigned char* mid, int mid_size, int mid_from_lines,
+                        const Params* params, int commit_level, int adjust_k,
+                        int adjust_max_level, int deep2_level, int deep2_k,
+                        int switch_level, const char* ruleset, const char* mode,
+                        int start_level, int height, int seed, int line_cap,
+                        int frame_cap, int interval, int reaction, double explore,
+                        int explore_from_lines, int explore_to_lines,
+                        std::uint64_t explore_seed,
+                        std::uint8_t* inputs, int capacity, std::int64_t* out,
+                        std::int32_t* rows, int row_capacity, int* row_count,
+                        const int* deep3, int lead_from_lines, int lead_to_lines,
+                        double lead_beta) {
+    if (!deep3) {
+        return -1;
+    }
+    return late_hybrid_game(net, net_size, late, late_size, late_from_lines, mid, mid_size,
+                            mid_from_lines, params, commit_level, adjust_k, adjust_max_level,
+                            deep2_level, deep2_k, switch_level, ruleset, mode, start_level,
+                            height, seed, line_cap, frame_cap, interval, reaction, explore,
+                            explore_from_lines, explore_to_lines, explore_seed, inputs,
+                            capacity, out, rows, row_capacity, row_count, deep3,
+                            lead_from_lines, lead_to_lines, lead_beta);
 }
 
 // Experiment 029: NetSearcher::backup2 (two unknown pieces deep, the best ``k`` of each

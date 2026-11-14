@@ -60,9 +60,32 @@ public:
     // The network's value, in points (0 once the lines reach the cap). Experiment 029:
     // the late network while the decision being searched is late (see set_late_net);
     // Experiment 030: the middle network while it is in the middle band (set_mid_net).
+    // Experiment 038: while the decision being searched is in the lead bonus's window
+    // (set_lead_bonus), every value also gets beta x column 0's lead, in Tetrises at level 18.
     double value(const Columns& columns, int lines, int drought, int last, int start_level) const {
-        return net_value(use_late_ ? *late_net_ : use_mid_ ? *mid_net_ : *net_, line_cap_,
-                         columns, lines, drought, last, start_level);
+        const double v = net_value(use_late_ ? *late_net_ : use_mid_ ? *mid_net_ : *net_,
+                                   line_cap_, columns, lines, drought, last, start_level);
+        return use_lead_ ? v + lead_beta_ * net_tetris_points * column0_lead(columns) : v;
+    }
+
+    // Experiment 038: min(height of column 0, 16) minus the mean height of columns 1-9.
+    static double column0_lead(const Columns& columns) {
+        const auto heights = column_heights(columns);
+        int rest = 0;
+        for (int index = 1; index < width; ++index) {
+            rest += heights[index];
+        }
+        return std::min(heights[0], 16) - rest / static_cast<double>(width - 1);
+    }
+
+    // Experiment 038's search change (off unless set): for a decision whose position has
+    // ``from_lines`` lines or more and fewer than ``to_lines``, every leaf value the search
+    // computes (value) gets ``beta`` x column0_lead of the board, in Tetrises at level 18.
+    // A beta of 0 is off: the search is then the one without it, exactly.
+    void set_lead_bonus(int from_lines, int to_lines, double beta) {
+        lead_from_lines_ = from_lines;
+        lead_to_lines_ = to_lines;
+        lead_beta_ = beta;
     }
 
     // Experiment 029: every value within the search of a decision whose position has at
@@ -83,6 +106,8 @@ public:
     bool search(const Position& position, Choice& choice) {
         use_late_ = late_net_ != nullptr && position.lines >= late_from_lines_;
         use_mid_ = !use_late_ && mid_net_ != nullptr && position.lines >= mid_from_lines_;
+        use_lead_ = lead_beta_ != 0.0 && position.lines >= lead_from_lines_ &&
+                    position.lines < lead_to_lines_;
         if (prefilter_ > 0) {
             return search_prefiltered(position, choice);
         }
@@ -557,6 +582,9 @@ private:
     const ValueNetwork* mid_net_ = nullptr;  // Experiment 030
     int mid_from_lines_ = 1 << 30;
     bool use_mid_ = false;
+    int lead_from_lines_ = 0, lead_to_lines_ = 0;
+    double lead_beta_ = 0.0;
+    bool use_lead_ = false;
     Searcher hand_{};
     int prefilter_ = 0;
     std::vector<Searcher::Candidate> candidates_;
