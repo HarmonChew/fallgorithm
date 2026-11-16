@@ -55,14 +55,18 @@ def _experiments() -> dict[str, Path]:
 def _own_harness(path: Path) -> bool:
     """A harness config (agent and line cap, no frame limit), not a suite or script one.
 
-    Anything else, including a config that does not parse, is kept so the runner's
-    own error reports it.
+    From Experiment 021 on a harness config need not name an agent or a line cap,
+    so one with none of the runner's own keys counts as well. Anything else,
+    including a config that does not parse, is kept so the runner's own error
+    reports it.
     """
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return False
-    return isinstance(value, dict) and "frame_limit" not in value and {"agent", "line_cap"} <= value.keys()
+    if not isinstance(value, dict) or "frame_limit" in value:
+        return False
+    return {"agent", "line_cap"} <= value.keys() or not {"script", "seeds", "agents"} & value.keys()
 
 
 def _config_selects_search(config_path: Path) -> bool:
