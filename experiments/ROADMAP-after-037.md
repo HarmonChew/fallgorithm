@@ -52,6 +52,10 @@ prefers the cheaper, surer step; nothing in 039 depends on 038 except its base a
 
 ## 3. Experiment 038 - preparing for level 39 at 20 Hz
 
+**Outcome (2026-11-15): stopped after step 0, no arm qualified** (lead +1.2 to +2.5 rows
+at a cost of 13.8k-114k before 330; [notes](038-level39-20hz/notes.md)). Next is 039 on
+`v36`.
+
 Full plan: [038-level39-20hz/plan.md](038-level39-20hz/plan.md); evidence:
 [038-level39-20hz/freelook.md](038-level39-20hz/freelook.md). In short:
 

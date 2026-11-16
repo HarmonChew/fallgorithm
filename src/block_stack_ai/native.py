@@ -300,6 +300,9 @@ def load() -> Any:
     lib.fn_late_hybrid_game.restype = C.c_int
     lib.fn_deep3_game.argtypes = lib.fn_late_hybrid_game.argtypes + [C.POINTER(C.c_int)]
     lib.fn_deep3_game.restype = C.c_int
+    if hasattr(lib, "fn_lead_game"):  # Experiment 038; checked where it is called
+        lib.fn_lead_game.argtypes = lib.fn_deep3_game.argtypes + [C.c_int, C.c_int, C.c_double]
+        lib.fn_lead_game.restype = C.c_int
     lib.fn_backup3_values.argtypes = [C.c_char_p, C.c_int, C.c_int, C.c_int,
                                       C.POINTER(C.c_int32), C.c_int, C.c_int, C.c_int,
                                       C.c_int, C.c_int, C.POINTER(C.c_double)]
@@ -845,7 +848,8 @@ def late_hybrid_game(net: bytes, game: dict[str, Any], seed: int, *, late: bytes
                      explore: float = 0.0, explore_from_lines: int = 0, explore_seed: int = 0,
                      dump: bool = False, mid: bytes | None = None, mid_from_lines: int = 0,
                      explore_to_lines: int = 0,
-                     deep3: tuple[int, int, int, int, int] | None = None
+                     deep3: tuple[int, int, int, int, int] | None = None,
+                     lead: tuple[int, int, float] | None = None
                      ) -> tuple[dict[str, Any], bytes | None]:
     """Experiment 029: :func:`deep_hybrid_game`'s game with an optional second network
     ``late`` for every decision at ``late_from_lines`` lines or more, a random placement
@@ -854,7 +858,9 @@ def late_hybrid_game(net: bytes, game: dict[str, Any], seed: int, *, late: bytes
     network ``mid`` for the decisions at ``mid_from_lines`` lines or more that are not late,
     and exploration only below ``explore_to_lines`` lines (0 is to the end). Experiment 035:
     ``deep3`` is the third unknown piece at the commit, (from_level, to_level, roots, k, k2)
-    of NetSearcher::set_deep3 (fn_deep3_game); None is the game without it."""
+    of NetSearcher::set_deep3 (fn_deep3_game); None is the game without it. Experiment
+    038: ``lead`` is NetSearcher::set_lead_bonus's (from_lines, to_lines, beta)
+    (fn_lead_game); None is the game without it."""
     inputs = (C.c_uint8 * max(1, frame_cap))()
     out = (C.c_int64 * 11)()
     rows = (C.c_int32 * DUMP_CAPACITY)() if dump else None
@@ -868,13 +874,19 @@ def late_hybrid_game(net: bytes, game: dict[str, Any], seed: int, *, late: bytes
         limits.reaction_frames, explore, explore_from_lines, explore_to_lines, explore_seed,
         inputs,
         max(1, frame_cap), out, rows, DUMP_CAPACITY if dump else 0, C.byref(count)]
-    if deep3 is None:
-        status = load().fn_late_hybrid_game(*arguments)
+    if lead is not None:
+        lib = load()
+        if not hasattr(lib, "fn_lead_game"):
+            raise NativeError("the native library has no fn_lead_game: rebuild it")
+        name = "lead"
+        status = lib.fn_lead_game(*arguments, (C.c_int * 5)(*(deep3 or (0, 0, 0, 0, 0))),
+                                  int(lead[0]), int(lead[1]), float(lead[2]))
+    elif deep3 is None:
+        name, status = "late_hybrid", load().fn_late_hybrid_game(*arguments)
     else:
-        status = load().fn_deep3_game(*arguments, (C.c_int * 5)(*deep3))
+        name, status = "deep3", load().fn_deep3_game(*arguments, (C.c_int * 5)(*deep3))
     if status:
-        raise NativeError(f"fn_{'late_hybrid' if deep3 is None else 'deep3'}_game failed "
-                          f"with {status}")
+        raise NativeError(f"fn_{name}_game failed with {status}")
     return _played(inputs, out), (C.string_at(rows, count.value * DUMP_STRIDE * 4)
                                   if dump else None)
 

@@ -95,6 +95,9 @@ def test_chosen_needs_a_choice(monkeypatch, tmp_path):
 
 def test_a_later_stage_needs_the_same_v29(monkeypatch, tmp_path):
     monkeypatch.setattr(ev, "OUT", tmp_path)
+    # The experiment's own games are retained in the repository, so the check
+    # that a stage has no games yet has to look at a directory of this test's.
+    monkeypatch.setattr(ev, "GAMES", tmp_path / "games30")
     weights = tmp_path / "w.bin"
     weights.write_bytes(b"abc")
     monkeypatch.setattr(ev.runner, "PROJECT_ROOT", tmp_path)

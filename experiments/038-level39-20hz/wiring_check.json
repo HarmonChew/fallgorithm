@@ -1,0 +1,29 @@
+{
+ "experiment": "038-level39-20hz",
+ "games": 28,
+ "matched_games": 28,
+ "mismatched_seeds": [],
+ "matched": true,
+ "lead": [
+  300,
+  330,
+  0.0
+ ],
+ "library": {
+  "path": "/home/harmon-chew/projects/code/fallgorithm/.build/native/libfallgorithm_native.so",
+  "sha256": "67d501e301028a890c83891f1c00f973847f7f999204cf21deb3acd1d1ff7927",
+  "abi_version": 29
+ },
+ "versions": {
+  "engine": {
+   "commit": "4d467820deb842bad3a1310b24fcfe9947f80292",
+   "dirty": false,
+   "kind": "committed"
+  },
+  "fallgorithm": {
+   "commit": "0c02b83aae6fa8da756f588fea4758f89ec9bca2",
+   "dirty": false,
+   "kind": "committed"
+  }
+ }
+}
